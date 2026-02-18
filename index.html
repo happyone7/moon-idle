@@ -79,6 +79,29 @@ header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
   color: var(--accent-gold);
   box-shadow: var(--glow-gold);
 }
+.header-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.sound-toggle {
+  background: var(--bg-card);
+  border: 1px solid rgba(79,195,247,0.3);
+  border-radius: 20px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 5px 12px;
+  transition: all 0.2s;
+}
+.sound-toggle:hover {
+  border-color: rgba(79,195,247,0.6);
+  box-shadow: var(--glow-blue);
+}
 .grid {
   display: grid;
   grid-template-columns: 280px 1fr 280px;
@@ -353,8 +376,11 @@ header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
   <header>
     <h1>🚀 MOON IDLE</h1>
     <p>자원을 모으고 로켓을 조립해 달에 도달하라!</p>
-    <div class="moonstone-bar" id="moonstone-display" style="display:none">
-      🌙 문스톤: <span id="moonstone-count">0</span> (+<span id="moonstone-bonus">0</span>% 생산 보너스)
+    <div class="header-controls">
+      <div class="moonstone-bar" id="moonstone-display" style="display:none">
+        🌙 문스톤: <span id="moonstone-count">0</span> (+<span id="moonstone-bonus">0</span>% 생산 보너스)
+      </div>
+      <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">🔊 사운드 ON</button>
     </div>
   </header>
 
@@ -445,12 +471,14 @@ let gs = {
   upgrades: {},
   moonstone: 0,
   launches: 0,
+  settings: { sound: true },
   lastTick: Date.now(),
 };
 let prodMult = {};
 let globalMult = 1;
 let partCostMult = 1;
 let fusionBonus = 0;
+let audioCtx = null;
 
 // ==================== HELPERS ====================
 function fmt(n) {
@@ -477,6 +505,50 @@ function notify(msg, color='var(--accent-blue)') {
   el.textContent = msg;
   document.getElementById('notif').appendChild(el);
   setTimeout(() => el.remove(), 3200);
+}
+function ensureAudioContext() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playSfx(type='sine', freq=440, duration=0.08, volume=0.03, targetFreq=null) {
+  if (!gs.settings?.sound) return;
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const now = ctx.currentTime;
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, now + duration);
+  gain.gain.setValueAtTime(volume, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + duration);
+}
+function playLaunchSfx() {
+  if (!gs.settings?.sound) return;
+  playSfx('triangle', 280, 0.12, 0.04, 380);
+  setTimeout(() => playSfx('triangle', 420, 0.16, 0.05, 620), 120);
+  setTimeout(() => playSfx('sawtooth', 680, 0.22, 0.04, 980), 250);
+}
+function toggleSound() {
+  gs.settings.sound = !gs.settings.sound;
+  renderSoundToggle();
+  saveGame();
+  notify(gs.settings.sound ? '🔊 사운드 ON' : '🔇 사운드 OFF', 'var(--accent-blue)');
+  if (gs.settings.sound) playSfx('sine', 640, 0.06, 0.03, 720);
+}
+function renderSoundToggle() {
+  const btn = document.getElementById('sound-toggle');
+  if (!btn) return;
+  btn.textContent = gs.settings?.sound ? '🔊 사운드 ON' : '🔇 사운드 OFF';
 }
 function switchTab(tab) {
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['buildings','upgrades'][i]===tab));
@@ -549,6 +621,7 @@ function clickResource(rid) {
   const mult = getMoonstoneMult() * globalMult;
   const amt = (prodMult[rid]||1) * mult;
   gs.res[rid] += amt;
+  playSfx('sine', 480, 0.04, 0.012, 560);
 }
 function buyBuilding(bid) {
   const bld = BUILDINGS.find(b=>b.id===bid);
@@ -557,6 +630,7 @@ function buyBuilding(bid) {
   spend(cost);
   gs.buildings[bid]++;
   notify(`${bld.icon} ${bld.name} 건설 완료! (${gs.buildings[bid]}개)`);
+  playSfx('triangle', 360, 0.08, 0.03, 520);
   renderAll();
 }
 function craftPart(pid) {
@@ -566,6 +640,7 @@ function craftPart(pid) {
   spend(cost);
   gs.parts[pid] = 1;
   notify(`${part.icon} ${part.name} 제작 완료!`, 'var(--accent-green)');
+  playSfx('square', 520, 0.11, 0.03, 760);
   checkLaunch();
   renderAll();
 }
@@ -577,6 +652,7 @@ function buyUpgrade(uid) {
   gs.upgrades[uid] = true;
   upg.effect();
   notify(`${upg.icon} ${upg.name} 연구 완료!`, 'var(--accent-purple)');
+  playSfx('sawtooth', 440, 0.1, 0.028, 700);
   renderAll();
 }
 function checkLaunch() {
@@ -590,6 +666,7 @@ function launchRocket() {
   const earned = 1 + gs.launches + fusionBonus;
   document.getElementById('moonstone-earned').textContent = `🌙 문스톤 +${earned}개 획득!`;
   document.getElementById('launch-overlay').classList.add('show');
+  playLaunchSfx();
   // store earned for prestige
   window._pendingMoonstone = earned;
 }
@@ -604,6 +681,7 @@ function prestige() {
   prodMult = {}; globalMult = 1; partCostMult = 1; fusionBonus = 0;
   document.getElementById('launch-overlay').classList.remove('show');
   notify(`🌙 ${gs.moonstone}개의 문스톤으로 재시작! 생산 +${gs.moonstone*5}% 보너스`, 'var(--accent-gold)');
+  playSfx('triangle', 500, 0.12, 0.04, 760);
   saveGame();
   renderAll();
 }
@@ -697,6 +775,7 @@ function renderAll() {
   renderParts();
   renderUpgrades();
   renderMoonstone();
+  renderSoundToggle();
 }
 
 // ==================== SAVE / LOAD ====================
@@ -713,6 +792,8 @@ function loadGame() {
     if (!raw) return;
     const save = JSON.parse(raw);
     Object.assign(gs, save.gs);
+    if (!gs.settings) gs.settings = { sound: true };
+    if (typeof gs.settings.sound !== 'boolean') gs.settings.sound = true;
     Object.assign(prodMult, save.prodMult||{});
     globalMult = save.globalMult||1;
     partCostMult = save.partCostMult||1;
