@@ -1,0 +1,328 @@
+// ============================================================
+//  GAME STATE
+// ============================================================
+let gs = {
+  res: { money:500, metal:0, fuel:0, electronics:0, research:0 },
+  buildings: { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:1, r_and_d:0, solar_array:0, launch_pad:0 },
+  parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
+  assembly: { selectedQuality:'proto', jobs:[] },
+  upgrades: {},
+  launches: 0,
+  moonstone: 0,
+  history: [],
+  lastTick: Date.now(),
+  settings: { sound: true },
+  saveVersion: 2,
+  unlocks: {
+    tab_production: true,
+    tab_research: true,
+    tab_assembly: false,
+    tab_launch: false,
+    tab_mission: false,
+    bld_ops_center: false,
+    bld_supply_depot: false,
+    bld_mine: false,
+    bld_extractor: false,
+    bld_refinery: false,
+    bld_cryo_plant: false,
+    bld_elec_lab: false,
+    bld_fab_plant: false,
+    bld_research_lab: true,
+    bld_r_and_d: false,
+    bld_solar_array: false,
+    bld_launch_pad: false,
+  },
+};
+let prodMult = {};
+let globalMult = 1;
+let partCostMult = 1;
+let fusionBonus = 0;
+let reliabilityBonus = 0;
+let slotBonus = 0;
+let audioCtx = null;
+let activeTab = 'production';
+let launchInProgress = false;
+let pendingLaunchMs = 0;
+let pendingLaunchData = null;
+let selectedTechId = null;
+let recentResearches = [];
+
+
+// ============================================================
+//  HELPERS
+// ============================================================
+function fmt(n) {
+  if (typeof n !== 'number' || isNaN(n)) return '0';
+  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return Math.floor(n).toString();
+}
+
+function fmtDec(n, d=1) {
+  if (typeof n !== 'number' || isNaN(n)) return '0.0';
+  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toFixed(d);
+}
+
+function fmtTime(sec) {
+  const s = Math.max(0, Math.floor(sec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${r}s`;
+  return `${r}s`;
+}
+
+function clamp(v, mn, mx) { return Math.min(mx, Math.max(mn, v)); }
+
+function getQuality(qid) { return QUALITIES.find(q => q.id === qid) || QUALITIES[0]; }
+
+function getAssemblySlots() { return 1 + gs.buildings.launch_pad + slotBonus; }
+
+function ensureAssemblyState() {
+  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
+  if (!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs = [];
+  if (!gs.assembly.selectedQuality) gs.assembly.selectedQuality = 'proto';
+  const slots = getAssemblySlots();
+  while (gs.assembly.jobs.length < slots) gs.assembly.jobs.push(null);
+  if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
+}
+
+function getMoonstoneMult() { return 1 + gs.moonstone * 0.05; }
+
+function getSolarBonus() { return 1 + gs.buildings.solar_array * 0.1; }
+
+function canAfford(cost) {
+  return Object.entries(cost).every(([r, v]) => (gs.res[r] || 0) >= v);
+}
+
+function spend(cost) {
+  Object.entries(cost).forEach(([r, v]) => { gs.res[r] -= v; });
+}
+
+function getBuildingCost(bld) {
+  const cost = {};
+  Object.entries(bld.baseCost).forEach(([r, v]) => {
+    cost[r] = Math.floor(v * Math.pow(1.15, gs.buildings[bld.id] || 0));
+  });
+  return cost;
+}
+
+function getPartCost(part) {
+  const cost = {};
+  Object.entries(part.cost).forEach(([r, v]) => {
+    cost[r] = Math.floor(v * partCostMult);
+  });
+  return cost;
+}
+
+function getProduction() {
+  const prod = { money:0, metal:0, fuel:0, electronics:0, research:0 };
+  BUILDINGS.forEach(b => {
+    if (b.produces === 'bonus' || !(b.produces in prod)) return;
+    const cnt = gs.buildings[b.id] || 0;
+    if (cnt === 0) return;
+    const rate = b.baseRate * cnt * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    prod[b.produces] += rate;
+  });
+  return prod;
+}
+
+function getTotalWorkers() {
+  return Object.values(gs.buildings).reduce((a, b) => a + b, 0);
+}
+
+function getRocketScience(qualityId) {
+  const q = getQuality(qualityId);
+  const isp = 315 + q.ispBonus + gs.buildings.elec_lab * 1.2 + (gs.upgrades.fusion ? 22 : 0);
+  const dryMass = 28 * q.dryMassMult * (gs.upgrades.lightweight ? 0.9 : 1);
+  const propMass = 76 + gs.buildings.refinery * 0.1 + gs.buildings.cryo_plant * 0.2;
+  const thrust = 1450 + gs.buildings.mine * 0.8 + (gs.upgrades.fusion ? 120 : 0);
+  const m0 = dryMass + propMass;
+  const deltaV = isp * 9.81 * Math.log(m0 / dryMass) / 1000;
+  const twr = thrust / (m0 * 9.81);
+  const reliability = clamp(
+    56 + gs.buildings.research_lab * 1.9 + gs.buildings.elec_lab * 0.8 + reliabilityBonus + q.relBonus,
+    0, 99.5
+  );
+  const altitude = clamp(deltaV * 22, 0, 400);
+  return { deltaV, twr, reliability, altitude };
+}
+
+function getMoonstoneReward(qualityId) {
+  const sci = getRocketScience(qualityId);
+  const q = getQuality(qualityId);
+  return Math.max(1, Math.floor((sci.altitude / 20) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / 4));
+}
+
+function getCostStr(cost) {
+  return Object.entries(cost).map(([r, v]) => {
+    const res = RESOURCES.find(x => x.id === r);
+    return `${res ? res.symbol : r}:${fmt(v)}`;
+  }).join(' ');
+}
+
+function getAssemblyCost(qualityId) {
+  const q = getQuality(qualityId);
+  const total = {};
+  PARTS.forEach(p => {
+    const c = getPartCost(p);
+    Object.entries(c).forEach(([r, v]) => {
+      total[r] = (total[r] || 0) + Math.floor(v * q.costMult * 0.32);
+    });
+  });
+  return total;
+}
+
+
+// ============================================================
+//  AUDIO
+// ============================================================
+function ensureAudio() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playSfx(type='sine', freq=440, dur=0.08, vol=0.03, targetFreq=null) {
+  if (!gs.settings.sound) return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const now = ctx.currentTime;
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, now + dur);
+  gain.gain.setValueAtTime(vol, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + dur);
+}
+
+function playLaunchSfx() {
+  playSfx('triangle', 280, 0.12, 0.04, 380);
+  setTimeout(() => playSfx('triangle', 420, 0.16, 0.05, 620), 120);
+  setTimeout(() => playSfx('sawtooth', 680, 0.22, 0.04, 980), 250);
+}
+
+
+// ============================================================
+//  SAVE / LOAD
+// ============================================================
+const SAVE_KEY = 'moonIdle_v2';
+
+function saveGame() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(gs));
+  } catch(e) {}
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+
+    // Merge resources
+    if (saved.res) Object.assign(gs.res, saved.res);
+
+    // Merge buildings
+    if (saved.buildings) Object.assign(gs.buildings, saved.buildings);
+
+    // Merge parts
+    if (saved.parts) Object.assign(gs.parts, saved.parts);
+
+    // Scalars
+    gs.launches = saved.launches || 0;
+    gs.moonstone = saved.moonstone || 0;
+    gs.history = saved.history || [];
+    gs.upgrades = saved.upgrades || {};
+    gs.assembly = saved.assembly || { selectedQuality:'proto', jobs:[] };
+    gs.settings = saved.settings || { sound: true };
+    gs.lastTick = saved.lastTick || Date.now();
+
+    // Merge unlocks — keep defaults for any missing keys
+    const defaultUnlocks = {
+      tab_production: true,
+      tab_research: true,
+      tab_assembly: false,
+      tab_launch: false,
+      tab_mission: false,
+      bld_ops_center: false,
+      bld_supply_depot: false,
+      bld_mine: false,
+      bld_extractor: false,
+      bld_refinery: false,
+      bld_cryo_plant: false,
+      bld_elec_lab: false,
+      bld_fab_plant: false,
+      bld_research_lab: true,
+      bld_r_and_d: false,
+      bld_solar_array: false,
+      bld_launch_pad: false,
+    };
+    gs.unlocks = Object.assign({}, defaultUnlocks, saved.unlocks || {});
+
+    // Re-apply upgrade effects to restore prodMult/globalMult etc.
+    prodMult = {};
+    globalMult = 1;
+    partCostMult = 1;
+    fusionBonus = 0;
+    reliabilityBonus = 0;
+    slotBonus = 0;
+    Object.keys(gs.upgrades).forEach(uid => {
+      if (!gs.upgrades[uid]) return;
+      const upg = UPGRADES.find(u => u.id === uid);
+      if (upg) upg.effect();
+    });
+
+    ensureAssemblyState();
+    return true;
+  } catch(e) {
+    console.warn('Load failed', e);
+    return false;
+  }
+}
+
+function calcOffline() {
+  const now = Date.now();
+  const elapsed = Math.min((now - gs.lastTick) / 1000, 8 * 3600);
+  if (elapsed < 5) { gs.lastTick = now; return; }
+  const prod = getProduction();
+  RESOURCES.forEach(r => { gs.res[r.id] = (gs.res[r.id] || 0) + prod[r.id] * elapsed; });
+  gs.lastTick = now;
+  updateAssemblyJobs(now);
+  const mins = Math.floor(elapsed / 60);
+  if (mins > 0) {
+    const banner = document.getElementById('offline-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.textContent = `오프라인 ${mins}분 — 자원 생산 완료`;
+      setTimeout(() => { banner.style.display = 'none'; }, 5000);
+    }
+  }
+}
+
+
+// ============================================================
+//  TICK / OFFLINE
+// ============================================================
+function tick() {
+  const now = Date.now();
+  const dt = Math.min((now - gs.lastTick) / 1000, 1);
+  gs.lastTick = now;
+  const prod = getProduction();
+  RESOURCES.forEach(r => { gs.res[r.id] = (gs.res[r.id] || 0) + prod[r.id] * dt; });
+  updateAssemblyJobs(now);
+}
+
