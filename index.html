@@ -6,1789 +6,790 @@
 <title>MOON IDLE — 달 탐사 로켓 제작소</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  /* ===== DESIGN TOKENS (v7a 목업 기준 색상 시스템) =====
-   *  --bg         #010800  배경 (거의 검정)
-   *  --panel-bg   #020d04  패널 배경
-   *  --green      #00e676  메인 그린: 활성 텍스트·테두리·버튼·건물 기본색
-   *  --green-dim  #1a5c34  어두운 그린: 비활성 테두리·섹션 헤더·스크롤바
-   *  --green-mid  #00994d  중간 그린: 서브 텍스트·생산 레이트·시스템 메시지
-   *  --amber      #ffab00  앰버: 돈(money)·경고·에너지·프레스티지
-   *  --red        #ff1744  레드: 에러·크리티컬·자원 부족
-   *  --white      #c8ffd4  밝은 그린-화이트: 강조 텍스트·건물명·헤더 수치
-   * ===================================================== */
-  :root {
-    --bg: #010800;
-    --panel-bg: #020d04;
-    --green: #00e676;
-    --green-dim: #1a5c34;
-    --green-mid: #00994d;
-    --amber: #ffab00;
-    --red: #ff1744;
-    --white: #c8ffd4;
-    --font: 'Share Tech Mono', monospace;
-    --border: 1px solid #1a5c34;
-    --glow: 0 0 6px #00e67680;
-    --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
-    --amber-glow: 0 0 8px #ffab0080;
-  }
-
-  /* ===== GLOBAL RESET ===== */
-  *, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    border-radius: 0 !important;
-  }
-
-  html, body {
-    width: 100%;
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--green);
-    font-family: var(--font);
-    font-size: 16px;
-    overflow-x: hidden;
-  }
-
-  /* ===== CRT SCANLINES ===== */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.18) 2px,
-      rgba(0, 0, 0, 0.18) 4px
-    );
-  }
-
-  /* ===== CRT VIGNETTE ===== */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    pointer-events: none;
-    background: radial-gradient(
-      ellipse at center,
-      transparent 60%,
-      rgba(0, 0, 0, 0.6) 100%
-    );
-  }
-
-  /* ===== CRT FLICKER ===== */
-  @keyframes crt-flicker {
-    0%   { opacity: 1; }
-    93%  { opacity: 1; }
-    93.5%{ opacity: 0.94; }
-    94%  { opacity: 1; }
-    96%  { opacity: 1; }
-    96.5%{ opacity: 0.96; }
-    97%  { opacity: 1; }
-    100% { opacity: 1; }
-  }
-
-  body {
-    animation: crt-flicker 8s step-end infinite;
-  }
-
-  /* ===== SCROLLBAR ===== */
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: var(--bg);
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--green-dim);
-  }
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--green-dim) transparent;
-  }
-
-  /* ===== PANEL HEADER :: before ===== */
-  .panel-header::before {
-    content: '// ';
-  }
-
-  /* ===========================
-     1. TITLE SCREEN
-     =========================== */
-  #title-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 5000;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    padding: 24px;
-  }
-
-  .title-logo {
-    font-size: 52px;
-    letter-spacing: 12px;
-    text-transform: uppercase;
-    color: var(--green);
-    text-shadow: var(--glow-strong);
-    margin-bottom: 6px;
-    text-align: center;
-  }
-
-  .title-subtitle {
-    font-size: 14px;
-    letter-spacing: 4px;
-    color: var(--green-mid);
-    text-transform: uppercase;
-    text-align: center;
-    margin-bottom: 8px;
-  }
-
-  #boot-log.boot-log {
-    width: 100%;
-    max-width: 540px;
-    height: 200px;
-    overflow-y: auto;
-    border: var(--border);
-    background: var(--panel-bg);
-    padding: 10px 14px;
-    font-size: 13px;
-    color: var(--green-mid);
-    line-height: 1.6;
-  }
-
-  #save-strip.title-save-strip {
-    font-size: 13px;
-    color: var(--green-dim);
-    letter-spacing: 2px;
-    border: var(--border);
-    padding: 5px 14px;
-    max-width: 540px;
-    width: 100%;
-    text-align: center;
-  }
-
-  .title-btns {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    justify-content: center;
-    margin-top: 4px;
-  }
-
-  .title-btn {
-    background: none;
-    border: 2px solid var(--green-dim);
-    color: var(--green);
-    font-family: var(--font);
-    font-size: 15px;
-    letter-spacing: 3px;
-    padding: 9px 28px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.15s;
-  }
-
-  .title-btn:hover {
-    border-color: var(--green);
-    text-shadow: var(--glow);
-  }
-
-  .title-btn.primary {
-    border-color: var(--green);
-    text-shadow: var(--glow);
-  }
-
-  @keyframes title-fade-out {
-    from { opacity: 1; }
-    to   { opacity: 0; pointer-events: none; }
-  }
-  .fade-out {
-    animation: title-fade-out 0.8s ease forwards;
-    pointer-events: none;
-  }
-
-  /* ===========================
-     2. WORLD BACKGROUND
-     =========================== */
-  #world-bg {
-    position: fixed;
-    bottom: 0;
-    left: 200px;
-    right: 0;
-    height: 240px;
-    z-index: 1;
-    overflow-x: auto;
-    overflow-y: hidden;
-    cursor: grab;
-  }
-  #world-bg:active { cursor: grabbing; }
-  #world-bg::-webkit-scrollbar { height: 6px; }
-  #world-bg::-webkit-scrollbar-track { background: #010800; }
-  #world-bg::-webkit-scrollbar-thumb { background: #1a5c34; }
-
-  #world-scene {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 3200px;
-    height: 220px;
-    transition: transform 0.8s ease;
-  }
-
-  #sky-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 160px;
-  }
-
-  .star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: var(--green-dim);
-    opacity: 0.6;
-  }
-
-  #buildings-layer {
-    position: absolute;
-    bottom: 32px;
-    left: 0;
-    width: 100%;
-  }
-
-  #ground-line {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 32px;
-    background: linear-gradient(to bottom, #0a1a08, #020d04);
-    border-top: 2px solid var(--green-dim);
-  }
-
-  #workers-layer {
-    position: absolute;
-    bottom: 32px;
-    left: 0;
-    width: 100%;
-  }
-
-  /* ===== WORLD BUILDINGS ===== */
-  .world-building {
-    position: absolute;
-    bottom: 0;
-  }
-
-  /* Mine */
-  .wb-mine {
-    width: 70px;
-    height: 85px;
-    background: #0a1808;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-    position: relative;
-  }
-  .wb-mine::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: 10px;
-    right: 10px;
-    height: 8px;
-    background: #0a2010;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-  }
-  .wb-mine::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 5px;
-    width: 60px;
-    height: 4px;
-    background: var(--green-dim);
-  }
-  .wb-mine .conveyor {
-    position: absolute;
-    bottom: 20px;
-    right: -20px;
-    width: 22px;
-    height: 8px;
-    background: #0a1a08;
-    border: 1px solid var(--green-dim);
-    transform: rotate(-20deg);
-  }
-  .mine-light {
-    position: absolute;
-    top: 6px;
-    right: 8px;
-    width: 6px;
-    height: 6px;
-    background: var(--amber);
-    box-shadow: 0 0 6px var(--amber);
-    animation: mine-blink 2s step-start infinite;
-  }
-  @keyframes mine-blink {
-    0%,100% { opacity: 1; }
-    50%      { opacity: 0.2; }
-  }
-
-  /* Refinery */
-  .wb-refinery {
-    width: 100px;
-    height: 100px;
-    display: flex;
-    align-items: flex-end;
-    gap: 6px;
-    position: absolute;
-    bottom: 0;
-  }
-  .refinery-tank {
-    width: 40px;
-    background: #081408;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-    position: relative;
-  }
-  .refinery-tank.tall  { height: 90px; }
-  .refinery-tank.short { height: 65px; }
-  .refinery-tank::before {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: -2px;
-    right: -2px;
-    height: 6px;
-    background: #0a1a08;
-    border: 2px solid var(--green-dim);
-  }
-  .refinery-pipe {
-    position: absolute;
-    bottom: 30px;
-    left: 40px;
-    width: 20px;
-    height: 3px;
-    background: var(--green-dim);
-  }
-
-  /* Research Lab */
-  .wb-research {
-    width: 110px;
-    height: 75px;
-    background: #060f08;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-    position: relative;
-  }
-  .wb-research::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 30px;
-    right: 30px;
-    height: 10px;
-    background: #060f08;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-  }
-  .research-windows {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
-    padding: 8px 6px;
-  }
-  .research-win {
-    height: 12px;
-    background: var(--panel-bg);
-    border: 1px solid var(--green-dim);
-  }
-  .research-win.lit {
-    background: rgba(0,230,118,0.15);
-    box-shadow: 0 0 4px #00e67640;
-  }
-
-  /* Electronics Lab */
-  .wb-eleclab {
-    width: 90px;
-    height: 60px;
-    background: #050a06;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-    position: relative;
-  }
-  .elec-circuit {
-    position: absolute;
-    top: 10px;
-    left: 8px;
-    right: 8px;
-    height: 1px;
-    background: var(--green-dim);
-  }
-  .elec-circuit::before {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: 20px;
-    width: 6px;
-    height: 7px;
-    background: var(--green-dim);
-  }
-  .elec-circuit::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    right: 20px;
-    width: 6px;
-    height: 7px;
-    background: var(--green-dim);
-  }
-  .elec-led {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 5px;
-    height: 5px;
-    background: var(--green);
-    box-shadow: var(--glow);
-    animation: elec-pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes elec-pulse {
-    0%,100% { opacity: 1; }
-    50%      { opacity: 0.3; }
-  }
-
-  /* Ops Center */
-  .wb-ops {
-    width: 120px;
-    height: 80px;
-    background: #060e07;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-    position: relative;
-  }
-  .ops-windows {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 3px;
-    padding: 8px 6px 6px;
-  }
-  .ops-win {
-    height: 10px;
-    background: var(--panel-bg);
-    border: 1px solid #0d2016;
-  }
-  .ops-win.lit {
-    background: rgba(0,230,118,0.1);
-  }
-  .ops-sign {
-    position: absolute;
-    bottom: 6px;
-    left: 0;
-    right: 0;
-    height: 12px;
-    border-top: 1px solid var(--green-dim);
-  }
-
-  /* Launch Pad */
-  .wb-launchpad {
-    width: 80px;
-    height: 160px;
-    position: absolute;
-    bottom: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  .lp-gantry {
-    width: 6px;
-    height: 130px;
-    background: var(--green-dim);
-    margin-left: 20px;
-    position: relative;
-  }
-  .lp-gantry::before {
-    content: '';
-    position: absolute;
-    top: 20px;
-    left: 0;
-    width: 30px;
-    height: 2px;
-    background: var(--green-dim);
-  }
-  .lp-gantry::after {
-    content: '';
-    position: absolute;
-    top: 50px;
-    left: 0;
-    width: 25px;
-    height: 2px;
-    background: var(--green-dim);
-  }
-  .lp-rocket {
-    position: absolute;
-    bottom: 20px;
-    left: 28px;
-    width: 20px;
-    height: 50px;
-    background: #0a1808;
-    border: 1px solid var(--green);
-  }
-  .lp-rocket::before {
-    content: '';
-    position: absolute;
-    top: -10px;
-    left: 3px;
-    right: 3px;
-    height: 10px;
-    background: #0a1808;
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-    border: 1px solid var(--green);
-  }
-  .lp-base {
-    width: 70px;
-    height: 10px;
-    background: #0a1a08;
-    border: 2px solid var(--green-dim);
-    border-bottom: none;
-  }
-
-  /* Solar Array */
-  .wb-solar {
-    width: 120px;
-    height: 30px;
-    position: absolute;
-    bottom: 0;
-    display: flex;
-    gap: 3px;
-    align-items: flex-end;
-  }
-  .solar-panel {
-    width: 22px;
-    height: 18px;
-    background: #041028;
-    border: 1px solid #1a3c6a;
-    transform: rotate(-10deg);
-    position: relative;
-  }
-  .solar-panel::after {
-    content: '';
-    position: absolute;
-    inset: 2px;
-    background: linear-gradient(135deg, #062040 0%, #0a3060 100%);
-    border: 1px solid #1a3c6a;
-  }
-  .solar-pole {
-    width: 2px;
-    height: 20px;
-    background: var(--green-dim);
-    align-self: flex-end;
-  }
-
-  /* Smoke */
-  .smoke-puff {
-    position: absolute;
-    top: -8px;
-    width: 4px;
-    height: 4px;
-    background: #1a3020;
-    border-radius: 50%;
-    animation: smoke-rise 2s ease-out infinite;
-  }
-  @keyframes smoke-rise {
-    0%   { transform: translateY(0); opacity: 0.8; }
-    100% { transform: translateY(-30px) translateX(8px); opacity: 0; }
-  }
-
-  /* Workers */
-  .worker {
-    position: absolute;
-    bottom: 0;
-    width: 6px;
-    height: 14px;
-    background: var(--green);
-  }
-  .worker::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: 0;
-    width: 6px;
-    height: 5px;
-    background: var(--green-mid);
-  }
-  @keyframes worker-walk-r {
-    0%   { left: 80px; }
-    100% { left: 3100px; transform: scaleX(-1); }
-  }
-  @keyframes worker-walk-l {
-    0%   { left: 3100px; transform: scaleX(-1); }
-    100% { left: 80px; }
-  }
-  .worker-1 { animation: worker-walk-r 28s linear infinite; }
-  .worker-2 { animation: worker-walk-l 32s linear infinite; animation-delay: -10s; }
-  .worker-3 { animation: worker-walk-r 24s linear infinite; animation-delay: -5s; }
-  .worker-4 { animation: worker-walk-l 30s linear infinite; animation-delay: -18s; }
-  .worker-5 { animation: worker-walk-r 26s linear infinite; animation-delay: -22s; }
-
-  /* ===========================
-     3. GAME UI #app
-     =========================== */
-  #app {
-    position: relative;
-    z-index: 10;
-    max-width: 1200px;
-    margin: 0 auto;
-    margin-left: 200px;
-    min-height: 100vh;
-    padding-bottom: 250px;
-    display: none;
-  }
-  #app.visible { display: block; }
-
-  /* ===== 3a. Resource Bar ===== */
-  #res-bar {
-    position: sticky;
-    top: 0;
-    z-index: 200;
-    background: rgba(1,8,0,0.97);
-    border-bottom: var(--border);
-    padding: 8px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.8);
-  }
-
-  .res-bar-inner {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    flex: 1;
-  }
-
-  .res-cell {
-    border: var(--border);
-    padding: 4px 12px;
-    font-size: 15px;
-    color: var(--green);
-    white-space: nowrap;
-    text-shadow: var(--glow);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1px;
-  }
-  .res-cell .res-name {
-    font-size: 11px;
-    color: var(--green-dim);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-  .res-cell .res-val {
-    font-size: 17px;
-    font-weight: normal;
-  }
-  .res-cell .res-rate {
-    font-size: 12px;
-    color: var(--green-mid);
-  }
-  .res-cell.amber .res-val {
-    color: var(--amber);
-    text-shadow: var(--amber-glow);
-  }
-
-  #ms-cell { border-color: var(--amber); }
-
-  .res-bar-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
-  }
-
-  /* ===== 3b. Nav Tabs ===== */
-  #nav-tabs {
-    display: flex;
-    border-bottom: var(--border);
-    background: rgba(1,8,0,0.95);
-    position: sticky;
-    top: 72px;
-    z-index: 150;
-  }
-
-  .nav-tab {
-    flex: 1;
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    color: var(--green-dim);
-    font-family: var(--font);
-    font-size: 15px;
-    letter-spacing: 2px;
-    padding: 10px 8px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.15s;
-    text-align: center;
-    border-right: var(--border);
-  }
-  .nav-tab:last-child { border-right: none; }
-  .nav-tab:hover { color: var(--green); }
-  .nav-tab.active {
-    color: var(--green);
-    border-bottom-color: var(--green);
-    text-shadow: var(--glow-strong);
-    background: rgba(0,230,118,0.04);
-  }
-  .nav-tab.new-unlock { animation: tab-unlock 0.8s ease; }
-  @keyframes tab-unlock {
-    0%   { color: var(--amber); text-shadow: 0 0 20px var(--amber); }
-    100% { color: var(--green); }
-  }
-
-  /* ===== 3c. Tab Panes ===== */
-  .tab-pane {
-    display: none;
-    padding: 14px 12px;
-  }
-  .tab-pane.active { display: block; }
-
-  /* Panels */
-  .panel {
-    background: rgba(2,13,4,0.96);
-    border: var(--border);
-    padding: 12px 16px;
-    margin-bottom: 12px;
-  }
-  .panel-header {
-    font-size: 17px;
-    letter-spacing: 3px;
-    color: var(--green);
-    text-transform: uppercase;
-    border-bottom: var(--border);
-    padding-bottom: 8px;
-    margin-bottom: 10px;
-    text-shadow: var(--glow);
-  }
-
-  /* Buttons */
-  .btn {
-    background: none;
-    border: 2px solid var(--green-dim);
-    color: var(--green);
-    font-family: var(--font);
-    font-size: 15px;
-    letter-spacing: 2px;
-    padding: 7px 16px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.12s;
-  }
-  .btn:hover:not(:disabled) {
-    border-color: var(--green);
-    text-shadow: var(--glow);
-  }
-  .btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-  .btn-amber {
-    border-color: var(--amber);
-    color: var(--amber);
-  }
-  .btn-sm {
-    font-size: 13px;
-    padding: 4px 10px;
-    letter-spacing: 1px;
-  }
-  .btn-full {
-    display: block;
-    width: 100%;
-    text-align: center;
-    margin-top: 8px;
-  }
-
-  /* Sound button */
-  #sound-btn {
-    background: none;
-    border: 1px solid var(--green-dim);
-    color: var(--green-dim);
-    font-family: var(--font);
-    font-size: 13px;
-    letter-spacing: 1px;
-    padding: 4px 10px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.12s;
-  }
-  #sound-btn:hover {
-    color: var(--green);
-    border-color: var(--green);
-  }
-
-  /* Progress bars */
-  .prog-wrap {
-    border: 1px solid var(--green-dim);
-    height: 8px;
-    background: var(--bg);
-    overflow: hidden;
-    margin: 4px 0;
-  }
-  .prog-fill {
-    height: 100%;
-    background: var(--green-mid);
-    transition: width 0.3s;
-  }
-  .prog-fill.amber { background: var(--amber); }
-
-  /* Offline banner */
-  #offline-banner {
-    display: none;
-    background: rgba(255,171,0,0.08);
-    border: 1px solid var(--amber);
-    color: var(--amber);
-    padding: 7px 14px;
-    font-size: 14px;
-    margin: 8px 12px;
-  }
-
-  /* Notifications */
-  #notif {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 8000;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    pointer-events: none;
-  }
-  .notif-item {
-    background: var(--panel-bg);
-    border: 1px solid var(--green-dim);
-    color: var(--green);
-    font-size: 14px;
-    padding: 8px 16px;
-    text-shadow: var(--glow);
-    animation: notif-in 0.2s ease, notif-out 0.4s ease 2.6s forwards;
-    max-width: 340px;
-  }
-  .notif-item.amber { border-color: var(--amber); color: var(--amber); }
-  .notif-item.red   { border-color: var(--red);   color: var(--red);   }
-  @keyframes notif-in {
-    from { opacity: 0; transform: translateX(40px); }
-    to   { opacity: 1; transform: none; }
-  }
-  @keyframes notif-out {
-    to { opacity: 0; transform: translateX(40px); }
-  }
-
-  /* ===========================
-     PRODUCTION TAB
-     =========================== */
-  .bld-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 10px;
-  }
-  .bld-card {
-    border: var(--border);
-    background: var(--panel-bg);
-    padding: 10px 14px;
-    cursor: pointer;
-    transition: border-color 0.15s;
-  }
-  .bld-card:hover { border-color: var(--green); }
-  .bld-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-  .bld-name {
-    font-size: 16px;
-    color: var(--green);
-    letter-spacing: 1px;
-  }
-  .bld-cnt {
-    color: var(--amber);
-    font-size: 15px;
-  }
-  .bld-desc {
-    font-size: 13px;
-    color: var(--green-mid);
-    margin-bottom: 8px;
-  }
-  .bld-rate {
-    font-size: 13px;
-    color: var(--green-mid);
-    margin-bottom: 6px;
-  }
-  .bld-cost {
-    font-size: 13px;
-    color: var(--green-dim);
-    margin-bottom: 8px;
-  }
-
-  /* ===========================
-     RESEARCH TAB
-     =========================== */
-  #research-layout {
-    display: flex;
-    height: calc(100vh - 200px);
-    min-height: 500px;
-    gap: 0;
-  }
-  #panel-left-research {
-    width: 22%;
-    flex-shrink: 0;
-    background: var(--panel-bg);
-    border-right: var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  #panel-center-research {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    background: var(--bg);
-  }
-  #panel-right-research {
-    width: 25%;
-    flex-shrink: 0;
-    background: var(--panel-bg);
-    border-left: var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  .r-panel-header {
-    padding: 8px 12px;
-    background: #041208;
-    border-bottom: var(--border);
-    font-size: 12px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--green);
-    text-shadow: var(--glow);
-  }
-  .r-panel-header::before { content: '> '; }
-  .r-panel-scroll {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--green-dim) transparent;
-  }
-
-  /* Research queue card */
-  .res-queue-card {
-    border: var(--border);
-    padding: 8px 10px;
-    margin-bottom: 8px;
-    background: #010f04;
-  }
-  .rqc-title {
-    font-size: 13px;
-    color: var(--green);
-    text-shadow: var(--glow);
-    margin-bottom: 4px;
-  }
-  .rqc-sub {
-    font-size: 11px;
-    color: var(--green-dim);
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-  .rqc-flash {
-    font-size: 12px;
-    color: var(--amber);
-    text-shadow: var(--amber-glow);
-    animation: pulse-amber 0.5s ease-in-out 3;
-  }
-  @keyframes pulse-amber {
-    0%,100% { opacity: 1; }
-    50%      { opacity: 0.4; }
-  }
-
-  /* Tech tree */
-  #tree-container {
-    flex: 1;
-    overflow: auto;
-    padding: 14px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--green-dim) transparent;
-    position: relative;
-  }
-  .branch-headers {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 10px;
-    min-width: 800px;
-  }
-  .branch-header {
-    flex: 1;
-    text-align: center;
-    padding: 5px;
-    border: var(--border);
-    background: #041208;
-    font-size: 12px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--green);
-    text-shadow: var(--glow);
-  }
-  .branch-header.locked {
-    border-color: #1a1f1a;
-    color: #3a4a3a;
-    text-shadow: none;
-  }
-  #tree-svg {
-    display: block;
-    min-width: 800px;
-  }
-  .tech-node { cursor: pointer; }
-
-  /* Right detail panel */
-  .detail-tech-id {
-    font-size: 11px;
-    letter-spacing: 3px;
-    color: var(--green-dim);
-    text-transform: uppercase;
-    margin-bottom: 2px;
-  }
-  .detail-tech-name {
-    font-size: 16px;
-    color: var(--green);
-    text-shadow: var(--glow-strong);
-    margin-bottom: 2px;
-    letter-spacing: 1px;
-  }
-  .detail-divider {
-    border: none;
-    border-top: var(--border);
-    margin: 8px 0;
-  }
-  .status-badge {
-    display: inline-block;
-    padding: 3px 10px;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border: 1px solid;
-    margin-bottom: 8px;
-  }
-  .status-complete  { color: var(--green);  border-color: var(--green);     background: #011a0a; }
-  .status-available { color: var(--green);  border-color: var(--green-mid); background: #010f04; }
-  .status-locked    { color: #3a4a3a;       border-color: #2a2f2a;          background: #1a1f1a; }
-
-  .detail-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    padding: 3px 0;
-    border-bottom: 1px solid #091608;
-  }
-  .detail-row .dr-key {
-    color: var(--green-dim);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 12px;
-  }
-  .detail-row .dr-val {
-    color: var(--green);
-    text-align: right;
-  }
-
-  .btn-research {
-    display: block;
-    width: 100%;
-    margin-top: 12px;
-    background: none;
-    border: 2px solid var(--green-mid);
-    color: var(--green);
-    font-family: var(--font);
-    font-size: 15px;
-    letter-spacing: 2px;
-    padding: 9px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.15s;
-  }
-  .btn-research:hover:not(:disabled) {
-    border-color: var(--green);
-    text-shadow: var(--glow-strong);
-  }
-  .btn-research:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  .rp-section {
-    margin-top: 12px;
-    border-top: 1px solid #0d2016;
-    padding-top: 10px;
-  }
-  .rp-section-title {
-    font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--green-dim);
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-  .lab-item {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: var(--green-mid);
-    padding: 3px 0;
-    border-bottom: 1px solid #091608;
-  }
-  .lab-item .lab-rate {
-    color: var(--green);
-    text-shadow: var(--glow);
-  }
-  .overview-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-top: 8px;
-  }
-  .ov-card {
-    border: var(--border);
-    background: #010f04;
-    padding: 8px;
-    text-align: center;
-  }
-  .ov-num {
-    font-size: 22px;
-    color: var(--green);
-    text-shadow: var(--glow-strong);
-    line-height: 1.2;
-  }
-  .ov-num.amber {
-    color: var(--amber);
-    text-shadow: var(--amber-glow);
-  }
-  .ov-label {
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--green-dim);
-    margin-top: 2px;
-  }
-
-  /* ===========================
-     ASSEMBLY TAB
-     =========================== */
-  .assembly-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  @media (max-width: 700px) {
-    .assembly-layout { grid-template-columns: 1fr; }
-  }
-  .rocket-art-wrap {
-    text-align: center;
-    padding: 10px;
-    border: var(--border);
-    background: var(--bg);
-    min-height: 300px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  #rocket-art-display {
-    font-size: 13px;
-    white-space: pre;
-    line-height: 1.3;
-    color: var(--green-dim);
-    text-shadow: none;
-  }
-  #rocket-art-display .done {
-    color: var(--green);
-    text-shadow: var(--glow);
-  }
-  .parts-list-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #0e2a18;
-    padding: 6px 0;
-    font-size: 14px;
-    gap: 8px;
-  }
-  .part-done    { color: var(--green); text-shadow: var(--glow); }
-  .part-pending { color: var(--green-dim); }
-
-  .quality-selector {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-  .q-btn { flex: 1; min-width: 100px; }
-  .q-btn.selected {
-    border-color: var(--amber);
-    color: var(--amber);
-    box-shadow: 0 0 8px var(--amber);
-  }
-
-  .slot-card {
-    border: var(--border);
-    background: var(--panel-bg);
-    padding: 10px 14px;
-    margin-bottom: 10px;
-  }
-  .slot-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5px;
-  }
-  .slot-title { font-size: 14px; color: var(--green); letter-spacing: 1px; }
-  .slot-state.idle  { color: var(--green-mid); }
-  .slot-state.busy  { color: var(--amber); }
-  .slot-state.ready { color: var(--green); text-shadow: var(--glow); }
-
-  .science-box {
-    border: var(--border);
-    background: var(--bg);
-    padding: 10px 14px;
-    font-size: 13px;
-    color: var(--green-mid);
-    margin-top: 10px;
-    line-height: 1.7;
-  }
-  .science-box .val    { color: var(--green); }
-  .science-box .ms-val { color: var(--amber); }
-
-  /* ===========================
-     LAUNCH TAB
-     =========================== */
-  .launch-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  @media (max-width: 700px) {
-    .launch-layout { grid-template-columns: 1fr; }
-  }
-
-  .ready-slot-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #0e2a18;
-    padding: 7px 0;
-    font-size: 14px;
-    gap: 8px;
-  }
-
-  .telemetry-wrap {
-    border: var(--border);
-    background: var(--bg);
-    padding: 12px 14px;
-    font-size: 13px;
-    min-height: 180px;
-  }
-  .telem-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 0;
-    border-bottom: 1px solid #0a1a0a;
-    color: var(--green-mid);
-  }
-  .telem-time  { color: var(--green-mid); min-width: 55px; font-size: 13px; }
-  .telem-event { min-width: 170px; color: var(--green); text-transform: uppercase; font-size: 13px; }
-  .telem-bar   { flex: 1; height: 6px; border: 1px solid var(--green-dim); }
-  .telem-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.5s; }
-  .telem-pct   { color: var(--green); font-size: 13px; min-width: 38px; text-align: right; }
-
-  .launch-anim-wrap {
-    text-align: center;
-    padding: 14px;
-    min-height: 160px;
-    position: relative;
-    overflow: hidden;
-    border: var(--border);
-    background: var(--bg);
-  }
-  .launch-rocket-ascii {
-    font-size: 12px;
-    white-space: pre;
-    color: var(--green);
-    display: inline-block;
-  }
-  .launch-rocket-ascii.launching {
-    animation: rocket-launch 3s ease-in forwards;
-  }
-  @keyframes rocket-launch {
-    0%   { transform: translateY(0); }
-    100% { transform: translateY(-400px); }
-  }
-  .exhaust-anim {
-    font-size: 12px;
-    white-space: pre;
-    color: var(--amber);
-    text-shadow: 0 0 6px var(--amber);
-    display: inline-block;
-    animation: exhaust-flicker 0.15s step-start infinite;
-  }
-  @keyframes exhaust-flicker {
-    0%,100% { opacity: 1; }
-    50%      { opacity: 0.4; }
-  }
-
-  .launch-result {
-    display: none;
-    border: 1px solid var(--amber);
-    background: rgba(255,171,0,0.05);
-    padding: 14px;
-    font-size: 14px;
-    color: var(--amber);
-    margin-top: 12px;
-  }
-  .launch-result.show { display: block; }
-  .launch-result-title {
-    font-size: 17px;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    text-shadow: 0 0 12px var(--amber);
-    margin-bottom: 8px;
-  }
-  .launch-result-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 5px;
-    font-size: 13px;
-    margin-bottom: 10px;
-  }
-  .launch-result-stat-lbl { color: var(--green-mid); }
-  .launch-result-stat-val { color: var(--amber); }
-
-  /* ===========================
-     MISSION TAB
-     =========================== */
-  .phase-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 7px 0;
-    border-bottom: 1px solid #0e2a18;
-    font-size: 14px;
-  }
-  .phase-name {
-    min-width: 200px;
-    color: var(--green-mid);
-    text-transform: uppercase;
-    font-size: 13px;
-  }
-  .phase-bar-wrap {
-    flex: 1;
-    height: 8px;
-    border: 1px solid var(--green-dim);
-    background: var(--bg);
-  }
-  .phase-bar-fill {
-    height: 100%;
-    background: var(--green-mid);
-    transition: width 0.5s;
-  }
-  .phase-bar-fill.done { background: var(--green); }
-  .phase-status {
-    min-width: 80px;
-    font-size: 13px;
-    text-align: right;
-    color: var(--green-mid);
-  }
-  .phase-status.done   { color: var(--green); }
-  .phase-status.locked { color: #0e2a18; }
-
-  .history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-    margin-top: 8px;
-  }
-  .history-table th {
-    background: #021508;
-    color: var(--green-mid);
-    text-align: left;
-    padding: 6px 10px;
-    border: var(--border);
-    letter-spacing: 1px;
-    font-weight: normal;
-    text-transform: uppercase;
-  }
-  .history-table td {
-    padding: 5px 10px;
-    border: 1px solid #0e2a18;
-    color: var(--green);
-  }
-  .history-table tr:hover td {
-    background: rgba(0,230,118,0.04);
-  }
-
-  .prestige-panel {
-    border: 1px solid var(--amber);
-    background: rgba(255,171,0,0.04);
-    padding: 14px;
-    margin-top: 12px;
-  }
-  .prestige-stat {
-    font-size: 14px;
-    color: var(--amber);
-    margin-bottom: 8px;
-    line-height: 1.7;
-  }
-
-  /* ===========================
-     4. LAUNCH OVERLAY
-     =========================== */
-  #launch-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(1,8,0,0.97);
-    z-index: 7000;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    text-align: center;
-    padding: 24px;
-  }
-  #launch-overlay.show { display: flex; }
-  .lo-title {
-    font-size: 28px;
-    letter-spacing: 8px;
-    text-transform: uppercase;
-    color: var(--amber);
-    text-shadow: 0 0 20px var(--amber);
-    margin-bottom: 14px;
-  }
-  .lo-rocket {
-    font-size: 12px;
-    white-space: pre;
-    color: var(--amber);
-    text-shadow: 0 0 6px #ffab0080;
-    margin-bottom: 14px;
-    animation: rocket-launch 4s ease-in forwards;
-  }
-  .lo-stats {
-    font-size: 16px;
-    color: var(--green);
-    margin-bottom: 18px;
-    line-height: 2.2;
-    text-shadow: var(--glow);
-  }
-  .lo-ms {
-    font-size: 20px;
-    color: var(--amber);
-    letter-spacing: 3px;
-    margin-bottom: 24px;
-  }
-  .lo-btns {
-    display: flex;
-    gap: 14px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-
-  /* ===== LEFT RESOURCE PANEL ===== */
-  #res-left {
-    position: fixed;
-    left: 0; top: 0; bottom: 0;
-    width: 200px;
-    background: rgba(2,13,4,0.96);
-    border-right: 1px solid #1a5c34;
-    z-index: 600;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 6px 8px;
-    display: none;
-    font-size: 13px;
-  }
-  #res-left.visible { display: block; }
-  #res-left::-webkit-scrollbar { width: 3px; }
-  #res-left::-webkit-scrollbar-thumb { background: #1a5c34; }
-  .rl-title {
-    color: #1a5c34;
-    font-size: 11px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border-bottom: 1px solid #1a5c34;
-    padding: 4px 0 3px;
-    margin-bottom: 6px;
-  }
-  .rl-item { padding: 3px 0 5px; margin-bottom: 4px; border-bottom: 1px solid #0a1a0a; }
-  .rl-label { color: #00994d; font-size: 12px; }
-  .rl-val { color: #00e676; font-size: 14px; font-weight: bold; }
-  .rl-rate { color: #00994d; font-size: 11px; }
-  .rl-bar { height: 4px; background: #1a5c34; margin-top: 2px; }
-  .rl-bar-fill { height: 100%; background: #00994d; transition: width 0.8s; }
-  .rl-bar-fill.amber { background: #ffab00; }
-  .rl-ms-row {
-    margin-top: 8px;
-    padding: 6px 4px;
-    border: 1px solid #7a5100;
-    background: rgba(255,171,0,0.05);
-  }
-  .rl-ms-label { color: #7a5100; font-size: 11px; letter-spacing: 1px; }
-  .rl-ms-val { color: #ffab00; font-size: 16px; font-weight: bold; }
-
-  /* ===== BUILDING HOVER OVERLAY ===== */
-  #bld-ov {
-    position: fixed;
-    display: none;
-    z-index: 9600;
-    background: rgba(1,8,0,0.97);
-    border: 1px solid #00e676;
-    min-width: 240px;
-    max-width: 320px;
-    box-shadow: 0 0 18px rgba(0,230,118,0.15);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 13px;
-    color: #00e676;
-  }
-  .bov-hd {
-    padding: 7px 12px;
-    font-size: 14px;
-    border-bottom: 1px solid #1a5c34;
-    color: var(--white);
-  }
-  .bov-row { padding: 4px 12px; color: #00994d; font-size: 12px; }
-  .bov-row span { color: #00e676; }
-  .bov-sep { border-top: 1px solid #1a5c34; margin: 2px 0; }
-  .bov-btns { display: flex; gap: 6px; padding: 6px 10px 8px; flex-wrap: wrap; }
-  .bov-btn {
-    padding: 5px 12px;
-    border: 1px solid #00e676;
-    color: #00e676;
-    cursor: pointer;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 12px;
-    background: transparent;
-    white-space: nowrap;
-  }
-  .bov-btn:hover { background: #00e676; color: #010800; }
-  .bov-btn.amber { border-color: #ffab00; color: #ffab00; }
-  .bov-btn.amber:hover { background: #ffab00; color: #010800; }
-  .bov-btn.disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+/* ===== DESIGN TOKENS (v7a 기준) =====
+ *  --bg         #010800  배경
+ *  --panel-bg   #020d04  패널 배경
+ *  --green      #00e676  활성 텍스트·테두리
+ *  --green-dim  #1a5c34  비활성 테두리·헤더
+ *  --green-mid  #00994d  서브 텍스트·레이트
+ *  --amber      #ffab00  돈·경고
+ *  --red        #ff1744  에러·크리티컬
+ *  --white      #c8ffd4  강조 텍스트
+ * ======================================= */
+:root {
+  --bg: #010800;
+  --panel-bg: #020d04;
+  --green: #00e676;
+  --green-dim: #1a5c34;
+  --green-mid: #00994d;
+  --amber: #ffab00;
+  --red: #ff1744;
+  --white: #c8ffd4;
+  --font: 'Share Tech Mono', monospace;
+  --border: 1px solid #1a5c34;
+  --glow: 0 0 6px #00e67680;
+  --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
+  --amber-glow: 0 0 8px #ffab0080;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--green); font-family: var(--font); font-size: 15px; }
+
+/* CRT scanlines */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.12) 2px, rgba(0,0,0,0.12) 4px);
+}
+/* CRT vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.65) 100%);
+}
+
+@keyframes crt-flicker {
+  0%,90%,94%,100% { opacity: 1; }
+  91% { opacity: 0.93; } 92% { opacity: 1; }
+  95% { opacity: 0.88; } 96% { opacity: 1; }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--green-dim); }
+* { scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent; }
+
+/* ===========================
+   TITLE SCREEN
+   =========================== */
+#title-screen {
+  position: fixed; inset: 0; z-index: 5000;
+  background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; padding: 24px;
+}
+.title-logo { font-size: 52px; letter-spacing: 12px; color: var(--green); text-shadow: var(--glow-strong); margin-bottom: 6px; text-align: center; text-transform: uppercase; }
+.title-subtitle { font-size: 14px; letter-spacing: 4px; color: var(--green-mid); text-transform: uppercase; text-align: center; }
+#boot-log { width: 100%; max-width: 540px; height: 200px; overflow-y: auto; border: var(--border); background: var(--panel-bg); padding: 10px 14px; font-size: 13px; color: var(--green-mid); line-height: 1.6; }
+.boot-line { display: block; }
+#save-strip { font-size: 13px; color: var(--green-dim); letter-spacing: 2px; border: var(--border); padding: 5px 14px; max-width: 540px; width: 100%; text-align: center; }
+.title-btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+.title-btn { background: none; border: 2px solid var(--green-dim); color: var(--green); font-family: var(--font); font-size: 15px; letter-spacing: 3px; padding: 9px 28px; cursor: pointer; text-transform: uppercase; transition: all 0.15s; }
+.title-btn:hover { border-color: var(--green); text-shadow: var(--glow); }
+.title-btn.primary { border-color: var(--green); text-shadow: var(--glow); }
+@keyframes title-fade-out { from { opacity: 1; } to { opacity: 0; pointer-events: none; } }
+.fade-out { animation: title-fade-out 0.8s ease forwards; pointer-events: none; }
+
+/* ===========================
+   APP WRAPPER
+   =========================== */
+#app {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  animation: crt-flicker 10s infinite;
+}
+#app.visible { display: flex; }
+
+/* ===========================
+   TOP BAR
+   =========================== */
+#topbar {
+  height: 42px;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border-bottom: 2px solid var(--green-dim);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#topbar .logo { color: var(--green); font-size: 17px; font-weight: bold; letter-spacing: 1px; }
+#topbar .sep  { color: var(--green-dim); }
+#topbar .clk  { color: var(--white); font-size: 13px; min-width: 72px; }
+#topbar .mny  { color: var(--amber); font-size: 17px; font-weight: bold; }
+#topbar .sys  { color: var(--green-mid); font-size: 12px; }
+#topbar .tb-r { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+
+/* ===========================
+   MAIN ROW
+   =========================== */
+#main { flex: 1; display: flex; overflow: hidden; }
+
+/* ===========================
+   LEFT PANEL
+   =========================== */
+#res-left {
+  width: 22%;
+  min-width: 200px;
+  max-width: 270px;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--green-dim);
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-shrink: 0;
+  padding: 8px;
+  font-size: 13px;
+}
+#res-left::-webkit-scrollbar { width: 3px; }
+/* Section header */
+.sh { color: var(--green-dim); font-size: 11px; letter-spacing: 2px; padding: 7px 4px 3px; border-bottom: 1px solid var(--green-dim); margin-bottom: 5px; text-transform: uppercase; }
+/* Resource items (rendered by JS) */
+.rl-item { padding: 3px 4px 5px; margin-bottom: 4px; border-bottom: 1px solid #0a1a0a; }
+.rl-label { color: var(--green-mid); font-size: 12px; }
+.rl-val { color: var(--green); font-size: 14px; font-weight: bold; }
+.rl-rate { color: var(--green-mid); font-size: 11px; }
+.rl-bar { height: 4px; background: var(--green-dim); margin-top: 3px; border-radius: 2px; overflow: hidden; }
+.rl-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.8s; border-radius: 2px; }
+.rl-bar-fill.amber { background: var(--amber); }
+.rl-ms-row { margin-top: 8px; padding: 6px 4px; border: 1px solid #7a5100; background: rgba(255,171,0,0.05); }
+.rl-ms-label { color: #7a5100; font-size: 11px; letter-spacing: 1px; }
+.rl-ms-val { color: var(--amber); font-size: 16px; font-weight: bold; }
+
+/* ===========================
+   WORLD WRAPPER
+   =========================== */
+#ww { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* ===========================
+   WORLD (drag-scroll) — INLINE FLEX, NOT FIXED
+   =========================== */
+#world-bg {
+  height: 240px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  cursor: grab;
+  background: linear-gradient(to bottom, #000d03 0%, #011205 38%, #010900 65%, var(--bg) 100%);
+}
+#world-bg:active { cursor: grabbing; }
+#world-bg::-webkit-scrollbar { height: 6px; }
+#world-bg::-webkit-scrollbar-track { background: #010800; border-top: 1px solid var(--green-dim); }
+#world-bg::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
+
+#world-scene {
+  position: relative;
+  width: 3200px;
+  height: 220px;
+}
+#sky-layer { position: absolute; top: 0; left: 0; width: 100%; height: 160px; }
+.star { position: absolute; width: 2px; height: 2px; background: var(--green-dim); opacity: 0.6; }
+#buildings-layer { position: absolute; bottom: 32px; left: 0; width: 100%; }
+#ground-line { position: absolute; bottom: 0; left: 0; width: 100%; height: 32px; background: linear-gradient(to bottom, #0a1a08, #020d04); border-top: 2px solid var(--green-dim); }
+#workers-layer { position: absolute; bottom: 32px; left: 0; width: 100%; }
+
+/* World buildings */
+.world-building { position: absolute; bottom: 0; }
+.wb-mine { width: 70px; height: 85px; background: #0a1808; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.wb-mine::before { content: ''; position: absolute; top: -8px; left: 10px; right: 10px; height: 8px; background: #0a2010; border: 2px solid var(--green-dim); border-bottom: none; }
+.wb-mine .conveyor { position: absolute; bottom: 20px; right: -20px; width: 22px; height: 8px; background: #0a1a08; border: 1px solid var(--green-dim); transform: rotate(-20deg); }
+.mine-light { position: absolute; top: 6px; right: 8px; width: 6px; height: 6px; background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: mine-blink 2s step-start infinite; }
+@keyframes mine-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+.wb-refinery { width: 100px; height: 100px; display: flex; align-items: flex-end; gap: 6px; position: absolute; bottom: 0; }
+.refinery-tank { width: 40px; background: #081408; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.refinery-tank.tall { height: 90px; }
+.refinery-tank.short { height: 65px; }
+.refinery-tank::before { content: ''; position: absolute; top: -6px; left: -2px; right: -2px; height: 6px; background: #0a1a08; border: 2px solid var(--green-dim); }
+.wb-research { width: 110px; height: 75px; background: #060f08; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.wb-research::before { content: ''; position: absolute; top: -10px; left: 30px; right: 30px; height: 10px; background: #0a1808; border: 2px solid var(--green-dim); border-bottom: none; }
+.research-windows { position: absolute; top: 10px; left: 6px; right: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+.research-win { width: 16px; height: 14px; background: #0a1a10; border: 1px solid var(--green-dim); }
+.research-win.lit { background: var(--green-dim); box-shadow: 0 0 4px var(--green-dim); }
+.wb-ops { width: 90px; height: 70px; background: #060f08; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.ops-windows { position: absolute; top: 8px; left: 4px; right: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
+.ops-win { width: 14px; height: 12px; background: #0a1a10; border: 1px solid var(--green-dim); }
+.ops-win.lit { background: var(--green-dim); }
+.ops-sign { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 40px; height: 6px; background: var(--green-dim); opacity: 0.6; }
+.wb-eleclab { width: 90px; height: 70px; background: #060f08; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.wb-solar { display: flex; align-items: flex-end; gap: 8px; position: absolute; bottom: 0; }
+.solar-pole { width: 4px; height: 50px; background: var(--green-dim); }
+.solar-panel { width: 30px; height: 20px; background: #060f20; border: 1px solid var(--green-dim); position: relative; top: -30px; }
+.wb-launchpad { width: 80px; height: 110px; position: absolute; bottom: 0; }
+.lp-gantry { position: absolute; top: 0; left: 10px; width: 4px; height: 80px; background: var(--green-dim); }
+.lp-rocket { position: absolute; top: 10px; left: 16px; width: 20px; height: 60px; background: #0a2010; border: 1px solid var(--green); }
+.lp-base { position: absolute; bottom: 0; left: 0; width: 80px; height: 16px; background: #0a1a08; border: 2px solid var(--green-dim); }
+
+/* ===========================
+   NAV TABS
+   =========================== */
+#nav-tabs {
+  flex-shrink: 0;
+  display: flex;
+  border-bottom: var(--border);
+  background: var(--panel-bg);
+}
+.nav-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--green-dim);
+  font-family: var(--font);
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 9px 6px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+  text-align: center;
+  border-right: var(--border);
+}
+.nav-tab:last-child { border-right: none; }
+.nav-tab:hover { color: var(--green); }
+.nav-tab.active { color: var(--green); border-bottom-color: var(--green); text-shadow: var(--glow-strong); background: rgba(0,230,118,0.04); }
+.nav-tab.new-unlock { animation: tab-unlock 0.8s ease; }
+@keyframes tab-unlock { 0% { color: var(--amber); text-shadow: 0 0 20px var(--amber); } 100% { color: var(--green); } }
+
+/* ===========================
+   OFFLINE BANNER
+   =========================== */
+#offline-banner {
+  display: none;
+  background: rgba(255,171,0,0.08);
+  border-bottom: 1px solid var(--amber);
+  color: var(--amber);
+  padding: 6px 14px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ===========================
+   TAB CONTENT AREA
+   =========================== */
+#tab-area { flex: 1; overflow-y: auto; }
+.tab-pane { display: none; padding: 14px 12px; }
+.tab-pane.active { display: block; }
+
+/* Panels */
+.panel { background: rgba(2,13,4,0.96); border: var(--border); padding: 12px 16px; margin-bottom: 12px; }
+.panel-header { font-size: 15px; letter-spacing: 3px; color: var(--green); text-transform: uppercase; border-bottom: var(--border); padding-bottom: 8px; margin-bottom: 10px; text-shadow: var(--glow); }
+.panel-header::before { content: '// '; }
+
+/* Buttons */
+.btn { background: none; border: 2px solid var(--green-dim); color: var(--green); font-family: var(--font); font-size: 14px; letter-spacing: 1px; padding: 7px 14px; cursor: pointer; text-transform: uppercase; transition: all 0.12s; }
+.btn:hover:not(:disabled) { border-color: var(--green); text-shadow: var(--glow); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.btn-amber { border-color: var(--amber); color: var(--amber); }
+.btn-sm { font-size: 12px; padding: 4px 10px; letter-spacing: 0; }
+.btn-full { display: block; width: 100%; text-align: center; margin-top: 8px; }
+
+/* v7a overlay button style */
+.obtn { padding: 5px 11px; border: 1px solid var(--green); color: var(--green); cursor: pointer; font-family: var(--font); font-size: 13px; background: transparent; transition: background .13s, color .13s; white-space: nowrap; }
+.obtn:hover { background: var(--green); color: var(--bg); }
+.obtn.a { border-color: var(--amber); color: var(--amber); }
+.obtn.a:hover { background: var(--amber); color: var(--bg); }
+.obtn.off { opacity: .35; cursor: not-allowed; pointer-events: none; }
+
+/* Sound button */
+#sound-btn { background: none; border: 1px solid var(--green-dim); color: var(--green-dim); font-family: var(--font); font-size: 12px; letter-spacing: 1px; padding: 3px 8px; cursor: pointer; text-transform: uppercase; transition: all 0.12s; }
+#sound-btn:hover { color: var(--green); border-color: var(--green); }
+#bgm-prev-btn { font-size: 11px; padding: 3px 7px; border: 1px solid var(--green-dim); background: transparent; color: var(--green-mid); cursor: pointer; font-family: var(--font); transition: all 0.12s; }
+#bgm-prev-btn:hover { color: var(--green); border-color: var(--green); }
+#bgm-track-label { font-size: 11px; color: var(--green-dim); min-width: 80px; }
+
+/* Progress bars */
+.prog-wrap { border: 1px solid var(--green-dim); height: 8px; background: var(--bg); overflow: hidden; margin: 4px 0; }
+.prog-fill { height: 100%; background: var(--green-mid); transition: width 0.3s; }
+.prog-fill.amber { background: var(--amber); }
+
+/* Notifications */
+#notif { position: fixed; bottom: 40px; right: 20px; z-index: 8000; display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
+.notif-item { background: var(--panel-bg); border: 1px solid var(--green-dim); color: var(--green); font-size: 13px; padding: 7px 14px; text-shadow: var(--glow); animation: notif-in 0.2s ease, notif-out 0.4s ease 2.6s forwards; max-width: 320px; }
+.notif-item.amber { border-color: var(--amber); color: var(--amber); }
+.notif-item.red { border-color: var(--red); color: var(--red); }
+@keyframes notif-in { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+@keyframes notif-out { to { opacity: 0; transform: translateX(40px); } }
+
+/* ===========================
+   RIGHT PANEL
+   =========================== */
+#rp {
+  width: 155px;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--green-dim);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 8px 6px;
+  font-size: 12px;
+}
+#rp::-webkit-scrollbar { width: 3px; }
+#rp::-webkit-scrollbar-thumb { background: var(--green-dim); }
+.rph { color: var(--green-dim); font-size: 11px; letter-spacing: 2px; padding-bottom: 4px; border-bottom: 1px solid var(--green-dim); margin-bottom: 6px; text-transform: uppercase; }
+.strow { padding: 4px 2px; border-bottom: 1px solid rgba(26,92,52,.4); margin-bottom: 4px; }
+.stn { color: var(--white); font-size: 12px; }
+.stl { color: var(--green-mid); font-size: 11px; margin-top: 1px; }
+.sts { font-size: 11px; margin-top: 1px; }
+.gbar { height: 5px; background: var(--green-dim); margin-top: 3px; border-radius: 2px; overflow: hidden; }
+.gfill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.9s ease; }
+.gfill.a { background: var(--amber); }
+
+/* ===========================
+   TICKER
+   =========================== */
+#ticker {
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  border-top: 1px solid var(--green-dim);
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 12px;
+  color: var(--green-mid);
+  white-space: nowrap;
+  overflow: hidden;
+}
+#tki { display: inline-block; animation: tkrun 45s linear infinite; }
+@keyframes tkrun { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+.tw { color: var(--amber); }
+.to { color: var(--green); }
+.ts { color: var(--green-dim); margin: 0 20px; }
+
+/* ===========================
+   BUILDING HOVER OVERLAY
+   =========================== */
+#bld-ov {
+  position: fixed;
+  display: none;
+  z-index: 9600;
+  background: rgba(1,8,0,0.97);
+  border: 1px solid var(--green);
+  min-width: 240px;
+  max-width: 320px;
+  box-shadow: 0 0 18px rgba(0,230,118,0.15);
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--green);
+}
+.bov-hd { padding: 7px 12px; font-size: 14px; border-bottom: 1px solid var(--green-dim); color: var(--white); }
+.bov-row { padding: 4px 12px; color: var(--green-mid); font-size: 12px; }
+.bov-row span { color: var(--green); }
+.bov-sep { border-top: 1px solid var(--green-dim); margin: 2px 0; }
+.bov-btns { display: flex; gap: 6px; padding: 6px 10px 8px; flex-wrap: wrap; }
+.bov-btn { padding: 5px 12px; border: 1px solid var(--green); color: var(--green); cursor: pointer; font-family: var(--font); font-size: 12px; background: transparent; white-space: nowrap; transition: background .12s, color .12s; }
+.bov-btn:hover { background: var(--green); color: var(--bg); }
+.bov-btn.amber { border-color: var(--amber); color: var(--amber); }
+.bov-btn.amber:hover { background: var(--amber); color: var(--bg); }
+.bov-btn.disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+
+/* ===========================
+   PRODUCTION TAB
+   =========================== */
+#prod-status { font-size: 13px; color: var(--green-mid); margin-bottom: 10px; border-bottom: var(--border); padding-bottom: 8px; }
+
+/* ===========================
+   RESEARCH TAB
+   =========================== */
+#research-layout { display: flex; height: 560px; min-height: 380px; gap: 0; }
+#panel-left-research { width: 22%; flex-shrink: 0; background: var(--panel-bg); border-right: var(--border); display: flex; flex-direction: column; overflow: hidden; }
+#panel-center-research { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+#panel-right-research { width: 25%; flex-shrink: 0; background: var(--panel-bg); border-left: var(--border); display: flex; flex-direction: column; overflow: hidden; }
+.r-panel-header { padding: 8px 12px; background: #041208; border-bottom: var(--border); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--green); text-shadow: var(--glow); }
+.r-panel-header::before { content: '> '; }
+.r-panel-scroll { flex: 1; overflow-y: auto; padding: 10px; }
+.res-queue-card { border: var(--border); padding: 8px 10px; margin-bottom: 8px; background: #010f04; }
+.rqc-title { font-size: 13px; color: var(--green); text-shadow: var(--glow); margin-bottom: 4px; }
+.rqc-sub { font-size: 11px; color: var(--green-dim); letter-spacing: 1px; margin-bottom: 4px; }
+.rqc-flash { font-size: 12px; color: var(--amber); text-shadow: var(--amber-glow); animation: pulse-amber 0.5s ease-in-out 3; }
+@keyframes pulse-amber { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+#tree-container { flex: 1; overflow: auto; padding: 14px; position: relative; }
+.branch-headers { display: flex; gap: 4px; margin-bottom: 10px; min-width: 800px; }
+.branch-header { flex: 1; text-align: center; padding: 5px; border: var(--border); background: #041208; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--green); text-shadow: var(--glow); }
+.branch-header.locked { border-color: #1a1f1a; color: #3a4a3a; text-shadow: none; }
+#tree-svg { display: block; min-width: 800px; }
+.tech-node { cursor: pointer; }
+.detail-tech-id { font-size: 11px; letter-spacing: 3px; color: var(--green-dim); text-transform: uppercase; margin-bottom: 2px; }
+.detail-tech-name { font-size: 15px; color: var(--green); text-shadow: var(--glow-strong); margin-bottom: 2px; letter-spacing: 1px; }
+.detail-divider { border: none; border-top: var(--border); margin: 8px 0; }
+.status-badge { display: inline-block; padding: 3px 10px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; border: 1px solid; margin-bottom: 8px; }
+.status-complete { color: var(--green); border-color: var(--green); background: #011a0a; }
+.status-available { color: var(--green); border-color: var(--green-mid); background: #010f04; }
+.status-locked { color: #3a4a3a; border-color: #2a2f2a; background: #1a1f1a; }
+.detail-row { display: flex; justify-content: space-between; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #091608; }
+.detail-row .dr-key { color: var(--green-dim); text-transform: uppercase; letter-spacing: 1px; font-size: 11px; }
+.detail-row .dr-val { color: var(--green); text-align: right; }
+.btn-research { display: block; width: 100%; margin-top: 12px; background: none; border: 2px solid var(--green-mid); color: var(--green); font-family: var(--font); font-size: 14px; letter-spacing: 2px; padding: 9px; cursor: pointer; text-transform: uppercase; transition: all 0.15s; }
+.btn-research:hover:not(:disabled) { border-color: var(--green); text-shadow: var(--glow-strong); }
+.btn-research:disabled { opacity: 0.3; cursor: not-allowed; }
+.rp-section { margin-top: 12px; border-top: 1px solid #0d2016; padding-top: 10px; }
+.rp-section-title { font-size: 11px; letter-spacing: 2px; color: var(--green-dim); text-transform: uppercase; margin-bottom: 6px; }
+.lab-item { display: flex; justify-content: space-between; font-size: 12px; color: var(--green-mid); padding: 3px 0; border-bottom: 1px solid #091608; }
+.lab-item .lab-rate { color: var(--green); text-shadow: var(--glow); }
+.overview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+.ov-card { border: var(--border); background: #010f04; padding: 8px; text-align: center; }
+.ov-num { font-size: 20px; color: var(--green); text-shadow: var(--glow-strong); line-height: 1.2; }
+.ov-num.amber { color: var(--amber); text-shadow: var(--amber-glow); }
+.ov-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--green-dim); margin-top: 2px; }
+
+/* ===========================
+   ASSEMBLY TAB
+   =========================== */
+.assembly-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rocket-art-wrap { text-align: center; padding: 10px; border: var(--border); background: var(--bg); min-height: 280px; display: flex; align-items: center; justify-content: center; }
+#rocket-art-display { font-size: 13px; white-space: pre; line-height: 1.3; color: var(--green-dim); }
+#rocket-art-display .done { color: var(--green); text-shadow: var(--glow); }
+.parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 6px 0; font-size: 13px; gap: 8px; }
+.part-done { color: var(--green); text-shadow: var(--glow); }
+.part-pending { color: var(--green-dim); }
+.quality-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.q-btn { flex: 1; min-width: 100px; }
+.q-btn.selected { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.slot-card { border: var(--border); background: var(--panel-bg); padding: 10px 14px; margin-bottom: 10px; }
+.slot-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.slot-title { font-size: 13px; color: var(--green); letter-spacing: 1px; }
+.slot-state.idle { color: var(--green-mid); }
+.slot-state.busy { color: var(--amber); }
+.slot-state.ready { color: var(--green); text-shadow: var(--glow); }
+.science-box { border: var(--border); background: var(--bg); padding: 10px 14px; font-size: 12px; color: var(--green-mid); margin-top: 10px; line-height: 1.7; }
+.science-box .val { color: var(--green); }
+.science-box .ms-val { color: var(--amber); }
+
+/* ===========================
+   LAUNCH TAB
+   =========================== */
+.launch-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ready-slot-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 7px 0; font-size: 13px; gap: 8px; }
+.telemetry-wrap { border: var(--border); background: var(--bg); padding: 12px 14px; font-size: 13px; min-height: 160px; }
+.telem-line { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #0a1a0a; color: var(--green-mid); }
+.telem-time { color: var(--green-mid); min-width: 55px; font-size: 12px; }
+.telem-event { min-width: 160px; color: var(--green); text-transform: uppercase; font-size: 12px; }
+.telem-bar { flex: 1; height: 6px; border: 1px solid var(--green-dim); }
+.telem-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.5s; }
+.telem-pct { color: var(--green); font-size: 12px; min-width: 38px; text-align: right; }
+.launch-anim-wrap { text-align: center; padding: 14px; min-height: 150px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); }
+.launch-rocket-ascii { font-size: 12px; white-space: pre; color: var(--green); display: inline-block; }
+.launch-rocket-ascii.launching { animation: rocket-launch 3s ease-in forwards; }
+@keyframes rocket-launch { 0% { transform: translateY(0); } 100% { transform: translateY(-400px); } }
+.exhaust-anim { font-size: 12px; white-space: pre; color: var(--amber); text-shadow: 0 0 6px var(--amber); display: inline-block; animation: exhaust-flicker 0.15s step-start infinite; }
+@keyframes exhaust-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+.launch-result { display: none; border: 1px solid var(--amber); background: rgba(255,171,0,0.05); padding: 14px; font-size: 13px; color: var(--amber); margin-top: 12px; }
+.launch-result.show { display: block; }
+.launch-result-title { font-size: 16px; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 12px var(--amber); margin-bottom: 8px; }
+.launch-result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px; margin-bottom: 10px; }
+.launch-result-stat-lbl { color: var(--green-mid); }
+.launch-result-stat-val { color: var(--amber); }
+
+/* ===========================
+   MISSION TAB
+   =========================== */
+.phase-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid #0e2a18; font-size: 13px; }
+.phase-name { min-width: 180px; color: var(--green-mid); text-transform: uppercase; font-size: 12px; }
+.phase-bar-wrap { flex: 1; height: 8px; border: 1px solid var(--green-dim); background: var(--bg); }
+.phase-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.5s; }
+.phase-bar-fill.done { background: var(--green); }
+.phase-status { min-width: 80px; font-size: 12px; text-align: right; color: var(--green-mid); }
+.phase-status.done { color: var(--green); }
+.phase-status.locked { color: #0e2a18; }
+.history-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+.history-table th { background: #021508; color: var(--green-mid); text-align: left; padding: 6px 10px; border: var(--border); letter-spacing: 1px; font-weight: normal; text-transform: uppercase; }
+.history-table td { padding: 5px 10px; border: 1px solid #0e2a18; color: var(--green); }
+.history-table tr:hover td { background: rgba(0,230,118,0.04); }
+.prestige-panel { border: 1px solid var(--amber); background: rgba(255,171,0,0.04); padding: 14px; margin-top: 12px; }
+.prestige-stat { font-size: 13px; color: var(--amber); margin-bottom: 8px; line-height: 1.7; }
+
+/* ===========================
+   LAUNCH OVERLAY
+   =========================== */
+#launch-overlay { display: none; position: fixed; inset: 0; background: rgba(1,8,0,0.97); z-index: 7000; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 24px; }
+#launch-overlay.show { display: flex; }
+.lo-title { font-size: 28px; letter-spacing: 8px; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 20px var(--amber); margin-bottom: 14px; }
+.lo-rocket { font-size: 12px; white-space: pre; color: var(--amber); text-shadow: 0 0 6px #ffab0080; margin-bottom: 14px; animation: rocket-launch 4s ease-in forwards; }
+.lo-stats { font-size: 15px; color: var(--green); margin-bottom: 18px; line-height: 2.2; text-shadow: var(--glow); }
+.lo-ms { font-size: 20px; color: var(--amber); letter-spacing: 3px; margin-bottom: 24px; }
+.lo-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
 </style>
 </head>
 <body>
 
-  <!-- ===========================
-       1. TITLE SCREEN
-       =========================== -->
-  <div id="title-screen">
-    <div class="title-logo">MOON IDLE</div>
-    <div class="title-subtitle">달 탐사 로켓 제작소 / LUNAR EXPLORATION SIM</div>
-    <div id="boot-log" class="boot-log"></div>
-    <div id="save-strip" class="title-save-strip">// 저장 데이터 없음</div>
-    <div class="title-btns">
-      <button class="title-btn primary" id="new-game-btn">새 게임</button>
-      <button class="title-btn" id="continue-btn" style="display:none">이어하기</button>
-      <button class="title-btn" id="settings-btn">설정</button>
+<!-- ===========================
+     TITLE SCREEN
+     =========================== -->
+<div id="title-screen">
+  <div class="title-logo">MOON IDLE</div>
+  <div class="title-subtitle">달 탐사 로켓 제작소 / LUNAR EXPLORATION SIM</div>
+  <div id="boot-log"></div>
+  <div id="save-strip">// 저장 데이터 없음</div>
+  <div class="title-btns">
+    <button class="title-btn primary" id="new-game-btn">새 게임</button>
+    <button class="title-btn" id="continue-btn" style="display:none">이어하기</button>
+  </div>
+</div>
+
+<!-- ===========================
+     APP (flex column, hidden until game starts)
+     =========================== -->
+<div id="app">
+
+  <!-- ══ TOP BAR ══ -->
+  <div id="topbar">
+    <span class="logo">&#9654; MOON IDLE</span>
+    <span class="sep">—</span>
+    <span style="color:var(--green-mid);font-size:13px">달 탐사 로켓 제작소</span>
+    <span class="sep">|</span>
+    <span class="clk" id="tb-clock">00:00:00</span>
+    <span class="sep">|</span>
+    <span class="mny">&#8361;&thinsp;<span id="tb-money">0</span></span>
+    <span class="sep">|</span>
+    <span class="sys">인원 <span id="tb-workers" style="color:var(--white)">0/0</span></span>
+    <div class="tb-r">
+      <button id="bgm-prev-btn" onclick="typeof BGM!=='undefined'&&BGM.next()" title="다음 BGM">BGM&#9664;&#9654;</button>
+      <span id="bgm-track-label">[BGM: 앰비언트]</span>
+      <button id="sound-btn">SND:ON</button>
     </div>
   </div>
 
-  <!-- LEFT RESOURCE PANEL -->
-  <div id="res-left">
-    <div class="rl-title">&#9726; 자원</div>
-    <div id="rl-inner"></div>
-    <div id="rl-ms-box"></div>
+  <!-- ══ MAIN ROW ══ -->
+  <div id="main">
+
+    <!-- ── LEFT PANEL ── -->
+    <div id="res-left">
+      <div class="sh">&#9726; 자원</div>
+      <div id="rl-inner"></div>
+      <div id="rl-ms-box"></div>
+    </div>
+
+    <!-- ── WORLD WRAPPER ── -->
+    <div id="ww">
+
+      <!-- WORLD (drag-scroll, inline in flex flow — solves z-index issue) -->
+      <div id="world-bg">
+        <div id="world-scene">
+          <div id="sky-layer"></div>
+          <div id="buildings-layer"></div>
+          <div id="ground-line"></div>
+          <div id="workers-layer"></div>
+        </div>
+      </div>
+
+      <!-- NAV TABS -->
+      <div id="nav-tabs">
+        <button class="nav-tab active" id="nav-tab-production" data-tab="production">생산 허브</button>
+        <button class="nav-tab" id="nav-tab-research" data-tab="research">연구소</button>
+        <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" style="display:none">조립동</button>
+        <button class="nav-tab" id="nav-tab-launch" data-tab="launch" style="display:none">발사 통제</button>
+        <button class="nav-tab" id="nav-tab-mission" data-tab="mission" style="display:none">미션 현황</button>
+      </div>
+
+      <!-- OFFLINE BANNER -->
+      <div id="offline-banner"></div>
+
+      <!-- TAB CONTENT AREA -->
+      <div id="tab-area">
+
+        <!-- ===== PRODUCTION TAB ===== -->
+        <div class="tab-pane active" id="pane-production">
+          <div class="panel">
+            <div class="panel-header">생산 허브</div>
+            <div id="prod-status"></div>
+            <div id="bld-grid"></div>
+          </div>
+        </div>
+
+        <!-- ===== RESEARCH TAB ===== -->
+        <div class="tab-pane" id="pane-research">
+          <div id="research-layout">
+            <div id="panel-left-research">
+              <div class="r-panel-header">연구 현황</div>
+              <div class="r-panel-scroll" id="research-left-content"></div>
+            </div>
+            <div id="panel-center-research">
+              <div class="r-panel-header">기술 트리</div>
+              <div id="tree-container">
+                <div class="branch-headers" id="branch-headers"></div>
+                <svg id="tree-svg" height="480"></svg>
+              </div>
+            </div>
+            <div id="panel-right-research">
+              <div class="r-panel-header">기술 상세</div>
+              <div class="r-panel-scroll" id="research-right-content">
+                <div id="tech-detail-panel"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== ASSEMBLY TAB ===== -->
+        <div class="tab-pane" id="pane-assembly">
+          <div class="panel">
+            <div class="panel-header">로켓 조립동</div>
+            <div class="assembly-layout">
+              <div>
+                <div class="rocket-art-wrap"><pre id="rocket-art-display"></pre></div>
+                <div class="panel" style="margin-top:10px">
+                  <div class="panel-header">부품 현황</div>
+                  <div id="parts-checklist"></div>
+                </div>
+                <div class="science-box" id="science-box"></div>
+              </div>
+              <div>
+                <div class="panel">
+                  <div class="panel-header">품질 등급</div>
+                  <div class="quality-selector" id="quality-selector"></div>
+                </div>
+                <div class="panel" style="margin-top:10px">
+                  <div class="panel-header">조립 슬롯</div>
+                  <div id="assembly-slots-wrap"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== LAUNCH TAB ===== -->
+        <div class="tab-pane" id="pane-launch">
+          <div class="panel">
+            <div class="panel-header">발사 통제</div>
+            <div class="launch-layout">
+              <div>
+                <div class="panel">
+                  <div class="panel-header">발사 준비</div>
+                  <div id="ready-list-wrap"></div>
+                </div>
+                <div class="launch-result" id="launch-result">
+                  <div class="launch-result-title">발사 성공</div>
+                  <div class="launch-result-stats" id="lr-stats"></div>
+                  <div id="lr-ms" style="color:var(--amber);font-size:15px;margin-bottom:10px;"></div>
+                </div>
+              </div>
+              <div>
+                <div class="panel">
+                  <div class="panel-header">발사 시퀀스</div>
+                  <div class="launch-anim-wrap" id="launch-anim-wrap">
+                    <div style="color:var(--green-mid);font-size:13px;">// 발사 대기 중</div>
+                  </div>
+                  <div id="telem-wrap"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== MISSION TAB ===== -->
+        <div class="tab-pane" id="pane-mission">
+          <div class="panel"><div class="panel-header">미션 진행 현황</div><div id="phase-progress-wrap"></div></div>
+          <div class="panel"><div class="panel-header">발사 기록</div><div id="history-wrap"></div></div>
+          <div id="prestige-wrap"></div>
+        </div>
+
+      </div><!-- /#tab-area -->
+
+    </div><!-- /#ww -->
+
+    <!-- ── RIGHT PANEL ── -->
+    <div id="rp">
+      <div class="rph">&#9726; 인원</div>
+      <div id="rp-workers">
+        <div style="color:var(--green-mid);font-size:10px;line-height:1.6;padding:2px 0 8px">
+          건물에 마우스를 오버하면 인원 배치 메뉴가 열립니다
+        </div>
+      </div>
+
+      <div style="margin-top:8px;border-top:1px solid var(--green-dim);padding-top:8px">
+        <div class="rph">&#9726; 문스톤</div>
+        <div id="rp-ms" style="font-size:12px;color:var(--green-dim);margin-top:4px">아직 획득 없음</div>
+      </div>
+
+      <div style="margin-top:8px;border-top:1px solid var(--green-dim);padding-top:8px">
+        <div class="rph">&#9726; 발사 기록</div>
+        <div id="rp-launches" style="font-size:12px;color:var(--green-mid);margin-top:4px">0회</div>
+      </div>
+
+      <div style="margin-top:8px;border-top:1px solid var(--green-dim);padding-top:8px">
+        <div class="rph">&#9726; 시스템</div>
+        <div id="rp-sys" style="font-size:11px;color:var(--green);margin-top:4px">SYS: NOMINAL</div>
+      </div>
+    </div><!-- /#rp -->
+
+  </div><!-- /#main -->
+
+  <!-- ══ TICKER ══ -->
+  <div id="ticker">
+    <span id="tki">
+      <span class="to">&gt;&gt; MOON IDLE 달 탐사 로켓 제작소 — 시스템 초기화 완료</span>
+      <span class="ts">&#9632;</span>
+      <span>&gt;&gt; 운영 센터에 인원을 배치하여 자금을 확보하세요</span>
+      <span class="ts">&#9632;</span>
+      <span class="tw">&gt;&gt; 연구소를 건설하면 연구 탭과 기술 트리가 해금됩니다</span>
+      <span class="ts">&#9632;</span>
+      <span>&gt;&gt; 태양광 어레이를 설치하면 전체 생산이 10%씩 증가합니다</span>
+      <span class="ts">&#9632;</span>
+      <span class="to">&gt;&gt; 발사대를 건설하고 로켓을 달로 쏘아올리세요!</span>
+      <span class="ts">&#9632;</span>
+    </span>
   </div>
 
-  <!-- ===========================
-       2. WORLD BACKGROUND
-       =========================== -->
-  <div id="world-bg">
-    <div id="world-scene">
-      <div id="sky-layer"></div>
-      <div id="buildings-layer"></div>
-      <div id="ground-line"></div>
-      <div id="workers-layer">
-        <div class="worker worker-1"></div>
-        <div class="worker worker-2"></div>
-        <div class="worker worker-3"></div>
-        <div class="worker worker-4"></div>
-        <div class="worker worker-5"></div>
-      </div>
-    </div>
+</div><!-- /#app -->
+
+<!-- ===========================
+     LAUNCH OVERLAY (position:fixed)
+     =========================== -->
+<div id="launch-overlay">
+  <div class="lo-title">// 달 탐사 성공</div>
+  <pre class="lo-rocket" id="lo-rocket-art"></pre>
+  <div class="lo-stats" id="lo-stats"></div>
+  <div class="lo-ms" id="lo-ms"></div>
+  <div class="lo-btns">
+    <button class="btn btn-amber" id="btn-prestige">문스톤 획득 후 재시작</button>
+    <button class="btn" id="btn-continue-game">계속 진행</button>
   </div>
+</div>
 
-  <!-- ===========================
-       3. GAME UI
-       =========================== -->
-  <div id="app">
+<!-- NOTIFICATIONS -->
+<div id="notif"></div>
 
-    <!-- 3a. Resource Bar -->
-    <div id="res-bar">
-      <div id="res-bar-inner" class="res-bar-inner"></div>
-      <div class="res-bar-right">
-        <span id="ms-display" style="color:var(--amber);font-size:14px;display:none"></span>
-        <button id="bgm-prev-btn" onclick="typeof BGM!=='undefined'&&BGM.next()" title="다음 BGM" style="font-size:12px;padding:3px 8px;border:1px solid #1a5c34;background:transparent;color:#00994d;cursor:pointer;font-family:'Share Tech Mono',monospace;">BGM◀▶</button>
-        <span id="bgm-track-label" style="font-size:11px;color:#1a5c34;min-width:90px;">[BGM: 앰비언트]</span>
-        <button id="sound-btn">SND:ON</button>
-      </div>
-    </div>
-
-    <!-- 3b. Nav Tabs -->
-    <div id="nav-tabs">
-      <button class="nav-tab active" id="nav-tab-production" data-tab="production">생산 허브</button>
-      <button class="nav-tab" id="nav-tab-research" data-tab="research">연구소</button>
-      <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" style="display:none">조립동</button>
-      <button class="nav-tab" id="nav-tab-launch" data-tab="launch" style="display:none">발사 통제</button>
-      <button class="nav-tab" id="nav-tab-mission" data-tab="mission" style="display:none">미션 현황</button>
-    </div>
-
-    <!-- Offline Banner -->
-    <div id="offline-banner"></div>
-
-    <!-- ===== PRODUCTION TAB ===== -->
-    <div class="tab-pane active" id="pane-production">
-      <div class="panel">
-        <div class="panel-header">생산 허브</div>
-        <div id="prod-status" style="font-size:14px;color:var(--green-mid);margin-bottom:10px;border-bottom:var(--border);padding-bottom:8px;"></div>
-        <div id="bld-grid" class="bld-grid"></div>
-      </div>
-    </div>
-
-    <!-- ===== RESEARCH TAB ===== -->
-    <div class="tab-pane" id="pane-research">
-      <div id="research-layout">
-        <div id="panel-left-research">
-          <div class="r-panel-header">연구 현황</div>
-          <div class="r-panel-scroll" id="research-left-content"></div>
-        </div>
-        <div id="panel-center-research">
-          <div class="r-panel-header">기술 트리</div>
-          <div id="tree-container">
-            <div class="branch-headers" id="branch-headers"></div>
-            <svg id="tree-svg" height="480"></svg>
-          </div>
-        </div>
-        <div id="panel-right-research">
-          <div class="r-panel-header">기술 상세</div>
-          <div class="r-panel-scroll" id="research-right-content">
-            <div id="tech-detail-panel"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== ASSEMBLY TAB ===== -->
-    <div class="tab-pane" id="pane-assembly">
-      <div class="panel">
-        <div class="panel-header">로켓 조립동</div>
-        <div class="assembly-layout">
-          <div>
-            <div class="rocket-art-wrap"><pre id="rocket-art-display"></pre></div>
-            <div class="panel" style="margin-top:10px">
-              <div class="panel-header">부품 현황</div>
-              <div id="parts-checklist"></div>
-            </div>
-            <div class="science-box" id="science-box"></div>
-          </div>
-          <div>
-            <div class="panel">
-              <div class="panel-header">품질 등급</div>
-              <div class="quality-selector" id="quality-selector"></div>
-            </div>
-            <div class="panel" style="margin-top:10px">
-              <div class="panel-header">조립 슬롯</div>
-              <div id="assembly-slots-wrap"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== LAUNCH TAB ===== -->
-    <div class="tab-pane" id="pane-launch">
-      <div class="panel">
-        <div class="panel-header">발사 통제</div>
-        <div class="launch-layout">
-          <div>
-            <div class="panel"><div class="panel-header">발사 준비</div><div id="ready-list-wrap"></div></div>
-            <div class="launch-result" id="launch-result">
-              <div class="launch-result-title">발사 성공</div>
-              <div class="launch-result-stats" id="lr-stats"></div>
-              <div id="lr-ms" style="color:var(--amber);font-size:16px;margin-bottom:10px;"></div>
-            </div>
-          </div>
-          <div>
-            <div class="panel">
-              <div class="panel-header">발사 시퀀스</div>
-              <div class="launch-anim-wrap" id="launch-anim-wrap"><div style="color:var(--green-mid);font-size:14px;">// 발사 대기 중</div></div>
-              <div id="telem-wrap"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ===== MISSION TAB ===== -->
-    <div class="tab-pane" id="pane-mission">
-      <div class="panel"><div class="panel-header">미션 진행 현황</div><div id="phase-progress-wrap"></div></div>
-      <div class="panel"><div class="panel-header">발사 기록</div><div id="history-wrap"></div></div>
-      <div id="prestige-wrap"></div>
-    </div>
-
-  </div><!-- /#app -->
-
-  <!-- ===========================
-       4. LAUNCH OVERLAY
-       =========================== -->
-  <div id="launch-overlay">
-    <div class="lo-title">// 달 탐사 성공</div>
-    <pre class="lo-rocket" id="lo-rocket-art"></pre>
-    <div class="lo-stats" id="lo-stats"></div>
-    <div class="lo-ms" id="lo-ms"></div>
-    <div class="lo-btns">
-      <button class="btn btn-amber" id="btn-prestige">문스톤 획득 후 재시작</button>
-      <button class="btn" id="btn-continue-game">계속 진행</button>
-    </div>
+<!-- BUILDING HOVER OVERLAY -->
+<div id="bld-ov">
+  <div class="bov-hd" id="bov-hd">건물명</div>
+  <div class="bov-row" id="bov-cnt"></div>
+  <div class="bov-row" id="bov-prod"></div>
+  <div class="bov-row" id="bov-workers" style="display:none"></div>
+  <div class="bov-row" id="bov-cost"></div>
+  <div class="bov-sep"></div>
+  <div class="bov-btns" id="bov-worker-btns" style="display:none;gap:4px;padding:4px 10px 2px;"></div>
+  <div class="bov-btns">
+    <button class="bov-btn" id="bov-buy">[ 건물 추가 ]</button>
+    <button class="bov-btn" onclick="closeBldOv()">[닫기]</button>
   </div>
+</div>
 
-  <!-- Notifications -->
-  <div id="notif"></div>
+<!-- Hidden compat elements -->
+<span id="ms-display" style="display:none"></span>
 
-  <!-- Building Hover Overlay -->
-  <div id="bld-ov">
-    <div class="bov-hd" id="bov-hd">건물명</div>
-    <div class="bov-row" id="bov-cnt"></div>
-    <div class="bov-row" id="bov-prod"></div>
-    <div class="bov-row" id="bov-workers" style="display:none"></div>
-    <div class="bov-row" id="bov-cost"></div>
-    <div class="bov-sep"></div>
-    <div class="bov-btns" id="bov-worker-btns" style="display:none;gap:4px;padding:4px 10px 2px;"></div>
-    <div class="bov-btns">
-      <button class="bov-btn" id="bov-buy">[ 건물 추가 ]</button>
-      <button class="bov-btn" onclick="closeBldOv()">[닫기]</button>
-    </div>
-  </div>
+<script>
+// ─── TOPBAR CLOCK ─────────────────────────────────────────────
+(function tickClock() {
+  const t = new Date();
+  const el = document.getElementById('tb-clock');
+  if (el) el.textContent =
+    String(t.getHours()).padStart(2,'0') + ':' +
+    String(t.getMinutes()).padStart(2,'0') + ':' +
+    String(t.getSeconds()).padStart(2,'0');
+  setTimeout(tickClock, 1000);
+})();
+
+// ─── TOPBAR MONEY / WORKERS (reads from global gs every 500ms) ────
+setInterval(function() {
+  if (typeof gs === 'undefined') return;
+  const m = document.getElementById('tb-money');
+  if (m) m.textContent = typeof fmt === 'function' ? fmt(gs.res.money || 0) : Math.floor(gs.res.money || 0).toLocaleString('ko-KR');
+  const w = document.getElementById('tb-workers');
+  if (w) {
+    const total = gs.workers || 1;
+    const assigned = typeof getTotalAssigned === 'function' ? getTotalAssigned() : 0;
+    w.textContent = assigned + '/' + total + '명';
+  }
+  // Right panel
+  const rpMs = document.getElementById('rp-ms');
+  if (rpMs) rpMs.textContent = gs.moonstone > 0 ? '&#9670; ' + gs.moonstone + ' 문스톤' : '아직 획득 없음';
+  const rpLaunches = document.getElementById('rp-launches');
+  if (rpLaunches) rpLaunches.textContent = (gs.launches || 0) + '회';
+}, 500);
+</script>
 
 <script src="js/game-data.js"></script>
 <script src="js/game-state.js"></script>
