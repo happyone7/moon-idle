@@ -49,3 +49,19 @@
 - 컨셉: 제작 공정을 컨베이어 스테이지로 표현한 파이프라인 UI
 - 포인트: 생산 단계(입력-엔지니어링-조립-발사)를 수평 흐름으로 표현
 - 버튼: `mockups/assets/moonidle_btn_amber_plate.svg`, `mockups/assets/moonidle_btn_warn.svg`
+
+## 시안 5(NASA Clean) 배리에이션 5종
+1) `mockups/sprint1_ui_mockup_v5a_nasa_patchbay.html`
+- 포인트: 원본 v5를 3열 패치베이 형태로 단순화
+
+2) `mockups/sprint1_ui_mockup_v5b_nasa_flightdeck.html`
+- 포인트: 다크 플라이트덱 톤 + 기술카드 중심
+
+3) `mockups/sprint1_ui_mockup_v5c_nasa_opsboard.html`
+- 포인트: 공정 단계를 5컬럼 운영보드로 표현
+
+4) `mockups/sprint1_ui_mockup_v5d_nasa_payload_tablet.html`
+- 포인트: 태블릿/패드 UI 느낌의 라이트 인터페이스
+
+5) `mockups/sprint1_ui_mockup_v5e_nasa_missionwall.html`
+- 포인트: 3분할 미션월(자원/미션/큐) 구조

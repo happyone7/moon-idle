@@ -3,2003 +3,1134 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MOON IDLE — 생산 허브 v7a (Graphic Idle)</title>
+<title>MOON IDLE — 생산 허브 v7a</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-/* =============================================
-   RESET & BASE
-============================================= */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-:root {
-  --bg:          #010800;
-  --panel-bg:    #020d04;
-  --green:       #00e676;
-  --green-dim:   #1a5c34;
-  --green-mid:   #00994d;
-  --amber:       #ffab00;
-  --red:         #ff1744;
-  --cyan:        #00e5ff;
-  --cyan-dim:    #006070;
-  --amber-dim:   #5c3d00;
-  --red-dim:     #5c0011;
-  --locked-fg:   #1a3020;
-  --locked-bg:   #010b03;
-  --font:        'Share Tech Mono', monospace;
-  --border:      1px solid #1a5c34;
-  --glow:        0 0 6px #00e67680;
-  --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
-  --glow-amber:  0 0 8px #ffab0080;
-  --glow-cyan:   0 0 8px #00e5ff60;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-  background: var(--bg);
-  color: var(--green);
-  font-family: var(--font);
-  font-size: 11px;
-  line-height: 1.4;
-  overflow: hidden;
-}
-
-/* =============================================
-   CRT OVERLAYS
-============================================= */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,0.13) 2px,
-    rgba(0,0,0,0.13) 4px
-  );
-  pointer-events: none;
-  z-index: 9999;
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.82) 100%);
-  pointer-events: none;
-  z-index: 9998;
-}
-
-@keyframes crt-flicker {
-  0%   { opacity: 1; }
-  92%  { opacity: 1; }
-  93%  { opacity: 0.91; }
-  94%  { opacity: 1; }
-  97%  { opacity: 1; }
-  98%  { opacity: 0.94; }
-  100% { opacity: 1; }
-}
-
-/* =============================================
-   LAYOUT SKELETON
-============================================= */
-.app {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  animation: crt-flicker 8s infinite;
-}
-
-/* TOP BAR */
-.topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 14px;
-  height: 34px;
-  min-height: 34px;
-  border-bottom: 1px solid var(--green-dim);
-  background: var(--panel-bg);
-  letter-spacing: 0.05em;
-  flex-shrink: 0;
-}
-
-.topbar-title {
-  color: var(--green);
-  font-size: 13px;
-  text-shadow: var(--glow);
-}
-
-.topbar-title span {
-  color: var(--amber);
-}
-
-.topbar-center {
-  color: var(--green-dim);
-  font-size: 12px;
-}
-
-.topbar-right {
-  display: flex;
-  gap: 18px;
-  font-size: 11px;
-  color: var(--green-mid);
-}
-
-.topbar-right .ok   { color: var(--green); }
-.topbar-right .warn { color: var(--amber); }
-
-/* MAIN CONTENT */
-.main {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  gap: 0;
-}
-
-/* =============================================
-   LEFT PANEL — Resource Dashboard
-============================================= */
-.panel-left {
-  width: 25%;
-  min-width: 200px;
-  max-width: 280px;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--green-dim);
-  background: var(--panel-bg);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 0 0;
-}
-
-.panel-left::-webkit-scrollbar { width: 4px; }
-.panel-left::-webkit-scrollbar-track { background: var(--bg); }
-.panel-left::-webkit-scrollbar-thumb { background: var(--green-dim); }
-
-.panel-label {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--green-dim);
-  padding: 0 10px 4px;
-  border-bottom: 1px solid var(--green-dim);
-  margin-bottom: 6px;
-}
-
-/* Resource Tier Block */
-.tier-block {
-  margin: 0 8px 8px;
-  border: 1px solid;
-  padding: 6px 8px;
-}
-
-.tier-block.t1 { border-color: var(--green-dim); }
-.tier-block.t2 { border-color: var(--amber-dim); }
-.tier-block.t3 { border-color: var(--cyan-dim); }
-.tier-block.t4 { border-color: var(--red-dim); }
-
-.tier-header {
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  margin-bottom: 5px;
-}
-
-.tier-block.t1 .tier-header { color: var(--green); }
-.tier-block.t2 .tier-header { color: var(--amber); }
-.tier-block.t3 .tier-header { color: var(--cyan); }
-.tier-block.t4 .tier-header { color: var(--red); }
-
-.res-row {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin-bottom: 4px;
-}
-
-.res-name {
-  width: 75px;
-  font-size: 10px;
-  color: #88aa88;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.res-bar-bg {
-  flex: 1;
-  height: 5px;
-  background: #020d04;
-  border: 1px solid #0d3020;
-  position: relative;
-  overflow: hidden;
-}
-
-.res-bar-fill {
-  height: 100%;
-  position: relative;
-}
-
-@keyframes bar-tick {
-  0%   { width: var(--from); }
-  100% { width: var(--to); }
-}
-
-.res-bar-fill.c-green  { background: var(--green); box-shadow: 0 0 4px #00e67660; }
-.res-bar-fill.c-amber  { background: var(--amber); box-shadow: 0 0 4px #ffab0060; }
-.res-bar-fill.c-cyan   { background: var(--cyan);  box-shadow: 0 0 4px #00e5ff50; }
-.res-bar-fill.c-red    { background: var(--red);   box-shadow: 0 0 4px #ff174450; }
-
-.res-val {
-  width: 36px;
-  font-size: 9px;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.res-rate {
-  font-size: 9px;
-  color: var(--green-dim);
-  width: 44px;
-  text-align: right;
-}
-
-.tier-block.t1 .res-val { color: var(--green-mid); }
-.tier-block.t2 .res-val { color: var(--amber); }
-.tier-block.t3 .res-val { color: var(--cyan); }
-.tier-block.t4 .res-val { color: var(--red); }
-
-/* Efficiency bar at bottom of left panel */
-.eff-block {
-  margin: 4px 8px 8px;
-  border: 1px solid var(--green-dim);
-  padding: 6px 8px;
-}
-
-.eff-label {
-  font-size: 10px;
-  color: var(--green-dim);
-  margin-bottom: 4px;
-}
-
-.eff-bar-bg {
-  height: 8px;
-  background: #010800;
-  border: 1px solid var(--green-dim);
-  overflow: hidden;
-}
-
-.eff-bar-fill {
-  height: 100%;
-  width: 73%;
-  background: linear-gradient(90deg, var(--green-mid), var(--green));
-  box-shadow: var(--glow);
-  position: relative;
-}
-
-.eff-bar-fill::after {
-  content: '';
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 2px;
-  background: #fff;
-  opacity: 0.7;
-  animation: eff-pulse 1.5s ease-in-out infinite;
-}
-
-@keyframes eff-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.9; }
-}
-
-.eff-pct {
-  font-size: 11px;
-  color: var(--green);
-  text-shadow: var(--glow);
-  margin-top: 3px;
-}
-
-/* =============================================
-   CENTER — WORLD VIEW
-============================================= */
-.panel-center {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-}
-
-.world-label {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  color: var(--green-dim);
-  padding: 5px 12px;
-  border-bottom: 1px solid var(--green-dim);
-  background: var(--panel-bg);
-  flex-shrink: 0;
-}
-
-.world-view {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  background: linear-gradient(180deg, #000800 0%, #010d02 60%, #010800 100%);
-}
-
-/* Stars */
-.stars {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.star {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  background: var(--green);
-  opacity: 0.3;
-  border-radius: 50%;
-}
-
-.star.bright {
-  width: 2px;
-  height: 2px;
-  opacity: 0.5;
-  box-shadow: 0 0 3px #00e676;
-}
-
-@keyframes star-twinkle {
-  0%, 100% { opacity: 0.15; }
-  50% { opacity: 0.55; }
-}
-
-/* Subtle horizon grid on ground */
-.ground {
-  position: absolute;
-  bottom: 60px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--green-dim);
-  box-shadow: 0 0 6px #00e67640;
-  z-index: 2;
-}
-
-.ground-fill {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: linear-gradient(180deg, #020d04 0%, #010800 100%);
-  border-top: 1px solid var(--green-dim);
-  z-index: 1;
-}
-
-/* Ground grid lines */
-.ground-grid {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background-image:
-    linear-gradient(90deg, #00e67610 1px, transparent 1px),
-    linear-gradient(0deg, #00e67610 1px, transparent 1px);
-  background-size: 40px 20px;
-  z-index: 2;
-  pointer-events: none;
-}
-
-/* =============================================
-   BUILDINGS
-============================================= */
-.buildings {
-  position: absolute;
-  bottom: 61px;   /* sit on the ground line */
-  left: 0;
-  right: 0;
-  height: calc(100% - 61px);
-  display: flex;
-  align-items: flex-end;
-  padding: 0 16px;
-  gap: 18px;
-  z-index: 5;
-}
-
-.building-slot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.building-label {
-  font-size: 9px;
-  color: var(--green-mid);
-  margin-bottom: 4px;
-  white-space: nowrap;
-  letter-spacing: 0.05em;
-  text-shadow: 0 0 4px #00e67670;
-}
-
-.building-label.locked-text {
-  color: var(--locked-fg);
-  text-shadow: none;
-}
-
-.building-status {
-  font-size: 8px;
-  color: var(--amber);
-  margin-bottom: 2px;
-  letter-spacing: 0.05em;
-}
-
-/* Generic building glow animation */
-@keyframes building-glow {
-  0%, 100% { box-shadow: 0 0 3px #00e67630; }
-  50%       { box-shadow: 0 0 10px #00e676, 0 0 20px #00e67650; }
-}
-
-@keyframes building-glow-amber {
-  0%, 100% { box-shadow: 0 0 3px #ffab0030; }
-  50%       { box-shadow: 0 0 10px #ffab00, 0 0 20px #ffab0050; }
-}
-
-@keyframes building-glow-cyan {
-  0%, 100% { box-shadow: 0 0 3px #00e5ff20; }
-  50%       { box-shadow: 0 0 8px #00e5ff, 0 0 16px #00e5ff40; }
-}
-
-/* =============================================
-   BUILDING 1 — 제련소 (Smelter)
-============================================= */
-.smelter-wrap {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-}
-
-.smelter-body {
-  width: 44px;
-  height: 90px;
-  background: linear-gradient(180deg, #0a1f0a 0%, #020d04 100%);
-  border: 1px solid var(--green-dim);
-  border-bottom: none;
-  position: relative;
-  animation: building-glow 2.4s ease-in-out infinite;
-}
-
-.smelter-body::before {
-  content: '';
-  position: absolute;
-  top: 12px; left: 6px; right: 6px; bottom: 16px;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 6px,
-    #00e67615 6px, #00e67615 7px
-  );
-}
-
-/* window */
-.smelter-window {
-  position: absolute;
-  bottom: 20px; left: 50%; transform: translateX(-50%);
-  width: 16px; height: 10px;
-  background: #001a08;
-  border: 1px solid var(--green-mid);
-  overflow: hidden;
-}
-
-@keyframes forge-glow {
-  0%, 100% { background: #ff6600; opacity: 0.5; }
-  50%       { background: #ff9900; opacity: 1; }
-}
-
-.smelter-window::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: #ff6600;
-  animation: forge-glow 0.8s ease-in-out infinite;
-}
-
-/* chimney */
-.smelter-chimney {
-  position: absolute;
-  top: -24px; right: 8px;
-  width: 8px;
-  height: 26px;
-  background: #0a1a0a;
-  border: 1px solid var(--green-dim);
-  border-bottom: none;
-}
-
-/* Smoke puffs */
-.smoke-container {
-  position: absolute;
-  top: -60px;
-  right: 6px;
-  width: 24px;
-  height: 60px;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.smoke-puff {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, #1a3320 0%, transparent 70%);
-  animation: smoke-rise linear infinite;
-  opacity: 0;
-}
-
-.smoke-puff:nth-child(1) { width: 14px; height: 14px; left: 4px; animation-duration: 3s; animation-delay: 0s; }
-.smoke-puff:nth-child(2) { width: 18px; height: 18px; left: 0px; animation-duration: 3.5s; animation-delay: 0.8s; }
-.smoke-puff:nth-child(3) { width: 12px; height: 12px; left: 6px; animation-duration: 3.2s; animation-delay: 1.6s; }
-.smoke-puff:nth-child(4) { width: 16px; height: 16px; left: 2px; animation-duration: 3.8s; animation-delay: 2.4s; }
-
-@keyframes smoke-rise {
-  0%   { bottom: 0; opacity: 0;    transform: translateX(0) scale(0.5); }
-  15%  { opacity: 0.7; }
-  80%  { opacity: 0.3; }
-  100% { bottom: 70px; opacity: 0; transform: translateX(8px) scale(2); }
-}
-
-/* =============================================
-   BUILDING 2 — 합금 제조공장 (Alloy Plant)
-============================================= */
-.alloy-body {
-  width: 62px;
-  height: 72px;
-  background: linear-gradient(180deg, #0d1a08 0%, #020d04 100%);
-  border: 1px solid var(--green-dim);
-  border-bottom: none;
-  position: relative;
-  animation: building-glow-amber 3s ease-in-out infinite;
-}
-
-/* roof detail */
-.alloy-body::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 8px;
-  background: #1a3310;
-  border-bottom: 1px solid var(--amber-dim);
-}
-
-.alloy-window {
-  position: absolute;
-  top: 16px; left: 8px; right: 8px; height: 20px;
-  background: #010800;
-  border: 1px solid var(--amber-dim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  color: var(--amber);
-  letter-spacing: 0;
-}
-
-/* Conveyor belt on side */
-.alloy-conveyor {
-  position: absolute;
-  bottom: 10px; left: 0; right: 0;
-  height: 6px;
-  background: #020d04;
-  border-top: 1px solid var(--amber-dim);
-  overflow: hidden;
-}
-
-@keyframes conveyor-move {
-  from { background-position: 0 0; }
-  to   { background-position: 20px 0; }
-}
-
-.alloy-conveyor::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: repeating-linear-gradient(
-    90deg,
-    transparent 0px, transparent 8px,
-    var(--amber-dim) 8px, var(--amber-dim) 10px
-  );
-  animation: conveyor-move 0.6s linear infinite;
-}
-
-/* =============================================
-   BUILDING 3 — CFRP 압출 시설
-============================================= */
-.cfrp-body {
-  width: 36px;
-  height: 110px;
-  background: linear-gradient(180deg, #001a1a 0%, #020d04 100%);
-  border: 1px solid var(--cyan-dim);
-  border-bottom: none;
-  position: relative;
-  animation: building-glow-cyan 2.8s ease-in-out infinite;
-}
-
-.cfrp-body::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    0deg, transparent, transparent 10px,
-    #00e5ff18 10px, #00e5ff18 11px
-  );
-}
-
-.cfrp-top {
-  position: absolute;
-  top: -10px; left: 50%; transform: translateX(-50%);
-  width: 18px; height: 12px;
-  background: #001020;
-  border: 1px solid var(--cyan-dim);
-  border-bottom: none;
-}
-
-.cfrp-light {
-  position: absolute;
-  top: 18px; left: 50%; transform: translateX(-50%);
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--cyan);
-  box-shadow: 0 0 8px var(--cyan);
-  animation: cfrp-blink 1.2s ease-in-out infinite;
-}
-
-@keyframes cfrp-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
-}
-
-/* =============================================
-   BUILDING 4 — 추진제 저장 탱크 (Propellant Tanks)
-============================================= */
-.tanks-wrap {
-  display: flex;
-  align-items: flex-end;
-  gap: 5px;
-}
-
-.tank {
-  width: 28px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.tank-top {
-  width: 28px;
-  height: 14px;
-  border-radius: 50% 50% 0 0;
-  border: 1px solid;
-  border-bottom: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.tank-top::after {
-  content: '';
-  position: absolute;
-  top: 4px; left: 4px; right: 4px;
-  height: 4px;
-  border-radius: 50%;
-  opacity: 0.4;
-}
-
-.tank.lox .tank-top {
-  background: linear-gradient(180deg, #003050 0%, #001a30 100%);
-  border-color: #0070a0;
-}
-.tank.lox .tank-top::after { background: #00c0ff; }
-
-.tank.rp1 .tank-top {
-  background: linear-gradient(180deg, #301000 0%, #1a0800 100%);
-  border-color: #803000;
-}
-.tank.rp1 .tank-top::after { background: #ff6010; }
-
-.tank.gh2 .tank-top {
-  background: linear-gradient(180deg, #102010 0%, #080f08 100%);
-  border-color: var(--green-dim);
-}
-.tank.gh2 .tank-top::after { background: var(--green); }
-
-.tank-body {
-  width: 28px;
-  border: 1px solid;
-  border-top: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.tank.lox .tank-body { height: 80px; background: linear-gradient(180deg, #001a30, #000c18); border-color: #0070a0; }
-.tank.rp1 .tank-body { height: 70px; background: linear-gradient(180deg, #1a0800, #0d0400); border-color: #803000; }
-.tank.gh2 .tank-body { height: 56px; background: linear-gradient(180deg, #081808, #010800); border-color: var(--green-dim); }
-
-/* level fill inside tank */
-.tank-fill {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  opacity: 0.35;
-  animation: tank-slosh 4s ease-in-out infinite;
-}
-
-.tank.lox .tank-fill { height: 55%; background: #0090c0; }
-.tank.rp1 .tank-fill { height: 68%; background: #cc4400; }
-.tank.gh2 .tank-fill { height: 40%; background: var(--green-mid); }
-
-@keyframes tank-slosh {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-2px); }
-}
-
-/* Pipe connecting tanks to ground */
-.tank-pipe {
-  width: 4px;
-  height: 12px;
-  border-left: 1px solid;
-  border-right: 1px solid;
-  margin-bottom: 0;
-}
-.tank.lox .tank-pipe { border-color: #0070a0; }
-.tank.rp1 .tank-pipe { border-color: #803000; }
-.tank.gh2 .tank-pipe { border-color: var(--green-dim); }
-
-.tank-label {
-  font-size: 8px;
-  margin-top: 2px;
-  margin-bottom: 2px;
-}
-
-.tank.lox .tank-label { color: #00a0d0; }
-.tank.rp1 .tank-label { color: #cc6020; }
-.tank.gh2 .tank-label { color: var(--green-mid); }
-
-/* LOX warning flash */
-@keyframes lox-warn {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-
-.tank.lox .tank-label { animation: lox-warn 1.8s ease-in-out infinite; }
-
-/* =============================================
-   BUILDING 5 — 조립 공장 (Assembly Hall) — LARGEST
-============================================= */
-.assembly-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.assembly-body {
-  width: 90px;
-  height: 120px;
-  background: linear-gradient(180deg, #060f06 0%, #020d04 100%);
-  border: 1px solid var(--green);
-  border-bottom: none;
-  position: relative;
-  animation: building-glow 2s ease-in-out infinite;
-}
-
-/* Roof slant */
-.assembly-roof {
-  width: 0;
-  height: 0;
-  border-left: 45px solid transparent;
-  border-right: 45px solid transparent;
-  border-bottom: 18px solid #0a1f0a;
-  position: absolute;
-  top: -18px; left: 0;
-}
-
-.assembly-roof::after {
-  content: '';
-  position: absolute;
-  top: 18px; left: -45px; right: -45px;
-  height: 1px;
-  background: var(--green);
-  box-shadow: var(--glow);
-}
-
-/* Big door */
-.assembly-door {
-  position: absolute;
-  bottom: 0; left: 50%; transform: translateX(-50%);
-  width: 32px; height: 48px;
-  background: #000d02;
-  border: 1px solid var(--green-dim);
-  border-bottom: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* ASCII rocket inside door */
-.assembly-rocket {
-  font-size: 9px;
-  line-height: 1.1;
-  color: var(--green-mid);
-  text-align: center;
-  letter-spacing: -1px;
-  white-space: pre;
-}
-
-/* Side windows */
-.assembly-windows {
-  position: absolute;
-  top: 20px; left: 8px; right: 8px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.assembly-win {
-  width: 12px; height: 8px;
-  background: #001a08;
-  border: 1px solid var(--green-dim);
-  animation: win-flicker 4s ease-in-out infinite;
-}
-
-.assembly-win:nth-child(2) { animation-delay: 1.2s; }
-.assembly-win:nth-child(3) { animation-delay: 2.4s; }
-
-@keyframes win-flicker {
-  0%, 85%, 100% { background: #001a08; }
-  88% { background: #00e67630; }
-  92% { background: #001a08; }
-  95% { background: #00e67620; }
-}
-
-/* =============================================
-   BUILDING 6 — 발사대 (Launch Pad) — far right
-============================================= */
-.launchpad-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-}
-
-/* Gantry tower */
-.gantry {
-  width: 6px;
-  height: 130px;
-  background: #0a1a0a;
-  border: 1px solid var(--green-dim);
-  border-bottom: none;
-  position: relative;
-}
-
-/* Horizontal arms on gantry */
-.gantry-arm {
-  position: absolute;
-  height: 1px;
-  background: var(--green-dim);
-  left: 5px;
-}
-
-.gantry-arm::after {
-  content: '';
-  position: absolute;
-  top: -2px; right: 0;
-  width: 3px; height: 5px;
-  background: var(--green-dim);
-}
-
-/* Launch platform */
-.launch-platform {
-  width: 60px;
-  height: 8px;
-  background: #0d1f0d;
-  border: 1px solid var(--green-mid);
-  position: relative;
-}
-
-/* Exhaust vents */
-.launch-vents {
-  display: flex;
-  justify-content: space-around;
-  width: 60px;
-}
-
-.launch-vent {
-  width: 10px;
-  height: 6px;
-  background: #010800;
-  border: 1px solid var(--green-dim);
-  border-top: none;
-}
-
-/* Rocket on pad (tiny) */
-.pad-rocket {
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 8px;
-  color: var(--green);
-  white-space: pre;
-  line-height: 1;
-  text-shadow: 0 0 6px #00e676;
-}
-
-/* Gantry tower 2 (taller, right side) */
-.gantry2 {
-  width: 4px;
-  height: 145px;
-  background: #080f08;
-  border: 1px solid #0d3020;
-  border-bottom: none;
-  position: absolute;
-  right: 4px;
-  bottom: 8px;
-}
-
-/* Connection cable between gantry arms */
-.gantry-cable {
-  position: absolute;
-  height: 1px;
-  background: #0d3020;
-}
-
-/* =============================================
-   LOCKED BUILDINGS
-============================================= */
-.locked-body {
-  background: var(--locked-bg);
-  border-color: #0d2010;
-  opacity: 0.5;
-}
-
-.locked-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  color: var(--locked-fg);
-  background: rgba(0,0,0,0.4);
-  letter-spacing: 0.05em;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.locked-icon {
-  font-size: 14px;
-  color: #1a3020;
-}
-
-/* LOCKED BUILDING 7 — 정제소 */
-.refinery-body {
-  width: 48px;
-  height: 80px;
-  border: 1px solid #0d2010;
-  border-bottom: none;
-  position: relative;
-}
-
-/* LOCKED BUILDING 8 — 발사체 조립동 */
-.vab-body {
-  width: 70px;
-  height: 100px;
-  border: 1px solid #0d2010;
-  border-bottom: none;
-  position: relative;
-}
-
-/* =============================================
-   WORKERS (animated dots on ground level)
-============================================= */
-.workers-layer {
-  position: absolute;
-  bottom: 61px;
-  left: 0;
-  right: 0;
-  height: 12px;
-  z-index: 10;
-  pointer-events: none;
-}
-
-.worker {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  bottom: 0;
-  font-size: 8px;
-  line-height: 8px;
-  text-align: center;
-}
-
-/* Worker movement keyframes — varied start/end positions */
-@keyframes worker1 {
-  0%   { left: 5%; }
-  40%  { left: 30%; }
-  60%  { left: 30%; }
-  100% { left: 5%; }
-}
-
-@keyframes worker2 {
-  0%   { left: 35%; }
-  45%  { left: 60%; }
-  65%  { left: 60%; }
-  100% { left: 35%; }
-}
-
-@keyframes worker3 {
-  0%   { left: 55%; }
-  50%  { left: 78%; }
-  70%  { left: 78%; }
-  100% { left: 55%; }
-}
-
-@keyframes worker4 {
-  0%   { left: 20%; }
-  35%  { left: 48%; }
-  55%  { left: 48%; }
-  100% { left: 20%; }
-}
-
-@keyframes worker5 {
-  0%   { left: 70%; }
-  40%  { left: 90%; }
-  60%  { left: 90%; }
-  100% { left: 70%; }
-}
-
-.worker.w1 { background: var(--green); box-shadow: 0 0 4px var(--green); animation: worker1 8s linear infinite; }
-.worker.w2 { background: var(--amber); box-shadow: 0 0 4px var(--amber); animation: worker2 6s linear infinite 1s; }
-.worker.w3 { background: var(--green); box-shadow: 0 0 4px var(--green); animation: worker3 9s linear infinite 2s; }
-.worker.w4 { background: var(--green-dim); animation: worker4 11s linear infinite 0.5s; }
-.worker.w5 { background: var(--amber); box-shadow: 0 0 4px var(--amber); animation: worker5 7s linear infinite 3s; }
-
-/* =============================================
-   RIGHT PANEL — Staff & Automation
-============================================= */
-.panel-right {
-  width: 25%;
-  min-width: 200px;
-  max-width: 280px;
-  display: flex;
-  flex-direction: column;
-  border-left: 1px solid var(--green-dim);
-  background: var(--panel-bg);
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 0 0;
-}
-
-.panel-right::-webkit-scrollbar { width: 4px; }
-.panel-right::-webkit-scrollbar-track { background: var(--bg); }
-.panel-right::-webkit-scrollbar-thumb { background: var(--green-dim); }
-
-/* Staff list */
-.staff-block {
-  margin: 0 8px 8px;
-  border: 1px solid var(--green-dim);
-  padding: 6px 8px;
-}
-
-.staff-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 0;
-  border-bottom: 1px solid #0d2010;
-}
-
-.staff-row:last-child { border-bottom: none; }
-
-.staff-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.staff-dot.engineer { background: var(--green); box-shadow: 0 0 4px var(--green); }
-.staff-dot.manager  { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
-.staff-dot.scientist{ background: var(--cyan);  box-shadow: 0 0 4px var(--cyan); }
-
-.staff-name {
-  flex: 1;
-  font-size: 10px;
-  color: #88aa88;
-}
-
-.staff-badge {
-  font-size: 8px;
-  padding: 1px 4px;
-  border: 1px solid;
-  letter-spacing: 0.05em;
-}
-
-.staff-badge.eng  { border-color: var(--green-dim); color: var(--green-mid); }
-.staff-badge.mgr  { border-color: var(--amber-dim); color: var(--amber); }
-.staff-badge.sci  { border-color: var(--cyan-dim);  color: var(--cyan); }
-
-.staff-assign {
-  font-size: 8px;
-  color: var(--green-dim);
-  white-space: nowrap;
-  max-width: 60px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Hire button */
-.btn-hire {
-  display: block;
-  margin: 0 8px 8px;
-  padding: 5px 0;
-  text-align: center;
-  border: 1px solid var(--amber);
-  background: var(--bg);
-  color: var(--amber);
-  font-family: var(--font);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
-}
-
-.btn-hire:hover {
-  background: #1a0e00;
-  box-shadow: var(--glow-amber);
-}
-
-/* Automation section */
-.auto-block {
-  margin: 0 8px 8px;
-  border: 1px solid var(--green-dim);
-  padding: 6px 8px;
-}
-
-.auto-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 3px 0;
-  border-bottom: 1px solid #0a1a0a;
-  font-size: 10px;
-}
-
-.auto-row:last-child { border-bottom: none; }
-
-.auto-name { color: #88aa88; }
-
-.auto-status {
-  font-size: 9px;
-  padding: 1px 5px;
-  border: 1px solid;
-}
-
-.auto-status.on  { border-color: var(--green-dim); color: var(--green); background: #001a08; }
-.auto-status.off { border-color: #1a1a1a; color: #3a4a3a; }
-
-/* Bonuses block */
-.bonus-block {
-  margin: 0 8px 8px;
-  border: 1px solid var(--green-dim);
-  padding: 6px 8px;
-}
-
-.bonus-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  padding: 2px 0;
-}
-
-.bonus-label { color: #667766; }
-.bonus-val   { color: var(--green); }
-.bonus-val.hi { color: var(--amber); text-shadow: var(--glow-amber); }
-
-/* Offline accumulation */
-.offline-block {
-  margin: 0 8px 8px;
-  border: 1px solid var(--amber-dim);
-  padding: 6px 8px;
-  background: #0d0800;
-}
-
-.offline-header {
-  font-size: 10px;
-  color: var(--amber);
-  margin-bottom: 4px;
-}
-
-.offline-entry {
-  font-size: 10px;
-  color: #886620;
-  padding: 1px 0;
-}
-
-.offline-entry span {
-  color: var(--amber);
-}
-
-/* =============================================
-   BOTTOM TICKER
-============================================= */
-.ticker-bar {
-  height: 26px;
-  min-height: 26px;
-  background: var(--panel-bg);
-  border-top: 1px solid var(--green-dim);
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  gap: 0;
-}
-
-.ticker-tag {
-  background: var(--green-dim);
-  color: var(--green);
-  font-size: 10px;
-  padding: 0 8px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  letter-spacing: 0.1em;
-  flex-shrink: 0;
-  border-right: 1px solid var(--green);
-}
-
-.ticker-scroll-wrap {
-  flex: 1;
-  overflow: hidden;
-  height: 100%;
-  position: relative;
-}
-
-.ticker-text {
-  position: absolute;
-  white-space: nowrap;
-  font-size: 10px;
-  color: var(--green-mid);
-  top: 50%;
-  transform: translateY(-50%);
-  animation: ticker-scroll 38s linear infinite;
-}
-
-@keyframes ticker-scroll {
-  0%   { left: 100%; }
-  100% { left: -220%; }
-}
-
-/* =============================================
-   HIRE MODAL
-============================================= */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 1000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-overlay.active {
-  display: flex;
-}
-
-.modal-box {
-  background: var(--panel-bg);
-  border: 1px solid var(--amber);
-  box-shadow: var(--glow-amber), 0 0 40px rgba(0,0,0,0.8);
-  padding: 18px 20px;
-  width: 360px;
-  max-height: 70vh;
-  overflow-y: auto;
-  font-family: var(--font);
-  color: var(--green);
-}
-
-.modal-title {
-  font-size: 13px;
-  color: var(--amber);
-  letter-spacing: 0.1em;
-  border-bottom: 1px solid var(--amber-dim);
-  padding-bottom: 8px;
-  margin-bottom: 12px;
-}
-
-.modal-candidate {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px solid #0d2010;
-  font-size: 11px;
-}
-
-.modal-candidate:last-child { border-bottom: none; }
-
-.modal-candidate-name { color: #88cc88; }
-.modal-candidate-role { color: var(--amber); font-size: 10px; }
-.modal-candidate-cost { color: var(--green); font-size: 10px; }
-
-.btn-hire-confirm {
-  margin-top: 4px;
-  padding: 3px 10px;
-  background: var(--bg);
-  border: 1px solid var(--green-dim);
-  color: var(--green);
-  font-family: var(--font);
-  font-size: 10px;
-  cursor: pointer;
-}
-
-.btn-hire-confirm:hover {
-  border-color: var(--green);
-  background: #001a08;
-  box-shadow: var(--glow);
-}
-
-.modal-close {
-  display: block;
-  margin-top: 14px;
-  text-align: center;
-  padding: 6px;
-  border: 1px solid var(--green-dim);
-  color: var(--green-dim);
-  cursor: pointer;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  font-family: var(--font);
-  background: var(--bg);
-}
-
-.modal-close:hover {
-  color: var(--green);
-  border-color: var(--green);
-}
-
-/* =============================================
-   MISC UTILS
-============================================= */
-.sec-label {
-  font-size: 10px;
-  color: var(--green-dim);
-  letter-spacing: 0.1em;
-  padding: 2px 0 4px;
-  margin-bottom: 4px;
-  border-bottom: 1px solid #0d2010;
-}
-
+  :root {
+    --bg:        #010800;
+    --panel-bg:  #020d04;
+    --green:     #00e676;
+    --green-dim: #1a5c34;
+    --green-mid: #00994d;
+    --amber:     #ffab00;
+    --red:       #ff1744;
+    --white:     #c8ffd4;
+    --font: 'Share Tech Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 15px;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* CRT scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.09) 2px,
+      rgba(0,0,0,0.09) 4px
+    );
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center,
+      transparent 50%,
+      rgba(0,0,0,0.65) 100%
+    );
+    pointer-events: none;
+    z-index: 9997;
+  }
+
+  @keyframes crt-flicker {
+    0%,90%,94%,100% { opacity: 1; }
+    91%  { opacity: 0.93; }
+    92%  { opacity: 1; }
+    95%  { opacity: 0.88; }
+    96%  { opacity: 1; }
+  }
+
+  #app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    animation: crt-flicker 10s infinite;
+  }
+
+  /* ══ TOP BAR ═══════════════════════════════════ */
+  #topbar {
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 7px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 16px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  #topbar .logo  { color: var(--green); font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+  #topbar .sep   { color: var(--green-dim); }
+  #topbar .clk   { color: var(--white);  font-size: 15px; min-width: 80px; }
+  #topbar .mny   { color: var(--amber);  font-size: 18px; font-weight: bold; }
+  #topbar .sys   { color: var(--green-mid); font-size: 14px; margin-left: auto; }
+
+  /* ══ MAIN ══════════════════════════════════════ */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ══ LEFT PANEL ════════════════════════════════ */
+  #lp {
+    width: 22%;
+    min-width: 210px;
+    max-width: 272px;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--green-dim);
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex-shrink: 0;
+    padding: 8px;
+  }
+  #lp::-webkit-scrollbar { width: 4px; }
+  #lp::-webkit-scrollbar-track { background: var(--bg); }
+  #lp::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  .sh {
+    color: var(--green-dim);
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 7px 4px 3px;
+    border-bottom: 1px solid var(--green-dim);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+
+  .rr { padding: 3px 4px; margin-bottom: 5px; }
+
+  .rn {
+    color: var(--white);
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .rv {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .ra       { font-size: 15px; color: var(--green); font-weight: bold; }
+  .ra.money { font-size: 19px; color: var(--amber); }
+  .ra.warn  { color: var(--amber); }
+  .ra.crit  { color: var(--red); }
+  .rrate    { font-size: 12px; color: var(--green-mid); }
+
+  .gbar {
+    height: 6px;
+    background: var(--green-dim);
+    margin-top: 3px;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .gfill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 3px;
+    transition: width 0.9s ease;
+  }
+  .gfill.a { background: var(--amber); }
+  .gfill.r { background: var(--red); }
+
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 0 5px;
+    margin-top: 2px;
+    border: 1px solid;
+    letter-spacing: 1px;
+  }
+  .tag.low  { color: var(--amber); border-color: var(--amber); }
+  .tag.crit { color: var(--red);   border-color: var(--red); }
+
+  /* ══ WORLD CONTAINER ═══════════════════════════ */
+  #ww {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  #ws {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: grab;
+  }
+  #ws:active { cursor: grabbing; }
+  #ws::-webkit-scrollbar { height: 8px; }
+  #ws::-webkit-scrollbar-track { background: var(--bg); border-top: 1px solid var(--green-dim); }
+  #ws::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 4px; }
+
+  #world {
+    width: 2800px;
+    height: 400px;
+    position: relative;
+    background: linear-gradient(180deg,
+      #000d03 0%,
+      #011205 38%,
+      #010900 65%,
+      #010800 100%
+    );
+  }
+
+  #ground {
+    position: absolute;
+    bottom: 52px;
+    left: 0;
+    width: 100%;
+    height: 16px;
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--green-dim);
+    white-space: nowrap;
+    letter-spacing: 0;
+    line-height: 16px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* ══ BUILDINGS ═════════════════════════════════ */
+  .bld {
+    position: absolute;
+    bottom: 67px;
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--green);
+    cursor: pointer;
+    white-space: pre;
+    user-select: none;
+    z-index: 10;
+    transition: filter 0.12s;
+  }
+  .bld:hover {
+    filter: brightness(1.5) drop-shadow(0 0 8px var(--green));
+  }
+  .bld.amber       { color: var(--amber); }
+  .bld.amber:hover { filter: brightness(1.5) drop-shadow(0 0 8px var(--amber)); }
+  .bld.under       { color: var(--green-dim); }
+  .bld.add-b       { color: var(--green-dim); }
+  .bld.add-b:hover { color: var(--green-mid); filter: brightness(1.3); }
+
+  @keyframes smoke-rise {
+    0%   { transform: translateY(0)     translateX(0);    opacity: .85; }
+    50%  { transform: translateY(-15px) translateX(4px);  opacity: .42; }
+    100% { transform: translateY(-30px) translateX(-3px); opacity: 0;   }
+  }
+  .smoke {
+    position: absolute;
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--green-dim);
+    pointer-events: none;
+    z-index: 20;
+    animation: smoke-rise 1.9s ease-out infinite;
+  }
+
+  .wkr {
+    position: absolute;
+    bottom: 66px;
+    font-size: 17px;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 15;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--green);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  /* ══ UPGRADE OVERLAY ═══════════════════════════ */
+  #ov {
+    position: fixed;
+    display: none;
+    z-index: 9500;
+    font-family: var(--font);
+    font-size: 14px;
+    color: var(--green);
+    background: rgba(1,8,0,0.98);
+    border: 1px solid var(--green);
+    min-width: 300px;
+    max-width: 370px;
+    box-shadow: 0 0 26px rgba(0,230,118,0.20);
+  }
+
+  .ovl  { padding: 5px 12px; white-space: pre; font-size: 14px; }
+  .ovsp { border-top: 1px solid var(--green-dim); }
+  .ovhd { color: var(--white); font-size: 15px; }
+  .ovsb { color: var(--green-mid); font-size: 13px; }
+  .ovco { color: var(--amber); }
+  .ovef { color: var(--green); font-size: 13px; }
+  .ovbt { display: flex; gap: 6px; padding: 5px 10px 7px; flex-wrap: wrap; }
+
+  .obtn {
+    padding: 5px 11px;
+    border: 1px solid var(--green);
+    color: var(--green);
+    cursor: pointer;
+    font-family: var(--font);
+    font-size: 13px;
+    background: transparent;
+    transition: background .13s, color .13s;
+    white-space: nowrap;
+  }
+  .obtn:hover             { background: var(--green); color: var(--bg); }
+  .obtn.a                 { border-color: var(--amber); color: var(--amber); }
+  .obtn.a:hover           { background: var(--amber); color: var(--bg); }
+  .obtn.r                 { border-color: var(--red); color: var(--red); }
+  .obtn.r:hover           { background: var(--red); color: var(--bg); }
+  .obtn.off               { opacity: .38; cursor: not-allowed; pointer-events: none; }
+
+  /* ══ RIGHT PANEL ════════════════════════════════ */
+  #rp {
+    width: 155px;
+    background: var(--panel-bg);
+    border-left: 1px solid var(--green-dim);
+    overflow-y: auto;
+    flex-shrink: 0;
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+  #rp::-webkit-scrollbar { width: 3px; }
+  #rp::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  .rph {
+    color: var(--green-dim);
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--green-dim);
+    margin-bottom: 6px;
+  }
+  .strow {
+    padding: 4px 2px;
+    border-bottom: 1px solid rgba(26,92,52,.4);
+    margin-bottom: 4px;
+  }
+  .stn { color: var(--white);     font-size: 13px; }
+  .stl { color: var(--green-mid); font-size: 11px; margin-top: 1px; }
+  .sts { font-size: 11px; }
+
+  /* ══ TICKER ═════════════════════════════════════ */
+  #ticker {
+    background: var(--panel-bg);
+    border-top: 1px solid var(--green-dim);
+    padding: 5px 14px;
+    font-size: 13px;
+    color: var(--green-mid);
+    white-space: nowrap;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  #tki {
+    display: inline-block;
+    animation: tkrun 40s linear infinite;
+  }
+  @keyframes tkrun {
+    0%   { transform: translateX(100vw); }
+    100% { transform: translateX(-100%); }
+  }
+  .tw { color: var(--amber); }
+  .to { color: var(--green); }
+  .ts { color: var(--green-dim); margin: 0 20px; }
+
+  .flash {
+    position: fixed;
+    top: 58px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-bg);
+    font-family: var(--font);
+    font-size: 16px;
+    padding: 8px 22px;
+    z-index: 9999;
+    pointer-events: none;
+    transition: opacity .5s;
+    border: 1px solid;
+  }
+  .flash.g { color: var(--green);  border-color: var(--green); }
+  .flash.a { color: var(--amber);  border-color: var(--amber); }
+  .flash.r { color: var(--red);    border-color: var(--red);   }
 </style>
 </head>
 <body>
+<div id="app">
 
-<div class="app">
-
-  <!-- ======== TOP BAR ======== -->
-  <div class="topbar">
-    <div class="topbar-title">&#9654; MOON IDLE &mdash; <span>생산 &amp; 자원</span></div>
-    <div class="topbar-center" id="clock">00:00:00</div>
-    <div class="topbar-right">
-      <span class="ok">SYS:NOMINAL</span>
-      <span class="ok">NET:LINK</span>
-      <span class="ok">PWR:100%</span>
-    </div>
-  </div>
-
-  <!-- ======== MAIN AREA ======== -->
-  <div class="main">
-
-    <!-- ===== LEFT PANEL ===== -->
-    <div class="panel-left">
-
-      <div class="panel-label">&#9632; 자원 현황</div>
-
-      <!-- TIER 1 -->
-      <div class="tier-block t1">
-        <div class="tier-header">&#9724; TIER-1  RAW MATERIALS</div>
-
-        <div class="res-row">
-          <span class="res-name">철광석</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-fe" style="width:72%"></div></div>
-          <span class="res-val" id="val-fe">14,320</span>
-          <span class="res-rate">+320/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">보크사이트</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-bx" style="width:58%"></div></div>
-          <span class="res-val" id="val-bx">8,640</span>
-          <span class="res-rate">+192/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">구리</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-cu" style="width:43%"></div></div>
-          <span class="res-val" id="val-cu">5,120</span>
-          <span class="res-rate">+128/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">알루미늄</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-al" style="width:65%"></div></div>
-          <span class="res-val" id="val-al">11,280</span>
-          <span class="res-rate">+256/s</span>
-        </div>
-      </div>
-
-      <!-- TIER 2 -->
-      <div class="tier-block t2">
-        <div class="tier-header">&#9724; TIER-2  PROCESSED</div>
-
-        <div class="res-row">
-          <span class="res-name">강철</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-amber" id="bar-st" style="width:54%"></div></div>
-          <span class="res-val" id="val-st">3,210</span>
-          <span class="res-rate">+64/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">Al-7075</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-amber" id="bar-al2" style="width:38%"></div></div>
-          <span class="res-val" id="val-al2">1,840</span>
-          <span class="res-rate">+42/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">Cu 배선</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-amber" id="bar-cuw" style="width:29%"></div></div>
-          <span class="res-val" id="val-cuw">920</span>
-          <span class="res-rate">+28/s</span>
-        </div>
-      </div>
-
-      <!-- TIER 3 -->
-      <div class="tier-block t3">
-        <div class="tier-header">&#9724; TIER-3  ADVANCED</div>
-
-        <div class="res-row">
-          <span class="res-name">CFRP</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-cyan" id="bar-cf" style="width:22%"></div></div>
-          <span class="res-val" id="val-cf">340</span>
-          <span class="res-rate">+8/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">Inconel 718</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-cyan" id="bar-in" style="width:31%"></div></div>
-          <span class="res-val" id="val-in">510</span>
-          <span class="res-rate">+12/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">Ti-6Al-4V</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-cyan" id="bar-ti" style="width:16%"></div></div>
-          <span class="res-val" id="val-ti">190</span>
-          <span class="res-rate">+6/s</span>
-        </div>
-      </div>
-
-      <!-- TIER 4 -->
-      <div class="tier-block t4">
-        <div class="tier-header">&#9724; TIER-4  PROPELLANT</div>
-
-        <div class="res-row">
-          <span class="res-name">LOX</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-red" id="bar-lox" style="width:18%"></div></div>
-          <span class="res-val" id="val-lox">280</span>
-          <span class="res-rate" style="color:var(--red)">+4/s !</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">RP-1</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-red" id="bar-rp1" style="width:47%"></div></div>
-          <span class="res-val" id="val-rp1">720</span>
-          <span class="res-rate">+10/s</span>
-        </div>
-        <div class="res-row">
-          <span class="res-name">GH2</span>
-          <div class="res-bar-bg"><div class="res-bar-fill c-red" id="bar-gh2" style="width:33%"></div></div>
-          <span class="res-val" id="val-gh2">420</span>
-          <span class="res-rate">+7/s</span>
-        </div>
-      </div>
-
-      <!-- EFFICIENCY -->
-      <div class="eff-block">
-        <div class="eff-label">PROD.EFFICIENCY</div>
-        <div class="eff-bar-bg"><div class="eff-bar-fill"></div></div>
-        <div class="eff-pct">73.4%</div>
-      </div>
-
-    </div>
-    <!-- /LEFT PANEL -->
-
-    <!-- ===== CENTER WORLD VIEW ===== -->
-    <div class="panel-center">
-      <div class="world-label">&#9632; BASE COMPLEX &mdash; SIDE VIEW  [6/8 ACTIVE]</div>
-
-      <div class="world-view" id="worldView">
-
-        <!-- Stars -->
-        <div class="stars" id="stars"></div>
-
-        <!-- Ground -->
-        <div class="ground"></div>
-        <div class="ground-fill"></div>
-        <div class="ground-grid"></div>
-
-        <!-- Buildings row -->
-        <div class="buildings">
-
-          <!-- 1. 제련소 (Smelter) -->
-          <div class="building-slot">
-            <div class="building-status">ACTIVE</div>
-            <div class="building-label">&#9632; 제련소</div>
-            <div class="smelter-wrap">
-              <div class="smelter-body">
-                <div class="smelter-chimney"></div>
-                <div class="smoke-container">
-                  <div class="smoke-puff"></div>
-                  <div class="smoke-puff"></div>
-                  <div class="smoke-puff"></div>
-                  <div class="smoke-puff"></div>
-                </div>
-                <div class="smelter-window"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. 합금 제조공장 -->
-          <div class="building-slot">
-            <div class="building-status">ACTIVE</div>
-            <div class="building-label">&#9632; 합금공장</div>
-            <div class="alloy-body">
-              <div class="alloy-window">&#9656;&#9656;&#9656;</div>
-              <div class="alloy-conveyor"></div>
-            </div>
-          </div>
-
-          <!-- 3. CFRP 압출 시설 -->
-          <div class="building-slot">
-            <div class="building-status">ACTIVE</div>
-            <div class="building-label">&#9632; CFRP</div>
-            <div class="cfrp-body">
-              <div class="cfrp-top"></div>
-              <div class="cfrp-light"></div>
-            </div>
-          </div>
-
-          <!-- 4. 추진제 탱크 -->
-          <div class="building-slot">
-            <div class="building-status" style="color:var(--red)">LOX-LOW!</div>
-            <div class="building-label" style="color:var(--amber)">&#9632; 추진제 탱크</div>
-            <div class="tanks-wrap">
-              <div class="tank lox">
-                <div class="tank-top"><div class="tank-fill"></div></div>
-                <div class="tank-body"><div class="tank-fill"></div></div>
-                <div class="tank-pipe"></div>
-                <div class="tank-label">LOX</div>
-              </div>
-              <div class="tank rp1">
-                <div class="tank-top"><div class="tank-fill"></div></div>
-                <div class="tank-body"><div class="tank-fill"></div></div>
-                <div class="tank-pipe"></div>
-                <div class="tank-label">RP-1</div>
-              </div>
-              <div class="tank gh2">
-                <div class="tank-top"><div class="tank-fill"></div></div>
-                <div class="tank-body"><div class="tank-fill"></div></div>
-                <div class="tank-pipe"></div>
-                <div class="tank-label">GH2</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 5. 조립 공장 — LARGEST, CENTER -->
-          <div class="building-slot" style="flex-shrink:0">
-            <div class="building-status" style="color:var(--green);text-shadow:0 0 6px #00e676">PROD x2.3</div>
-            <div class="building-label" style="color:var(--green);font-size:10px">&#9632; 조립 공장</div>
-            <div class="assembly-wrap">
-              <div class="assembly-body">
-                <div class="assembly-roof"></div>
-                <div class="assembly-windows">
-                  <div class="assembly-win"></div>
-                  <div class="assembly-win"></div>
-                  <div class="assembly-win"></div>
-                </div>
-                <div class="assembly-door">
-                  <div class="assembly-rocket">  /\
- /  \
-| [] |
-|    |
- \  /
-  \/</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 6. 발사대 -->
-          <div class="building-slot" style="position:relative">
-            <div class="building-status">STANDBY</div>
-            <div class="building-label">&#9632; 발사대</div>
-            <div class="launchpad-wrap">
-              <div style="display:flex;align-items:flex-end;gap:6px;position:relative">
-                <!-- Main gantry tower -->
-                <div class="gantry">
-                  <div class="gantry-arm" style="width:28px;top:20px;"></div>
-                  <div class="gantry-arm" style="width:24px;top:50px;"></div>
-                  <div class="gantry-arm" style="width:20px;top:80px;"></div>
-                  <div class="gantry-arm" style="width:24px;top:108px;"></div>
-                </div>
-                <!-- Launch platform + rocket on pad -->
-                <div style="position:relative">
-                  <div class="pad-rocket">  ^
- /|\
-/ | \
-  |
- [=]</div>
-                  <div class="launch-platform"></div>
-                  <div class="launch-vents">
-                    <div class="launch-vent"></div>
-                    <div class="launch-vent"></div>
-                    <div class="launch-vent"></div>
-                  </div>
-                </div>
-                <!-- Secondary gantry -->
-                <div class="gantry2"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- SPACER -->
-          <div style="flex:1;min-width:10px"></div>
-
-          <!-- 7. LOCKED — 정제소 -->
-          <div class="building-slot">
-            <div class="building-label locked-text">&#9632; 정제소</div>
-            <div class="refinery-body locked-body" style="position:relative">
-              <div class="locked-overlay">
-                <div class="locked-icon">&#128274;</div>
-                <div>[LOCKED]</div>
-                <div style="font-size:8px;color:#0d3020">Lv.8 필요</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 8. LOCKED — 발사체 조립동 -->
-          <div class="building-slot">
-            <div class="building-label locked-text">&#9632; 발사체조립동</div>
-            <div class="vab-body locked-body" style="position:relative">
-              <div class="locked-overlay">
-                <div class="locked-icon">&#128274;</div>
-                <div>[LOCKED]</div>
-                <div style="font-size:8px;color:#0d3020">Lv.12 필요</div>
-              </div>
-            </div>
-          </div>
-
-        </div>
-        <!-- /buildings -->
-
-        <!-- WORKERS -->
-        <div class="workers-layer">
-          <div class="worker w1">&#9679;</div>
-          <div class="worker w2">&#9679;</div>
-          <div class="worker w3">&#9679;</div>
-          <div class="worker w4">&#9679;</div>
-          <div class="worker w5">&#9679;</div>
-        </div>
-
-      </div>
-      <!-- /world-view -->
-    </div>
-    <!-- /CENTER -->
-
-    <!-- ===== RIGHT PANEL ===== -->
-    <div class="panel-right">
-
-      <div class="panel-label">&#9632; 인원 &amp; 자동화</div>
-
-      <!-- Staff list -->
-      <div class="staff-block">
-        <div class="sec-label">HIRED STAFF (3/6)</div>
-
-        <div class="staff-row">
-          <div class="staff-dot engineer"></div>
-          <div class="staff-name">김엔지니어</div>
-          <div class="staff-badge eng">ENG</div>
-          <div class="staff-assign">조립공장</div>
-        </div>
-        <div class="staff-row">
-          <div class="staff-dot scientist"></div>
-          <div class="staff-name">이박사</div>
-          <div class="staff-badge sci">SCI</div>
-          <div class="staff-assign">CFRP</div>
-        </div>
-        <div class="staff-row">
-          <div class="staff-dot manager"></div>
-          <div class="staff-name">박매니저</div>
-          <div class="staff-badge mgr">MGR</div>
-          <div class="staff-assign">전체</div>
-        </div>
-      </div>
-
-      <button class="btn-hire" id="btnHire">[ 인원 고용 + ]</button>
-
-      <!-- Automation -->
-      <div class="auto-block">
-        <div class="sec-label">AUTO-MANAGER</div>
-
-        <div class="auto-row">
-          <span class="auto-name">제련소</span>
-          <span class="auto-status on">AUTO</span>
-        </div>
-        <div class="auto-row">
-          <span class="auto-name">합금공장</span>
-          <span class="auto-status on">AUTO</span>
-        </div>
-        <div class="auto-row">
-          <span class="auto-name">CFRP</span>
-          <span class="auto-status on">AUTO</span>
-        </div>
-        <div class="auto-row">
-          <span class="auto-name">추진제 탱크</span>
-          <span class="auto-status off">수동</span>
-        </div>
-        <div class="auto-row">
-          <span class="auto-name">조립 공장</span>
-          <span class="auto-status on">AUTO</span>
-        </div>
-        <div class="auto-row">
-          <span class="auto-name">발사대</span>
-          <span class="auto-status off">수동</span>
-        </div>
-      </div>
-
-      <!-- Bonuses -->
-      <div class="bonus-block">
-        <div class="sec-label">PRODUCTION BONUS</div>
-
-        <div class="bonus-row">
-          <span class="bonus-label">제련 효율 업그레이드</span>
-          <span class="bonus-val">Lv.4</span>
-        </div>
-        <div class="bonus-row">
-          <span class="bonus-label">합금 수율</span>
-          <span class="bonus-val hi">+38%</span>
-        </div>
-        <div class="bonus-row">
-          <span class="bonus-label">CFRP 처리속도</span>
-          <span class="bonus-val">x1.6</span>
-        </div>
-        <div class="bonus-row">
-          <span class="bonus-label">박매니저 보너스</span>
-          <span class="bonus-val hi">x2.3</span>
-        </div>
-        <div class="bonus-row">
-          <span class="bonus-label">연구 가속</span>
-          <span class="bonus-val">+12%</span>
-        </div>
-      </div>
-
-      <!-- Offline accumulation -->
-      <div class="offline-block">
-        <div class="offline-header">&#9650; 오프라인 누적</div>
-        <div class="offline-entry">시간: <span>3h 42m</span></div>
-        <div class="offline-entry">철광석: <span>+43,200</span></div>
-        <div class="offline-entry">Al-7075: <span>+8,400</span></div>
-        <div class="offline-entry">강철: <span>+5,640</span></div>
-        <div class="offline-entry">CFRP: <span>+1,080</span></div>
-        <div class="offline-entry" style="margin-top:4px;color:var(--amber)">효율: 60% (매니저 없음)</div>
-      </div>
-
-    </div>
-    <!-- /RIGHT PANEL -->
-
-  </div>
-  <!-- /MAIN -->
-
-  <!-- ======== TICKER ======== -->
-  <div class="ticker-bar">
-    <div class="ticker-tag">LOG</div>
-    <div class="ticker-scroll-wrap">
-      <div class="ticker-text" id="tickerText">
-        &#9660; [경고] LOX 잔량 18% — 추진제 생산 우선 전환 권고
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9654; [달성] Al-7075 누적 생산 10,000 돌파 — 보너스 +5%
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9660; 발사대: 이그나이터 점검 필요 (D-3)
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9654; 조립 공장: 로켓 1호기 동체 조립 완료 (72%)
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9654; 박매니저 효율 보너스 갱신 — 전체 생산 x2.3 적용 중
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9660; CFRP 재고 부족 예상 — 압출 시설 24시간 가동 돌입
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9654; [인원] 김엔지니어 조립공장 배치 완료 — 조립속도 +15%
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9660; GH2 탱크 압력 정상화 완료
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        &#9654; 제련소 Lv.4 업그레이드 예약됨 — 강철 +20%/s 예상
-      </div>
-    </div>
-  </div>
-
+<!-- ╔══ TOP BAR ══╗ -->
+<div id="topbar">
+  <span class="logo">&#9654; MOON IDLE</span>
+  <span class="sep">—</span>
+  <span style="color:var(--green-mid)">생산 &amp; 자원</span>
+  <span class="sep">|</span>
+  <span class="clk" id="clk">00:00:00</span>
+  <span class="sep">|</span>
+  <span class="mny">&#128176; &#8361;&thinsp;<span id="top-money">48,200</span></span>
+  <span class="sep">|</span>
+  <span class="sys">SYS:<span id="sys-st" style="color:var(--green-mid)">NOMINAL</span></span>
 </div>
-<!-- /APP -->
 
-<!-- HIRE MODAL -->
-<div class="modal-overlay" id="hireModal">
-  <div class="modal-box">
-    <div class="modal-title">[ 인원 고용 — 채용 후보 목록 ]</div>
+<!-- ╔══ MAIN ══╗ -->
+<div id="main">
 
-    <div class="modal-candidate">
-      <div>
-        <div class="modal-candidate-name">최엔지니어</div>
-        <div class="modal-candidate-role">ENGINEER &mdash; 추진제 탱크 전문</div>
-      </div>
-      <div style="text-align:right">
-        <div class="modal-candidate-cost">&#9830; 5,000 Al</div>
-        <button class="btn-hire-confirm">고용</button>
-      </div>
+<!-- ══ LEFT PANEL ══ -->
+<div id="lp">
+
+  <div class="sh">&#9726; 자금</div>
+  <div class="rr">
+    <div class="rn">기금 (FUND)</div>
+    <div class="rv">
+      <span class="ra money">&#8361;&thinsp;<span id="r-money">48,200</span></span>
+      <span class="rrate" style="color:var(--amber)">(+<span id="r-money-rate">320</span>/s)</span>
     </div>
+    <div class="gbar"><div class="gfill a" id="g-money" style="width:62%"></div></div>
+  </div>
 
-    <div class="modal-candidate">
-      <div>
-        <div class="modal-candidate-name">한박사</div>
-        <div class="modal-candidate-role">SCIENTIST &mdash; 추진제 연구 특화</div>
-      </div>
-      <div style="text-align:right">
-        <div class="modal-candidate-cost">&#9830; 8,200 Al</div>
-        <button class="btn-hire-confirm">고용</button>
-      </div>
+  <div class="sh">&#9726; 원자재</div>
+
+  <div class="rr">
+    <div class="rn">철광석 (Iron Ore)</div>
+    <div class="rv">
+      <span class="ra"><span id="r-iron">8,420</span></span>
+      <span class="rrate">(+<span id="r-iron-rate">320</span>/s)</span>
     </div>
+    <div class="gbar"><div class="gfill" id="g-iron" style="width:71%"></div></div>
+  </div>
 
-    <div class="modal-candidate">
-      <div>
-        <div class="modal-candidate-name">정매니저</div>
-        <div class="modal-candidate-role">MANAGER &mdash; 발사 운영 총괄</div>
-      </div>
-      <div style="text-align:right">
-        <div class="modal-candidate-cost">&#9830; 12,000 강철</div>
-        <button class="btn-hire-confirm">고용</button>
-      </div>
+  <div class="rr">
+    <div class="rn">보크사이트 (Bauxite)</div>
+    <div class="rv">
+      <span class="ra"><span id="r-bauxite">3,180</span></span>
+      <span class="rrate">(+<span id="r-bauxite-rate">180</span>/s)</span>
     </div>
+    <div class="gbar"><div class="gfill" id="g-bauxite" style="width:44%"></div></div>
+  </div>
 
-    <div class="modal-candidate">
-      <div>
-        <div class="modal-candidate-name">오기술자</div>
-        <div class="modal-candidate-role">ENGINEER &mdash; 제련소 전담</div>
-      </div>
-      <div style="text-align:right">
-        <div class="modal-candidate-cost">&#9830; 3,800 Al</div>
-        <button class="btn-hire-confirm">고용</button>
-      </div>
+  <div class="rr">
+    <div class="rn">구리 (Copper)</div>
+    <div class="rv">
+      <span class="ra"><span id="r-copper">2,050</span></span>
+      <span class="rrate">(+<span id="r-copper-rate">95</span>/s)</span>
     </div>
+    <div class="gbar"><div class="gfill" id="g-copper" style="width:38%"></div></div>
+  </div>
 
-    <button class="modal-close" id="modalClose">[ 취소 ]</button>
+  <div class="rr">
+    <div class="rn">알루미늄 (Aluminum)</div>
+    <div class="rv">
+      <span class="ra"><span id="r-aluminum">1,640</span></span>
+      <span class="rrate">(+<span id="r-aluminum-rate">76</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-aluminum" style="width:29%"></div></div>
+  </div>
+
+  <div class="sh">&#9726; 정제 소재</div>
+
+  <div class="rr">
+    <div class="rn">강철 (Steel)</div>
+    <div class="rv">
+      <span class="ra"><span id="r-steel">2,840</span></span>
+      <span class="rrate">(+<span id="r-steel-rate">228</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-steel" style="width:55%"></div></div>
+  </div>
+
+  <div class="rr">
+    <div class="rn">Al-7075</div>
+    <div class="rv">
+      <span class="ra"><span id="r-al7075">920</span></span>
+      <span class="rrate">(+<span id="r-al7075-rate">54</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-al7075" style="width:33%"></div></div>
+  </div>
+
+  <div class="rr">
+    <div class="rn">Cu배선 (Cu Wire)</div>
+    <div class="rv">
+      <span class="ra"><span id="r-cuwire">680</span></span>
+      <span class="rrate">(+<span id="r-cuwire-rate">42</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-cuwire" style="width:28%"></div></div>
+  </div>
+
+  <div class="sh">&#9726; 첨단 소재</div>
+
+  <div class="rr">
+    <div class="rn">CFRP</div>
+    <div class="rv">
+      <span class="ra"><span id="r-cfrp">340</span></span>
+      <span class="rrate">(+<span id="r-cfrp-rate">18</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-cfrp" style="width:22%"></div></div>
+  </div>
+
+  <div class="rr">
+    <div class="rn">Inconel 718</div>
+    <div class="rv">
+      <span class="ra"><span id="r-inconel">210</span></span>
+      <span class="rrate">(+<span id="r-inconel-rate">12</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-inconel" style="width:18%"></div></div>
+  </div>
+
+  <div class="rr">
+    <div class="rn">Ti-6Al-4V</div>
+    <div class="rv">
+      <span class="ra"><span id="r-titanium">155</span></span>
+      <span class="rrate">(+<span id="r-titanium-rate">8</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-titanium" style="width:14%"></div></div>
+  </div>
+
+  <div class="sh">&#9726; 추진제</div>
+
+  <div class="rr">
+    <div class="rn">LOX (액체 산소)</div>
+    <div class="rv">
+      <span class="ra warn"><span id="r-lox">183</span></span>
+      <span class="rrate">(+<span id="r-lox-rate">22</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill a" id="g-lox" style="width:24%"></div></div>
+    <span class="tag low">LOW</span>
+  </div>
+
+  <div class="rr">
+    <div class="rn">RP-1 (케로신)</div>
+    <div class="rv">
+      <span class="ra"><span id="r-rp1">520</span></span>
+      <span class="rrate">(+<span id="r-rp1-rate">30</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill" id="g-rp1" style="width:48%"></div></div>
+  </div>
+
+  <div class="rr">
+    <div class="rn">GH2 (기체 수소)</div>
+    <div class="rv">
+      <span class="ra crit"><span id="r-gh2">42</span></span>
+      <span class="rrate">(+<span id="r-gh2-rate">5</span>/s)</span>
+    </div>
+    <div class="gbar"><div class="gfill r" id="g-gh2" style="width:8%"></div></div>
+    <span class="tag crit">CRITICAL</span>
+  </div>
+
+</div><!-- /lp -->
+
+<!-- ══ WORLD ══ -->
+<div id="ww">
+<div id="ws">
+<div id="world">
+
+<!-- Stars (injected by JS) -->
+
+<!-- ── Iron Mine  x=20 ── -->
+<pre class="bld" id="b0"
+  data-key="iron-mine" data-name="철광석 광산" data-level="2"
+  data-cost="8000"  data-mat="강철 300kg"
+  data-effect="채굴속도 +40%  출력 ×1.3" data-staff="1/2"
+  style="left:20px">  [철광석 광산 Lv.2]
+  &#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+  &#9553; IRON    &#9553;
+  &#9553; MINE    &#9553;
+  &#9553; &#9619;&#9619;&#9619;&#9618;&#9618;&#9618; &#9553;
+  &#9553; 320/s   &#9553;
+  &#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;
+    &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;
+   &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;
+  /\/\/\/\/\</pre>
+
+<!-- ── Bauxite Mine  x=200 ── -->
+<pre class="bld" id="b1"
+  data-key="bauxite-mine" data-name="보크사이트 광산" data-level="1"
+  data-cost="5500"  data-mat="강철 200kg"
+  data-effect="채굴속도 +30%  출력 ×1.2" data-staff="1/2"
+  style="left:200px">  [보크사이트 Lv.1]
+  &#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+  &#9553; BAUXIT  &#9553;
+  &#9553; MINE    &#9553;
+  &#9553; &#9619;&#9619;&#9618;&#9618;&#9618;&#9618; &#9553;
+  &#9553; 180/s   &#9553;
+  &#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;
+    &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;
+   &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</pre>
+
+<!-- ── Add Mine placeholder  x=390 ── -->
+<pre class="bld add-b" id="b2"
+  data-key="add-mine" data-name="광산 추가" data-level="0"
+  data-cost="15000" data-mat="" data-effect="새 채굴 슬롯 개방" data-staff="0/0"
+  style="left:390px; bottom:92px">  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474; + ADD  &#9474;
+  &#9474;  MINE  &#9474;
+  &#9474; [&#8361;15k] &#9474;
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</pre>
+
+<!-- ── Smelter  x=510 ── -->
+<pre class="bld" id="b3"
+  data-key="smelter" data-name="제련소" data-level="3"
+  data-cost="12000" data-mat="강철 500kg"
+  data-effect="효율 +15%  속도 ×1.2" data-staff="2/3"
+  style="left:510px">   [제련소 Lv.3]
+  &#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+  &#9553; SMELTER&#9553;
+  &#9553; Fe&#8594;Steel&#9553;
+  &#9553; &#9619;&#9619;&#9619;&#9619;&#9619;&#9618;&#9618; &#9553;
+  &#9553; &#54952;&#50984; 71%&#9553;
+  &#9568;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9571;
+  &#9553; &#9553;&#9553;     &#9553;
+  &#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;</pre>
+
+<!-- Smelter smoke -->
+<span class="smoke" id="sma" style="left:548px; bottom:298px">o</span>
+<span class="smoke" id="smb" style="left:556px; bottom:290px; animation-delay:.65s">&#176;</span>
+
+<!-- ── Alloy Plant  x=720 ── -->
+<pre class="bld" id="b4"
+  data-key="alloy" data-name="합금공장" data-level="2"
+  data-cost="18000" data-mat="Al-7075 200kg"
+  data-effect="처리량 +25%  효율 +10%" data-staff="2/3"
+  style="left:720px">  [합금공장 Lv.2]
+  &#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+  &#9553; ALLOY     &#9553;
+  &#9553; PLANT     &#9553;
+  &#9553; Al&#8594;Al-7075&#9553;
+  &#9553; &#9619;&#9619;&#9619;&#9618;&#9618;&#9618;&#9618;&#9618;&#9618; &#9553;
+  &#9568;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9571;
+  &#9553;<span id="conv">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>&#9553;
+  &#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;</pre>
+
+<!-- ── CFRP Plant  x=960 ── -->
+<pre class="bld" id="b5"
+  data-key="cfrp" data-name="CFRP 시설" data-level="1"
+  data-cost="25000" data-mat="Inconel 718  100kg"
+  data-effect="경화속도 +20%  수율 +12%" data-staff="1/2"
+  style="left:960px">  [CFRP 시설 Lv.1]
+  &#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+  &#9553; CFRP EXT&#9553;
+  &#9553; /////////&#9553;
+  &#9553; =========&#9553;
+  &#9553; 140&#176;C CURE&#9553;
+  &#9553; &#9619;&#9619;&#9618;&#9618;&#9618;&#9618;&#9618;&#9618;&#9618; &#9553;
+  &#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;</pre>
+
+<!-- ── Propellant Storage  x=1165 ── -->
+<pre class="bld amber" id="b6"
+  data-key="propellant" data-name="추진제 저장고" data-level="2"
+  data-cost="22000" data-mat="Ti-6Al-4V 80kg"
+  data-effect="저장용량 ×2  냉각효율 +30%" data-staff="1/2"
+  style="left:1165px">  [추진제 저장 Lv.2]
+  &#9556;&#9552;&#9552;&#9552;&#9559;  &#9556;&#9552;&#9552;&#9552;&#9559;  &#9556;&#9552;&#9552;&#9552;&#9559;
+  &#9553;LOX&#9553;  &#9553;RP1&#9553;  &#9553;GH2&#9553;
+  &#9553; - &#9553;  &#9553;   &#9553;  &#9553; ! &#9553;
+  &#9553;183&#9553;  &#9553;520&#9553;  &#9553; 42&#9553;
+  &#9562;&#9552;&#9552;&#9552;&#9565;  &#9562;&#9552;&#9552;&#9552;&#9565;  &#9562;&#9552;&#9552;&#9552;&#9565;
+  [CRYO][PUMP][HIGH-P]</pre>
+
+<!-- ── Add Production placeholder  x=1415 ── -->
+<pre class="bld add-b" id="b7"
+  data-key="add-prod" data-name="생산시설 추가" data-level="0"
+  data-cost="30000" data-mat="" data-effect="새 생산 슬롯 개방" data-staff="0/0"
+  style="left:1415px; bottom:92px">  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474;+ PROD  &#9474;
+  &#9474; FACIL  &#9474;
+  &#9474; [&#8361;30k] &#9474;
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</pre>
+
+<!-- ── Assembly Hall  x=1570 ── -->
+<pre class="bld" id="b8"
+  data-key="assembly" data-name="조립공장" data-level="2"
+  data-cost="35000" data-mat="CFRP 150kg  Inconel 80kg"
+  data-effect="조립속도 +35%  정밀도 +20%" data-staff="2/3"
+  style="left:1570px"> [조립공장 Lv.2]
+  &#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;
+  &#9553; ASSEMBLY   &#9553;
+  &#9553; HALL       &#9553;
+  &#9553;     *      &#9553;
+  &#9553;    /|\     &#9553;
+  &#9553;   / | \    &#9553;
+  &#9553;  |ENGINE|  &#9553;
+  &#9553; BETA mk.2  &#9553;
+  &#9553; 57% &#9619;&#9619;&#9619;&#9618;&#9618;&#9618; &#9553;
+  &#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;</pre>
+
+<!-- ── Launch Pad Alpha  x=1900 ── -->
+<pre class="bld" id="b9"
+  data-key="pad-alpha" data-name="발사대 Alpha" data-level="2"
+  data-cost="50000" data-mat="강철 1000kg  Ti-6Al-4V 200kg"
+  data-effect="발사 성공률 +15%  탑재량 +500kg" data-staff="2/3"
+  style="left:1900px">   [발사대 Alpha]
+  &#9553;     &#9553;
+  &#9553;  &#9580;&#9472;&#9580; &#9553;
+  &#9553;     &#9553;
+       /|\
+      / | \
+     / BETA\
+    /_mk.2__\
+   | ENGINE |
+   |_________|
+  &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;</pre>
+
+<!-- ── Launch Pad Beta (under construction)  x=2230 ── -->
+<pre class="bld under" id="b10"
+  data-key="pad-beta" data-name="발사대 Beta" data-level="0"
+  data-cost="0" data-mat="" data-effect="건설 완료 시 발사 가능" data-staff="0/0"
+  style="left:2230px">  [발사대 Beta - 건설중]
+  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474; &#9608;&#9608;&#9608;&#9608;&#9608;&#9619;&#9619;&#9619;&#9619;&#9619; &#9474;
+  &#9474;  건설 중...  &#9474;
+  &#9474;     48%      &#9474;
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;
+  = = = = = = = =</pre>
+
+<!-- ── Add Launch Pad placeholder  x=2520 ── -->
+<pre class="bld add-b" id="b11"
+  data-key="add-pad" data-name="발사대 추가" data-level="0"
+  data-cost="80000" data-mat="" data-effect="새 발사 슬롯 개방" data-staff="0/0"
+  style="left:2520px; bottom:92px">  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+  &#9474;+ PAD   &#9474;
+  &#9474; SITE   &#9474;
+  &#9474; [&#8361;80k] &#9474;
+  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</pre>
+
+<!-- Ground -->
+<div id="ground">&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;</div>
+
+<!-- Workers -->
+<span class="wkr" id="wk0" style="left:80px;  color:var(--green)">&#9679;</span>
+<span class="wkr" id="wk1" style="left:395px; color:var(--amber)">&#9679;</span>
+<span class="wkr" id="wk2" style="left:700px; color:var(--green)">&#9679;</span>
+<span class="wkr" id="wk3" style="left:1180px;color:var(--green-dim)">&#9679;</span>
+<span class="wkr" id="wk4" style="left:1850px;color:var(--amber)">&#9679;</span>
+
+</div><!-- /world -->
+</div><!-- /ws -->
+</div><!-- /ww -->
+
+<!-- ══ RIGHT PANEL ══ -->
+<div id="rp">
+
+  <div class="rph">&#9726; 직원</div>
+
+  <div class="strow">
+    <div class="stn">김엔지니어</div>
+    <div class="stl">&#8594; 제련소</div>
+    <div class="sts" style="color:var(--green)">&#9679; 작업 중</div>
+  </div>
+
+  <div class="strow">
+    <div class="stn">이박사</div>
+    <div class="stl">&#8594; 합금공장</div>
+    <div class="sts" style="color:var(--green)">&#9679; 작업 중</div>
+  </div>
+
+  <div class="strow">
+    <div class="stn">박매니저</div>
+    <div class="stl">&#8594; 조립공장</div>
+    <div class="sts" style="color:var(--amber)">&#9679; 순찰 중</div>
+  </div>
+
+  <div class="strow">
+    <div class="stn">최기사</div>
+    <div class="stl">&#8594; 미배치</div>
+    <div class="sts" style="color:var(--green-dim)">&#9679; 대기</div>
+  </div>
+
+  <div style="margin-top:8px">
+    <button class="obtn a" style="width:100%;font-size:12px;padding:5px 4px">[고용] +직원</button>
+  </div>
+
+  <div style="margin-top:10px;border:1px solid var(--green-dim);padding:6px 4px">
+    <div style="color:var(--green-dim);font-size:11px;letter-spacing:1px">전체 효율</div>
+    <div style="color:var(--green);font-size:19px;font-weight:bold">73.4%</div>
+    <div class="gbar" style="margin-top:4px">
+      <div class="gfill a" style="width:73.4%"></div>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;border-top:1px solid var(--green-dim);padding-top:8px">
+    <div class="rph">&#9726; 발사 현황</div>
+    <div style="font-size:12px;color:var(--green-mid);margin-top:4px">BETA mk.2</div>
+    <div style="font-size:13px;color:var(--green)">조립 57%</div>
+    <div class="gbar" style="margin-top:4px">
+      <div class="gfill" style="width:57%"></div>
+    </div>
+    <div style="font-size:11px;color:var(--green-dim);margin-top:4px">ETA: 42분</div>
+  </div>
+
+  <div style="margin-top:12px;border-top:1px solid var(--green-dim);padding-top:8px">
+    <div class="rph">&#9726; 빠른 액션</div>
+    <button class="obtn" style="width:100%;font-size:11px;padding:4px;margin:2px 0">[긴급 주문]</button>
+    <button class="obtn a" style="width:100%;font-size:11px;padding:4px;margin:2px 0">[LOX 보충]</button>
+    <button class="obtn" style="width:100%;font-size:11px;padding:4px;margin:2px 0">[시설 점검]</button>
+  </div>
+
+</div><!-- /rp -->
+</div><!-- /main -->
+
+<!-- ══ TICKER ══ -->
+<div id="ticker">
+  <span id="tki">
+    <span class="tw">&gt;&gt; LOX 재고 부족 경고 — 추진제 저장고 보충 필요</span>
+    <span class="ts">&#9632;</span>
+    <span class="to">&gt;&gt; 합금공장 효율 업그레이드 가능 — &#8361;18,000 / Al-7075 200kg</span>
+    <span class="ts">&#9632;</span>
+    <span>&gt;&gt; BETA mk.2 조립 57% 진행 중 — 완성까지 약 42분</span>
+    <span class="ts">&#9632;</span>
+    <span class="tw">&gt;&gt; GH2 잔량 위험 수준 — 즉각 조치 요망</span>
+    <span class="ts">&#9632;</span>
+    <span class="to">&gt;&gt; 발사대 Beta 건설 진행률 48% — 예상 완공 72시간</span>
+    <span class="ts">&#9632;</span>
+    <span>&gt;&gt; 제련소 Lv.3 운영 중 — 일일 강철 생산 19,584kg</span>
+    <span class="ts">&#9632;</span>
+  </span>
+</div>
+
+</div><!-- /app -->
+
+<!-- ══ UPGRADE OVERLAY ══ -->
+<div id="ov">
+  <div class="ovl ovhd" id="ov-title">&#9553; &nbsp;</div>
+  <div class="ovl ovsb" id="ov-sub">&nbsp;</div>
+  <div class="ovsp"></div>
+  <div class="ovl" id="ov-upg-row" style="padding-bottom:2px">
+    <button class="obtn" id="ov-upg">[&#9650; 업그레이드]</button>
+  </div>
+  <div class="ovl ovco" id="ov-cost">&nbsp;</div>
+  <div class="ovl ovco" id="ov-mat">&nbsp;</div>
+  <div class="ovl ovef" id="ov-eff">&nbsp;</div>
+  <div class="ovsp"></div>
+  <div class="ovl" id="ov-strow">
+    <span style="color:var(--green-mid)">직원 배치: </span><span id="ov-st">—</span>
+  </div>
+  <div class="ovbt">
+    <button class="obtn" onclick="closeOv()">[닫기]</button>
+    <button class="obtn r" id="ov-demo" onclick="demolish()">[철거 -50%]</button>
   </div>
 </div>
 
 <script>
-/* =============================================
-   CLOCK
-============================================= */
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getHours()).padStart(2,'0');
-  const m = String(now.getMinutes()).padStart(2,'0');
-  const s = String(now.getSeconds()).padStart(2,'0');
-  document.getElementById('clock').textContent = h + ':' + m + ':' + s;
-}
-setInterval(updateClock, 1000);
-updateClock();
+// ─── STATE ─────────────────────────────────────────────────────
+const S = {
+  money: 48200,
+  mRate: 320,
+  res: {
+    iron:     {v:8420,  r:320, max:50000},
+    bauxite:  {v:3180,  r:180, max:20000},
+    copper:   {v:2050,  r:95,  max:15000},
+    aluminum: {v:1640,  r:76,  max:12000},
+    steel:    {v:2840,  r:228, max:20000},
+    al7075:   {v:920,   r:54,  max:8000},
+    cuwire:   {v:680,   r:42,  max:5000},
+    cfrp:     {v:340,   r:18,  max:3000},
+    inconel:  {v:210,   r:12,  max:2000},
+    titanium: {v:155,   r:8,   max:1500},
+    lox:      {v:183,   r:22,  max:2000},
+    rp1:      {v:520,   r:30,  max:3000},
+    gh2:      {v:42,    r:5,   max:1000},
+  }
+};
+let hovEl = null;
 
-/* =============================================
-   STARS
-============================================= */
-(function generateStars() {
-  const container = document.getElementById('stars');
-  const count = 60;
-  for (let i = 0; i < count; i++) {
-    const star = document.createElement('div');
-    star.className = 'star' + (Math.random() < 0.15 ? ' bright' : '');
-    star.style.left = (Math.random() * 100) + '%';
-    star.style.top  = (Math.random() * 70) + '%';
-    const delay = (Math.random() * 6).toFixed(2) + 's';
-    const dur   = (3 + Math.random() * 4).toFixed(2) + 's';
-    star.style.animation = `star-twinkle ${dur} ease-in-out ${delay} infinite`;
-    container.appendChild(star);
+// ─── UTILS ─────────────────────────────────────────────────────
+const fmt = n => Math.floor(n).toLocaleString('ko-KR');
+
+// ─── CLOCK ─────────────────────────────────────────────────────
+function tickClock() {
+  const t = new Date();
+  document.getElementById('clk').textContent =
+    String(t.getHours()).padStart(2,'0') + ':' +
+    String(t.getMinutes()).padStart(2,'0') + ':' +
+    String(t.getSeconds()).padStart(2,'0');
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ─── RESOURCE TICK ─────────────────────────────────────────────
+const RM = [
+  ['iron',    'r-iron',    'g-iron'],
+  ['bauxite', 'r-bauxite', 'g-bauxite'],
+  ['copper',  'r-copper',  'g-copper'],
+  ['aluminum','r-aluminum','g-aluminum'],
+  ['steel',   'r-steel',   'g-steel'],
+  ['al7075',  'r-al7075',  'g-al7075'],
+  ['cuwire',  'r-cuwire',  'g-cuwire'],
+  ['cfrp',    'r-cfrp',    'g-cfrp'],
+  ['inconel', 'r-inconel', 'g-inconel'],
+  ['titanium','r-titanium','g-titanium'],
+  ['lox',     'r-lox',     'g-lox'],
+  ['rp1',     'r-rp1',     'g-rp1'],
+  ['gh2',     'r-gh2',     'g-gh2'],
+];
+
+function resTick() {
+  S.money = Math.min(S.money + S.mRate, 9999999999);
+  syncMoney();
+  const mg = document.getElementById('g-money');
+  if (mg) mg.style.width = Math.min((S.money/200000)*100,100)+'%';
+
+  for (const [k, rId, gId] of RM) {
+    const o = S.res[k];
+    o.v = Math.min(o.v + o.r, o.max);
+    const re = document.getElementById(rId);
+    const ge = document.getElementById(gId);
+    if (re) re.textContent = fmt(o.v);
+    if (ge) ge.style.width = ((o.v/o.max)*100).toFixed(1)+'%';
+  }
+}
+setInterval(resTick, 1000);
+
+// ─── STARS ─────────────────────────────────────────────────────
+(function(){
+  const w = document.getElementById('world');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left    = (Math.random()*2800).toFixed(0)+'px';
+    s.style.top     = (Math.random()*175).toFixed(0)+'px';
+    s.style.opacity = (0.15 + Math.random()*0.55).toFixed(2);
+    w.appendChild(s);
   }
 })();
 
-/* =============================================
-   RESOURCE TICK
-============================================= */
-const resources = {
-  fe:  { val: 14320, rate: 320,  max: 50000, barId: 'bar-fe',  valId: 'val-fe' },
-  bx:  { val: 8640,  rate: 192,  max: 30000, barId: 'bar-bx',  valId: 'val-bx' },
-  cu:  { val: 5120,  rate: 128,  max: 20000, barId: 'bar-cu',  valId: 'val-cu' },
-  al:  { val: 11280, rate: 256,  max: 25000, barId: 'bar-al',  valId: 'val-al' },
-  st:  { val: 3210,  rate: 64,   max: 10000, barId: 'bar-st',  valId: 'val-st' },
-  al2: { val: 1840,  rate: 42,   max: 8000,  barId: 'bar-al2', valId: 'val-al2' },
-  cuw: { val: 920,   rate: 28,   max: 5000,  barId: 'bar-cuw', valId: 'val-cuw' },
-  cf:  { val: 340,   rate: 8,    max: 2000,  barId: 'bar-cf',  valId: 'val-cf' },
-  inc: { val: 510,   rate: 12,   max: 2000,  barId: 'bar-in',  valId: 'val-in' },
-  ti:  { val: 190,   rate: 6,    max: 2000,  barId: 'bar-ti',  valId: 'val-ti' },
-  lox: { val: 280,   rate: 4,    max: 2000,  barId: 'bar-lox', valId: 'val-lox' },
-  rp1: { val: 720,   rate: 10,   max: 2000,  barId: 'bar-rp1', valId: 'val-rp1' },
-  gh2: { val: 420,   rate: 7,    max: 2000,  barId: 'bar-gh2', valId: 'val-gh2' },
-};
+// ─── SMOKE ─────────────────────────────────────────────────────
+const SC = [' ', '.', '\u00b0', 'o', 'O', '\u00b0', 'o', ' '];
+let si = 0;
+setInterval(() => {
+  si = (si+1) % SC.length;
+  const a = document.getElementById('sma');
+  const b = document.getElementById('smb');
+  if (a) a.textContent = SC[si];
+  if (b) b.textContent = SC[(si+3)%SC.length];
+}, 400);
 
-function formatNum(n) {
-  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
-  if (n >= 10000)   return (n/1000).toFixed(1) + 'k';
-  return Math.floor(n).toLocaleString();
-}
+// ─── CONVEYOR ──────────────────────────────────────────────────
+const CF = [
+  '>>>>>>>>>',
+  '\u2192>>>>>>>>',
+  '\u2192\u2192>>>>>>>',
+  '\u2192\u2192\u2192>>>>>>',
+  '\u2192\u2192\u2192\u2192>>>>>',
+  '\u2192\u2192\u2192\u2192\u2192>>>>',
+  '\u2192\u2192\u2192\u2192\u2192\u2192>>>',
+  '\u2192\u2192\u2192\u2192\u2192\u2192\u2192>>',
+  '\u2192\u2192\u2192\u2192\u2192\u2192\u2192\u2192>',
+];
+let ci = 0;
+setInterval(() => {
+  ci = (ci+1) % CF.length;
+  const el = document.getElementById('conv');
+  if (el) el.textContent = CF[ci];
+}, 110);
 
-function tickResources() {
-  for (const key in resources) {
-    const r = resources[key];
-    r.val = Math.min(r.val + r.rate, r.max);
-    const pct = Math.round((r.val / r.max) * 100);
-    const bar = document.getElementById(r.barId);
-    const valEl = document.getElementById(r.valId);
-    if (bar) bar.style.width = pct + '%';
-    if (valEl) valEl.textContent = formatNum(r.val);
+// ─── WORKERS ───────────────────────────────────────────────────
+const WK = [
+  {id:'wk0', from:45,   to:185,  spd:1.3, x:80,   dir:1},
+  {id:'wk1', from:350,  to:490,  spd:1.0, x:395,  dir:1},
+  {id:'wk2', from:600,  to:925,  spd:1.6, x:700,  dir:1},
+  {id:'wk3', from:1050, to:1400, spd:0.7, x:1180, dir:1},
+  {id:'wk4', from:1750, to:2200, spd:1.2, x:1850, dir:1},
+];
+setInterval(() => {
+  for (const w of WK) {
+    w.x += w.dir * w.spd * 2;
+    if (w.x >= w.to)   { w.x = w.to;   w.dir = -1; }
+    if (w.x <= w.from) { w.x = w.from; w.dir =  1; }
+    const el = document.getElementById(w.id);
+    if (el) el.style.left = Math.round(w.x)+'px';
   }
+}, 50);
+
+// ─── OVERLAY ───────────────────────────────────────────────────
+const ov = document.getElementById('ov');
+
+function openOv(el) {
+  hovEl = el;
+  const isAdd   = el.classList.contains('add-b');
+  const isUnder = el.classList.contains('under');
+  const level   = parseInt(el.dataset.level  || '0');
+  const cost    = parseInt(el.dataset.cost   || '0');
+  const name    = el.dataset.name  || el.dataset.key || '?';
+  const mat     = el.dataset.mat   || '';
+  const effect  = el.dataset.effect|| '';
+  const staff   = el.dataset.staff || '—';
+
+  document.getElementById('ov-title').textContent =
+    '\u2553 ' + name + (level > 0 ? ' Lv.' + level : '');
+  document.getElementById('ov-sub').textContent =
+    '\u2553 ' + (isAdd ? '\uc2e0\uaddc \uac74\uc124' :
+                 isUnder ? '\uac74\uc124 \uc911 48%' : '\uc6b4\uc601 \uc911');
+  document.getElementById('ov-cost').textContent =
+    cost > 0 ? '\ube44\uc6a9: \u20a9 ' + fmt(cost) : '';
+  document.getElementById('ov-mat').textContent  =
+    mat    ? '\uc18c\uc7ac: ' + mat    : '';
+  document.getElementById('ov-eff').textContent  =
+    effect ? '\ud6a8\uacfc: ' + effect : '';
+  document.getElementById('ov-st').textContent   = staff + '\uba85';
+
+  const srow = document.getElementById('ov-strow');
+  const demo = document.getElementById('ov-demo');
+  srow.style.display = (isAdd || isUnder) ? 'none' : '';
+  demo.style.display = (isAdd || isUnder) ? 'none' : '';
+
+  const btn = document.getElementById('ov-upg');
+  if (isAdd) {
+    btn.textContent = '[\u002b \uac74\uc124 \uc2dc\uc791]';
+    btn.className   = 'obtn' + (S.money >= cost ? '' : ' off');
+    btn.onclick     = () => purchase(cost);
+  } else if (isUnder || level === 0) {
+    btn.textContent = '[\uac74\uc124 \uc644\ub8cc \ub300\uae30]';
+    btn.className   = 'obtn off';
+    btn.onclick     = null;
+  } else {
+    btn.textContent = '[\u25b2 \uc5c5\uadf8\ub808\uc774\ub4dc \u2192 Lv.' + (level+1) + ']';
+    btn.className   = 'obtn' + (S.money >= cost ? '' : ' off');
+    btn.onclick     = () => upgrade(el, cost);
+  }
+
+  // Position near building, but stay in viewport
+  const r   = el.getBoundingClientRect();
+  const oW  = 340, oH = 230;
+  let lx = r.left;
+  let ty = r.top - oH - 8;
+  if (lx + oW > window.innerWidth  - 6) lx = window.innerWidth  - oW - 6;
+  if (lx < 4) lx = 4;
+  if (ty < 40) ty = r.bottom + 6;
+  ov.style.left    = lx + 'px';
+  ov.style.top     = ty + 'px';
+  ov.style.display = 'block';
 }
 
-setInterval(tickResources, 1000);
+function closeOv() {
+  ov.style.display = 'none';
+  hovEl = null;
+}
 
-/* =============================================
-   HIRE MODAL
-============================================= */
-const hireBtn   = document.getElementById('btnHire');
-const modal     = document.getElementById('hireModal');
-const closeBtn  = document.getElementById('modalClose');
+function upgrade(el, cost) {
+  if (S.money < cost) { flash('\uc790\uae08 \ubd80\uc871!', 'r'); return; }
+  S.money -= cost;
+  syncMoney();
+  const newLv = (parseInt(el.dataset.level)||0) + 1;
+  el.dataset.level = newLv;
+  el.dataset.cost  = Math.floor(cost * 1.8);
+  const btn = document.getElementById('ov-upg');
+  btn.textContent = '[UPGRADING...]';
+  btn.className   = 'obtn off';
+  setTimeout(() => { flash('\uc5c5\uadf8\ub808\uc774\ub4dc \uc644\ub8cc!','g'); closeOv(); }, 1400);
+}
 
-hireBtn.addEventListener('click', function() {
-  modal.classList.add('active');
-});
+function purchase(cost) {
+  if (S.money < cost) { flash('\uc790\uae08 \ubd80\uc871!','r'); return; }
+  S.money -= cost;
+  syncMoney();
+  flash('\uac74\uc124 \uc2dc\uc791!','g');
+  closeOv();
+}
 
-closeBtn.addEventListener('click', function() {
-  modal.classList.remove('active');
-});
+function demolish() {
+  if (!hovEl) return;
+  const cost   = parseInt(hovEl.dataset.cost || '0');
+  const refund = Math.floor(cost * 0.5);
+  S.money += refund;
+  syncMoney();
+  flash('\ucca0\uac70 \uc644\ub8cc \u2014 \u20a9' + fmt(refund) + ' \ud658\ubd88', 'a');
+  closeOv();
+}
 
-modal.addEventListener('click', function(e) {
-  if (e.target === modal) modal.classList.remove('active');
-});
+function syncMoney() {
+  const v = fmt(S.money);
+  const a = document.getElementById('r-money');
+  const b = document.getElementById('top-money');
+  if (a) a.textContent = v;
+  if (b) b.textContent = v;
+}
 
-/* Hire confirm buttons (demo) */
-document.querySelectorAll('.btn-hire-confirm').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    const row = btn.closest('.modal-candidate');
-    const name = row.querySelector('.modal-candidate-name').textContent;
-    btn.textContent = '고용됨';
-    btn.disabled = true;
-    btn.style.color = 'var(--green)';
-    btn.style.borderColor = 'var(--green-dim)';
+function flash(msg, cls) {
+  const d = document.createElement('div');
+  d.className = 'flash ' + cls;
+  d.textContent = msg;
+  document.body.appendChild(d);
+  setTimeout(() => { d.style.opacity = '0'; }, 1100);
+  setTimeout(() => { d.remove(); }, 1700);
+}
+
+// ─── BUILDING EVENTS ───────────────────────────────────────────
+let ovTmr;
+document.querySelectorAll('.bld').forEach(el => {
+  el.addEventListener('mouseenter', () => { clearTimeout(ovTmr); openOv(el); });
+  el.addEventListener('mouseleave', () => {
+    ovTmr = setTimeout(() => { if (!ov.matches(':hover')) closeOv(); }, 160);
   });
 });
+ov.addEventListener('mouseenter', () => clearTimeout(ovTmr));
+ov.addEventListener('mouseleave', closeOv);
+document.addEventListener('keydown', e => { if (e.key==='Escape') closeOv(); });
 
-/* =============================================
-   TICKER — restart on end
-============================================= */
-const tickerEl = document.getElementById('tickerText');
-tickerEl.addEventListener('animationiteration', function() {
-  // Continuously loops via CSS animation — no JS needed
+// ─── SCROLL DRAG ───────────────────────────────────────────────
+const ws = document.getElementById('ws');
+let drag=false, dragX, dragSL;
+ws.addEventListener('mousedown', e => {
+  if (e.target.closest('.bld')) return;
+  drag=true; dragX=e.pageX-ws.offsetLeft; dragSL=ws.scrollLeft;
+  ws.style.cursor='grabbing';
 });
-</script>
+document.addEventListener('mouseup', () => { drag=false; ws.style.cursor='grab'; });
+ws.addEventListener('mousemove', e => {
+  if (!drag) return;
+  e.preventDefault();
+  ws.scrollLeft = dragSL - (e.pageX - ws.offsetLeft - dragX) * 1.4;
+});
 
+// ─── SYS STATUS ────────────────────────────────────────────────
+const SYS = ['NOMINAL','NOMINAL','NOMINAL','WARN:LOX','NOMINAL','CRIT:GH2','NOMINAL','NOMINAL'];
+let syi = 0;
+setInterval(() => {
+  syi = (syi+1) % SYS.length;
+  const el = document.getElementById('sys-st');
+  if (!el) return;
+  const m = SYS[syi];
+  el.textContent = m;
+  el.style.color = m==='NOMINAL'      ? 'var(--green-mid)' :
+                   m.startsWith('CRIT')? 'var(--red)'      : 'var(--amber)';
+}, 3200);
+</script>
 </body>
 </html>

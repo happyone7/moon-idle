@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle v5D - NASA Payload Tablet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#e9eef4;--panel:#ffffff;--line:#bfccda;--txt:#1b2a3f;--mut:#607289;--btn:url("./assets/moonidle_btn_blueprint.svg");--warn:url("./assets/moonidle_btn_warn.svg");}
+    *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#f4f8fc,var(--bg));font-family:Manrope,"Malgun Gothic",sans-serif;color:var(--txt)}
+    .wrap{max-width:1280px;margin:0 auto;padding:16px}.tablet{border:2px solid #9db0c8;border-radius:18px;background:#f9fcff;padding:14px;box-shadow:0 18px 32px #89a0bf40}
+    .top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+    .top b{font-size:1rem;letter-spacing:.06em}.meta{display:flex;gap:7px;flex-wrap:wrap}.m{font-family:"JetBrains Mono",monospace;font-size:.66rem;border:1px solid var(--line);border-radius:999px;padding:3px 8px}
+    .grid{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .panel{border:1px solid var(--line);border-radius:10px;background:#fff;overflow:hidden}
+    .hd{padding:9px 10px;border-bottom:1px solid var(--line);font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#2f4e7b;font-family:"JetBrains Mono",monospace}
+    .hero{height:180px;position:relative;border-bottom:1px solid var(--line)}
+    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,#eef5ffcc 70%,#f9fcff),url("./assets/moonidle_hangar_bg_industrial.svg") center/cover no-repeat;opacity:.72}
+    .hero .txt{position:absolute;left:10px;right:10px;bottom:10px;background:#ffffffeb;border-left:3px solid #4670ac;padding:8px;font-size:.73rem}
+    .body{padding:10px;display:grid;gap:8px}.r{border:1px solid #cbd7e5;border-radius:8px;padding:8px;background:#f8fbff}.line{display:flex;justify-content:space-between;font-size:.78rem}.sub{font-size:.64rem;color:var(--mut);margin-top:3px}
+    .btn{margin-top:8px;border:0;border-radius:8px;padding:8px;width:100%;text-align:left;background:var(--btn) center/100% 100% no-repeat;color:#fff;font-family:"JetBrains Mono",monospace;font-size:.65rem}
+    .btn.warn{background-image:var(--warn)}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="tablet">
+      <header class="top"><b>MoonIdle // NASA Payload Tablet</b><div class="meta"><span class="m">Moonstone 126</span><span class="m">Day 03:18</span><span class="m">Reliability 93.1%</span></div></header>
+      <section class="grid">
+        <article class="panel"><div class="hd">Payload Integration</div><div class="hero"><div class="txt">탑재체와 추진부 결합 단계를 태블릿 운영 화면으로 표현한 시안</div></div><div class="body"><div class="r"><div class="line"><span>Delta-v</span><b>9.48 km/s</b></div></div><div class="r"><div class="line"><span>TWR</span><b>1.61</b></div></div><button class="btn">검증 시퀀스 실행</button></div></article>
+        <article class="panel"><div class="hd">Launch Queue</div><div class="body"><div class="r"><div class="line"><span>Slot 1</span><span>14m 08s</span></div><div class="sub">진행 중</div></div><div class="r"><div class="line"><span>Slot 2</span><span>대기</span></div><button class="btn">대기열 투입</button></div><div class="r"><div class="line"><span>Slot 3</span><span>잠금</span></div><button class="btn warn">도크 확장</button></div><div class="r"><div class="line"><span>품질</span><b>51%</b></div><div class="sub">열보정 연구 필요</div></div><button class="btn warn">브리핑 후 자동 업그레이드</button></div></article>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle v5A - NASA Patchbay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;700;800&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#f1ede5;--panel:#ffffff;--line:#d4ccbf;--navy:#213a74;--mut:#60708e;--txt:#1c2437;--btn:url("./assets/moonidle_btn_blueprint.svg");--cta:url("./assets/moonidle_btn_warn.svg");}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--txt);font-family:"Exo 2","Malgun Gothic",sans-serif;}
+    .wrap{max-width:1500px;margin:0 auto;padding:14px}
+    .top{border:1px solid var(--line);background:var(--navy);color:#fff;border-radius:12px;padding:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+    .top h1{margin:0;font-size:1.08rem;letter-spacing:.08em} .chips{display:flex;gap:7px;flex-wrap:wrap}
+    .chip{font-family:"IBM Plex Mono",monospace;font-size:.7rem;padding:4px 10px;border-radius:999px;border:1px solid #ffffff40;background:#ffffff1c}
+    .grid{margin-top:10px;display:grid;grid-template-columns:300px 1fr 320px;gap:10px}
+    .panel{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+    .hd{padding:10px;border-bottom:1px solid var(--line);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);font-family:"IBM Plex Mono",monospace}
+    .list{padding:10px;display:grid;gap:8px}
+    .item{border:1px solid #d8d0c2;border-radius:8px;padding:8px;background:#faf8f3}.row{display:flex;justify-content:space-between;font-size:.8rem}.sub{margin-top:3px;font-size:.66rem;color:var(--mut)}
+    .hero{height:220px;border-bottom:1px solid var(--line);position:relative;overflow:hidden}
+    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,#eef3ffcc 60%,#f6f9ff),url("./assets/moonidle_hangar_bg_lab_quantum.svg") center/cover no-repeat;opacity:.72}
+    .hero .txt{position:absolute;left:12px;right:12px;bottom:12px;background:#ffffffe8;border-left:3px solid #2d5ca8;padding:9px}
+    .hero b{display:block;font-size:.92rem}.hero span{font-size:.7rem;color:var(--mut)}
+    .kpi{padding:10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.k{border:1px solid #d8d0c2;border-radius:8px;padding:7px;background:#faf8f3}.k b{font-size:.95rem}
+    .btn{margin-top:8px;width:100%;border:0;border-radius:8px;padding:8px;background:var(--btn) center/100% 100% no-repeat;color:#fff;font-family:"IBM Plex Mono",monospace;font-size:.68rem;text-align:left;cursor:pointer}
+    .btn.cta{background-image:var(--cta)}
+    .cam{margin:0 10px 10px;height:130px;border:1px solid #d7cfbf;border-radius:8px;background:url("./assets/moonidle_hub_cam_lab_quantum.svg") center/cover no-repeat;filter:brightness(.78)}
+    @media(max-width:1200px){.grid{grid-template-columns:1fr}.kpi{grid-template-columns:1fr 1fr}} @media(max-width:760px){.kpi{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top"><h1>MoonIdle // NASA Patchbay</h1><div class="chips"><span class="chip">Moonstone 126</span><span class="chip">DAY 03:18</span><span class="chip">EFF 97.2%</span></div></header>
+    <section class="grid">
+      <aside class="panel"><div class="hd">Resource Rack</div><div class="list"><div class="item"><div class="row"><span>Moonstone</span><b>2.41M</b></div><div class="sub">+15.8K/s</div></div><div class="item"><div class="row"><span>액체 산소</span><b>802K</b></div><div class="sub">+8.7K/s</div></div><div class="item"><div class="row"><span>촉매제</span><b>193K</b></div><div class="sub">+2.6K/s</div></div><button class="btn">라인 보강</button></div></aside>
+      <section class="panel"><div class="hd">Mission Document</div><div class="hero"><div class="txt"><b>1~2시간 첫 기체 완성 후 슬롯 기반 확장</b><span>NASA 문서형 분위기를 유지하면서 공정 파이프라인 가시성을 강화한 버전.</span></div></div><div class="kpi"><div class="k"><b>9.48 km/s</b><div>Delta-v</div></div><div class="k"><b>1.61</b><div>TWR</div></div><div class="k"><b>93.1%</b><div>신뢰도</div></div><div class="k"><b>51%</b><div>품질</div></div></div></section>
+      <aside class="panel"><div class="hd">Queue Board</div><div class="list"><div class="item"><div class="row"><span>Slot 1</span><span>14m 08s</span></div><div class="sub">진행 중</div></div><div class="item"><div class="row"><span>Slot 2</span><span>대기</span></div><button class="btn">큐 등록</button></div><div class="item"><div class="row"><span>Slot 3</span><span>잠금</span></div><button class="btn cta">설비 확장</button></div></div><div class="cam"></div><button class="btn cta" style="margin:0 10px 10px;width:calc(100% - 20px);">브리핑 실행</button></aside>
+    </section>
+  </main>
+</body>
+</html>

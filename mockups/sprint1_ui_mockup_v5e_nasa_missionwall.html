@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle v5E - NASA Missionwall</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#121a2a;--panel:#1b2740;--line:#617aab45;--txt:#e6efff;--mut:#9fb0d0;--btn:url("./assets/moonidle_btn_primary.svg");--warn:url("./assets/moonidle_btn_warn.svg");}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -20%,#4b619338 0,transparent 36%),var(--bg);font-family:"Chakra Petch","Malgun Gothic",sans-serif;color:var(--txt)}
+    .wall{max-width:1540px;margin:0 auto;padding:14px}.top{border:1px solid var(--line);border-radius:10px;background:#223156cc;padding:10px;display:flex;justify-content:space-between;align-items:center}
+    .top b{font-size:1.05rem;letter-spacing:.07em}.meta{font-family:"Roboto Mono",monospace;font-size:.68rem;color:#c5d5f5}
+    .layout{margin-top:10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .panel{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+    .hd{padding:9px 10px;border-bottom:1px solid #ffffff1b;font-family:"Roboto Mono",monospace;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#b9caf0}
+    .box{padding:10px;display:grid;gap:8px}.node{border:1px solid #8ea7d33a;border-radius:8px;background:#ffffff08;padding:8px;font-size:.77rem}
+    .line{display:flex;justify-content:space-between}.sub{font-size:.64rem;color:var(--mut);margin-top:3px}
+    .hero{height:210px;position:relative;border-bottom:1px solid #ffffff1a}
+    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,#111a2fcb 68%,#10192ef1),url("./assets/moonidle_hangar_bg_lab_arcade.svg") center/cover no-repeat;filter:brightness(.65)}
+    .hero .txt{position:absolute;left:10px;right:10px;bottom:10px;background:#101a31de;border-left:3px solid #8ab8ff;padding:8px;font-size:.72rem}
+    .kpi{padding:10px;display:grid;grid-template-columns:1fr 1fr;gap:7px}.k{border:1px solid #8ba4ce33;border-radius:8px;background:#ffffff09;padding:7px}
+    .btn{margin-top:8px;width:100%;border:0;border-radius:8px;padding:8px;background:var(--btn) center/100% 100% no-repeat;color:#fff;font-family:"Roboto Mono",monospace;font-size:.66rem;text-align:left}
+    .btn.warn{background-image:var(--warn)}
+    @media(max-width:1200px){.layout{grid-template-columns:1fr 1fr}}@media(max-width:760px){.layout{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="wall">
+    <header class="top"><b>MoonIdle // NASA Missionwall</b><span class="meta">Moonstone 126 / Day 03:18 / Eff 97.2%</span></header>
+    <section class="layout">
+      <article class="panel"><div class="hd">Resource Nodes</div><div class="box"><div class="node"><div class="line"><span>Moonstone</span><b>2.41M</b></div><div class="sub">+15.8K/s</div></div><div class="node"><div class="line"><span>액체 산소</span><b>802K</b></div><div class="sub">+8.7K/s</div></div><div class="node"><div class="line"><span>촉매제</span><b>193K</b></div><div class="sub">+2.6K/s</div></div><button class="btn">생산 라인 튜닝</button></div></article>
+      <article class="panel"><div class="hd">Mission Wall</div><div class="hero"><div class="txt">우주선 완성 품질을 끌어올릴수록 제작시간이 늘어나고 슬롯 확장이 성장률을 바꾼다.</div></div><div class="kpi"><div class="k"><b>9.48 km/s</b><div>Delta-v</div></div><div class="k"><b>1.61</b><div>TWR</div></div><div class="k"><b>93.1%</b><div>신뢰도</div></div><div class="k"><b>51%</b><div>품질</div></div></div></article>
+      <article class="panel"><div class="hd">Queue Nodes</div><div class="box"><div class="node"><div class="line"><span>Slot 1</span><span>14m 08s</span></div><div class="sub">진행 중</div></div><div class="node"><div class="line"><span>Slot 2</span><span>대기</span></div><button class="btn">대기열 등록</button></div><div class="node"><div class="line"><span>Slot 3</span><span>잠금</span></div><button class="btn warn">도크 확장</button></div><button class="btn warn">일일 브리핑 실행</button></div></article>
+    </section>
+  </main>
+</body>
+</html>

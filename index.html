@@ -3,566 +3,936 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MoonIdle - 달 탐사 로켓 제작소</title>
-<meta name="description" content="자원을 모으고 로켓을 조립해 달에 도달하는 방치형 게임">
+<title>MOON IDLE — 달 탐사 로켓 제작소</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
+/* ==================== v7 CRT DESIGN TOKENS ==================== */
 :root {
-  --bg-dark: #0a0e1a;
-  --bg-panel: #0f1629;
-  --bg-card: #141d35;
-  --accent-blue: #4fc3f7;
-  --accent-purple: #b39ddb;
-  --accent-gold: #ffd54f;
-  --accent-green: #69f0ae;
-  --accent-red: #ef5350;
-  --text-primary: #e8eaf6;
-  --text-secondary: #90a4ae;
-  --glow-blue: 0 0 12px rgba(79,195,247,0.5);
-  --glow-gold: 0 0 12px rgba(255,213,79,0.5);
-  --glow-green: 0 0 12px rgba(105,240,174,0.5);
+  --bg:         #010800;
+  --panel-bg:   #020d04;
+  --green:      #00e676;
+  --green-dim:  #1a5c34;
+  --green-mid:  #00994d;
+  --amber:      #ffab00;
+  --red:        #ff1744;
+  --font:       'Share Tech Mono', monospace;
+  --border:     1px solid #1a5c34;
+  --glow:       0 0 6px #00e67680;
+  --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  background: var(--bg-dark);
-  color: var(--text-primary);
-  min-height: 100vh;
-  overflow-x: hidden;
+
+/* ==================== RESET & BASE ==================== */
+*{box-sizing:border-box;margin:0;padding:0;border-radius:0!important;}
+html,body{min-height:100vh;}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--green);
+  font-size:15px;
+  overflow-x:hidden;
+  animation:crt-flicker 8s linear infinite;
 }
-#stars {
-  position: fixed; top: 0; left: 0;
-  width: 100%; height: 100%;
-  pointer-events: none; z-index: 0;
-  background: radial-gradient(ellipse at 50% 30%, #1a2a4a 0%, #0a0e1a 70%);
+
+/* CRT SCANLINES */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,transparent 2px,
+    rgba(0,0,0,0.18) 2px,rgba(0,0,0,0.18) 4px
+  );
+  pointer-events:none;z-index:9999;
 }
-.star {
-  position: absolute;
-  border-radius: 50%;
-  background: white;
-  animation: twinkle var(--dur, 3s) ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
+/* CRT VIGNETTE */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.7) 100%);
+  pointer-events:none;z-index:9998;
 }
-@keyframes twinkle {
-  0%,100% { opacity: 0.2; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.3); }
+@keyframes crt-flicker{
+  0%,92%,94%,97%,100%{opacity:1;}
+  93%{opacity:0.85;}
+  96%{opacity:0.90;}
 }
-#app {
-  position: relative; z-index: 1;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 16px;
+
+/* ==================== SCROLLBAR ==================== */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--green-dim);}
+
+/* ==================== TEXT GLOW ==================== */
+.glow{text-shadow:var(--glow);}
+.glow-strong{text-shadow:var(--glow-strong);}
+
+/* ==================== TITLE SCREEN ==================== */
+#title-screen{
+  position:fixed;inset:0;
+  background:var(--bg);
+  z-index:5000;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:20px;
+  transition:opacity 0.8s ease;
 }
-header {
-  text-align: center;
-  padding: 20px 0 16px;
-  border-bottom: 1px solid rgba(79,195,247,0.2);
-  margin-bottom: 16px;
+#title-screen.fade-out{opacity:0;pointer-events:none;}
+.title-logo{
+  font-size:clamp(24px,5vw,48px);
+  letter-spacing:16px;
+  color:var(--green);
+  text-shadow:var(--glow-strong);
+  margin-bottom:8px;
+  text-align:center;
 }
-header h1 {
-  font-size: 2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #4fc3f7, #b39ddb, #ffd54f);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: 2px;
+.title-subtitle{
+  font-size:13px;
+  letter-spacing:4px;
+  color:var(--green-mid);
+  margin-bottom:32px;
+  text-align:center;
 }
-header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
-.moonstone-bar {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: rgba(255,213,79,0.1);
-  border: 1px solid rgba(255,213,79,0.3);
-  border-radius: 20px;
-  padding: 4px 14px;
-  margin-top: 8px;
-  font-size: 0.85rem;
-  color: var(--accent-gold);
-  box-shadow: var(--glow-gold);
+.boot-log{
+  width:100%;max-width:600px;
+  height:200px;
+  overflow:hidden;
+  border:var(--border);
+  background:var(--panel-bg);
+  padding:12px;
+  font-size:13px;
+  color:var(--green-mid);
+  margin-bottom:24px;
 }
-.header-controls {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 8px;
-  flex-wrap: wrap;
+.boot-line{
+  display:block;
+  margin-bottom:2px;
+  opacity:0;
+  animation:boot-appear 0.1s forwards;
 }
-.sound-toggle {
-  background: var(--bg-card);
-  border: 1px solid rgba(79,195,247,0.3);
-  border-radius: 20px;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 5px 12px;
-  transition: all 0.2s;
+@keyframes boot-appear{to{opacity:1;}}
+.title-save-strip{
+  width:100%;max-width:600px;
+  border:var(--border);
+  background:var(--panel-bg);
+  padding:10px 16px;
+  font-size:13px;
+  color:var(--green-mid);
+  margin-bottom:20px;
+  display:flex;gap:24px;flex-wrap:wrap;
 }
-.sound-toggle:hover {
-  border-color: rgba(79,195,247,0.6);
-  box-shadow: var(--glow-blue);
+.title-save-strip span{color:var(--green);}
+.title-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.title-btn{
+  background:none;
+  border:2px solid var(--green-dim);
+  color:var(--green);
+  font-family:var(--font);
+  font-size:15px;
+  letter-spacing:3px;
+  padding:10px 28px;
+  cursor:pointer;
+  transition:all 0.15s;
+  text-transform:uppercase;
 }
-.grid {
-  display: grid;
-  grid-template-columns: 280px 1fr 280px;
-  gap: 14px;
+.title-btn:hover{
+  border-color:var(--green);
+  text-shadow:var(--glow-strong);
+  box-shadow:var(--glow-strong);
 }
-@media (max-width: 900px) {
-  .grid { grid-template-columns: 1fr; }
+.title-btn.primary{border-color:var(--amber);color:var(--amber);}
+.title-btn.primary:hover{box-shadow:0 0 12px #ffab00,0 0 24px #ffab0050;}
+
+/* ==================== MAIN APP ==================== */
+#app{
+  display:none;
+  max-width:1200px;
+  margin:0 auto;
+  padding:0 8px 20px;
 }
-.panel {
-  background: var(--bg-panel);
-  border: 1px solid rgba(79,195,247,0.15);
-  border-radius: 14px;
-  padding: 14px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+#app.visible{display:block;}
+
+/* ==================== RESOURCE BAR ==================== */
+#res-bar{
+  position:sticky;top:0;z-index:100;
+  background:var(--bg);
+  border-bottom:var(--border);
+  padding:6px 8px;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:6px;flex-wrap:wrap;
 }
-.panel-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--accent-blue);
-  margin-bottom: 12px;
-  display: flex; align-items: center; gap: 6px;
+.res-bar-inner{
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1;
 }
-/* Resources */
-.resource-item {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 10px;
-  background: var(--bg-card);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  border: 1px solid rgba(255,255,255,0.04);
-  transition: border-color 0.2s;
+.res-cell{
+  border:var(--border);
+  padding:3px 8px;
+  font-size:13px;
+  color:var(--green);
+  white-space:nowrap;
+  text-shadow:var(--glow);
 }
-.resource-item:hover { border-color: rgba(79,195,247,0.2); }
-.resource-icon { font-size: 1.2rem; width: 28px; text-align: center; }
-.resource-info { flex: 1; padding: 0 8px; }
-.resource-name { font-size: 0.78rem; color: var(--text-secondary); }
-.resource-amount { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
-.resource-rate { font-size: 0.72rem; color: var(--accent-green); }
-.click-btn {
-  background: linear-gradient(135deg, #1565c0, #4fc3f7);
-  border: none; border-radius: 6px;
-  color: white; cursor: pointer;
-  font-size: 0.75rem; font-weight: 600;
-  padding: 5px 10px;
-  transition: all 0.15s;
-  box-shadow: var(--glow-blue);
-  white-space: nowrap;
+.res-cell .rate{color:var(--green-mid);font-size:12px;}
+.res-cell .ms{color:var(--amber);}
+.res-bar-right{display:flex;align-items:center;gap:8px;}
+#sound-btn{
+  background:none;
+  border:var(--border);
+  color:var(--green-mid);
+  font-family:var(--font);
+  font-size:13px;
+  padding:3px 10px;
+  cursor:pointer;
+  letter-spacing:1px;
+  text-transform:uppercase;
 }
-.click-btn:hover { transform: translateY(-1px); filter: brightness(1.2); }
-.click-btn:active { transform: translateY(0); }
-/* Buildings */
-.building-item {
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 8px;
-  transition: all 0.2s;
+#sound-btn:hover{color:var(--green);border-color:var(--green);}
+
+/* ==================== NAV TABS ==================== */
+#nav-tabs{
+  display:flex;
+  border-bottom:var(--border);
+  margin-bottom:0;
 }
-.building-item:hover { border-color: rgba(79,195,247,0.25); }
-.building-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.building-name { font-size: 0.85rem; font-weight: 600; }
-.building-count {
-  background: rgba(79,195,247,0.15);
-  color: var(--accent-blue);
-  border-radius: 12px;
-  padding: 1px 8px;
-  font-size: 0.75rem; font-weight: 700;
+.nav-tab{
+  flex:1;
+  background:none;
+  border:none;
+  border-bottom:2px solid transparent;
+  border-right:var(--border);
+  color:var(--green-dim);
+  font-family:var(--font);
+  font-size:14px;
+  letter-spacing:1px;
+  padding:8px 4px;
+  cursor:pointer;
+  text-transform:uppercase;
+  transition:all 0.15s;
+  text-align:center;
 }
-.building-desc { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 6px; }
-.building-cost { font-size: 0.72rem; color: var(--accent-gold); margin-bottom: 6px; }
-.buy-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #1a237e, #283593);
-  border: 1px solid rgba(79,195,247,0.3);
-  border-radius: 6px;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: 0.78rem; font-weight: 600;
-  padding: 6px;
-  transition: all 0.2s;
+.nav-tab:last-child{border-right:none;}
+.nav-tab:hover{color:var(--green);text-shadow:var(--glow);}
+.nav-tab.active{
+  color:var(--green);
+  border-bottom-color:var(--green);
+  text-shadow:var(--glow-strong);
+  background:rgba(0,230,118,0.04);
 }
-.buy-btn:hover:not(:disabled) { background: linear-gradient(135deg, #283593, #4fc3f7); box-shadow: var(--glow-blue); }
-.buy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-/* Rocket Panel */
-.rocket-visual {
-  text-align: center;
-  font-size: 4rem;
-  padding: 10px 0;
-  animation: rocketFloat 3s ease-in-out infinite;
+
+/* ==================== TAB PANES ==================== */
+.tab-pane{display:none;padding:12px 0;}
+.tab-pane.active{display:block;}
+
+/* ==================== PANELS ==================== */
+.panel{
+  background:var(--panel-bg);
+  border:var(--border);
+  padding:10px 12px;
+  margin-bottom:10px;
 }
-@keyframes rocketFloat {
-  0%,100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+.panel-header{
+  font-size:13px;
+  letter-spacing:3px;
+  color:var(--green);
+  text-transform:uppercase;
+  border-bottom:var(--border);
+  padding-bottom:6px;
+  margin-bottom:8px;
+  text-shadow:var(--glow);
 }
-.rocket-part {
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 6px;
-  transition: all 0.2s;
+.panel-header::before{content:'// ';}
+
+/* ==================== BUTTONS ==================== */
+.btn{
+  background:none;
+  border:2px solid var(--green-dim);
+  color:var(--green);
+  font-family:var(--font);
+  font-size:14px;
+  letter-spacing:2px;
+  padding:6px 14px;
+  cursor:pointer;
+  text-transform:uppercase;
+  transition:all 0.12s;
+  display:inline-block;
 }
-.rocket-part.complete {
-  border-color: rgba(105,240,174,0.4);
-  background: rgba(105,240,174,0.05);
+.btn:hover:not(:disabled){
+  border-color:var(--green);
+  text-shadow:var(--glow);
 }
-.part-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.part-name { font-size: 0.82rem; font-weight: 600; }
-.part-status { font-size: 0.75rem; }
-.part-status.done { color: var(--accent-green); }
-.part-status.pending { color: var(--text-secondary); }
-.progress-bar {
-  background: rgba(255,255,255,0.08);
-  border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 4px;
+.btn:disabled{opacity:0.3;cursor:not-allowed;}
+.btn-amber{border-color:var(--amber);color:var(--amber);}
+.btn-amber:hover:not(:disabled){box-shadow:0 0 8px #ffab00;}
+.btn-red{border-color:var(--red);color:var(--red);}
+.btn-sm{font-size:12px;padding:3px 8px;letter-spacing:1px;}
+.btn-full{display:block;width:100%;text-align:center;}
+
+/* ==================== PROGRESS BAR ==================== */
+.prog-wrap{
+  border:1px solid var(--green-dim);
+  height:8px;
+  background:var(--bg);
+  overflow:hidden;
+  margin:4px 0;
 }
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #4fc3f7, #b39ddb);
-  border-radius: 4px;
-  transition: width 0.3s ease;
-  box-shadow: var(--glow-blue);
+.prog-fill{
+  height:100%;
+  background:var(--green-mid);
+  transition:width 0.3s;
 }
-.rocket-part.complete .progress-fill { background: linear-gradient(90deg, #69f0ae, #4fc3f7); }
-.craft-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #4a148c, #7b1fa2);
-  border: 1px solid rgba(179,157,219,0.3);
-  border-radius: 6px;
-  color: white; cursor: pointer;
-  font-size: 0.75rem; font-weight: 600;
-  padding: 5px;
-  transition: all 0.2s;
-  margin-top: 4px;
+.prog-fill.amber{background:var(--amber);}
+.prog-fill.red{background:var(--red);}
+
+/* ==================== OFFLINE BANNER ==================== */
+#offline-banner{
+  display:none;
+  background:rgba(255,171,0,0.08);
+  border:1px solid var(--amber);
+  color:var(--amber);
+  padding:6px 12px;
+  font-size:13px;
+  margin-bottom:8px;
 }
-.craft-btn:hover:not(:disabled) { background: linear-gradient(135deg, #6a1b9a, #b39ddb); box-shadow: 0 0 10px rgba(179,157,219,0.4); }
-.craft-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.launch-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #e65100, #ff6d00, #ffd54f);
-  border: none; border-radius: 10px;
-  color: white; cursor: pointer;
-  font-size: 1rem; font-weight: 800;
-  padding: 14px;
-  margin-top: 10px;
-  transition: all 0.3s;
-  box-shadow: var(--glow-gold), 0 4px 20px rgba(255,109,0,0.4);
-  letter-spacing: 1px;
-  display: none;
+
+/* ==================== NOTIFICATIONS ==================== */
+#notif{
+  position:fixed;bottom:16px;right:16px;
+  z-index:8000;
+  display:flex;flex-direction:column;gap:6px;
+  pointer-events:none;
 }
-.launch-btn.ready { display: block; animation: pulse 1.5s ease-in-out infinite; }
-@keyframes pulse {
-  0%,100% { transform: scale(1); box-shadow: var(--glow-gold), 0 4px 20px rgba(255,109,0,0.4); }
-  50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255,213,79,0.8), 0 4px 30px rgba(255,109,0,0.6); }
+.notif-item{
+  background:var(--panel-bg);
+  border:1px solid var(--green-dim);
+  color:var(--green);
+  font-size:13px;
+  padding:7px 14px;
+  text-shadow:var(--glow);
+  animation:notif-in 0.2s ease,notif-out 0.4s ease 2.6s forwards;
+  max-width:320px;
 }
-.science-summary {
-  background: rgba(79,195,247,0.08);
-  border: 1px solid rgba(79,195,247,0.25);
-  border-radius: 10px;
-  padding: 10px;
-  margin-top: 8px;
-  margin-bottom: 8px;
-  font-size: 0.73rem;
-  color: var(--text-secondary);
+.notif-item.amber{border-color:var(--amber);color:var(--amber);}
+.notif-item.red{border-color:var(--red);color:var(--red);}
+@keyframes notif-in{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:none;}}
+@keyframes notif-out{to{opacity:0;transform:translateX(40px);}}
+
+/* ==================== TAB 1: PRODUCTION HUB ==================== */
+.prod-status-line{
+  font-size:13px;color:var(--green-mid);
+  margin-bottom:8px;
+  border-bottom:var(--border);
+  padding-bottom:6px;
 }
-.science-summary b { color: var(--text-primary); }
-.assembly-toolbar {
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 8px;
+.prod-world-wrap{
+  overflow-x:auto;
+  border:var(--border);
+  padding:10px;
+  background:var(--bg);
+  margin-bottom:10px;
 }
-.assembly-title {
-  font-size: 0.76rem;
-  color: var(--accent-blue);
-  margin-bottom: 6px;
-  font-weight: 700;
+.prod-world{
+  min-width:2400px;
+  display:flex;
+  gap:16px;
+  align-items:flex-end;
+  padding:8px 4px;
+  font-size:13px;
+  line-height:1.3;
 }
-.quality-select {
-  width: 100%;
-  background: #0b1328;
-  border: 1px solid rgba(79,195,247,0.3);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-size: 0.75rem;
-  padding: 6px;
+.building-ascii-wrap{
+  position:relative;
+  display:inline-block;
+  cursor:pointer;
+  flex-shrink:0;
 }
-.slot-item {
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 10px;
-  padding: 9px;
-  margin-bottom: 7px;
+.building-ascii{
+  font-size:12px;
+  line-height:1.25;
+  color:var(--green-mid);
+  white-space:pre;
+  transition:color 0.15s;
+  text-shadow:none;
 }
-.slot-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
-  font-size: 0.74rem;
+.building-ascii-wrap:hover .building-ascii{
+  color:var(--green);
+  text-shadow:var(--glow);
 }
-.slot-status {
-  font-size: 0.7rem;
+.building-ascii-wrap .bld-count-badge{
+  position:absolute;top:-4px;right:-4px;
+  background:var(--green-dim);
+  color:var(--green);
+  font-size:11px;
+  padding:0 4px;
+  min-width:18px;
+  text-align:center;
+  border:1px solid var(--green);
 }
-.slot-status.ready { color: var(--accent-green); }
-.slot-status.busy { color: var(--accent-gold); }
-.slot-status.idle { color: var(--text-secondary); }
-.slot-row-note {
-  font-size: 0.68rem;
-  color: var(--text-secondary);
-  margin-bottom: 4px;
+.bld-hover-overlay{
+  display:none;
+  position:absolute;
+  top:0;left:100%;
+  z-index:200;
+  background:var(--panel-bg);
+  border:1px solid var(--green);
+  padding:8px 12px;
+  white-space:pre;
+  font-size:12px;
+  line-height:1.5;
+  color:var(--green);
+  min-width:240px;
+  text-shadow:var(--glow);
+  pointer-events:none;
 }
-.slot-btn {
-  width: 100%;
-  border: 1px solid rgba(79,195,247,0.3);
-  border-radius: 7px;
-  background: linear-gradient(135deg, #0d47a1, #1565c0);
-  color: white;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 6px;
-  cursor: pointer;
+.building-ascii-wrap:hover .bld-hover-overlay{display:block;}
+.bld-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:8px;
 }
-.slot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-.slot-btn.launch {
-  background: linear-gradient(135deg, #e65100, #ff6d00);
-  border-color: rgba(255,109,0,0.6);
+.bld-card{
+  border:var(--border);
+  background:var(--panel-bg);
+  padding:8px 10px;
 }
-/* Upgrades */
-.upgrade-item {
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 10px;
-  padding: 10px;
-  margin-bottom: 6px;
-  transition: all 0.2s;
+.bld-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.bld-name{font-size:14px;color:var(--green);letter-spacing:1px;}
+.bld-cnt{color:var(--amber);font-size:13px;}
+.bld-desc{font-size:12px;color:var(--green-mid);margin-bottom:6px;}
+.bld-rate{font-size:12px;color:var(--green-mid);margin-bottom:4px;}
+.bld-cost{font-size:12px;color:var(--amber);margin-bottom:6px;}
+
+/* ==================== TAB 2: RESEARCH ==================== */
+.upg-tree{
+  font-size:13px;
+  line-height:1.6;
+  overflow-x:auto;
 }
-.upgrade-item.purchased { border-color: rgba(105,240,174,0.3); opacity: 0.6; }
-.upgrade-item:hover:not(.purchased) { border-color: rgba(179,157,219,0.3); }
-.upgrade-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
-.upgrade-name { font-size: 0.82rem; font-weight: 600; }
-.upgrade-desc { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px; }
-.upgrade-cost { font-size: 0.7rem; color: var(--accent-purple); margin-bottom: 5px; }
-.upg-btn {
-  width: 100%;
-  background: linear-gradient(135deg, #1b5e20, #2e7d32);
-  border: 1px solid rgba(105,240,174,0.25);
-  border-radius: 6px;
-  color: white; cursor: pointer;
-  font-size: 0.75rem; font-weight: 600;
-  padding: 5px;
-  transition: all 0.2s;
+.upg-tree-row{
+  display:flex;gap:16px;margin-bottom:4px;flex-wrap:wrap;
 }
-.upg-btn:hover:not(:disabled) { background: linear-gradient(135deg, #2e7d32, #69f0ae); color: #000; }
-.upg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-/* Notifications */
-#notif {
-  position: fixed; bottom: 20px; right: 20px;
-  z-index: 100; display: flex; flex-direction: column; gap: 8px;
+.upg-node{
+  border:1px solid var(--green-dim);
+  background:var(--panel-bg);
+  padding:8px 12px;
+  cursor:pointer;
+  min-width:180px;
+  transition:all 0.12s;
+  position:relative;
 }
-.notif-item {
-  background: var(--bg-panel);
-  border: 1px solid rgba(79,195,247,0.3);
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-size: 0.82rem;
-  box-shadow: var(--glow-blue);
-  animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
-  max-width: 280px;
+.upg-node.available{border-color:var(--amber);color:var(--amber);}
+.upg-node.purchased{border-color:var(--green-dim);color:var(--green-dim);cursor:default;}
+.upg-node.purchased .upg-node-name::after{content:' [OK]';}
+.upg-node.locked{border-color:var(--bg);color:#0e2a18;cursor:not-allowed;}
+.upg-node:hover:not(.purchased):not(.locked){border-color:var(--green);color:var(--green);text-shadow:var(--glow);}
+.upg-node-name{font-size:13px;letter-spacing:1px;margin-bottom:3px;text-transform:uppercase;}
+.upg-node-desc{font-size:11px;color:var(--green-mid);}
+.upg-node.available .upg-node-desc{color:var(--amber);}
+.upg-node-cost{font-size:11px;margin-top:4px;}
+.upg-connector{
+  font-size:12px;color:var(--green-dim);
+  align-self:center;
+  user-select:none;
 }
-@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-@keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
-/* Launch overlay */
-#launch-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.92);
-  z-index: 200;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+.upg-tree-section{margin-bottom:16px;}
+.upg-tree-section-title{
+  font-size:11px;letter-spacing:3px;color:var(--green-mid);
+  text-transform:uppercase;border-bottom:var(--border);
+  padding-bottom:4px;margin-bottom:8px;
 }
-#launch-overlay.show { display: flex; }
-#launch-overlay h2 {
-  font-size: 2.5rem; font-weight: 800;
-  background: linear-gradient(135deg, #ffd54f, #ff6d00);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 16px;
+.upg-tree-section-title::before{content:'// ';}
+
+/* ==================== TAB 3: ASSEMBLY ==================== */
+.assembly-layout{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
 }
-#launch-overlay p { color: var(--text-secondary); margin-bottom: 24px; font-size: 1rem; }
-.moon-emoji { font-size: 6rem; animation: moonBounce 1s ease-in-out infinite; }
-@keyframes moonBounce { 0%,100% { transform: scale(1) rotate(-5deg); } 50% { transform: scale(1.1) rotate(5deg); } }
-.prestige-btn {
-  background: linear-gradient(135deg, #ffd54f, #ff6d00);
-  border: none; border-radius: 12px;
-  color: #000; cursor: pointer;
-  font-size: 1rem; font-weight: 800;
-  padding: 14px 32px;
-  transition: all 0.2s;
-  box-shadow: var(--glow-gold);
-  margin-top: 16px;
+@media(max-width:700px){.assembly-layout{grid-template-columns:1fr;}}
+.rocket-art-wrap{
+  border:var(--border);
+  background:var(--bg);
+  padding:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
 }
-.prestige-btn:hover { transform: scale(1.05); }
-.offline-banner {
-  background: rgba(255,213,79,0.1);
-  border: 1px solid rgba(255,213,79,0.3);
-  border-radius: 10px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
-  font-size: 0.82rem;
-  color: var(--accent-gold);
-  display: none;
+.rocket-art{
+  font-size:12px;
+  line-height:1.3;
+  white-space:pre;
+  text-align:left;
+  font-family:var(--font);
+  color:var(--green-mid);
 }
-.tab-bar {
-  display: flex; gap: 6px; margin-bottom: 10px;
+.rocket-art .r-nose{color:var(--green-dim);}
+.rocket-art .r-payload{color:var(--green-dim);}
+.rocket-art .r-avionics{color:var(--green-dim);}
+.rocket-art .r-engine{color:var(--green-dim);}
+.rocket-art .r-exhaust{color:var(--green-dim);}
+
+.rocket-art .r-nose.done{color:var(--green);text-shadow:var(--glow);}
+.rocket-art .r-payload.done{color:var(--green);text-shadow:var(--glow);}
+.rocket-art .r-avionics.done{color:var(--green);text-shadow:var(--glow);}
+.rocket-art .r-engine.done{color:var(--green);text-shadow:var(--glow);}
+.rocket-art .r-exhaust.done{color:var(--amber);text-shadow:0 0 6px #ffab0080;}
+
+.quality-selector{
+  display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;
 }
-.tab {
-  flex: 1;
-  background: var(--bg-card);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 8px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 0.75rem; font-weight: 600;
-  padding: 7px;
-  text-align: center;
-  transition: all 0.2s;
+.qual-btn{
+  background:none;
+  border:1px solid var(--green-dim);
+  color:var(--green-mid);
+  font-family:var(--font);
+  font-size:12px;
+  padding:4px 10px;
+  cursor:pointer;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  transition:all 0.12s;
 }
-.tab.active {
-  background: rgba(79,195,247,0.15);
-  border-color: rgba(79,195,247,0.4);
-  color: var(--accent-blue);
+.qual-btn.active{
+  border-color:var(--amber);
+  color:var(--amber);
+  text-shadow:0 0 6px #ffab0080;
 }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+.qual-btn:hover:not(.active){border-color:var(--green-dim);color:var(--green);}
+
+.parts-list-item{
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid #0e2a18;
+  padding:5px 0;
+  font-size:13px;
+  gap:8px;
+}
+.part-done{color:var(--green);text-shadow:var(--glow);}
+.part-pending{color:var(--green-dim);}
+.part-check{font-size:12px;color:var(--green-mid);min-width:14px;}
+
+.slot-card{
+  border:var(--border);
+  background:var(--panel-bg);
+  padding:8px 10px;
+  margin-bottom:8px;
+}
+.slot-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.slot-title{font-size:13px;color:var(--green);letter-spacing:1px;}
+.slot-state{font-size:12px;}
+.slot-state.idle{color:var(--green-mid);}
+.slot-state.busy{color:var(--amber);}
+.slot-state.ready{color:var(--green);text-shadow:var(--glow);}
+
+.science-box{
+  border:var(--border);
+  background:var(--bg);
+  padding:8px 10px;
+  font-size:12px;
+  color:var(--green-mid);
+  margin-top:8px;
+  line-height:1.6;
+}
+.science-box .val{color:var(--green);}
+.science-box .ms-val{color:var(--amber);}
+
+/* ==================== TAB 4: LAUNCH CONTROL ==================== */
+.launch-layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:700px){.launch-layout{grid-template-columns:1fr;}}
+
+.ready-list{font-size:13px;color:var(--green-mid);line-height:1.8;}
+.ready-slot-row{
+  display:flex;justify-content:space-between;align-items:center;
+  border-bottom:1px solid #0e2a18;
+  padding:5px 0;
+  gap:8px;
+}
+
+.telemetry-wrap{
+  border:var(--border);
+  background:var(--bg);
+  padding:10px 12px;
+  font-size:13px;
+  min-height:160px;
+}
+.telem-line{
+  display:flex;align-items:center;gap:8px;
+  padding:3px 0;
+  border-bottom:1px solid #0a1a0a;
+  color:var(--green-mid);
+}
+.telem-time{color:var(--green-mid);min-width:55px;font-size:12px;}
+.telem-event{min-width:160px;color:var(--green);text-transform:uppercase;font-size:12px;}
+.telem-bar{flex:1;height:6px;border:1px solid var(--green-dim);position:relative;}
+.telem-bar-fill{height:100%;background:var(--green-mid);transition:width 0.5s;}
+.telem-pct{color:var(--green);font-size:12px;min-width:36px;text-align:right;}
+
+.launch-result{
+  display:none;
+  border:1px solid var(--amber);
+  background:rgba(255,171,0,0.05);
+  padding:12px;
+  font-size:13px;
+  color:var(--amber);
+  margin-top:10px;
+}
+.launch-result.show{display:block;}
+.launch-result-title{
+  font-size:15px;letter-spacing:3px;text-transform:uppercase;
+  text-shadow:0 0 12px #ffab00;margin-bottom:8px;
+}
+.launch-result-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;
+  font-size:12px;margin-bottom:10px;
+}
+.launch-result-stat-lbl{color:var(--green-mid);}
+.launch-result-stat-val{color:var(--amber);}
+
+.launch-anim-wrap{
+  text-align:center;
+  padding:10px;
+  min-height:120px;
+  position:relative;
+  overflow:hidden;
+}
+.launch-rocket-ascii{
+  font-size:11px;
+  white-space:pre;
+  color:var(--green);
+  display:inline-block;
+  transition:transform 1.5s ease-in;
+  position:relative;
+}
+.launch-rocket-ascii.launching{
+  animation:rocket-launch 3s ease-in forwards;
+}
+@keyframes rocket-launch{
+  0%{transform:translateY(0);}
+  100%{transform:translateY(-400px);}
+}
+.exhaust-anim{
+  font-size:11px;
+  white-space:pre;
+  color:var(--amber);
+  text-shadow:0 0 6px #ffab00;
+  display:inline-block;
+  animation:exhaust-flicker 0.15s step-start infinite;
+}
+@keyframes exhaust-flicker{
+  0%{opacity:1;}50%{opacity:0.4;}100%{opacity:1;}
+}
+
+/* ==================== TAB 5: MISSION PROGRESS ==================== */
+.phase-row{
+  display:flex;align-items:center;gap:10px;
+  padding:6px 0;
+  border-bottom:1px solid #0e2a18;
+  font-size:13px;
+}
+.phase-name{min-width:200px;color:var(--green-mid);text-transform:uppercase;font-size:12px;}
+.phase-bar-wrap{flex:1;height:8px;border:1px solid var(--green-dim);background:var(--bg);}
+.phase-bar-fill{height:100%;background:var(--green-mid);transition:width 0.5s;}
+.phase-bar-fill.done{background:var(--green);}
+.phase-status{min-width:80px;font-size:12px;text-align:right;color:var(--green-mid);}
+.phase-status.done{color:var(--green);}
+.phase-status.locked{color:#0e2a18;}
+
+.history-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+  margin-top:6px;
+}
+.history-table th{
+  background:#021508;
+  color:var(--green-mid);
+  text-align:left;
+  padding:5px 8px;
+  border:var(--border);
+  letter-spacing:1px;
+  font-weight:normal;
+  text-transform:uppercase;
+}
+.history-table td{
+  padding:4px 8px;
+  border:1px solid #0e2a18;
+  color:var(--green);
+}
+.history-table tr:hover td{background:rgba(0,230,118,0.04);}
+
+.prestige-panel{
+  border:1px solid var(--amber);
+  background:rgba(255,171,0,0.04);
+  padding:12px;
+  margin-top:10px;
+}
+.prestige-panel .panel-header{
+  color:var(--amber);
+  border-bottom-color:var(--amber);
+}
+.prestige-panel .panel-header::before{content:'// ';}
+.prestige-stat{
+  font-size:13px;color:var(--amber);
+  margin-bottom:6px;line-height:1.6;
+}
+
+/* ==================== LAUNCH OVERLAY ==================== */
+#launch-overlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(1,8,0,0.97);
+  z-index:7000;
+  align-items:center;justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  padding:20px;
+}
+#launch-overlay.show{display:flex;}
+.lo-title{
+  font-size:24px;letter-spacing:8px;text-transform:uppercase;
+  color:var(--amber);text-shadow:0 0 20px #ffab00;
+  margin-bottom:12px;
+}
+.lo-rocket{
+  font-size:11px;white-space:pre;
+  color:var(--amber);text-shadow:0 0 6px #ffab0080;
+  margin-bottom:12px;
+  animation:rocket-launch 4s ease-in forwards;
+}
+.lo-stats{
+  font-size:14px;color:var(--green);
+  margin-bottom:16px;line-height:2;
+  text-shadow:var(--glow);
+}
+.lo-ms{font-size:18px;color:var(--amber);letter-spacing:3px;margin-bottom:20px;}
+.lo-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+
+/* ==================== MISC ==================== */
+.sep{border:none;border-top:var(--border);margin:8px 0;}
+.label-sm{font-size:11px;color:var(--green-mid);letter-spacing:2px;text-transform:uppercase;}
+.val-green{color:var(--green);text-shadow:var(--glow);}
+.val-amber{color:var(--amber);}
+.val-red{color:var(--red);}
+.cursor-blink::after{content:'_';animation:blink 1s step-start infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
 </style>
 </head>
 <body>
-<div id="stars"></div>
-<div id="app">
-  <header>
-    <h1>🚀 MOON IDLE</h1>
-    <p>자원을 모으고 로켓을 조립해 달에 도달하라!</p>
-    <div class="header-controls">
-      <div class="moonstone-bar" id="moonstone-display" style="display:none">
-        🌙 문스톤: <span id="moonstone-count">0</span> (+<span id="moonstone-bonus">0</span>% 생산 보너스)
-      </div>
-      <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">🔊 사운드 ON</button>
-    </div>
-  </header>
 
-  <div id="offline-banner" class="offline-banner"></div>
-
-  <div class="grid">
-    <!-- LEFT: Resources -->
-    <div class="panel">
-      <div class="panel-title">📦 자원</div>
-      <div id="resources-list"></div>
-    </div>
-
-    <!-- CENTER: Buildings + Upgrades -->
-    <div class="panel">
-      <div class="tab-bar">
-        <button class="tab active" onclick="switchTab('buildings')">🏭 시설</button>
-        <button class="tab" onclick="switchTab('upgrades')">🔬 업그레이드</button>
-      </div>
-      <div id="tab-buildings" class="tab-content active">
-        <div id="buildings-list"></div>
-      </div>
-      <div id="tab-upgrades" class="tab-content">
-        <div id="upgrades-list"></div>
-      </div>
-    </div>
-
-    <!-- RIGHT: Rocket -->
-    <div class="panel">
-      <div class="panel-title">🚀 로켓 조립</div>
-      <div class="rocket-visual" id="rocket-emoji">🚀</div>
-      <div id="parts-list"></div>
-      <div id="science-summary" class="science-summary"></div>
-      <div id="assembly-controls"></div>
-      <div id="assembly-slots"></div>
-    </div>
+<!-- ==================== TITLE SCREEN ==================== -->
+<div id="title-screen">
+  <div class="title-logo glow-strong">MOON IDLE</div>
+  <div class="title-subtitle">달 탐사 로켓 제작소 / LUNAR EXPLORATION SIM</div>
+  <div class="boot-log" id="boot-log"></div>
+  <div class="title-save-strip" id="save-strip">
+    <span>세이브 없음</span>
+  </div>
+  <div class="title-btns">
+    <button class="title-btn primary" onclick="startNewGame()">새 게임</button>
+    <button class="title-btn" id="continue-btn" onclick="continueGame()" style="display:none">이어하기</button>
+    <button class="title-btn" onclick="openSettings()">설정</button>
   </div>
 </div>
 
-<div id="notif"></div>
+<!-- ==================== MAIN APP ==================== -->
+<div id="app">
+  <!-- RESOURCE BAR -->
+  <div id="res-bar">
+    <div class="res-bar-inner" id="res-bar-inner"></div>
+    <div class="res-bar-right">
+      <button id="sound-btn" onclick="toggleSound()">SND:ON</button>
+    </div>
+  </div>
 
-<div id="launch-overlay">
-  <div class="moon-emoji">🌙</div>
-  <h2>달 탐사 성공!</h2>
-  <p id="launch-msg">로켓이 달에 도착했습니다!<br>문스톤을 획득하고 더 강력하게 재시작하세요.</p>
-  <div style="font-size:0.9rem;color:var(--accent-gold);margin-bottom:8px" id="moonstone-earned"></div>
-  <button class="prestige-btn" onclick="prestige()">🌙 문스톤 획득 후 재시작</button>
+  <!-- NAV TABS -->
+  <div id="nav-tabs">
+    <button class="nav-tab active" onclick="switchMainTab(0)">생산 허브</button>
+    <button class="nav-tab" onclick="switchMainTab(1)">연구소</button>
+    <button class="nav-tab" onclick="switchMainTab(2)">조립동</button>
+    <button class="nav-tab" onclick="switchMainTab(3)">발사 통제</button>
+    <button class="nav-tab" onclick="switchMainTab(4)">미션 현황</button>
+  </div>
+
+  <!-- OFFLINE BANNER -->
+  <div id="offline-banner"></div>
+
+  <!-- ===== TAB 0: PRODUCTION HUB ===== -->
+  <div class="tab-pane active" id="pane-0">
+    <div class="panel">
+      <div class="panel-header">생산 허브</div>
+      <div class="prod-status-line" id="prod-status"></div>
+      <!-- ASCII world -->
+      <div class="prod-world-wrap">
+        <div class="prod-world" id="prod-world"></div>
+      </div>
+      <!-- Building cards -->
+      <div class="bld-grid" id="bld-grid"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 1: RESEARCH ===== -->
+  <div class="tab-pane" id="pane-1">
+    <div class="panel">
+      <div class="panel-header">연구소 — 업그레이드 트리</div>
+      <div id="upg-tree-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 2: ASSEMBLY ===== -->
+  <div class="tab-pane" id="pane-2">
+    <div class="panel">
+      <div class="panel-header">로켓 조립동</div>
+      <div class="assembly-layout">
+        <!-- LEFT: ASCII rocket + parts -->
+        <div>
+          <div class="rocket-art-wrap">
+            <div id="rocket-art-display"></div>
+          </div>
+          <div class="panel" style="margin-top:8px;">
+            <div class="panel-header">부품 현황</div>
+            <div id="parts-checklist"></div>
+          </div>
+          <div class="science-box" id="science-box"></div>
+        </div>
+        <!-- RIGHT: quality + slots -->
+        <div>
+          <div class="panel">
+            <div class="panel-header">품질 등급</div>
+            <div class="quality-selector" id="quality-selector"></div>
+          </div>
+          <div class="panel" style="margin-top:8px;">
+            <div class="panel-header">조립 슬롯</div>
+            <div id="assembly-slots-wrap"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 3: LAUNCH CONTROL ===== -->
+  <div class="tab-pane" id="pane-3">
+    <div class="panel">
+      <div class="panel-header">발사 통제</div>
+      <div class="launch-layout">
+        <div>
+          <div class="panel">
+            <div class="panel-header">발사 준비 목록</div>
+            <div id="ready-list-wrap"></div>
+          </div>
+          <div class="launch-result" id="launch-result">
+            <div class="launch-result-title">발사 성공</div>
+            <div class="launch-result-stats" id="lr-stats"></div>
+            <div id="lr-ms" style="color:var(--amber);font-size:14px;margin-bottom:8px;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="panel">
+            <div class="panel-header">발사 시퀀스</div>
+            <div class="launch-anim-wrap" id="launch-anim-wrap">
+              <div style="color:var(--green-mid);font-size:12px;">// 발사 대기 중</div>
+            </div>
+            <div id="telem-wrap"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB 4: MISSION PROGRESS ===== -->
+  <div class="tab-pane" id="pane-4">
+    <div class="panel">
+      <div class="panel-header">미션 진행 현황</div>
+      <div id="phase-progress-wrap"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">발사 기록</div>
+      <div id="history-wrap"></div>
+    </div>
+    <div id="prestige-wrap"></div>
+  </div>
 </div>
 
+<!-- ==================== LAUNCH OVERLAY ==================== -->
+<div id="launch-overlay">
+  <div class="lo-title">// 달 탐사 성공</div>
+  <pre class="lo-rocket" id="lo-rocket-art"></pre>
+  <div class="lo-stats" id="lo-stats"></div>
+  <div class="lo-ms" id="lo-ms"></div>
+  <div class="lo-btns">
+    <button class="btn btn-amber" onclick="confirmLaunch()">문스톤 획득 후 재시작</button>
+    <button class="btn" onclick="closeLaunchOverlay()">계속 진행</button>
+  </div>
+</div>
+
+<!-- NOTIFICATIONS -->
+<div id="notif"></div>
+
 <script>
-// ==================== GAME DATA ====================
+// ============================================================
+//  GAME DATA
+// ============================================================
 const RESOURCES = [
-  { id:'metal',       name:'금속',     icon:'🪨', color:'#90a4ae' },
-  { id:'fuel',        name:'연료',     icon:'⛽', color:'#ef9a9a' },
-  { id:'electronics', name:'전자부품', icon:'💡', color:'#fff176' },
-  { id:'research',    name:'연구 포인트', icon:'🔬', color:'#b39ddb' },
+  { id:'money',       name:'돈',       symbol:'₩',  color:'var(--amber)' },
+  { id:'metal',       name:'금속',     symbol:'Fe', color:'var(--green)' },
+  { id:'fuel',        name:'연료',     symbol:'LOX',color:'var(--green)' },
+  { id:'electronics', name:'전자부품', symbol:'PCB',color:'var(--green)' },
+  { id:'research',    name:'연구',     symbol:'RP', color:'var(--green-mid)' },
 ];
 
 const BUILDINGS = [
-  { id:'mine',           name:'광산',     icon:'⛏️',  desc:'금속 자동 채굴',      produces:'metal',       baseRate:1,   baseCost:{metal:10} },
-  { id:'refinery',       name:'정유소',   icon:'🛢️',  desc:'연료 자동 생산',      produces:'fuel',        baseRate:0.8, baseCost:{metal:30, fuel:0} },
-  { id:'electronicsLab', name:'전자공장', icon:'🏭',  desc:'전자부품 생산',       produces:'electronics', baseRate:0.5, baseCost:{metal:80, fuel:20} },
-  { id:'researchLab',    name:'연구소',   icon:'🔭',  desc:'연구 포인트 생산',    produces:'research',    baseRate:0.3, baseCost:{metal:200, electronics:10} },
-  { id:'solarArray',     name:'태양광 패널', icon:'☀️', desc:'모든 생산 +10%',    produces:'bonus',       baseRate:0,   baseCost:{metal:500, electronics:50} },
-  { id:'launchPad',      name:'로켓 발사대', icon:'🛰️', desc:'조립 슬롯 +1, 대량 발사 인프라', produces:'slots', baseRate:0, baseCost:{metal:1500, electronics:250, research:250} },
+  { id:'ops_center',   name:'운영 센터',      icon:'[OPS]', produces:'money',       baseRate:20,  baseCost:{metal:50},                          desc:'수익 창출 허브' },
+  { id:'supply_depot', name:'보급 창고',      icon:'[DEP]', produces:'money',       baseRate:60,  baseCost:{metal:200,electronics:50},           desc:'물류 수익' },
+  { id:'mine',         name:'철광석 채굴기',  icon:'[MIN]', produces:'metal',       baseRate:1.2, baseCost:{money:100},                          desc:'기본 금속 생산' },
+  { id:'extractor',    name:'보크사이트 추출기',icon:'[EXT]',produces:'metal',      baseRate:3.5, baseCost:{money:500,metal:200},                 desc:'고급 금속 추출' },
+  { id:'refinery',     name:'연료 정제소',    icon:'[REF]', produces:'fuel',        baseRate:0.8, baseCost:{money:300,metal:100},                 desc:'LOX/RP-1 생산' },
+  { id:'cryo_plant',   name:'극저온 플랜트',  icon:'[CRY]', produces:'fuel',        baseRate:2.0, baseCost:{money:1000,metal:400,electronics:100},desc:'고순도 극저온 연료' },
+  { id:'elec_lab',     name:'전자공학 연구소',icon:'[PCB]', produces:'electronics', baseRate:0.5, baseCost:{money:400,metal:150},                 desc:'회로 부품 생산' },
+  { id:'fab_plant',    name:'반도체 공장',    icon:'[FAB]', produces:'electronics', baseRate:1.8, baseCost:{money:2000,metal:800,electronics:200}, desc:'고급 반도체' },
+  { id:'research_lab', name:'연구소',         icon:'[RSH]', produces:'research',    baseRate:0.4, baseCost:{money:500,electronics:100},            desc:'기술 연구 포인트' },
+  { id:'r_and_d',      name:'R&D 센터',       icon:'[RND]', produces:'research',    baseRate:1.2, baseCost:{money:3000,electronics:500},           desc:'고급 연구 가속' },
+  { id:'solar_array',  name:'태양광 어레이',  icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:800,electronics:200},            desc:'전체 생산 +10%/개' },
+  { id:'launch_pad',   name:'발사대',         icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:5000,metal:2000,electronics:500},desc:'발사 슬롯 +1' },
 ];
 
 const PARTS = [
-  { id:'engine',    name:'엔진',       icon:'🔥', cost:{metal:900,  electronics:450}, desc:'로켓 추진 시스템' },
-  { id:'fuelTank',  name:'연료 탱크',  icon:'🛢️', cost:{metal:600,  fuel:2200},       desc:'고압 연료 저장소' },
-  { id:'control',   name:'제어 시스템', icon:'🖥️', cost:{electronics:900, research:600}, desc:'비행 제어 컴퓨터' },
-  { id:'hull',      name:'선체',       icon:'🔩', cost:{metal:2200, fuel:450},         desc:'내열 합금 선체' },
-  { id:'payload',   name:'탑재체',     icon:'📡', cost:{electronics:700, research:1400}, desc:'달 탐사 장비' },
+  { id:'engine',   name:'엔진',      icon:'[ENG]', cost:{metal:80,  fuel:40,  electronics:20} },
+  { id:'fueltank', name:'연료 탱크', icon:'[TNK]', cost:{metal:60,  fuel:60} },
+  { id:'control',  name:'제어 시스템',icon:'[CTL]',cost:{electronics:80, research:30} },
+  { id:'hull',     name:'기체 선체', icon:'[HUL]', cost:{metal:100} },
+  { id:'payload',  name:'탑재체',    icon:'[PLD]', cost:{electronics:40, research:50} },
 ];
 
-const ROCKET_QUALITIES = [
-  { id:'proto',  name:'궤도 시제기', icon:'🧪', costMult:1.0, timeSec:1800, ispBonus:0,  dryMassMult:1.0, relBonus:0,  reuseBonus:0,  rewardMult:1.0 },
-  { id:'block1', name:'Block-I',   icon:'🚀', costMult:1.5, timeSec:3600, ispBonus:12, dryMassMult:0.95, relBonus:6,  reuseBonus:8,  rewardMult:1.6 },
-  { id:'block2', name:'Block-II',  icon:'🛰️', costMult:2.4, timeSec:7200, ispBonus:24, dryMassMult:0.9,  relBonus:10, reuseBonus:14, rewardMult:2.4 },
-  { id:'heavy',  name:'Heavy',     icon:'🌌', costMult:4.0, timeSec:14400,ispBonus:38, dryMassMult:0.84, relBonus:16, reuseBonus:22, rewardMult:3.8 },
+const QUALITIES = [
+  { id:'proto',    name:'PROTO-MK1', icon:'[P1]', costMult:1.0, timeSec:30,  ispBonus:0,  dryMassMult:1.0,  relBonus:0,  reuseBonus:0,  rewardMult:1.0 },
+  { id:'standard', name:'STD-MK2',   icon:'[S2]', costMult:2.0, timeSec:60,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:1.5 },
+  { id:'advanced', name:'ADV-MK3',   icon:'[A3]', costMult:4.0, timeSec:120, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:2.5 },
+  { id:'elite',    name:'ELITE-MK4', icon:'[E4]', costMult:8.0, timeSec:240, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:4.5 },
 ];
-const SAVE_VERSION = 2;
 
 const UPGRADES = [
-  { id:'mining1',    name:'채굴 효율 I',   icon:'⛏️', desc:'금속 생산 +50%',        cost:{research:50},  effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.5; } },
-  { id:'mining2',    name:'채굴 효율 II',  icon:'⛏️', desc:'금속 생산 +100%',       cost:{research:200}, effect:()=>{ prodMult.metal=(prodMult.metal||1)*2; },   req:'mining1' },
-  { id:'fuel1',      name:'연료 압축 I',   icon:'⛽', desc:'연료 생산 +50%',         cost:{research:80},  effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.5; } },
-  { id:'fuel2',      name:'연료 압축 II',  icon:'⛽', desc:'연료 생산 +100%',        cost:{research:300}, effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*2; },    req:'fuel1' },
-  { id:'auto1',      name:'자동화 I',      icon:'🤖', desc:'모든 생산 +25%',         cost:{research:150}, effect:()=>{ globalMult*=1.25; } },
-  { id:'auto2',      name:'자동화 II',     icon:'🤖', desc:'모든 생산 +50%',         cost:{research:500}, effect:()=>{ globalMult*=1.5; },                       req:'auto1' },
-  { id:'lightweight',name:'경량 소재',     icon:'🪶', desc:'로켓 부품 비용 -25%',   cost:{research:400}, effect:()=>{ partCostMult=0.75; } },
-  { id:'fusion',     name:'핵융합 엔진',   icon:'⚛️', desc:'문스톤 획득량 +2',      cost:{research:1000},effect:()=>{ fusionBonus=2; } },
-  { id:'qaRig',      name:'품질 시험대',   icon:'🧰', desc:'신뢰도 +8%',             cost:{research:900}, effect:()=>{ reliabilityBonus += 8; },                 req:'auto1' },
-  { id:'padOps',     name:'발사 운영 AI',  icon:'🧠', desc:'조립 슬롯 +1',           cost:{research:1800},effect:()=>{ slotBonus += 1; },                        req:'qaRig' },
+  { id:'drill',      name:'정밀 드릴',     icon:'[DRL]', cost:{research:50},                   req:null,        desc:'금속 생산 +25%',            effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.25; } },
+  { id:'catalyst',   name:'촉매 정제',     icon:'[CAT]', cost:{research:80,fuel:100},           req:'drill',     desc:'연료 생산 +30%',            effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; } },
+  { id:'microchip',  name:'마이크로칩',    icon:'[MCH]', cost:{research:100,electronics:80},    req:null,        desc:'전자부품 +35%',             effect:()=>{ prodMult.electronics=(prodMult.electronics||1)*1.35; } },
+  { id:'automation', name:'자동화 시스템', icon:'[AUT]', cost:{research:200,electronics:200},   req:'microchip', desc:'전체 생산 ×1.5',            effect:()=>{ globalMult*=1.5; } },
+  { id:'alloy',      name:'고강도 합금',   icon:'[ALY]', cost:{research:150,metal:500},         req:'drill',     desc:'부품 비용 -20%',            effect:()=>{ partCostMult*=0.8; } },
+  { id:'lightweight',name:'경량 구조',     icon:'[LGT]', cost:{research:250,metal:800},         req:'alloy',     desc:'건조질량 -10%, 재활용 +8%', effect:()=>{ /* handled in getRocketScience */ } },
+  { id:'fusion',     name:'핵융합 엔진',   icon:'[FSN]', cost:{research:500,electronics:400},   req:'automation',desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
+  { id:'reliability',name:'신뢰도 강화',   icon:'[REL]', cost:{research:300},                   req:'microchip', desc:'발사 신뢰도 +15%',          effect:()=>{ reliabilityBonus+=15; } },
+  { id:'multipad',   name:'복수 발사대',   icon:'[MUL]', cost:{research:400,metal:1000},        req:'alloy',     desc:'조립 슬롯 +1',              effect:()=>{ slotBonus++; } },
 ];
 
-// ==================== GAME STATE ====================
+// ============================================================
+//  GAME STATE
+// ============================================================
 let gs = {
-  res: { metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0, launchPad:0 },
-  parts: { engine:0, fuelTank:0, control:0, hull:0, payload:0 },
+  res: { money:500, metal:0, fuel:0, electronics:0, research:0 },
+  buildings: { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
+  parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
+  assembly: { selectedQuality:'proto', jobs:[] },
   upgrades: {},
-  assembly: {
-    selectedQuality: 'proto',
-    jobs: []
-  },
-  moonstone: 0,
   launches: 0,
-  settings: { sound: true },
+  moonstone: 0,
+  history: [],
   lastTick: Date.now(),
+  settings: { sound: true },
+  saveVersion: 2,
 };
 let prodMult = {};
 let globalMult = 1;
@@ -570,578 +940,1034 @@ let partCostMult = 1;
 let fusionBonus = 0;
 let reliabilityBonus = 0;
 let slotBonus = 0;
-let audioCtx = null;
 
-// ==================== HELPERS ====================
+let audioCtx = null;
+let activeTab = 0;
+let launchInProgress = false;
+let pendingLaunchMs = 0;
+let pendingLaunchData = null;
+
+// ============================================================
+//  HELPERS
+// ============================================================
 function fmt(n) {
-  if (n >= 1e12) return (n/1e12).toFixed(2)+'T';
-  if (n >= 1e9)  return (n/1e9).toFixed(2)+'B';
-  if (n >= 1e6)  return (n/1e6).toFixed(2)+'M';
-  if (n >= 1e3)  return (n/1e3).toFixed(2)+'K';
+  if (typeof n !== 'number' || isNaN(n)) return '0';
+  if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
   return Math.floor(n).toString();
 }
-function fmtDec(n) {
-  if (n >= 1000) return fmt(n);
-  return n.toFixed(1);
+function fmtDec(n,d=1) {
+  if (typeof n !== 'number' || isNaN(n)) return '0.0';
+  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
+  return n.toFixed(d);
 }
 function fmtTime(sec) {
   const s = Math.max(0, Math.floor(sec));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const r = s % 60;
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m ${r}s`;
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  const r = s%60;
+  if (h>0) return `${h}h ${m}m`;
+  if (m>0) return `${m}m ${r}s`;
   return `${r}s`;
 }
-function clamp(v, min, max) {
-  return Math.min(max, Math.max(min, v));
+function clamp(v,mn,mx){return Math.min(mx,Math.max(mn,v));}
+function getQuality(qid){return QUALITIES.find(q=>q.id===qid)||QUALITIES[0];}
+function getAssemblySlots(){return 1+gs.buildings.launch_pad+slotBonus;}
+function ensureAssemblyState(){
+  if(!gs.assembly) gs.assembly={selectedQuality:'proto',jobs:[]};
+  if(!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs=[];
+  if(!gs.assembly.selectedQuality) gs.assembly.selectedQuality='proto';
+  const slots=getAssemblySlots();
+  while(gs.assembly.jobs.length<slots) gs.assembly.jobs.push(null);
+  if(gs.assembly.jobs.length>slots) gs.assembly.jobs=gs.assembly.jobs.slice(0,slots);
 }
-function getQuality(qid) {
-  return ROCKET_QUALITIES.find(q => q.id === qid) || ROCKET_QUALITIES[0];
+function getMoonstoneMult(){return 1+gs.moonstone*0.05;}
+function getSolarBonus(){return 1+gs.buildings.solar_array*0.1;}
+function canAfford(cost){return Object.entries(cost).every(([r,v])=>(gs.res[r]||0)>=v);}
+function spend(cost){Object.entries(cost).forEach(([r,v])=>{gs.res[r]-=v;});}
+function getBuildingCost(bld){
+  const cost={};
+  Object.entries(bld.baseCost).forEach(([r,v])=>{cost[r]=Math.floor(v*Math.pow(1.15,gs.buildings[bld.id]));});
+  return cost;
 }
-function getAssemblySlots() {
-  return 1 + gs.buildings.launchPad + slotBonus;
+function getPartCost(part){
+  const cost={};
+  Object.entries(part.cost).forEach(([r,v])=>{cost[r]=Math.floor(v*partCostMult);});
+  return cost;
 }
-function ensureAssemblyState() {
-  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
-  if (!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs = [];
-  if (!gs.assembly.selectedQuality) gs.assembly.selectedQuality = 'proto';
-  const slots = getAssemblySlots();
-  while (gs.assembly.jobs.length < slots) gs.assembly.jobs.push(null);
-  if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
-}
-function getAssemblyCost(qualityId) {
-  const q = getQuality(qualityId);
-  const total = { metal:0, fuel:0, electronics:0, research:0 };
-  PARTS.forEach(p => {
-    const c = getPartCost(p);
-    Object.entries(c).forEach(([r,v]) => {
-      total[r] = (total[r] || 0) + Math.floor(v * q.costMult * 0.32);
-    });
-  });
-  return total;
-}
-function getRocketScience(qualityId) {
-  const q = getQuality(qualityId);
-  const tech = {
-    mine: gs.buildings.mine,
-    lab: gs.buildings.researchLab,
-    elec: gs.buildings.electronicsLab
-  };
-  const isp = 315 + q.ispBonus + tech.elec * 1.2 + (gs.upgrades.fusion ? 22 : 0);
-  const dryMass = 28 * q.dryMassMult * (gs.upgrades.lightweight ? 0.9 : 1);
-  const propMass = 76 + gs.buildings.refinery * 0.1;
-  const thrust = 1450 + tech.mine * 0.8 + (gs.upgrades.fusion ? 120 : 0);
-  const m0 = dryMass + propMass;
-  const mf = dryMass;
-  const deltaV = (isp * 9.81 * Math.log(m0 / mf)) / 1000;
-  const twr = thrust / (m0 * 9.81);
-  const reliability = clamp(56 + tech.lab * 1.9 + tech.elec * 0.8 + reliabilityBonus + q.relBonus, 35, 99.5);
-  const reusability = clamp(6 + gs.buildings.launchPad * 4 + q.reuseBonus + (gs.upgrades.lightweight ? 8 : 0), 0, 95);
-  const score = deltaV * 11 + twr * 26 + reliability * 0.7 + reusability * 0.3;
-  return { deltaV, twr, reliability, reusability, score };
-}
-function getMoonstoneRewardForQuality(qualityId) {
-  const q = getQuality(qualityId);
-  const sci = getRocketScience(qualityId);
-  const qualityBonus = Math.floor((sci.score / 160) * q.rewardMult);
-  const missionBonus = Math.floor(gs.launches / 4);
-  return Math.max(1, 1 + fusionBonus + qualityBonus + missionBonus);
-}
-function canAfford(cost) {
-  return Object.entries(cost).every(([r,v]) => gs.res[r] >= v);
-}
-function spend(cost) {
-  Object.entries(cost).forEach(([r,v]) => gs.res[r] -= v);
-}
-function notify(msg, color='var(--accent-blue)') {
-  const el = document.createElement('div');
-  el.className = 'notif-item';
-  el.style.borderColor = color;
-  el.textContent = msg;
-  document.getElementById('notif').appendChild(el);
-  setTimeout(() => el.remove(), 3200);
-}
-function ensureAudioContext() {
-  if (!audioCtx) {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (!Ctx) return null;
-    audioCtx = new Ctx();
-  }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
-  return audioCtx;
-}
-function playSfx(type='sine', freq=440, duration=0.08, volume=0.03, targetFreq=null) {
-  if (!gs.settings?.sound) return;
-  const ctx = ensureAudioContext();
-  if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  const now = ctx.currentTime;
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, now);
-  if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, now + duration);
-  gain.gain.setValueAtTime(volume, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + duration);
-}
-function playLaunchSfx() {
-  if (!gs.settings?.sound) return;
-  playSfx('triangle', 280, 0.12, 0.04, 380);
-  setTimeout(() => playSfx('triangle', 420, 0.16, 0.05, 620), 120);
-  setTimeout(() => playSfx('sawtooth', 680, 0.22, 0.04, 980), 250);
-}
-function toggleSound() {
-  gs.settings.sound = !gs.settings.sound;
-  renderSoundToggle();
-  saveGame();
-  notify(gs.settings.sound ? '🔊 사운드 ON' : '🔇 사운드 OFF', 'var(--accent-blue)');
-  if (gs.settings.sound) playSfx('sine', 640, 0.06, 0.03, 720);
-}
-function renderSoundToggle() {
-  const btn = document.getElementById('sound-toggle');
-  if (!btn) return;
-  btn.textContent = gs.settings?.sound ? '🔊 사운드 ON' : '🔇 사운드 OFF';
-}
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['buildings','upgrades'][i]===tab));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab-'+tab).classList.add('active');
-}
-
-// ==================== PRODUCTION ====================
-function getMoonstoneMult() {
-  return 1 + gs.moonstone * 0.05;
-}
-function getBuildingRate(b) {
-  const bld = BUILDINGS.find(x=>x.id===b.id);
-  if (!bld || bld.produces==='bonus') return 0;
-  const mult = (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult();
-  return bld.baseRate * gs.buildings[b.id] * mult;
-}
-function getSolarBonus() {
-  return 1 + gs.buildings.solarArray * 0.1;
-}
-function getProduction() {
-  const prod = { metal:0, fuel:0, electronics:0, research:0 };
-  BUILDINGS.forEach(b => {
-    if (b.produces !== 'bonus' && Object.prototype.hasOwnProperty.call(prod, b.produces)) {
-      const rate = b.baseRate * gs.buildings[b.id] * (prodMult[b.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus();
-      prod[b.produces] = (prod[b.produces]||0) + rate;
-    }
+function getProduction(){
+  const prod={money:0,metal:0,fuel:0,electronics:0,research:0};
+  BUILDINGS.forEach(b=>{
+    if(b.produces==='bonus'||!(b.produces in prod)) return;
+    const cnt=gs.buildings[b.id]||0;
+    const rate=b.baseRate*cnt*(prodMult[b.produces]||1)*globalMult*getMoonstoneMult()*getSolarBonus();
+    prod[b.produces]+=rate;
   });
   return prod;
 }
-function tick() {
-  const now = Date.now();
-  const dt = Math.min((now - gs.lastTick) / 1000, 1);
-  gs.lastTick = now;
-  const prod = getProduction();
-  RESOURCES.forEach(r => { gs.res[r.id] += prod[r.id] * dt; });
-  updateAssemblyJobs(now);
+function getTotalIncome(){
+  const p=getProduction();
+  return p.money;
 }
-function calcOffline() {
-  const now = Date.now();
-  const elapsed = Math.min((now - gs.lastTick) / 1000, 8*3600);
-  if (elapsed < 5) return;
-  const prod = getProduction();
-  RESOURCES.forEach(r => { gs.res[r.id] += prod[r.id] * elapsed; });
-  gs.lastTick = now;
-  const mins = Math.floor(elapsed/60);
-  updateAssemblyJobs(now);
-  if (mins > 0) {
-    const banner = document.getElementById('offline-banner');
-    banner.style.display = 'block';
-    banner.textContent = `⏰ 오프라인 ${mins}분 동안 자원이 생산되었습니다!`;
-    setTimeout(() => banner.style.display='none', 5000);
+function getTotalWorkers(){
+  return Object.values(gs.buildings).reduce((a,b)=>a+b,0);
+}
+function getRocketScience(qualityId){
+  const q=getQuality(qualityId);
+  const isp=315+q.ispBonus+gs.buildings.elec_lab*1.2+(gs.upgrades.fusion?22:0);
+  const dryMass=28*q.dryMassMult*(gs.upgrades.lightweight?0.9:1);
+  const propMass=76+gs.buildings.refinery*0.1+gs.buildings.cryo_plant*0.2;
+  const thrust=1450+gs.buildings.mine*0.8+(gs.upgrades.fusion?120:0);
+  const m0=dryMass+propMass;
+  const deltaV=isp*9.81*Math.log(m0/dryMass)/1000;
+  const twr=thrust/(m0*9.81);
+  const reliability=clamp(56+gs.buildings.research_lab*1.9+gs.buildings.elec_lab*0.8+reliabilityBonus+q.relBonus,0,99.5);
+  const altitude=clamp(deltaV*22,0,400);
+  return {deltaV,twr,reliability,altitude};
+}
+function getMoonstoneReward(qualityId){
+  const sci=getRocketScience(qualityId);
+  const q=getQuality(qualityId);
+  return Math.max(1,Math.floor((sci.altitude/20)*q.rewardMult)+fusionBonus+Math.floor(gs.launches/4));
+}
+function getCostStr(cost){
+  return Object.entries(cost).map(([r,v])=>{
+    const res=RESOURCES.find(x=>x.id===r);
+    return `${res?res.symbol:r}:${fmt(v)}`;
+  }).join(' ');
+}
+
+// ============================================================
+//  AUDIO
+// ============================================================
+function ensureAudio(){
+  if(!audioCtx){
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx) return null;
+    audioCtx=new Ctx();
   }
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+function playSfx(type='sine',freq=440,dur=0.08,vol=0.03,targetFreq=null){
+  if(!gs.settings.sound) return;
+  const ctx=ensureAudio();
+  if(!ctx) return;
+  const osc=ctx.createOscillator();
+  const gain=ctx.createGain();
+  const now=ctx.currentTime;
+  osc.type=type;
+  osc.frequency.setValueAtTime(freq,now);
+  if(targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq,now+dur);
+  gain.gain.setValueAtTime(vol,now);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now+dur);
+}
+function playLaunchSfx(){
+  if(!gs.settings.sound) return;
+  playSfx('triangle',280,0.12,0.04,380);
+  setTimeout(()=>playSfx('triangle',420,0.16,0.05,620),120);
+  setTimeout(()=>playSfx('sawtooth',680,0.22,0.04,980),250);
+}
+function toggleSound(){
+  gs.settings.sound=!gs.settings.sound;
+  document.getElementById('sound-btn').textContent=gs.settings.sound?'SND:ON':'SND:OFF';
+  document.getElementById('sound-btn').style.color=gs.settings.sound?'var(--green-mid)':'var(--red)';
+  if(gs.settings.sound) playSfx('sine',640,0.06,0.03,720);
 }
 
-// ==================== BUILDING COST ====================
-function getBuildingCost(bld) {
-  const cost = {};
-  Object.entries(bld.baseCost).forEach(([r,v]) => {
-    cost[r] = Math.floor(v * Math.pow(1.15, gs.buildings[bld.id]));
-  });
-  return cost;
-}
-function getPartCost(part) {
-  const cost = {};
-  Object.entries(part.cost).forEach(([r,v]) => { cost[r] = Math.floor(v * partCostMult); });
-  return cost;
+// ============================================================
+//  NOTIFICATIONS
+// ============================================================
+function notify(msg,cls=''){
+  const el=document.createElement('div');
+  el.className='notif-item'+(cls?' '+cls:'');
+  el.textContent=msg;
+  document.getElementById('notif').appendChild(el);
+  setTimeout(()=>el.remove(),3200);
 }
 
-// ==================== ACTIONS ====================
-function clickResource(rid) {
-  const mult = getMoonstoneMult() * globalMult;
-  const amt = (prodMult[rid]||1) * mult;
-  gs.res[rid] += amt;
-  playSfx('sine', 480, 0.04, 0.012, 560);
+// ============================================================
+//  TAB SWITCHING
+// ============================================================
+function switchMainTab(idx){
+  activeTab=idx;
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===idx));
+  renderTab(idx);
 }
-function buyBuilding(bid) {
-  const bld = BUILDINGS.find(b=>b.id===bid);
-  const cost = getBuildingCost(bld);
-  if (!canAfford(cost)) return;
+
+// ============================================================
+//  ACTIONS
+// ============================================================
+function buyBuilding(bid){
+  const bld=BUILDINGS.find(b=>b.id===bid);
+  if(!bld) return;
+  const cost=getBuildingCost(bld);
+  if(!canAfford(cost)){notify('자원 부족',  'red');return;}
   spend(cost);
-  gs.buildings[bid]++;
-  notify(`${bld.icon} ${bld.name} 건설 완료! (${gs.buildings[bid]}개)`);
-  playSfx('triangle', 360, 0.08, 0.03, 520);
-  renderAll();
+  gs.buildings[bid]=(gs.buildings[bid]||0)+1;
+  notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]})`);
+  playSfx('triangle',360,0.08,0.03,520);
+  renderTab(activeTab);
 }
-function craftPart(pid) {
-  const part = PARTS.find(p=>p.id===pid);
-  const cost = getPartCost(part);
-  if (!canAfford(cost) || gs.parts[pid]) return;
+function craftPart(pid){
+  const part=PARTS.find(p=>p.id===pid);
+  if(!part) return;
+  if(gs.parts[pid]){notify('이미 제작됨');return;}
+  const cost=getPartCost(part);
+  if(!canAfford(cost)){notify('자원 부족','red');return;}
   spend(cost);
-  gs.parts[pid] = 1;
-  notify(`${part.icon} ${part.name} 제작 완료!`, 'var(--accent-green)');
-  playSfx('square', 520, 0.11, 0.03, 760);
-  renderAll();
+  gs.parts[pid]=1;
+  notify(`${part.icon} ${part.name} 제작 완료`);
+  playSfx('square',520,0.11,0.03,760);
+  renderTab(activeTab);
 }
-function buyUpgrade(uid) {
-  const upg = UPGRADES.find(u=>u.id===uid);
-  if (!upg || gs.upgrades[uid] || !canAfford(upg.cost)) return;
-  if (upg.req && !gs.upgrades[upg.req]) return;
+function buyUpgrade(uid){
+  const upg=UPGRADES.find(u=>u.id===uid);
+  if(!upg||gs.upgrades[uid]) return;
+  if(upg.req&&!gs.upgrades[upg.req]){notify('선행 연구 필요','red');return;}
+  if(!canAfford(upg.cost)){notify('연구 포인트 부족','red');return;}
   spend(upg.cost);
-  gs.upgrades[uid] = true;
+  gs.upgrades[uid]=true;
   upg.effect();
-  notify(`${upg.icon} ${upg.name} 연구 완료!`, 'var(--accent-purple)');
-  playSfx('sawtooth', 440, 0.1, 0.028, 700);
-  renderAll();
+  notify(`${upg.icon} ${upg.name} 연구 완료`);
+  playSfx('sawtooth',440,0.1,0.028,700);
+  renderTab(activeTab);
 }
-function selectQuality(qid) {
-  gs.assembly.selectedQuality = qid;
-  renderAll();
+function selectQuality(qid){
+  gs.assembly.selectedQuality=qid;
+  renderTab(2);
 }
-function updateAssemblyJobs(now = Date.now()) {
+function startAssembly(slotIdx){
   ensureAssemblyState();
-  for (let i = 0; i < gs.assembly.jobs.length; i++) {
-    const job = gs.assembly.jobs[i];
-    if (!job || job.ready) continue;
-    if (now >= job.endAt) {
-      job.ready = true;
-      notify(`🛠️ 슬롯 ${i+1}: ${getQuality(job.qualityId).name} 조립 완료`, 'var(--accent-green)');
-    }
-  }
-}
-function startAssembly(slotIdx) {
-  ensureAssemblyState();
-  if (!PARTS.every(p => gs.parts[p.id])) {
-    notify('먼저 엔진/탱크/제어/선체/탑재체를 모두 완성하세요.', 'var(--accent-red)');
-    return;
-  }
-  if (gs.assembly.jobs[slotIdx]) return;
-  const q = getQuality(gs.assembly.selectedQuality);
-  const cost = getAssemblyCost(q.id);
-  if (!canAfford(cost)) return;
+  if(!PARTS.every(p=>gs.parts[p.id])){notify('부품을 모두 제작하세요','red');return;}
+  if(gs.assembly.jobs[slotIdx]){notify('슬롯이 사용 중');return;}
+  const q=getQuality(gs.assembly.selectedQuality);
+  const cost=getAssemblyCost(q.id);
+  if(!canAfford(cost)){notify('자원 부족','red');return;}
   spend(cost);
-  const now = Date.now();
-  gs.assembly.jobs[slotIdx] = {
-    qualityId: q.id,
-    startAt: now,
-    endAt: now + q.timeSec * 1000,
-    ready: false
-  };
-  notify(`🚀 슬롯 ${slotIdx+1}: ${q.name} 조립 시작 (${fmtTime(q.timeSec)})`);
-  playSfx('triangle', 310, 0.09, 0.03, 430);
-  renderAll();
+  const now=Date.now();
+  gs.assembly.jobs[slotIdx]={qualityId:q.id,startAt:now,endAt:now+q.timeSec*1000,ready:false};
+  notify(`슬롯 ${slotIdx+1}: ${q.name} 조립 시작 (${fmtTime(q.timeSec)})`);
+  playSfx('triangle',310,0.09,0.03,430);
+  renderTab(activeTab);
 }
-function launchFromSlot(slotIdx) {
+function getAssemblyCost(qualityId){
+  const q=getQuality(qualityId);
+  const total={};
+  PARTS.forEach(p=>{
+    const c=getPartCost(p);
+    Object.entries(c).forEach(([r,v])=>{total[r]=(total[r]||0)+Math.floor(v*q.costMult*0.32);});
+  });
+  return total;
+}
+function launchFromSlot(slotIdx){
   ensureAssemblyState();
-  const job = gs.assembly.jobs[slotIdx];
-  if (!job || !job.ready) return;
-  const q = getQuality(job.qualityId);
-  const sci = getRocketScience(q.id);
-  const earned = getMoonstoneRewardForQuality(q.id);
-  gs.assembly.jobs[slotIdx] = null;
-  gs.launches += 1;
-  const msg = `${q.icon} ${q.name} 발사 성공 | Δv ${sci.deltaV.toFixed(2)}km/s · TWR ${sci.twr.toFixed(2)} · 신뢰도 ${sci.reliability.toFixed(1)}%`;
-  document.getElementById('launch-msg').innerHTML = `${msg}<br>문스톤을 획득하고 더 강하게 확장하세요.`;
-  document.getElementById('moonstone-earned').textContent = `🌙 문스톤 +${earned}개 획득!`;
-  document.getElementById('launch-overlay').classList.add('show');
-  playLaunchSfx();
-  window._pendingMoonstone = earned;
+  const job=gs.assembly.jobs[slotIdx];
+  if(!job||!job.ready) return;
+  const q=getQuality(job.qualityId);
+  const sci=getRocketScience(q.id);
+  const earned=getMoonstoneReward(q.id);
+  gs.assembly.jobs[slotIdx]=null;
+  gs.launches++;
+  gs.history.push({
+    no:gs.launches,
+    quality:q.name,
+    deltaV:sci.deltaV.toFixed(2),
+    altitude:Math.floor(sci.altitude),
+    reliability:sci.reliability.toFixed(1),
+    date:`D+${gs.launches*2}`
+  });
+  pendingLaunchMs=earned;
+  pendingLaunchData={q,sci,earned};
+  showLaunchSequence(q,sci,earned,slotIdx);
 }
-function prestige() {
-  gs.moonstone += window._pendingMoonstone || 1;
-  // reset but keep moonstone & launches
-  gs.res = { metal:0, fuel:0, electronics:0, research:0 };
-  gs.buildings = { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0, launchPad:0 };
-  gs.parts = { engine:0, fuelTank:0, control:0, hull:0, payload:0 };
-  gs.assembly = { selectedQuality:'proto', jobs:[] };
-  gs.upgrades = {};
-  prodMult = {};
-  globalMult = 1;
-  partCostMult = 1;
-  fusionBonus = 0;
-  reliabilityBonus = 0;
-  slotBonus = 0;
+function showLaunchSequence(q,sci,earned,slotIdx){
+  // Switch to launch control tab and run telemetry
+  switchMainTab(3);
+  launchInProgress=true;
+  const anim=document.getElementById('launch-anim-wrap');
+  anim.innerHTML=`
+<div id="launch-rocket-cnt">
+<pre class="launch-rocket-ascii" id="launch-rocket-pre">        *
+       /|\\
+      / | \\
+     /  |  \\
+    / BETA  \\
+   /__mk.2__\\
+  |          |
+  |  ENGINE  |
+  |__________|</pre>
+<pre class="exhaust-anim" id="exhaust-art" style="display:none;">  |   |   |
+ /|\\ /|\\ /|\\
+   |||||||||
+    |||||||
+     |||||</pre>
+</div>`;
+  const telemEl=document.getElementById('telem-wrap');
+  telemEl.innerHTML='<div class="panel-header">텔레메트리</div>';
+  const steps=[
+    {t:0,   label:'T+0  IGNITION',    pct:5},
+    {t:800, label:'T+3  LIFTOFF',     pct:22},
+    {t:1600,label:'T+8  MAX-Q',       pct:45},
+    {t:2500,label:'T+14 MECO',        pct:72},
+    {t:3400,label:'T+20 STAGE-2',     pct:88},
+    {t:4000,label:`T+25 ALT:${Math.floor(sci.altitude)}KM`, pct:100},
+  ];
+  const telemDiv=document.createElement('div');
+  telemDiv.className='telemetry-wrap';
+  telemEl.appendChild(telemDiv);
+  let exhaustShown=false;
+  steps.forEach((step,i)=>{
+    setTimeout(()=>{
+      if(i===1){
+        document.getElementById('exhaust-art').style.display='block';
+        exhaustShown=true;
+        document.getElementById('launch-rocket-pre').classList.add('launching');
+      }
+      const line=document.createElement('div');
+      line.className='telem-line';
+      line.innerHTML=`
+        <span class="telem-time">${step.label.split(' ')[0]}</span>
+        <span class="telem-event">${step.label.split(' ').slice(1).join(' ')}</span>
+        <div class="telem-bar"><div class="telem-bar-fill" style="width:${step.pct}%"></div></div>
+        <span class="telem-pct">${step.pct}%</span>`;
+      telemDiv.appendChild(line);
+      if(gs.settings.sound){
+        playSfx('triangle',300+i*40,0.06,0.02,400+i*30);
+      }
+    },step.t);
+  });
+  setTimeout(()=>{
+    launchInProgress=false;
+    showLaunchOverlay(q,sci,earned);
+    playLaunchSfx();
+    // show result in tab 3
+    const lr=document.getElementById('launch-result');
+    lr.classList.add('show');
+    document.getElementById('lr-stats').innerHTML=`
+      <span class="launch-result-stat-lbl">기체</span><span class="launch-result-stat-val">${q.name}</span>
+      <span class="launch-result-stat-lbl">Δv</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>
+      <span class="launch-result-stat-lbl">TWR</span><span class="launch-result-stat-val">${sci.twr.toFixed(2)}</span>
+      <span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${Math.floor(sci.altitude)} km</span>
+      <span class="launch-result-stat-lbl">신뢰도</span><span class="launch-result-stat-val">${sci.reliability.toFixed(1)}%</span>
+    `;
+    document.getElementById('lr-ms').textContent=`문스톤 보상: +${earned}개`;
+  },4600);
+}
+function showLaunchOverlay(q,sci,earned){
+  document.getElementById('lo-rocket-art').textContent=
+`        *
+       /|\\
+      / | \\
+     /  |  \\
+    / BETA  \\
+   /__mk.2__\\
+  |          |
+  |  ENGINE  |
+  |__________|`;
+  document.getElementById('lo-stats').innerHTML=
+    `기체: ${q.name}  |  Δv: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${Math.floor(sci.altitude)} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
+  document.getElementById('lo-ms').textContent=`문스톤 +${earned}개 획득 예정`;
+  document.getElementById('launch-overlay').classList.add('show');
+}
+function closeLaunchOverlay(){
   document.getElementById('launch-overlay').classList.remove('show');
-  notify(`🌙 문스톤 ${gs.moonstone}개 보유 | 다음 세대 생산 +${gs.moonstone*5}%`, 'var(--accent-gold)');
-  playSfx('triangle', 500, 0.12, 0.04, 760);
+  renderTab(activeTab);
+}
+function confirmLaunch(){
+  gs.moonstone+=pendingLaunchMs;
+  // Prestige reset
+  gs.res={money:500,metal:0,fuel:0,electronics:0,research:0};
+  gs.buildings={ops_center:0,supply_depot:0,mine:0,extractor:0,refinery:0,cryo_plant:0,elec_lab:0,fab_plant:0,research_lab:0,r_and_d:0,solar_array:0,launch_pad:0};
+  gs.parts={engine:0,fueltank:0,control:0,hull:0,payload:0};
+  gs.assembly={selectedQuality:'proto',jobs:[]};
+  gs.upgrades={};
+  prodMult={};
+  globalMult=1;
+  partCostMult=1;
+  fusionBonus=0;
+  reliabilityBonus=0;
+  slotBonus=0;
+  document.getElementById('launch-overlay').classList.remove('show');
+  notify(`문스톤 ${gs.moonstone}개 보유 — 생산 +${gs.moonstone*5}%`,'');
+  playSfx('triangle',500,0.12,0.04,760);
   saveGame();
   renderAll();
 }
 
-// ==================== RENDER ====================
-function renderResources() {
-  const prod = getProduction();
-  const html = RESOURCES.map(r => {
-    const rate = prod[r.id];
-    return `<div class="resource-item">
-      <div class="resource-icon">${r.icon}</div>
-      <div class="resource-info">
-        <div class="resource-name">${r.name}</div>
-        <div class="resource-amount" style="color:${r.color}">${fmt(gs.res[r.id])}</div>
-        ${rate>0?`<div class="resource-rate">+${fmtDec(rate)}/s</div>`:''}
-      </div>
-      <button class="click-btn" onclick="clickResource('${r.id}')">+클릭</button>
-    </div>`;
-  }).join('');
-  document.getElementById('resources-list').innerHTML = html;
+// ============================================================
+//  TICK / OFFLINE
+// ============================================================
+function tick(){
+  const now=Date.now();
+  const dt=Math.min((now-gs.lastTick)/1000,1);
+  gs.lastTick=now;
+  const prod=getProduction();
+  RESOURCES.forEach(r=>{gs.res[r.id]=(gs.res[r.id]||0)+prod[r.id]*dt;});
+  updateAssemblyJobs(now);
 }
-function renderBuildings() {
-  const html = BUILDINGS.map(b => {
-    const cost = getBuildingCost(b);
-    const affordable = canAfford(cost);
-    const costStr = Object.entries(cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
-    let rateStr = `${RESOURCES.find(x=>x.id===b.produces)?.icon} +${fmtDec(b.baseRate * (prodMult[b.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus())}/s`;
-    if (b.produces==='bonus') rateStr = `태양광: 생산 +${(gs.buildings[b.id]*10)}%`;
-    if (b.produces==='slots') rateStr = `조립 슬롯 +${gs.buildings[b.id]} (현재 ${getAssemblySlots()} 슬롯)`;
-    return `<div class="building-item">
-      <div class="building-header">
-        <div class="building-name">${b.icon} ${b.name}</div>
-        <div class="building-count">${gs.buildings[b.id]}</div>
-      </div>
-      <div class="building-desc">${b.desc} · ${rateStr}</div>
-      <div class="building-cost">💰 ${costStr}</div>
-      <button class="buy-btn" onclick="buyBuilding('${b.id}')" ${affordable?'':'disabled'}>구매</button>
-    </div>`;
-  }).join('');
-  document.getElementById('buildings-list').innerHTML = html;
-}
-function renderParts() {
+function updateAssemblyJobs(now=Date.now()){
   ensureAssemblyState();
-  const html = PARTS.map(p => {
-    const cost = getPartCost(p);
-    const done = gs.parts[p.id];
-    const affordable = canAfford(cost);
-    const costStr = Object.entries(cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
-    // progress: how close to affording
-    const progress = done ? 100 : Math.min(100, Math.min(...Object.entries(cost).map(([r,v])=>gs.res[r]/v*100)));
-    return `<div class="rocket-part ${done?'complete':''}">
-      <div class="part-header">
-        <div class="part-name">${p.icon} ${p.name}</div>
-        <div class="part-status ${done?'done':'pending'}">${done?'✅ 완료':'⏳ 제작 중'}</div>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-      ${!done?`<div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:4px">💰 ${costStr}</div>`:''}
-      ${!done?`<button class="craft-btn" onclick="craftPart('${p.id}')" ${affordable?'':'disabled'}>제작</button>`:''}
-    </div>`;
-  }).join('');
-  document.getElementById('parts-list').innerHTML = html;
-}
-function renderScienceSummary() {
-  ensureAssemblyState();
-  const q = getQuality(gs.assembly.selectedQuality);
-  const sci = getRocketScience(q.id);
-  const reward = getMoonstoneRewardForQuality(q.id);
-  const firstFlowHint = `첫 로켓 목표 흐름: 약 1~2시간 (자원 생산/연구 업그레이드에 따라 단축)`;
-  document.getElementById('science-summary').innerHTML = `
-    <div><b>${q.icon} ${q.name}</b> · 예상 조립 ${fmtTime(q.timeSec)}</div>
-    <div>Δv: <b>${sci.deltaV.toFixed(2)} km/s</b> (Tsiolkovsky 근사)</div>
-    <div>TWR: <b>${sci.twr.toFixed(2)}</b> · 신뢰도: <b>${sci.reliability.toFixed(1)}%</b> · 재사용성: <b>${sci.reusability.toFixed(1)}%</b></div>
-    <div>예상 문스톤 보상: <b>+${reward}</b></div>
-    <div style="margin-top:4px">${firstFlowHint}</div>
-  `;
-}
-function renderAssembly() {
-  ensureAssemblyState();
-  const qualityOptions = ROCKET_QUALITIES.map(q =>
-    `<option value="${q.id}" ${gs.assembly.selectedQuality===q.id?'selected':''}>${q.icon} ${q.name} · ${fmtTime(q.timeSec)} · 비용x${q.costMult.toFixed(1)}</option>`
-  ).join('');
-  document.getElementById('assembly-controls').innerHTML = `
-    <div class="assembly-toolbar">
-      <div class="assembly-title">🔧 조립 품질 설정 (고급 로켓일수록 오래 걸리지만 보상 증가)</div>
-      <select class="quality-select" onchange="selectQuality(this.value)">${qualityOptions}</select>
-    </div>
-  `;
-
-  const slotsHtml = gs.assembly.jobs.map((job, idx) => {
-    if (!job) {
-      const cost = getAssemblyCost(gs.assembly.selectedQuality);
-      const costStr = Object.entries(cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
-      const canStart = PARTS.every(p => gs.parts[p.id]) && canAfford(cost);
-      return `<div class="slot-item">
-        <div class="slot-header"><span>슬롯 ${idx+1}</span><span class="slot-status idle">대기</span></div>
-        <div class="slot-row-note">선택 품질로 조립 시작 가능</div>
-        <div class="slot-row-note">💰 ${costStr}</div>
-        <button class="slot-btn" onclick="startAssembly(${idx})" ${canStart?'':'disabled'}>조립 시작</button>
-      </div>`;
+  for(let i=0;i<gs.assembly.jobs.length;i++){
+    const job=gs.assembly.jobs[i];
+    if(!job||job.ready) continue;
+    if(now>=job.endAt){
+      job.ready=true;
+      notify(`슬롯 ${i+1}: ${getQuality(job.qualityId).name} 조립 완료`);
     }
-    const q = getQuality(job.qualityId);
-    if (job.ready) {
-      const reward = getMoonstoneRewardForQuality(q.id);
-      return `<div class="slot-item">
-        <div class="slot-header"><span>슬롯 ${idx+1} · ${q.icon} ${q.name}</span><span class="slot-status ready">발사 준비 완료</span></div>
-        <div class="slot-row-note">예상 문스톤 보상 +${reward}</div>
-        <button class="slot-btn launch" onclick="launchFromSlot(${idx})">🌙 발사 실행</button>
-      </div>`;
-    }
-    const remain = Math.max(0, Math.floor((job.endAt - Date.now()) / 1000));
-    const total = Math.max(1, Math.floor((job.endAt - job.startAt) / 1000));
-    const p = Math.min(100, ((total - remain) / total) * 100);
-    return `<div class="slot-item">
-      <div class="slot-header"><span>슬롯 ${idx+1} · ${q.icon} ${q.name}</span><span class="slot-status busy">조립 중 ${fmtTime(remain)}</span></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div>
-    </div>`;
-  }).join('');
-  document.getElementById('assembly-slots').innerHTML = slotsHtml;
-}
-function renderUpgrades() {
-  const html = UPGRADES.map(u => {
-    const purchased = gs.upgrades[u.id];
-    const reqMet = !u.req || gs.upgrades[u.req];
-    const affordable = canAfford(u.cost);
-    const costStr = Object.entries(u.cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
-    if (!reqMet && !purchased) return '';
-    return `<div class="upgrade-item ${purchased?'purchased':''}">
-      <div class="upgrade-header">
-        <div class="upgrade-name">${u.icon} ${u.name}</div>
-        ${purchased?'<span style="color:var(--accent-green);font-size:0.75rem">✅</span>':''}
-      </div>
-      <div class="upgrade-desc">${u.desc}</div>
-      ${!purchased?`<div class="upgrade-cost">🔬 ${costStr}</div>`:''}
-      ${!purchased?`<button class="upg-btn" onclick="buyUpgrade('${u.id}')" ${affordable?'':'disabled'}>연구</button>`:''}
-    </div>`;
-  }).join('');
-  document.getElementById('upgrades-list').innerHTML = html;
-}
-function renderMoonstone() {
-  const disp = document.getElementById('moonstone-display');
-  if (gs.moonstone > 0 || gs.launches > 0) {
-    disp.style.display = 'inline-flex';
-    document.getElementById('moonstone-count').textContent = gs.moonstone;
-    document.getElementById('moonstone-bonus').textContent = (gs.moonstone*5).toFixed(0);
   }
 }
-function renderAll() {
-  ensureAssemblyState();
-  renderResources();
-  renderBuildings();
-  renderParts();
-  renderScienceSummary();
-  renderAssembly();
-  renderUpgrades();
-  renderMoonstone();
-  renderSoundToggle();
-}
-
-// ==================== SAVE / LOAD ====================
-function migrateSave(rawSave) {
-  const src = rawSave || {};
-  const version = Number(src.saveVersion || 1);
-  let migrated = { ...src };
-
-  if (version < 2) {
-    const nextGs = migrated.gs || {};
-    const nextBuildings = { ...(nextGs.buildings || {}) };
-    if (typeof nextBuildings.launchPad !== 'number') nextBuildings.launchPad = 0;
-    const nextAssembly = nextGs.assembly && typeof nextGs.assembly === 'object'
-      ? nextGs.assembly
-      : { selectedQuality: 'proto', jobs: [] };
-
-    migrated = {
-      ...migrated,
-      gs: {
-        ...nextGs,
-        buildings: nextBuildings,
-        assembly: {
-          selectedQuality: nextAssembly.selectedQuality || 'proto',
-          jobs: Array.isArray(nextAssembly.jobs) ? nextAssembly.jobs : []
-        }
-      },
-      reliabilityBonus: Number(migrated.reliabilityBonus || 0),
-      slotBonus: Number(migrated.slotBonus || 0),
-      saveVersion: 2
-    };
+function calcOffline(){
+  const now=Date.now();
+  const elapsed=Math.min((now-gs.lastTick)/1000,8*3600);
+  if(elapsed<5){gs.lastTick=now;return;}
+  const prod=getProduction();
+  RESOURCES.forEach(r=>{gs.res[r.id]=(gs.res[r.id]||0)+prod[r.id]*elapsed;});
+  gs.lastTick=now;
+  updateAssemblyJobs(now);
+  const mins=Math.floor(elapsed/60);
+  if(mins>0){
+    const banner=document.getElementById('offline-banner');
+    banner.style.display='block';
+    banner.textContent=`오프라인 ${mins}분 — 자원 생산 완료`;
+    setTimeout(()=>banner.style.display='none',5000);
   }
-
-  if (!migrated.saveVersion) migrated.saveVersion = SAVE_VERSION;
-  return migrated;
 }
 
-function saveGame() {
-  const save = {
-    saveVersion: SAVE_VERSION,
-    gs, prodMult, globalMult, partCostMult, fusionBonus, reliabilityBonus, slotBonus,
-    lastSave: Date.now()
+// ============================================================
+//  SAVE / LOAD
+// ============================================================
+const SAVE_KEY='moonIdle_v2';
+function saveGame(){
+  const save={
+    saveVersion:2,gs,prodMult,globalMult,partCostMult,
+    fusionBonus,reliabilityBonus,slotBonus,lastSave:Date.now()
   };
-  localStorage.setItem('moonIdle_v1', JSON.stringify(save));
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}
 }
-function loadGame() {
-  try {
-    const raw = localStorage.getItem('moonIdle_v1');
-    if (!raw) return;
-    const save = migrateSave(JSON.parse(raw));
-    Object.assign(gs, save.gs);
-    if (!gs.buildings.launchPad) gs.buildings.launchPad = 0;
-    if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
-    if (!gs.settings) gs.settings = { sound: true };
-    if (typeof gs.settings.sound !== 'boolean') gs.settings.sound = true;
-    Object.assign(prodMult, save.prodMult||{});
-    globalMult = save.globalMult||1;
-    partCostMult = save.partCostMult||1;
-    fusionBonus = save.fusionBonus||0;
-    reliabilityBonus = save.reliabilityBonus||0;
-    slotBonus = save.slotBonus||0;
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw) return false;
+    const save=JSON.parse(raw);
+    // merge gs
+    if(save.gs){
+      Object.assign(gs.res,save.gs.res||{});
+      Object.assign(gs.buildings,save.gs.buildings||{});
+      Object.assign(gs.parts,save.gs.parts||{});
+      gs.launches=save.gs.launches||0;
+      gs.moonstone=save.gs.moonstone||0;
+      gs.history=save.gs.history||[];
+      gs.upgrades=save.gs.upgrades||{};
+      gs.assembly=save.gs.assembly||{selectedQuality:'proto',jobs:[]};
+      gs.settings=save.gs.settings||{sound:true};
+      gs.lastTick=save.gs.lastTick||Date.now();
+    }
+    if(typeof save.prodMult==='object') Object.assign(prodMult,save.prodMult);
+    globalMult=save.globalMult||1;
+    partCostMult=save.partCostMult||1;
+    fusionBonus=save.fusionBonus||0;
+    reliabilityBonus=save.reliabilityBonus||0;
+    slotBonus=save.slotBonus||0;
     ensureAssemblyState();
-    // re-apply upgrade effects for multipliers (they're stored directly)
-    // offline progress
-    calcOffline();
-  } catch(e) { console.warn('Save load failed', e); }
+    return true;
+  }catch(e){console.warn('Load failed',e);return false;}
+}
+function hasSave(){
+  try{return !!localStorage.getItem(SAVE_KEY);}catch(e){return false;}
 }
 
-// ==================== STARS ====================
-function createStars() {
-  const container = document.getElementById('stars');
-  for (let i=0; i<150; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    const size = Math.random()*2.5+0.5;
-    s.style.cssText = `
-      width:${size}px; height:${size}px;
-      left:${Math.random()*100}%;
-      top:${Math.random()*100}%;
-      --dur:${2+Math.random()*4}s;
-      --delay:${Math.random()*4}s;
-      opacity:${0.2+Math.random()*0.8};
-    `;
-    container.appendChild(s);
+// ============================================================
+//  RENDER HELPERS
+// ============================================================
+function renderResourceBar(){
+  const prod=getProduction();
+  let html='';
+  RESOURCES.forEach(r=>{
+    const rate=prod[r.id]||0;
+    const rateStr=rate>0.001?` <span class="rate">(+${fmtDec(rate,1)}/s)</span>`:'';
+    html+=`<div class="res-cell" style="color:${r.color}">
+      ${r.symbol}: <strong>${fmt(gs.res[r.id]||0)}</strong>${rateStr}
+    </div>`;
+  });
+  html+=`<div class="res-cell ms">🌙 문스톤: <strong>${gs.moonstone}</strong></div>`;
+  document.getElementById('res-bar-inner').innerHTML=html;
+  document.getElementById('sound-btn').textContent=gs.settings.sound?'SND:ON':'SND:OFF';
+  document.getElementById('sound-btn').style.color=gs.settings.sound?'var(--green-mid)':'var(--red)';
+}
+
+// ============================================================
+//  TAB 0: PRODUCTION HUB
+// ============================================================
+
+// ASCII building art per building id
+function getBuildingArt(bid,cnt){
+  const w=cnt>0?'♟':'·';
+  const arts={
+    ops_center:
+`╔══════════════╗
+║  [OPS]  센터  ║
+║  ${w} ${w} ${w} ${w}    ║
+║  ══════════  ║
+╚══════════════╝`,
+    supply_depot:
+`╔══════════╗
+║  [DEP]   ║
+║ ▓▓▓▓▓▓▓ ║
+║ 보급 창고  ║
+╚══════════╝`,
+    mine:
+`  ▲▲▲
+ ▲▲▲▲▲
+╔══════╗
+║[MIN] ║
+║ ||| ${w}║
+╚══════╝
+  |||`,
+    extractor:
+` ╔════╗
+ ║[EXT]║
+═╣    ╠═
+ ║ ${w}${w}${w} ║
+ ╚════╝`,
+    refinery:
+` _╔══╗_
+╔╣  ╠══╗
+║╚══╝  ║
+║[REF]${w}║
+║ ~~~  ║
+╚══════╝`,
+    cryo_plant:
+`╔══════╗
+║[CRY] ║
+║*~*~*~║
+║ ${w} ${w} ${w}║
+╚══════╝`,
+    elec_lab:
+`╔══════╗
+║[PCB] ║
+║⊙ ⊙ ⊙║
+║ ${w}${w}${w}  ║
+╚══════╝`,
+    fab_plant:
+`╔══════╗
+║[FAB] ║
+║▤▤▤▤▤║
+║ ${w}  ${w} ║
+╚══════╝`,
+    research_lab:
+`╔══════╗
+║[RSH] ║
+║ ◎◎◎ ║
+║ ${w}  ${w} ║
+╚══════╝`,
+    r_and_d:
+`╔══════╗
+║[RND] ║
+║⌬⌬⌬⌬⌬║
+║ ${w}${w}${w}  ║
+╚══════╝`,
+    solar_array:
+`  ┌─┐
+  │☀│
+┌─┴─┴─┐
+│[SOL]│
+└─────┘`,
+    launch_pad:
+`  __|__
+ / [PAD]\\
+|  ═══  |
+|_______|
+  | | |`
+  };
+  return arts[bid]||`[${bid}]\n×${cnt}`;
+}
+
+function renderProdHub(){
+  const prod=getProduction();
+  const totalIncome=prod.money;
+  const workers=getTotalWorkers();
+  document.getElementById('prod-status').textContent=
+    `[ 총 수입: ₩${fmtDec(totalIncome,1)}/s ]  [ 인력: ${workers}명 배치 ]`;
+
+  // ASCII world
+  let worldHtml='';
+  BUILDINGS.forEach(b=>{
+    const cnt=gs.buildings[b.id]||0;
+    const art=getBuildingArt(b.id,cnt);
+    const cost=getBuildingCost(b);
+    const costStr=getCostStr(cost);
+    const affordable=canAfford(cost);
+    let rateInfo='';
+    if(b.produces!=='bonus'){
+      const rate=b.baseRate*Math.max(cnt,1)*(prodMult[b.produces]||1)*globalMult*getMoonstoneMult()*getSolarBonus();
+      rateInfo=`생산: ${fmtDec(rate,2)} ${b.produces}/s`;
+    } else {
+      rateInfo=b.id==='solar_array'?`전체 생산 +${cnt*10}%`:`조립 슬롯: ${getAssemblySlots()}`;
+    }
+    const overlay=
+`╔══════════════════════════════╗
+║ // ${b.name.padEnd(20)}LV.${cnt} ║
+║ ${rateInfo.padEnd(28)}║
+╠══════════════════════════════╣
+║ [ 업그레이드 ]                ║
+║ 비용: ${costStr.padEnd(23)}║
+╚══════════════════════════════╝`;
+    worldHtml+=`
+<div class="building-ascii-wrap" onclick="buyBuilding('${b.id}')">
+  <pre class="building-ascii">${art}</pre>
+  <div class="bld-count-badge">×${cnt}</div>
+  <pre class="bld-hover-overlay">${overlay}</pre>
+</div>`;
+  });
+  document.getElementById('prod-world').innerHTML=worldHtml;
+
+  // Building cards
+  let cardsHtml='';
+  BUILDINGS.forEach(b=>{
+    const cnt=gs.buildings[b.id]||0;
+    const cost=getBuildingCost(b);
+    const costStr=getCostStr(cost);
+    const affordable=canAfford(cost);
+    let rateStr='';
+    if(b.produces!=='bonus'){
+      const rate=b.baseRate*cnt*(prodMult[b.produces]||1)*globalMult*getMoonstoneMult()*getSolarBonus();
+      rateStr=`${b.produces} +${fmtDec(rate,2)}/s`;
+    } else {
+      rateStr=b.id==='solar_array'?`전체 생산 +${cnt*10}%`:`발사 슬롯 +${cnt}`;
+    }
+    cardsHtml+=`
+<div class="bld-card">
+  <div class="bld-card-top">
+    <span class="bld-name">${b.icon} ${b.name}</span>
+    <span class="bld-cnt">×${cnt}</span>
+  </div>
+  <div class="bld-desc">${b.desc}</div>
+  <div class="bld-rate">${rateStr}</div>
+  <div class="bld-cost">비용: ${costStr}</div>
+  <button class="btn btn-sm btn-full${affordable?'':' btn-amber'}" onclick="buyBuilding('${b.id}')" ${affordable?'':'disabled'}>
+    ${affordable?'[ 구매 ]':'[ 자원 부족 ]'}
+  </button>
+</div>`;
+  });
+  document.getElementById('bld-grid').innerHTML=cardsHtml;
+}
+
+// ============================================================
+//  TAB 1: RESEARCH
+// ============================================================
+function renderResearch(){
+  // Organize into rows/chains
+  const chains=[
+    {title:'광업 / 연료', nodes:['drill','catalyst','alloy','lightweight']},
+    {title:'전자 / 자동화', nodes:['microchip','automation','reliability','fusion']},
+    {title:'생산 확장', nodes:['multipad']},
+  ];
+  let html='';
+  chains.forEach(chain=>{
+    html+=`<div class="upg-tree-section"><div class="upg-tree-section-title">${chain.title}</div><div class="upg-tree-row">`;
+    chain.nodes.forEach((uid,i)=>{
+      const upg=UPGRADES.find(u=>u.id===uid);
+      if(!upg) return;
+      const purchased=gs.upgrades[uid];
+      const reqMet=!upg.req||gs.upgrades[upg.req];
+      let cls='upg-node';
+      if(purchased) cls+=' purchased';
+      else if(!reqMet) cls+=' locked';
+      else if(canAfford(upg.cost)) cls+=' available';
+      const costStr=getCostStr(upg.cost);
+      const onclick=purchased||!reqMet?'':`onclick="buyUpgrade('${uid}')"`;
+      if(i>0) html+=`<span class="upg-connector">→</span>`;
+      html+=`<div class="${cls}" ${onclick}>
+        <div class="upg-node-name">${upg.icon} ${upg.name}</div>
+        <div class="upg-node-desc">${upg.desc}</div>
+        ${!purchased?`<div class="upg-node-cost">${costStr}</div>`:''}
+      </div>`;
+    });
+    html+='</div></div>';
+  });
+  document.getElementById('upg-tree-wrap').innerHTML=html;
+}
+
+// ============================================================
+//  TAB 2: ASSEMBLY
+// ============================================================
+function renderAssembly(){
+  ensureAssemblyState();
+  const pd=gs.parts;
+  // Rocket art with glow on completed sections
+  const noseClass='r-nose'+(pd.hull?' done':'');
+  const payloadClass='r-payload'+(pd.payload?' done':'');
+  const avionicsClass='r-avionics'+(pd.control?' done':'');
+  const engineClass='r-engine'+(pd.engine?' done':'');
+  const exhaustClass='r-exhaust'+(pd.fueltank&&pd.engine?' done':'');
+  const rocketHtml=`<pre class="rocket-art"><span class="${noseClass}">           *
+          /|\\
+         / | \\
+        /  |  \\
+       /   |   \\
+      /  BETA   \\
+     /   mk.2    \\
+    /______________\\</span>
+<span class="${payloadClass}">   |  [PAYLOAD]    |
+   |   _________   |
+   |  |  NAV    |  |
+   |  |  SYS    |  |
+   |  |_________|  |</span>
+<span class="${avionicsClass}">   |               |
+   |  [AVIONICS]   |
+   |  _________    |
+   | | O  O  O |   |
+   | |  GYRO   |   |
+   | |_________|   |</span>
+<span class="${engineClass}">   |               |
+   | [PROPULSION]  |
+   |  _________    |
+   | |         |   |
+   | | 156 kN  |   |
+   | |_________|   |
+   |_______________|</span>
+<span class="${exhaustClass}">  / [LOX]  [RP-1]  \\
+ /___________________\\
+       |   |   |
+      /|   |   |\\
+     /_|___|___|_\\</span></pre>`;
+  document.getElementById('rocket-art-display').innerHTML=rocketHtml;
+
+  // Parts checklist
+  let partsHtml='';
+  PARTS.forEach(p=>{
+    const done=gs.parts[p.id];
+    const cost=getPartCost(p);
+    const costStr=getCostStr(cost);
+    const affordable=canAfford(cost);
+    partsHtml+=`<div class="parts-list-item">
+      <span class="part-check ${done?'part-done':'part-pending'}">${done?'[✓]':'[✗]'}</span>
+      <span style="flex:1;color:${done?'var(--green)':'var(--green-dim)'};">${p.icon} ${p.name}</span>
+      ${done?'<span style="color:var(--green);font-size:12px;">완료</span>'
+            :`<button class="btn btn-sm${affordable?'':' btn-amber'}" onclick="craftPart('${p.id}')" ${affordable?'':'disabled'}>제작</button>`}
+    </div>
+    ${!done?`<div style="font-size:11px;color:var(--green-mid);padding:2px 0 4px 22px;">비용: ${costStr}</div>`:''}`;
+  });
+  document.getElementById('parts-checklist').innerHTML=partsHtml;
+
+  // Quality selector
+  let qualHtml='';
+  QUALITIES.forEach(q=>{
+    const active=gs.assembly.selectedQuality===q.id;
+    qualHtml+=`<button class="qual-btn${active?' active':''}" onclick="selectQuality('${q.id}')">${q.icon} ${q.name}</button>`;
+  });
+  document.getElementById('quality-selector').innerHTML=qualHtml;
+
+  // Science box
+  const q=getQuality(gs.assembly.selectedQuality);
+  const sci=getRocketScience(q.id);
+  const reward=getMoonstoneReward(q.id);
+  const cost=getAssemblyCost(q.id);
+  const costStr=getCostStr(cost);
+  document.getElementById('science-box').innerHTML=`
+    <div class="label-sm">// 로켓 제원 — ${q.name}</div>
+    <div>Δv: <span class="val">${sci.deltaV.toFixed(2)} km/s</span>  TWR: <span class="val">${sci.twr.toFixed(2)}</span></div>
+    <div>신뢰도: <span class="val">${sci.reliability.toFixed(1)}%</span>  예상 고도: <span class="val">${Math.floor(sci.altitude)} km</span></div>
+    <div>조립 시간: <span class="val">${fmtTime(q.timeSec)}</span>  조립 비용: <span class="ms-val">${costStr}</span></div>
+    <div>예상 문스톤 보상: <span class="ms-val">+${reward}개</span></div>
+  `;
+
+  // Assembly slots
+  let slotsHtml='';
+  gs.assembly.jobs.forEach((job,idx)=>{
+    if(!job){
+      const canStart=PARTS.every(p=>gs.parts[p.id])&&canAfford(cost);
+      slotsHtml+=`<div class="slot-card">
+        <div class="slot-card-header">
+          <span class="slot-title">// 조립 슬롯 ${idx+1}</span>
+          <span class="slot-state idle">대기 중</span>
+        </div>
+        <div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">
+          선택: ${q.name}  |  비용: ${costStr}
+        </div>
+        <button class="btn btn-full btn-sm${canStart?'':' btn-amber'}" onclick="startAssembly(${idx})" ${canStart?'':'disabled'}>
+          ${canStart?'[ ▶ 조립 시작 ]':'[ 부품/자원 부족 ]'}
+        </button>
+      </div>`;
+    } else if(job.ready){
+      const ms=getMoonstoneReward(job.qualityId);
+      slotsHtml+=`<div class="slot-card" style="border-color:var(--green);">
+        <div class="slot-card-header">
+          <span class="slot-title glow">// 슬롯 ${idx+1} — ${getQuality(job.qualityId).name}</span>
+          <span class="slot-state ready">발사 준비!</span>
+        </div>
+        <div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">
+          예상 문스톤: +${ms}개
+        </div>
+        <button class="btn btn-full btn-sm btn-amber" onclick="launchFromSlot(${idx})">
+          [ ▶▶ 발사 실행 ]
+        </button>
+      </div>`;
+    } else {
+      const remain=Math.max(0,Math.floor((job.endAt-Date.now())/1000));
+      const total=Math.max(1,Math.floor((job.endAt-job.startAt)/1000));
+      const pct=Math.min(100,((total-remain)/total)*100);
+      slotsHtml+=`<div class="slot-card" style="border-color:var(--amber);">
+        <div class="slot-card-header">
+          <span class="slot-title">// 슬롯 ${idx+1} — ${getQuality(job.qualityId).name}</span>
+          <span class="slot-state busy">조립 중 ${fmtTime(remain)}</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-fill amber" style="width:${pct}%"></div></div>
+        <div style="font-size:11px;color:var(--green-mid);">${pct.toFixed(0)}% 완료</div>
+      </div>`;
+    }
+  });
+  document.getElementById('assembly-slots-wrap').innerHTML=slotsHtml;
+}
+
+// ============================================================
+//  TAB 3: LAUNCH CONTROL
+// ============================================================
+function renderLaunchControl(){
+  ensureAssemblyState();
+  let readyHtml='';
+  let hasReady=false;
+  gs.assembly.jobs.forEach((job,idx)=>{
+    if(!job) return;
+    if(job.ready){
+      hasReady=true;
+      const ms=getMoonstoneReward(job.qualityId);
+      readyHtml+=`<div class="ready-slot-row">
+        <span style="color:var(--green);">슬롯 ${idx+1}: ${getQuality(job.qualityId).name}</span>
+        <span style="color:var(--green);font-size:12px;">[준비 완료]</span>
+        <button class="btn btn-sm btn-amber" onclick="launchFromSlot(${idx})">[ ▶▶ 발사 ]</button>
+      </div>`;
+    } else {
+      const remain=Math.max(0,Math.floor((job.endAt-Date.now())/1000));
+      readyHtml+=`<div class="ready-slot-row">
+        <span style="color:var(--amber);">슬롯 ${idx+1}: ${getQuality(job.qualityId).name}</span>
+        <span style="color:var(--amber);font-size:12px;">조립 중 ${fmtTime(remain)}</span>
+      </div>`;
+    }
+  });
+  if(!readyHtml) readyHtml='<div style="color:var(--green-dim);font-size:13px;">// 준비된 로켓이 없습니다. 조립동에서 로켓을 조립하세요.</div>';
+  document.getElementById('ready-list-wrap').innerHTML=readyHtml;
+}
+
+// ============================================================
+//  TAB 4: MISSION PROGRESS
+// ============================================================
+function renderMissionProgress(){
+  // Phase definitions
+  const phases=[
+    {name:'PHASE 1: 프로토타입', target:1,    unit:'회', key:'launches' },
+    {name:'PHASE 2: 준궤도',     target:100,  unit:'km', key:'altitude100' },
+    {name:'PHASE 3: 궤도',       target:200,  unit:'km', key:'altitude200' },
+    {name:'PHASE 4: 시스루나',   target:300,  unit:'km', key:'altitude300' },
+    {name:'PHASE 5: 달 착륙',    target:384400,unit:'km',key:'moon' },
+  ];
+  const maxAlt=gs.history.length?Math.max(...gs.history.map(h=>Number(h.altitude)||0)):0;
+  const vals={
+    launches:gs.launches,
+    altitude100:maxAlt,
+    altitude200:maxAlt,
+    altitude300:maxAlt,
+    moon:maxAlt
+  };
+  const targets={launches:1,altitude100:100,altitude200:200,altitude300:300,moon:384400};
+  let phaseHtml='';
+  phases.forEach((ph,i)=>{
+    const val=vals[ph.key];
+    const tgt=targets[ph.key];
+    const pct=Math.min(100,(val/tgt)*100);
+    const done=pct>=100;
+    // Unlock: phase 1 always, phase 2 if launches>0, etc.
+    const locked=i>0&&!done&&(i>=2&&maxAlt<(i===2?100:i===3?200:300))&&gs.launches<1;
+    phaseHtml+=`<div class="phase-row">
+      <div class="phase-name">${ph.name}</div>
+      <div class="phase-bar-wrap">
+        <div class="phase-bar-fill${done?' done':''}" style="width:${pct}%"></div>
+      </div>
+      <div class="phase-status${done?' done':locked?' locked':''}">
+        ${done?'완료 ✓':locked?'잠금':'진행 중'}
+      </div>
+    </div>`;
+  });
+  document.getElementById('phase-progress-wrap').innerHTML=phaseHtml;
+
+  // History table
+  let histHtml='';
+  if(gs.history.length===0){
+    histHtml='<div style="color:var(--green-dim);font-size:13px;padding:8px 0;">// 발사 기록 없음</div>';
+  } else {
+    histHtml=`<table class="history-table">
+      <thead><tr>
+        <th>NO.</th><th>날짜</th><th>기체</th><th>Δv</th><th>최고도</th><th>신뢰도</th>
+      </tr></thead><tbody>`;
+    gs.history.forEach(h=>{
+      histHtml+=`<tr>
+        <td>${String(h.no).padStart(3,'0')}</td>
+        <td>${h.date}</td>
+        <td>${h.quality}</td>
+        <td>${h.deltaV} km/s</td>
+        <td>${h.altitude} km</td>
+        <td>${h.reliability}%</td>
+      </tr>`;
+    });
+    histHtml+='</tbody></table>';
+  }
+  document.getElementById('history-wrap').innerHTML=histHtml;
+
+  // Prestige
+  let prestigeHtml='';
+  if(gs.launches>0){
+    const nextBonus=(gs.moonstone+1)*5;
+    prestigeHtml=`<div class="prestige-panel">
+      <div class="panel-header">프레스티지 — 새 시즌</div>
+      <div class="prestige-stat">현재 문스톤: <strong>${gs.moonstone}개</strong></div>
+      <div class="prestige-stat">현재 생산 보너스: <strong>+${gs.moonstone*5}%</strong></div>
+      <div style="font-size:12px;color:var(--amber);margin-bottom:10px;">
+        // 다음 발사 후 재시작하면 문스톤이 누적됩니다
+      </div>
+    </div>`;
+  }
+  document.getElementById('prestige-wrap').innerHTML=prestigeHtml;
+}
+
+// ============================================================
+//  RENDER ALL / RENDER TAB
+// ============================================================
+function renderTab(idx){
+  if(idx===0) renderProdHub();
+  else if(idx===1) renderResearch();
+  else if(idx===2) renderAssembly();
+  else if(idx===3) renderLaunchControl();
+  else if(idx===4) renderMissionProgress();
+}
+function renderAll(){
+  renderResourceBar();
+  renderTab(activeTab);
+}
+
+// ============================================================
+//  TITLE SCREEN
+// ============================================================
+const BOOT_LINES=[
+  'MOONIDLE MISSION CONTROL v2.0',
+  'COPYRIGHT (C) PRIMORDIAL STATION DEV',
+  '──────────────────────────────────────',
+  'INITIALIZING HARDWARE...',
+  '  [OK] CPU CORE 0-3',
+  '  [OK] MEMORY 4096MB',
+  '  [OK] DISPLAY PHOSPHOR-GREEN',
+  'LOADING SUBSYSTEMS...',
+  '  [OK] RESOURCE MANAGER',
+  '  [OK] PRODUCTION ENGINE',
+  '  [OK] ROCKET ASSEMBLY',
+  '  [OK] LAUNCH SEQUENCER',
+  '  [OK] SAVE/LOAD (localStorage)',
+  'CHECKING TELEMETRY LINK... NOMINAL',
+  '──────────────────────────────────────',
+  'SYSTEM READY. AWAITING COMMANDER INPUT.',
+];
+
+function runBootSequence(cb){
+  const log=document.getElementById('boot-log');
+  log.innerHTML='';
+  BOOT_LINES.forEach((line,i)=>{
+    const span=document.createElement('span');
+    span.className='boot-line';
+    span.textContent=line;
+    span.style.animationDelay=(i*130)+'ms';
+    log.appendChild(span);
+  });
+  setTimeout(cb, BOOT_LINES.length*130+400);
+}
+
+function updateSaveStrip(){
+  const strip=document.getElementById('save-strip');
+  if(hasSave()){
+    const raw=localStorage.getItem(SAVE_KEY);
+    const save=JSON.parse(raw);
+    const sg=save.gs||{};
+    const ls=save.lastSave?new Date(save.lastSave).toLocaleDateString('ko-KR'):'?';
+    strip.innerHTML=`세이브 발견 — 마지막 저장: <span>${ls}</span>  발사 횟수: <span>${sg.launches||0}</span>회  문스톤: <span>${sg.moonstone||0}</span>개`;
+    document.getElementById('continue-btn').style.display='inline-block';
+  } else {
+    strip.innerHTML='<span>세이브 없음</span>';
+    document.getElementById('continue-btn').style.display='none';
   }
 }
 
-// ==================== INIT ====================
-createStars();
-loadGame();
-renderAll();
+function startNewGame(){
+  // Reset everything
+  gs.res={money:500,metal:0,fuel:0,electronics:0,research:0};
+  gs.buildings={ops_center:0,supply_depot:0,mine:0,extractor:0,refinery:0,cryo_plant:0,elec_lab:0,fab_plant:0,research_lab:0,r_and_d:0,solar_array:0,launch_pad:0};
+  gs.parts={engine:0,fueltank:0,control:0,hull:0,payload:0};
+  gs.assembly={selectedQuality:'proto',jobs:[]};
+  gs.upgrades={};
+  gs.launches=0;
+  gs.moonstone=0;
+  gs.history=[];
+  gs.lastTick=Date.now();
+  gs.settings={sound:true};
+  prodMult={};
+  globalMult=1;
+  partCostMult=1;
+  fusionBonus=0;
+  reliabilityBonus=0;
+  slotBonus=0;
+  saveGame();
+  launchGame();
+}
 
-// Game loop
-setInterval(() => { tick(); }, 200);
-// UI update loop
-setInterval(() => { renderAll(); }, 500);
-// Auto save
-setInterval(() => { saveGame(); }, 30000);
+function continueGame(){
+  const ok=loadGame();
+  if(!ok){startNewGame();return;}
+  calcOffline();
+  launchGame();
+}
 
-// Page visibility - pause tick when hidden
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    calcOffline();
-  }
-});
+function openSettings(){
+  const on=gs.settings.sound;
+  gs.settings.sound=!on;
+  notify(`사운드 ${gs.settings.sound?'ON':'OFF'}`);
+  playSfx('sine',640,0.06,0.03,720);
+}
+
+function launchGame(){
+  const ts=document.getElementById('title-screen');
+  ts.classList.add('fade-out');
+  setTimeout(()=>{
+    ts.style.display='none';
+    document.getElementById('app').classList.add('visible');
+    ensureAssemblyState();
+    renderAll();
+  },800);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+(function init(){
+  runBootSequence(()=>{
+    updateSaveStrip();
+  });
+
+  // Game loop
+  setInterval(()=>{tick();},200);
+  // Render loop
+  setInterval(()=>{renderAll();},500);
+  // Autosave
+  setInterval(()=>{saveGame();},10000);
+  // Visibility
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden) calcOffline();
+  });
+})();
 </script>
 </body>
 </html>
