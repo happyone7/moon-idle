@@ -203,13 +203,18 @@
   #world-bg {
     position: fixed;
     bottom: 0;
-    left: 0;
+    left: 200px;
     right: 0;
-    height: 220px;
+    height: 240px;
     z-index: 1;
-    overflow: hidden;
-    background: linear-gradient(to bottom, #000800 0%, #010c04 60%, #020d04 100%);
+    overflow-x: auto;
+    overflow-y: hidden;
+    cursor: grab;
   }
+  #world-bg:active { cursor: grabbing; }
+  #world-bg::-webkit-scrollbar { height: 6px; }
+  #world-bg::-webkit-scrollbar-track { background: #010800; }
+  #world-bg::-webkit-scrollbar-thumb { background: #1a5c34; }
 
   #world-scene {
     position: absolute;
@@ -626,8 +631,9 @@
     z-index: 10;
     max-width: 1200px;
     margin: 0 auto;
+    margin-left: 200px;
     min-height: 100vh;
-    padding-bottom: 230px;
+    padding-bottom: 250px;
     display: none;
   }
   #app.visible { display: block; }
@@ -1488,6 +1494,87 @@
     justify-content: center;
     flex-wrap: wrap;
   }
+
+  /* ===== LEFT RESOURCE PANEL ===== */
+  #res-left {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 200px;
+    background: rgba(2,13,4,0.96);
+    border-right: 1px solid #1a5c34;
+    z-index: 600;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 6px 8px;
+    display: none;
+    font-size: 13px;
+  }
+  #res-left.visible { display: block; }
+  #res-left::-webkit-scrollbar { width: 3px; }
+  #res-left::-webkit-scrollbar-thumb { background: #1a5c34; }
+  .rl-title {
+    color: #1a5c34;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #1a5c34;
+    padding: 4px 0 3px;
+    margin-bottom: 6px;
+  }
+  .rl-item { padding: 3px 0 5px; margin-bottom: 4px; border-bottom: 1px solid #0a1a0a; }
+  .rl-label { color: #00994d; font-size: 12px; }
+  .rl-val { color: #00e676; font-size: 14px; font-weight: bold; }
+  .rl-rate { color: #00994d; font-size: 11px; }
+  .rl-bar { height: 4px; background: #1a5c34; margin-top: 2px; }
+  .rl-bar-fill { height: 100%; background: #00994d; transition: width 0.8s; }
+  .rl-bar-fill.amber { background: #ffab00; }
+  .rl-ms-row {
+    margin-top: 8px;
+    padding: 6px 4px;
+    border: 1px solid #7a5100;
+    background: rgba(255,171,0,0.05);
+  }
+  .rl-ms-label { color: #7a5100; font-size: 11px; letter-spacing: 1px; }
+  .rl-ms-val { color: #ffab00; font-size: 16px; font-weight: bold; }
+
+  /* ===== BUILDING HOVER OVERLAY ===== */
+  #bld-ov {
+    position: fixed;
+    display: none;
+    z-index: 9600;
+    background: rgba(1,8,0,0.97);
+    border: 1px solid #00e676;
+    min-width: 240px;
+    max-width: 320px;
+    box-shadow: 0 0 18px rgba(0,230,118,0.15);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: #00e676;
+  }
+  .bov-hd {
+    padding: 7px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid #1a5c34;
+    color: #c8ffd4;
+  }
+  .bov-row { padding: 4px 12px; color: #00994d; font-size: 12px; }
+  .bov-row span { color: #00e676; }
+  .bov-sep { border-top: 1px solid #1a5c34; margin: 2px 0; }
+  .bov-btns { display: flex; gap: 6px; padding: 6px 10px 8px; flex-wrap: wrap; }
+  .bov-btn {
+    padding: 5px 12px;
+    border: 1px solid #00e676;
+    color: #00e676;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    background: transparent;
+    white-space: nowrap;
+  }
+  .bov-btn:hover { background: #00e676; color: #010800; }
+  .bov-btn.amber { border-color: #ffab00; color: #ffab00; }
+  .bov-btn.amber:hover { background: #ffab00; color: #010800; }
+  .bov-btn.disabled { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
 </style>
 </head>
 <body>
@@ -1505,6 +1592,13 @@
       <button class="title-btn" id="continue-btn" style="display:none">이어하기</button>
       <button class="title-btn" id="settings-btn">설정</button>
     </div>
+  </div>
+
+  <!-- LEFT RESOURCE PANEL -->
+  <div id="res-left">
+    <div class="rl-title">&#9726; 자원</div>
+    <div id="rl-inner"></div>
+    <div id="rl-ms-box"></div>
   </div>
 
   <!-- ===========================
@@ -1535,6 +1629,8 @@
       <div id="res-bar-inner" class="res-bar-inner"></div>
       <div class="res-bar-right">
         <span id="ms-display" style="color:var(--amber);font-size:14px;display:none"></span>
+        <button id="bgm-prev-btn" onclick="typeof BGM!=='undefined'&&BGM.next()" title="다음 BGM" style="font-size:12px;padding:3px 8px;border:1px solid #1a5c34;background:transparent;color:#00994d;cursor:pointer;font-family:'Share Tech Mono',monospace;">BGM◀▶</button>
+        <span id="bgm-track-label" style="font-size:11px;color:#1a5c34;min-width:90px;">[BGM: 앰비언트]</span>
         <button id="sound-btn">SND:ON</button>
       </div>
     </div>
@@ -1660,6 +1756,19 @@
   <!-- Notifications -->
   <div id="notif"></div>
 
+  <!-- Building Hover Overlay -->
+  <div id="bld-ov">
+    <div class="bov-hd" id="bov-hd">건물명</div>
+    <div class="bov-row" id="bov-cnt"></div>
+    <div class="bov-row" id="bov-prod"></div>
+    <div class="bov-row" id="bov-cost"></div>
+    <div class="bov-sep"></div>
+    <div class="bov-btns">
+      <button class="bov-btn" id="bov-buy">[ 구매 ]</button>
+      <button class="bov-btn" onclick="closeBldOv()">[닫기]</button>
+    </div>
+  </div>
+
 <script src="js/game-data.js"></script>
 <script src="js/game-state.js"></script>
 <script src="js/unlock.js"></script>
@@ -1669,6 +1778,7 @@
 <script src="js/tabs/assembly.js"></script>
 <script src="js/tabs/launch.js"></script>
 <script src="js/tabs/mission.js"></script>
+<script src="js/audio-bgm.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
