@@ -7,6 +7,11 @@ function buyBuilding(bid) {
   if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
   spend(cost);
   gs.buildings[bid] = (gs.buildings[bid] || 0) + 1;
+  // 주거 시설: 인원 +1, 워커 도트 동기화
+  if (bid === 'housing') {
+    gs.workers = (gs.workers || 1) + 1;
+    if (typeof syncWorkerDots === 'function') syncWorkerDots();
+  }
   notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]})`);
   playSfx('triangle', 360, 0.08, 0.03, 520);
   renderAll();

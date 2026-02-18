@@ -22,6 +22,7 @@ const BUILDINGS = [
   { id:'r_and_d',      name:'R&D 센터',         icon:'[RND]', produces:'research',    baseRate:1.2, baseCost:{money:3000,electronics:500},            desc:'고급 연구 가속',    wbClass:'wb-research' },
   { id:'solar_array',  name:'태양광 어레이',    icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:800,electronics:200},             desc:'전체 생산 +10%/개', wbClass:'wb-solar' },
   { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:5000,metal:2000,electronics:500}, desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },
+  { id:'housing',      name:'주거 시설',         icon:'[HOU]', produces:'bonus',       baseRate:0,   baseCost:{money:200},                             desc:'인원 +1명',        wbClass:'wb-housing' },
 ];
 
 const PARTS = [

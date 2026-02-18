@@ -1,4 +1,24 @@
 
+// ─── ASCII TECH VISUALIZATIONS ──────────────────────────────
+const TECH_VIZ = {
+  hire_worker_1:      { lines: ['▓▓▓▓▓▓▓▓▓ ← 인력 풀', '▓▓▓▓▓▓▓ ← 교육 기간', '▓▓▓▓▓▓▓▓▓▓ ← 역량'],   stat: '+1 WORKER' },
+  basic_prod:         { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 기초 인프라', '▓▓▓▓▓▓▓▓ ← 생산 라인', '▓▓▓▓▓ ← 자동화'], stat: 'MINE UNLOCK' },
+  drill:              { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 드릴 강도', '▓▓▓▓▓▓▓▓ ← 관통력', '▓▓▓▓▓▓▓▓▓ ← 굴착 속도'], stat: '+25% METAL' },
+  fuel_chem:          { lines: ['▓▓▓▓▓▓▓▓▓ ← 반응 효율', '▓▓▓▓▓▓▓ ← 촉매량', '▓▓▓▓▓▓▓▓ ← 정제율'], stat: 'REFINERY UNLOCK' },
+  electronics_basics: { lines: ['▓▓▓▓▓▓▓▓▓ ← 회로 설계', '▓▓▓▓▓▓▓ ← 납땜 기술', '▓▓▓▓▓▓▓▓ ← QC 기준'], stat: 'PCB LAB UNLOCK' },
+  catalyst:           { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 촉매 농도', '▓▓▓▓▓▓▓▓▓ ← 반응기 효율', '▓▓▓▓▓▓▓▓ ← 순도'], stat: '+30% FUEL' },
+  microchip:          { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 트랜지스터', '▓▓▓▓▓▓▓▓▓ ← 집적도', '▓▓▓▓▓▓▓ ← 전력 소비'], stat: '+35% ELECTRONICS' },
+  automation:         { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 자동화율', '▓▓▓▓▓▓▓▓▓▓ ← 처리량', '▓▓▓▓▓▓▓▓▓ ← 효율'], stat: '×1.5 ALL OUTPUT' },
+  alloy:              { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 인장 강도', '▓▓▓▓▓▓▓▓ ← 내열성', '▓▓▓▓▓▓▓▓▓ ← 경량비'], stat: '-20% PART COST' },
+  rocket_eng:         { lines: ['▓▓▓▓▓▓▓▓▓ ← 추진 설계', '▓▓▓▓▓▓▓▓▓▓ ← 구조 해석', '▓▓▓▓▓▓▓ ← 시험 횟수'], stat: 'ASSEMBLY UNLOCK' },
+  launch_ctrl:        { lines: ['▓▓▓▓▓▓▓▓▓ ← 텔레메트리', '▓▓▓▓▓▓▓▓▓ ← 비행 S/W', '▓▓▓▓▓▓▓▓ ← GO/NOGO'], stat: 'LAUNCH TAB UNLOCK' },
+  mission_sys:        { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 궤도 계산', '▓▓▓▓▓▓▓▓ ← 탑재체 최적화', '▓▓▓▓▓▓▓▓▓ ← 임무 계획'], stat: 'MISSION TAB UNLOCK' },
+  lightweight:        { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 티타늄 구조', '▓▓▓▓▓▓▓▓▓ ← MLI 레이어', '▓▓▓▓▓▓▓▓ ← 구조재'], stat: '-10% DRY MASS' },
+  fusion:             { lines: ['▓▓▓▓▓▓▓▓▓▓▓ ← 플라즈마', '▓▓▓▓▓▓▓▓▓▓ ← 자기 봉입', '▓▓▓▓▓▓▓▓▓ ← 중성자'], stat: '+22 ISP / +120kN' },
+  reliability:        { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 배선 품질', '▓▓▓▓▓▓▓▓▓ ← 이중화', '▓▓▓▓▓▓▓▓▓▓ ← 테스트 커버'], stat: '+15% RELIABILITY' },
+  multipad:           { lines: ['▓▓▓▓▓▓▓▓▓ ← 발사대 추가', '▓▓▓▓▓▓▓▓▓▓ ← 가트리 시스템', '▓▓▓▓▓▓▓▓ ← 연결부'], stat: '+1 ASSEMBLY SLOT' },
+};
+
 function buyUpgrade(uid) {
   const upg = UPGRADES.find(u => u.id === uid);
   if (!upg || gs.upgrades[uid]) return;
@@ -245,6 +265,21 @@ function renderTechDetail() {
   const btnDisabled = purchased || !reqMet || !affordable;
   const btnText = purchased ? '[ 연구 완료 ]' : !reqMet ? '[ 선행 필요 ]' : !affordable ? '[ 자원 부족 ]' : '[ 연구 실행 ]';
 
+  // ASCII Tech Visualization
+  const viz = TECH_VIZ[upg.id];
+  let vizHtml = '';
+  if (viz) {
+    const linesHtml = viz.lines.map(line =>
+      `<div style="color:var(--amber);font-size:12px;font-family:var(--font);letter-spacing:0;margin:2px 0;">${line}</div>`
+    ).join('');
+    vizHtml = `
+<div style="margin-top:10px;border:1px solid #3a2800;background:rgba(255,171,0,0.04);padding:8px 10px;">
+  <div style="font-size:10px;color:#7a5100;letter-spacing:2px;margin-bottom:6px;">// TECH VISUALIZATION</div>
+  ${linesHtml}
+  <div style="color:var(--amber);font-size:13px;margin-top:6px;letter-spacing:1px;text-shadow:var(--amber-glow);">${viz.stat}</div>
+</div>`;
+  }
+
   panel.innerHTML = `
 <div style="font-size:10px;color:var(--green-dim);letter-spacing:2px;margin-bottom:4px;">${upg.id}</div>
 <div style="font-size:14px;color:var(--green);margin-bottom:4px;">${upg.icon} ${upg.name}</div>
@@ -256,6 +291,7 @@ ${costHtml}
 <div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">${upg.desc}</div>
 ${unlocksHtml}
 ${prereqHtml}
+${vizHtml}
 <div style="margin-top:12px;">
   <button class="btn btn-full btn-sm${purchased ? '' : !reqMet || !affordable ? ' btn-amber' : ''}" onclick="buyUpgrade('${upg.id}');renderTechDetail();" ${btnDisabled ? 'disabled' : ''}>
     ${btnText}
