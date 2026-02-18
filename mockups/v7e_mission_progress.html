@@ -1646,6 +1646,136 @@
     border-top: 1px solid #0a2e14;
     margin: 10px 0;
   }
+
+  /* ==============================================
+     ASCII ART SCENE PANELS
+  ============================================== */
+  .ascii-scene-wrap {
+    margin-bottom: 10px;
+    border: 1px solid #0a2e14;
+    background: #010800;
+    position: relative;
+  }
+
+  .ascii-scene-wrap.active-scene {
+    border-color: var(--amber-dim);
+    box-shadow: 0 0 8px #ffab0020, inset 0 0 16px #0a0500;
+  }
+
+  .ascii-scene-wrap.complete-scene {
+    border-color: var(--green-dim);
+    box-shadow: 0 0 4px #00e67620, inset 0 0 12px #010f05;
+  }
+
+  .ascii-scene-wrap.locked-scene {
+    border-color: #06120a;
+    opacity: 0.45;
+  }
+
+  .ascii-scene-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 10px;
+    border-bottom: 1px solid #0a2e14;
+    font-size: 9px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .ascii-scene-wrap.active-scene .ascii-scene-header { color: var(--amber); border-color: var(--amber-dim); }
+  .ascii-scene-wrap.complete-scene .ascii-scene-header { color: var(--green-mid); }
+  .ascii-scene-wrap.locked-scene .ascii-scene-header { color: #1a3a20; border-color: #06120a; }
+
+  .ascii-scene-toggle {
+    font-size: 9px;
+    color: inherit;
+    letter-spacing: 1px;
+  }
+
+  .ascii-scene-body {
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    max-height: 400px;
+  }
+
+  .ascii-scene-body.collapsed {
+    max-height: 0;
+  }
+
+  pre.ascii-art {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    line-height: 1.45;
+    padding: 10px 12px;
+    margin: 0;
+    white-space: pre;
+    color: var(--green);
+    text-shadow: 0 0 4px #00e67650;
+    overflow-x: auto;
+  }
+
+  .ascii-scene-wrap.active-scene pre.ascii-art {
+    color: var(--amber);
+    text-shadow: 0 0 5px #ffab0050;
+  }
+
+  .ascii-scene-wrap.complete-scene pre.ascii-art {
+    color: var(--green-mid);
+    text-shadow: 0 0 4px #00994d40;
+  }
+
+  .ascii-scene-wrap.locked-scene pre.ascii-art {
+    color: #1a3a20;
+    text-shadow: none;
+  }
+
+  /* ASCII Timeline strip */
+  #ascii-timeline-strip {
+    margin-top: 12px;
+    padding: 8px 0 2px;
+    border-top: 1px solid #0a2e14;
+  }
+
+  pre.ascii-timeline {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    line-height: 1.5;
+    color: var(--green-dim);
+    text-shadow: none;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 0;
+  }
+
+  pre.ascii-timeline .tl-done   { color: var(--green);     text-shadow: 0 0 5px #00e67660; }
+  pre.ascii-timeline .tl-active { color: var(--amber);     text-shadow: 0 0 5px #ffab0060; }
+  pre.ascii-timeline .tl-lock   { color: #1a3a20;          text-shadow: none; }
+
+  /* Animated moon dot */
+  .moon-phase-dot {
+    display: inline-block;
+    font-size: 13px;
+    line-height: 1;
+    vertical-align: middle;
+  }
+
+  /* Milestone ASCII icon prefix */
+  .ms-ascii-icon {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+    color: var(--green-dim);
+    margin-top: 1px;
+    letter-spacing: 0;
+  }
+
+  .ms-item.ms-complete .ms-ascii-icon { color: var(--green); text-shadow: 0 0 4px #00e67650; }
+  .ms-item.ms-next    .ms-ascii-icon { color: var(--amber); text-shadow: 0 0 4px #ffab0060; }
+  .ms-item.ms-locked  .ms-ascii-icon { color: #1a3a20; }
 </style>
 </head>
 <body>
@@ -1804,6 +1934,12 @@
             </div>
 
           </div><!-- #timeline-row -->
+
+          <!-- ASCII MISSION TIMELINE STRIP -->
+          <div id="ascii-timeline-strip">
+            <pre class="ascii-timeline" id="ascii-timeline-pre"></pre>
+          </div>
+
         </div><!-- #timeline-zone -->
 
         <!-- MIDDLE ZONE -->
@@ -1813,6 +1949,109 @@
           <div id="phase-detail-col">
             <div class="col-header">현재 에라 상세</div>
             <div id="phase-detail-scroll">
+
+              <!-- ================================================
+                   ASCII PHASE SCENE PANELS
+              ================================================ -->
+
+              <!-- Phase 5 scene (LOCKED) -->
+              <div class="ascii-scene-wrap locked-scene" id="ascii-scene-5" style="display:none;">
+                <div class="ascii-scene-header" onclick="toggleAsciiScene(5)">
+                  <span>// PHASE 5 — LUNAR SURFACE</span>
+                  <span class="ascii-scene-toggle" id="ascii-toggle-5">[−]</span>
+                </div>
+                <div class="ascii-scene-body" id="ascii-body-5">
+<pre class="ascii-art">        ___
+    ___/   \___    ← Moon surface horizon
+   /   crater  \
+  /_____________\
+
+    /\     /\      ← Landing legs
+   /  \___/  \
+  | LUNAR BASE |
+   \__________/
+  ░░░░░░░░░░░░░░░
+  [REQUIRES: 달 전이 궤도]</pre>
+                </div>
+              </div>
+
+              <!-- Phase 4 scene (LOCKED) -->
+              <div class="ascii-scene-wrap locked-scene" id="ascii-scene-4" style="display:none;">
+                <div class="ascii-scene-header" onclick="toggleAsciiScene(4)">
+                  <span>// PHASE 4 — CISLUNAR OPS</span>
+                  <span class="ascii-scene-toggle" id="ascii-toggle-4">[−]</span>
+                </div>
+                <div class="ascii-scene-body" id="ascii-body-4">
+<pre class="ascii-art">    .  *  .  .  *           Stars/space
+  *    .    .    *
+       .  (  )  .           Moon silhouette
+      .  (    )  .
+        (  <span class="moon-phase-dot" id="moon-dot">○</span>  )
+         (  )
+          ()
+  ░░░░░░░░░░░░░░░░░░
+  [REQUIRES: 궤도 안정화]</pre>
+                </div>
+              </div>
+
+              <!-- Phase 3 scene (LOCKED) -->
+              <div class="ascii-scene-wrap locked-scene" id="ascii-scene-3" style="display:none;">
+                <div class="ascii-scene-header" onclick="toggleAsciiScene(3)">
+                  <span>// PHASE 3 — ORBITAL COMPLEX</span>
+                  <span class="ascii-scene-toggle" id="ascii-toggle-3">[−]</span>
+                </div>
+                <div class="ascii-scene-body" id="ascii-body-3">
+<pre class="ascii-art">  ░░░░░░░░░░░░░░░░░░░░░░░░
+  ░  ┌──┐  ┌──────┐  ┌──┐ ░   (dim, locked state)
+  ░  │  │  │      │  │  │ ░
+  ░  └──┘  └──────┘  └──┘ ░
+  ░░░░░░░░░░░░░░░░░░░░░░░░
+       [REQUIRES: 카르만선 돌파]</pre>
+                </div>
+              </div>
+
+              <!-- Phase 2 scene (ACTIVE) -->
+              <div class="ascii-scene-wrap active-scene" id="ascii-scene-2" style="display:none;">
+                <div class="ascii-scene-header" onclick="toggleAsciiScene(2)">
+                  <span>// PHASE 2 — SUBORBITAL FACILITY  [ACTIVE]</span>
+                  <span class="ascii-scene-toggle" id="ascii-toggle-2">[−]</span>
+                </div>
+                <div class="ascii-scene-body" id="ascii-body-2">
+<pre class="ascii-art">  ┌──────────┐   ┌──────────┐
+  │  FORGE   │   │ ASSEMBLY │   Established factory
+  │  ░░░░░░  │   │   ████   │
+  │  ──────  │   │   ████   │
+  └──────────┘   └──────────┘
+                    ║
+                 ───╫───   ← launch rail
+                    ║
+                 /──┴──\
+                / BETA  \
+               /__mk.2___\
+                 | | |</pre>
+                </div>
+              </div>
+
+              <!-- Phase 1 scene (COMPLETE) -->
+              <div class="ascii-scene-wrap complete-scene" id="ascii-scene-1" style="display:none;">
+                <div class="ascii-scene-header" onclick="toggleAsciiScene(1)">
+                  <span>// PHASE 1 — PROTOTYPE LAB  [COMPLETE ✓]</span>
+                  <span class="ascii-scene-toggle" id="ascii-toggle-1">[−]</span>
+                </div>
+                <div class="ascii-scene-body" id="ascii-body-1">
+<pre class="ascii-art">      /\
+     /  \         Simple tent/shed structure
+    /____\
+   | LAB  |       Small makeshift rocket on stand:
+   |______|
+                     |
+               /─────┴─────\
+              |   ALPHA      |
+              |   mk.1       |
+              |______________|
+                   | | |</pre>
+                </div>
+              </div>
 
               <!-- ACTIVE PHASE 2 CARD -->
               <div class="phase-card active-phase">
@@ -1939,6 +2178,7 @@
 
               <div class="ms-item ms-complete" onclick="showMilestoneModal('first-ignition')">
                 <span class="ms-icon done">✓</span>
+                <span class="ms-ascii-icon">/|\</span>
                 <div class="ms-body">
                   <div class="ms-name">First Ignition</div>
                   <div class="ms-cond">첫 엔진 점화 성공</div>
@@ -1951,6 +2191,7 @@
 
               <div class="ms-item ms-complete" onclick="showMilestoneModal('1km-club')">
                 <span class="ms-icon done">✓</span>
+                <span class="ms-ascii-icon">/|\</span>
                 <div class="ms-body">
                   <div class="ms-name">1km Club</div>
                   <div class="ms-cond">고도 1km 돌파</div>
@@ -1963,6 +2204,7 @@
 
               <div class="ms-item ms-complete" onclick="showMilestoneModal('boundary-pusher')">
                 <span class="ms-icon done">✓</span>
+                <span class="ms-ascii-icon">↑10</span>
                 <div class="ms-body">
                   <div class="ms-name">Boundary Pusher</div>
                   <div class="ms-cond">고도 10km 돌파</div>
@@ -1975,6 +2217,7 @@
 
               <div class="ms-item ms-complete" onclick="showMilestoneModal('stratosphere')">
                 <span class="ms-icon done">✓</span>
+                <span class="ms-ascii-icon">↑20</span>
                 <div class="ms-body">
                   <div class="ms-name">Stratosphere</div>
                   <div class="ms-cond">고도 20km 돌파 (성층권)</div>
@@ -1987,6 +2230,7 @@
 
               <div class="ms-item ms-complete" onclick="showMilestoneModal('felix-line')">
                 <span class="ms-icon done">✓</span>
+                <span class="ms-ascii-icon">↑39</span>
                 <div class="ms-body">
                   <div class="ms-name">Felix Line</div>
                   <div class="ms-cond">고도 39km 돌파 (펠릭스 라인)</div>
@@ -2005,6 +2249,7 @@
 
               <div class="ms-item ms-complete" onclick="showMilestoneModal('mesosphere')">
                 <span class="ms-icon done">✓</span>
+                <span class="ms-ascii-icon">↑50</span>
                 <div class="ms-body">
                   <div class="ms-name">Mesosphere Entry</div>
                   <div class="ms-cond">고도 50km 돌파 (중간권)</div>
@@ -2017,6 +2262,7 @@
 
               <div class="ms-item ms-complete" onclick="showMilestoneModal('weather-eye')">
                 <span class="ms-icon done">✓</span>
+                <span class="ms-ascii-icon">/|\</span>
                 <div class="ms-body">
                   <div class="ms-name">Weather Eye</div>
                   <div class="ms-cond">200km 궤도 준성공 인정</div>
@@ -2029,6 +2275,7 @@
 
               <div class="ms-item ms-next" onclick="showMilestoneModal('karman-line')">
                 <span class="ms-icon" style="color: var(--amber);">▶</span>
+                <span class="ms-ascii-icon" style="color:var(--amber);">═══</span>
                 <div class="ms-body">
                   <div class="ms-name">Kármán Line</div>
                   <div class="ms-cond">고도 정확히 100km 돌파</div>
@@ -2047,6 +2294,7 @@
 
               <div class="ms-item ms-available" onclick="showMilestoneModal('tourist-alt')">
                 <span class="ms-icon" style="color: var(--green-dim);">○</span>
+                <span class="ms-ascii-icon">○</span>
                 <div class="ms-body">
                   <div class="ms-name">Tourist Altitude</div>
                   <div class="ms-cond">고도 120km 달성 (우주관광 고도)</div>
@@ -2058,6 +2306,7 @@
 
               <div class="ms-item ms-available" onclick="showMilestoneModal('suborbital-return')">
                 <span class="ms-icon" style="color: var(--green-dim);">○</span>
+                <span class="ms-ascii-icon">/|\</span>
                 <div class="ms-body">
                   <div class="ms-name">Suborbital Return</div>
                   <div class="ms-cond">준궤도 비행 후 회수 성공</div>
@@ -2075,6 +2324,7 @@
 
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">○</span>
                 <div class="ms-body">
                   <div class="ms-name">First Orbit</div>
                   <div class="ms-cond">LEO 궤도 진입 성공</div>
@@ -2083,6 +2333,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">○</span>
                 <div class="ms-body">
                   <div class="ms-name">Orbital Decay</div>
                   <div class="ms-cond">궤도 유지 3회전 성공</div>
@@ -2091,6 +2342,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">○</span>
                 <div class="ms-body">
                   <div class="ms-name">Deorbit Master</div>
                   <div class="ms-cond">정밀 재진입 및 회수</div>
@@ -2099,6 +2351,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">/|\</span>
                 <div class="ms-body">
                   <div class="ms-name">Payload Delivery</div>
                   <div class="ms-cond">위성 탑재체 LEO 투입</div>
@@ -2107,6 +2360,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">○</span>
                 <div class="ms-body">
                   <div class="ms-name">Rendezvous</div>
                   <div class="ms-cond">궤도 랑데부 성공</div>
@@ -2120,6 +2374,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">/|\</span>
                 <div class="ms-body">
                   <div class="ms-name">Lunar Transfer</div>
                   <div class="ms-cond">달 전이 궤도 진입</div>
@@ -2128,6 +2383,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">(C)</span>
                 <div class="ms-body">
                   <div class="ms-name">Lunar Flyby</div>
                   <div class="ms-cond">달 플라이바이 완료</div>
@@ -2136,6 +2392,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">( )</span>
                 <div class="ms-body">
                   <div class="ms-name">Lunar Orbit</div>
                   <div class="ms-cond">달 궤도 진입 및 유지</div>
@@ -2144,6 +2401,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">(C)</span>
                 <div class="ms-body">
                   <div class="ms-name">Far Side</div>
                   <div class="ms-cond">달 뒷면 탐사 완료</div>
@@ -2152,6 +2410,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">/|\</span>
                 <div class="ms-body">
                   <div class="ms-name">Cislunar Return</div>
                   <div class="ms-cond">지구-달 왕복 성공</div>
@@ -2165,6 +2424,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">[+]</span>
                 <div class="ms-body">
                   <div class="ms-name">Touchdown</div>
                   <div class="ms-cond">달 착륙 성공 (첫 터치다운)</div>
@@ -2173,6 +2433,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">[*]</span>
                 <div class="ms-body">
                   <div class="ms-name">Surface Sample</div>
                   <div class="ms-cond">달 표면 샘플 채취</div>
@@ -2181,6 +2442,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">[#]</span>
                 <div class="ms-body">
                   <div class="ms-name">ISRU Pioneer</div>
                   <div class="ms-cond">현지 자원 활용 성공</div>
@@ -2189,6 +2451,7 @@
               </div>
               <div class="ms-item ms-locked">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon">[B]</span>
                 <div class="ms-body">
                   <div class="ms-name">Lunar Base Alpha</div>
                   <div class="ms-cond">달 기지 건설 완료</div>
@@ -2197,6 +2460,7 @@
               </div>
               <div class="ms-item ms-locked" style="border-color: #1a3a20;">
                 <span class="ms-icon">🔒</span>
+                <span class="ms-ascii-icon" style="color:#1a3a20;">[!]</span>
                 <div class="ms-body">
                   <div class="ms-name" style="color: #2a5c35; font-size: 12px; letter-spacing: 2px;">인류의 도약</div>
                   <div class="ms-cond" style="color: #1a3a20;">달 정착지 운용 개시 — 최종 마일스톤</div>
@@ -2929,6 +3193,90 @@
       });
     }, 300);
   });
+
+  // ============================================================
+  //   ASCII TIMELINE STRIP RENDERER
+  // ============================================================
+  function renderAsciiTimeline() {
+    const pre = document.getElementById('ascii-timeline-pre');
+    if (!pre) return;
+
+    // Build spans with class-based color using spans inside pre
+    // We write raw HTML into the pre element via innerHTML
+    const done  = (s) => `<span class="tl-done">${s}</span>`;
+    const act   = (s) => `<span class="tl-active">${s}</span>`;
+    const lock  = (s) => `<span class="tl-lock">${s}</span>`;
+
+    pre.innerHTML =
+      '  MISSION TIMELINE\n\n' +
+      '  ' + done('[P1:DONE]') + '───────' + act('[P2: 60%]') + '─ ─ ─ ─' + lock('[P3:LOCK]') + '─ ─ ─ ─' + lock('[P4:LOCK]') + '─ ─ ─ ─' + lock('[P5:LOCK]') + '\n' +
+      '     ' + done('✓') + '              ' + act('▶') + '                  ' + lock('░') + '                ' + lock('░') + '                ' + lock('░') + '\n' +
+      '  ' + done('프로토타입') + '      ' + act('서브오비탈') + '          ' + lock('궤도') + '            ' + lock('시스루나') + '          ' + lock('달 표면') + '\n\n' +
+      '  현재: ' + act('████████████░░░░░░░░░░░░') + '  Phase 2  ' + act('60%');
+  }
+
+  // ============================================================
+  //   ASCII PHASE SCENE VISIBILITY
+  //   Shows only the scene matching the given phase number
+  // ============================================================
+  function showAsciiScene(phaseNum) {
+    for (let i = 1; i <= 5; i++) {
+      const el = document.getElementById('ascii-scene-' + i);
+      if (el) el.style.display = (i === phaseNum) ? 'block' : 'none';
+    }
+  }
+
+  // Wire up phase-node clicks in timeline to also reveal the matching scene
+  // The onclick="showPhaseModal(N)" calls already open the modal;
+  // we additionally call showAsciiScene via event delegation on .phase-node clicks.
+  document.querySelectorAll('.phase-node').forEach((node, idx) => {
+    node.addEventListener('click', () => {
+      showAsciiScene(idx + 1);
+    });
+  });
+
+  // ============================================================
+  //   ASCII SCENE COLLAPSIBLE TOGGLE
+  // ============================================================
+  function toggleAsciiScene(phaseNum) {
+    const body   = document.getElementById('ascii-body-' + phaseNum);
+    const toggle = document.getElementById('ascii-toggle-' + phaseNum);
+    if (!body || !toggle) return;
+    if (body.classList.contains('collapsed')) {
+      body.classList.remove('collapsed');
+      toggle.textContent = '[−]';
+    } else {
+      body.classList.add('collapsed');
+      toggle.textContent = '[+]';
+    }
+  }
+
+  // ============================================================
+  //   ANIMATED MOON DOT (phase 4 scene)
+  // ============================================================
+  const moonFrames = ['○', '◐', '●', '◑'];
+  let moonIdx = 0;
+  function animateMoonDot() {
+    const dot = document.getElementById('moon-dot');
+    if (dot) {
+      moonIdx = (moonIdx + 1) % moonFrames.length;
+      dot.textContent = moonFrames[moonIdx];
+    }
+  }
+  setInterval(animateMoonDot, 700);
+
+  // ============================================================
+  //   INIT: render timeline + show default scene (Phase 2 active)
+  // ============================================================
+  window.addEventListener('DOMContentLoaded', () => {
+    renderAsciiTimeline();
+    showAsciiScene(2); // default: show active phase scene
+  });
+  // Fallback if DOMContentLoaded already fired (script at end of body)
+  if (document.readyState !== 'loading') {
+    renderAsciiTimeline();
+    showAsciiScene(2);
+  }
 </script>
 </body>
 </html>

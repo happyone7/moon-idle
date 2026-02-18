@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MOON IDLE — 발사 관제 (ML-004)</title>
+<title>MoonIdle — 발사 관제 v7d</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
   /* =============================================
@@ -22,13 +22,8 @@
     --green-dim:   #1a5c34;
     --green-mid:   #00994d;
     --amber:       #ffab00;
-    --amber-dim:   #5a3c00;
     --red:         #ff1744;
-    --red-dim:     #4a0010;
-    --white-dim:   #8aaa8a;
     --font:        'Share Tech Mono', monospace;
-    --border:      1px solid #1a5c34;
-    --border-amber:1px solid #5a3c00;
     --glow:        0 0 6px #00e67680;
     --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
     --glow-amber:  0 0 8px #ffab0080;
@@ -47,9 +42,7 @@
     overflow: hidden;
   }
 
-  /* =============================================
-     CRT SCANLINES OVERLAY
-  ============================================= */
+  /* CRT scanlines */
   body::before {
     content: '';
     position: fixed;
@@ -58,8 +51,8 @@
       0deg,
       transparent,
       transparent 2px,
-      rgba(0, 0, 0, 0.16) 2px,
-      rgba(0, 0, 0, 0.16) 4px
+      rgba(0, 0, 0, 0.18) 2px,
+      rgba(0, 0, 0, 0.18) 4px
     );
     pointer-events: none;
     z-index: 9999;
@@ -77,11 +70,11 @@
 
   @keyframes crt-flicker {
     0%   { opacity: 1; }
-    91%  { opacity: 1; }
-    92%  { opacity: 0.87; }
-    93%  { opacity: 1; }
-    97%  { opacity: 0.92; }
-    98%  { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.85; }
+    94%  { opacity: 1; }
+    96%  { opacity: 0.9; }
+    97%  { opacity: 1; }
     100% { opacity: 1; }
   }
 
@@ -97,78 +90,57 @@
   }
 
   @keyframes pulse-amber {
-    0%   { box-shadow: 0 0 4px #ffab0060; }
-    50%  { box-shadow: 0 0 18px #ffab00cc, 0 0 36px #ffab0040; }
-    100% { box-shadow: 0 0 4px #ffab0060; }
+    0%   { box-shadow: 0 0 4px #ffab0060; border-color: var(--amber); }
+    50%  { box-shadow: 0 0 20px #ffab00cc, 0 0 40px #ffab0040; border-color: #ffd050; }
+    100% { box-shadow: 0 0 4px #ffab0060; border-color: var(--amber); }
   }
 
-  @keyframes scanline-sweep {
-    0%   { transform: translateY(-100%); }
-    100% { transform: translateY(100vh); }
-  }
-
-  @keyframes data-scroll {
-    0%   { transform: translateY(0); }
-    100% { transform: translateY(-50%); }
+  @keyframes exhaust-pulse {
+    0%   { color: #ffab00; text-shadow: 0 0 6px #ffab00, 0 0 16px #ff6400aa; }
+    25%  { color: #ff6400; text-shadow: 0 0 10px #ff6400, 0 0 24px #ff640088; }
+    50%  { color: #ff1744; text-shadow: 0 0 8px #ff1744, 0 0 20px #ff174466; }
+    75%  { color: #ffcc00; text-shadow: 0 0 10px #ffcc00, 0 0 22px #ffcc0088; }
+    100% { color: #ffab00; text-shadow: 0 0 6px #ffab00, 0 0 16px #ff6400aa; }
   }
 
   @keyframes rocket-rise {
-    0%   { transform: translateY(0) scaleX(1); opacity: 1; }
-    80%  { transform: translateY(-500px) scaleX(1); opacity: 1; }
-    100% { transform: translateY(-600px) scaleX(1); opacity: 0; }
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-480px); }
   }
 
-  @keyframes exhaust-flicker {
-    0%   { transform: scaleY(1) scaleX(1); opacity: 0.9; }
-    25%  { transform: scaleY(1.3) scaleX(0.85); opacity: 1; }
-    50%  { transform: scaleY(0.85) scaleX(1.1); opacity: 0.8; }
-    75%  { transform: scaleY(1.2) scaleX(0.9); opacity: 1; }
-    100% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
-  }
-
-  @keyframes ignition-flash {
-    0%   { opacity: 0; }
-    10%  { opacity: 1; }
-    30%  { opacity: 0.6; }
-    60%  { opacity: 0.2; }
-    100% { opacity: 0; }
-  }
-
-  @keyframes success-glow {
-    0%   { text-shadow: 0 0 10px #00e676; }
-    50%  { text-shadow: 0 0 40px #00e676, 0 0 80px #00e67680; }
-    100% { text-shadow: 0 0 10px #00e676; }
+  @keyframes exhaust-rise {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-480px); }
   }
 
   @keyframes countdown-pulse {
     0%   { transform: scale(1); opacity: 1; }
-    50%  { transform: scale(1.05); opacity: 0.9; }
+    50%  { transform: scale(1.04); opacity: 0.88; }
     100% { transform: scale(1); opacity: 1; }
   }
 
-  @keyframes panel-slide-left {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-110%); }
+  @keyframes warning-flash-anim {
+    0%   { opacity: 0; }
+    10%  { opacity: 1; }
+    80%  { opacity: 1; }
+    100% { opacity: 0; }
   }
-  @keyframes panel-slide-right {
-    from { transform: translateX(0); }
-    to   { transform: translateX(110%); }
+
+  @keyframes ignition-bg-flash {
+    0%   { background: rgba(255, 120, 0, 0); }
+    15%  { background: rgba(255, 120, 0, 0.55); }
+    40%  { background: rgba(255, 80, 0, 0.25); }
+    70%  { background: rgba(255, 60, 0, 0.1); }
+    100% { background: rgba(255, 120, 0, 0); }
   }
-  @keyframes panel-slide-in-left {
-    from { transform: translateX(-110%); }
-    to   { transform: translateX(0); }
-  }
-  @keyframes panel-slide-in-right {
-    from { transform: translateX(110%); }
-    to   { transform: translateX(0); }
-  }
-  @keyframes theater-reveal {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+
+  @keyframes result-appear {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1); }
   }
 
   /* =============================================
-     LAYOUT STRUCTURE
+     APP SHELL
   ============================================= */
   #app {
     width: 100%;
@@ -184,111 +156,60 @@
      TOP BAR
   ============================================= */
   #topbar {
-    flex: 0 0 38px;
+    flex: 0 0 36px;
     background: #000d01;
     border-bottom: 1px solid var(--green-dim);
     display: flex;
     align-items: center;
-    padding: 0 16px;
+    padding: 0 14px;
     gap: 0;
     position: relative;
     z-index: 100;
   }
 
-  .topbar-logo {
+  .tb-logo {
     color: var(--green);
-    font-size: 14px;
-    letter-spacing: 0.12em;
+    font-size: 13px;
+    letter-spacing: 0.1em;
     text-shadow: var(--glow);
     white-space: nowrap;
   }
 
-  .topbar-sep {
+  .tb-sep {
     color: var(--green-dim);
-    margin: 0 12px;
+    margin: 0 10px;
   }
 
-  .topbar-mission {
+  .tb-mission {
     color: var(--amber);
-    font-size: 13px;
+    font-size: 12px;
     text-shadow: var(--glow-amber);
     white-space: nowrap;
   }
 
-  .topbar-countdown {
-    color: var(--green-dim);
-    font-size: 12px;
-    margin-left: 16px;
-  }
-  .topbar-countdown span {
-    color: var(--green);
-    animation: blink 1s step-end infinite;
-  }
-
-  .topbar-spacer { flex: 1; }
-
-  .topbar-rep {
+  .tb-standby {
     color: var(--amber);
-    font-size: 13px;
-    margin-right: 8px;
+    font-size: 11px;
+    animation: blink 1.4s step-end infinite;
+    margin-left: 14px;
   }
 
-  /* =============================================
-     MAIN TABS
-  ============================================= */
-  #tabs {
-    flex: 0 0 32px;
-    background: #010a02;
-    border-bottom: 1px solid var(--green-dim);
-    display: flex;
-    align-items: stretch;
-    padding: 0 8px;
-    gap: 2px;
-    position: relative;
-    z-index: 100;
-  }
-
-  .tab {
-    padding: 0 18px;
-    cursor: pointer;
+  .tb-day {
     color: var(--green-dim);
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    border: none;
-    background: none;
-    font-family: var(--font);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s;
+    font-size: 11px;
+    margin-left: 14px;
   }
 
-  .tab:hover {
-    color: var(--green-mid);
-  }
+  .tb-spacer { flex: 1; }
 
-  .tab.active {
+  .tb-clock {
     color: var(--green);
-    border-bottom: 2px solid var(--green);
+    font-size: 11px;
     text-shadow: var(--glow);
   }
 
-  .tab-dot {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    border: 1px solid currentColor;
-    border-radius: 50%;
-  }
-
-  .tab.active .tab-dot {
-    background: var(--green);
-    box-shadow: var(--glow);
-  }
-
   /* =============================================
-     MAIN CONTENT AREA
+     THREE-COLUMN LAYOUT
   ============================================= */
   #content-area {
     flex: 1;
@@ -297,55 +218,51 @@
     overflow: hidden;
   }
 
-  /* =============================================
-     THREE-COLUMN LAYOUT
-  ============================================= */
   #col-left {
-    flex: 0 0 25%;
-    max-width: 25%;
+    flex: 0 0 28%;
+    max-width: 28%;
     border-right: 1px solid var(--green-dim);
     overflow-y: auto;
-    padding: 10px 8px;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    gap: 0;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s;
+    background: var(--panel-bg);
   }
 
   #col-center {
-    flex: 0 0 50%;
-    max-width: 50%;
+    flex: 0 0 44%;
+    max-width: 44%;
     overflow-y: auto;
-    padding: 10px 12px;
+    overflow-x: hidden;
+    background: var(--bg);
     display: flex;
     flex-direction: column;
-    gap: 10px;
   }
 
   #col-right {
-    flex: 0 0 25%;
-    max-width: 25%;
+    flex: 0 0 28%;
+    max-width: 28%;
     border-left: 1px solid var(--green-dim);
     overflow-y: auto;
-    padding: 10px 8px;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    gap: 0;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s;
+    background: var(--panel-bg);
   }
 
-  /* Panel slide-out during launch */
-  #col-left.slide-out  { transform: translateX(-110%); }
-  #col-right.slide-out { transform: translateX(110%); }
-  #col-left.slide-in   { transform: translateX(0); }
-  #col-right.slide-in  { transform: translateX(0); }
+  #col-left.slide-out  { transform: translateX(-120%); opacity: 0; }
+  #col-right.slide-out { transform: translateX(120%); opacity: 0; }
 
   /* =============================================
      PANEL COMPONENTS
   ============================================= */
   .panel {
     background: var(--panel-bg);
-    border: 1px solid var(--green-dim);
+    border-bottom: 1px solid var(--green-dim);
     padding: 8px 10px;
   }
 
@@ -354,406 +271,290 @@
     font-size: 10px;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     border-bottom: 1px solid var(--green-dim);
-    padding-bottom: 4px;
+    padding-bottom: 3px;
   }
 
-  .panel-title.amber {
-    color: var(--amber);
-    border-bottom-color: var(--amber-dim);
-  }
-
-  .panel-title.green-bright {
+  .panel-title.green {
     color: var(--green);
     text-shadow: var(--glow);
     border-bottom-color: var(--green-mid);
   }
 
+  .panel-title.amber {
+    color: var(--amber);
+    border-bottom-color: #5a3c00;
+  }
+
   /* =============================================
-     CHECKLIST
+     LEFT: CHECKLIST
   ============================================= */
   .checklist-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 3px 0;
+    padding: 4px 0;
     border-bottom: 1px solid #0d2010;
     font-size: 11px;
   }
 
   .checklist-row:last-child { border-bottom: none; }
 
-  .chk-name {
-    color: var(--white-dim);
-    flex: 1;
-  }
+  .chk-name { color: #8aaa8a; flex: 1; }
 
-  .chk-status {
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 0.08em;
-    padding: 1px 6px;
-    border: 1px solid;
-  }
-
-  .chk-status.go {
-    color: var(--green);
-    border-color: var(--green-mid);
-    background: rgba(0, 230, 118, 0.06);
-    text-shadow: var(--glow);
-  }
-
-  .chk-status.nogo {
-    color: var(--red);
-    border-color: var(--red);
-    background: rgba(255, 23, 68, 0.08);
-  }
-
-  .chk-status.caution {
-    color: var(--amber);
-    border-color: var(--amber-dim);
-    background: rgba(255, 171, 0, 0.06);
-  }
-
-  .chk-detail {
-    color: #4a7a4a;
+  .chk-badge {
     font-size: 10px;
-    margin-top: 1px;
-    margin-left: 4px;
+    padding: 1px 6px;
+    border: 1px solid var(--green-mid);
+    color: var(--green);
+    background: rgba(0, 230, 118, 0.07);
+    text-shadow: var(--glow);
+    white-space: nowrap;
   }
 
-  .mission-status-banner {
+  .all-go-banner {
     background: rgba(0, 230, 118, 0.07);
     border: 1px solid var(--green);
     padding: 5px 8px;
     text-align: center;
     color: var(--green);
     font-size: 11px;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-shadow: var(--glow);
-    margin-top: 4px;
+    margin-top: 6px;
     animation: pulse-green 2.5s ease-in-out infinite;
   }
 
   /* =============================================
-     DATA BONUS BOX
+     LEFT: DATA / WEATHER
   ============================================= */
-  .data-line {
+  .data-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 11px;
     padding: 2px 0;
-    color: var(--white-dim);
+    color: #8aaa8a;
   }
 
-  .data-line .bonus {
+  .data-row .val { color: var(--green); text-shadow: var(--glow); }
+  .data-row .val-amber { color: var(--amber); }
+
+  /* =============================================
+     CENTER: ASCII ROCKET DISPLAY
+  ============================================= */
+  .rocket-display {
+    padding: 12px 0 6px 0;
+    text-align: center;
+    background: var(--bg);
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  pre.rocket-pad {
+    display: inline-block;
+    text-align: left;
+    font-size: 11px;
+    line-height: 1.35;
     color: var(--green);
-    text-shadow: var(--glow);
-    font-size: 10px;
-  }
-
-  .data-total-line {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    padding: 4px 0 2px;
-    border-top: 1px solid var(--green-dim);
-    margin-top: 4px;
-  }
-
-  .data-total-line .label { color: var(--white-dim); }
-  .data-total-line .val {
-    color: var(--green);
-    text-shadow: var(--glow);
-    font-size: 13px;
-  }
-
-  .data-divider {
-    color: var(--green-dim);
-    font-size: 10px;
-    margin: 2px 0;
+    white-space: pre;
+    text-shadow:
+      0 0 6px #00e676,
+      0 0 16px rgba(0, 230, 118, 0.5),
+      0 0 32px rgba(0, 230, 118, 0.2);
+    letter-spacing: 0;
   }
 
   /* =============================================
-     WEATHER BOX
+     CENTER: STATUS BARS
   ============================================= */
-  .weather-nominal {
-    background: rgba(0,230,118,0.04);
-    border: 1px solid var(--green-dim);
-    padding: 6px 8px;
-    font-size: 11px;
+  .status-bars {
+    padding: 8px 12px;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--green-dim);
   }
 
-  .weather-header {
-    color: var(--green);
-    font-size: 11px;
-    text-shadow: var(--glow);
+  .sbar-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-bottom: 4px;
   }
 
-  .weather-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 1px 0;
-    color: var(--white-dim);
-    font-size: 11px;
-  }
-
-  .weather-row .val { color: var(--green); }
-
-  /* =============================================
-     VEHICLE STATUS
-  ============================================= */
-  .veh-header {
-    text-align: center;
-    color: var(--green);
-    font-size: 12px;
-    text-shadow: var(--glow);
-    letter-spacing: 0.1em;
-    margin-bottom: 6px;
-  }
-
-  .veh-divider {
-    border: none;
-    border-top: 1px solid var(--green-mid);
-    margin: 4px 0;
-  }
-
-  .veh-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2px 0;
-    font-size: 11px;
-  }
-
-  .veh-label {
-    color: var(--white-dim);
-    width: 72px;
+  .sbar-label {
+    width: 62px;
+    font-size: 10px;
+    color: var(--green-mid);
     flex-shrink: 0;
-    font-size: 11px;
   }
 
-  .veh-bar-wrap {
+  .sbar-track {
     flex: 1;
-    height: 10px;
-    background: #0a1a0a;
+    height: 8px;
+    background: rgba(26, 92, 52, 0.35);
     border: 1px solid var(--green-dim);
-    margin: 0 8px;
-    position: relative;
     overflow: hidden;
   }
 
-  .veh-bar {
+  .sbar-fill {
     height: 100%;
     background: var(--green);
-    transition: width 0.5s;
+    box-shadow: 0 0 4px var(--green);
   }
 
-  .veh-bar.amber { background: var(--amber); }
+  .sbar-fill.amber {
+    background: var(--amber);
+    box-shadow: 0 0 4px var(--amber);
+  }
 
-  .veh-val {
-    color: var(--green);
-    font-size: 11px;
-    min-width: 80px;
+  .sbar-pct {
+    width: 34px;
     text-align: right;
-  }
-
-  .veh-status-tag {
     font-size: 10px;
-    padding: 0 5px;
-    border: 1px solid;
-    margin-left: 6px;
-  }
-
-  .tag-nominal {
     color: var(--green);
-    border-color: var(--green-mid);
-    text-shadow: var(--glow);
+    flex-shrink: 0;
   }
 
-  .tag-check {
-    color: var(--amber);
-    border-color: var(--amber-dim);
-  }
-
-  .tag-armed {
-    color: var(--green);
-    border-color: var(--green);
-    background: rgba(0,230,118,0.08);
-    text-shadow: var(--glow);
+  .sbar-tag {
+    font-size: 9px;
+    padding: 0 4px;
+    border: 1px solid var(--green-mid);
+    color: var(--green-mid);
+    flex-shrink: 0;
     animation: blink 1.2s step-end infinite;
   }
 
   /* =============================================
-     MISSION PROFILE DIAGRAM
+     CENTER: FAILURE TABLE
   ============================================= */
-  #mission-profile {
-    background: #000d01;
-    border: 1px solid var(--green-dim);
-    padding: 6px;
+  .fail-section {
+    padding: 8px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--green-dim);
   }
 
-  /* =============================================
-     FAILURE PROBABILITY
-  ============================================= */
   .fail-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 2px 0;
-    font-size: 11px;
+    gap: 5px;
+    margin-bottom: 4px;
+    font-size: 10px;
   }
 
   .fail-name {
-    color: var(--white-dim);
+    width: 82px;
+    color: #8aaa8a;
+    flex-shrink: 0;
+  }
+
+  .fail-bar-str {
     flex: 1;
+    color: var(--red);
+    font-size: 11px;
+    letter-spacing: -1px;
   }
-
-  .fail-bar-wrap {
-    width: 80px;
-    height: 8px;
-    background: #0a0a0a;
-    border: 1px solid var(--green-dim);
-    margin: 0 8px;
-    overflow: hidden;
-  }
-
-  .fail-bar {
-    height: 100%;
-  }
-  .fail-bar.low    { background: var(--green-mid); }
-  .fail-bar.medium { background: var(--amber); }
-  .fail-bar.high   { background: var(--red); }
 
   .fail-pct {
-    color: var(--white-dim);
-    width: 32px;
+    width: 28px;
     text-align: right;
-    font-size: 11px;
+    color: var(--amber);
+    flex-shrink: 0;
   }
-  .fail-pct.high { color: var(--red); }
-  .fail-pct.medium { color: var(--amber); }
+
+  .fail-lvl {
+    font-size: 9px;
+    padding: 0 4px;
+    border: 1px solid;
+    flex-shrink: 0;
+  }
+
+  .fail-lvl.low  { border-color: var(--green-dim); color: var(--green-mid); }
+  .fail-lvl.mid  { border-color: #5a3c00; color: var(--amber); }
+  .fail-lvl.high { border-color: var(--red); color: var(--red); }
 
   /* =============================================
-     LAUNCH COMMIT BUTTON
+     CENTER: LAUNCH COMMIT BOX
   ============================================= */
   #launch-commit-box {
-    background: #000d01;
+    margin: 10px 12px 12px;
     border: 2px solid var(--amber);
-    padding: 14px 20px;
-    text-align: center;
+    padding: 12px;
+    background: #000d01;
     animation: pulse-amber 3s ease-in-out infinite;
   }
 
   .commit-header {
     color: var(--amber);
-    font-size: 14px;
-    letter-spacing: 0.12em;
+    font-size: 12px;
+    letter-spacing: 0.15em;
     text-shadow: var(--glow-amber);
-    margin-bottom: 4px;
-  }
-
-  .commit-mission-id {
-    color: var(--green-dim);
-    font-size: 11px;
+    text-align: center;
     margin-bottom: 10px;
   }
 
   .commit-stats {
     display: flex;
-    justify-content: center;
-    gap: 28px;
+    justify-content: space-around;
     margin-bottom: 12px;
   }
 
-  .commit-stat {
-    text-align: center;
-  }
+  .commit-stat { text-align: center; }
 
-  .commit-stat .cs-label {
-    color: var(--green-dim);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-  }
-
-  .commit-stat .cs-val {
+  .cs-val {
     display: block;
-    font-size: 18px;
-    color: var(--green);
-    text-shadow: var(--glow-strong);
+    font-size: 20px;
     letter-spacing: 0.05em;
+    margin-bottom: 2px;
   }
 
-  .commit-stat .cs-val.amber {
-    color: var(--amber);
-    text-shadow: var(--glow-amber);
-  }
+  .cs-val.green { color: var(--green); text-shadow: var(--glow-strong); }
+  .cs-val.amber { color: var(--amber); text-shadow: var(--glow-amber); }
+  .cs-val.red   { color: var(--red);   text-shadow: var(--glow-red); }
 
-  .commit-stat .cs-val.red {
-    color: var(--red);
-    text-shadow: var(--glow-red);
+  .cs-label {
+    font-size: 9px;
+    color: var(--green-dim);
+    letter-spacing: 0.1em;
   }
 
   #btn-launch {
     display: block;
     width: 100%;
-    padding: 12px 0;
+    padding: 10px 0;
     background: rgba(255, 171, 0, 0.08);
     border: 2px solid var(--amber);
     color: var(--amber);
     font-family: var(--font);
-    font-size: 16px;
+    font-size: 15px;
     letter-spacing: 0.2em;
     cursor: pointer;
     text-shadow: var(--glow-amber);
     transition: background 0.2s, transform 0.1s;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
   }
 
-  #btn-launch:hover {
-    background: rgba(255, 171, 0, 0.18);
-    transform: scale(1.01);
-  }
-
-  #btn-launch:active {
-    transform: scale(0.99);
-  }
-
-  .commit-warning {
-    color: var(--red);
-    font-size: 10px;
-    letter-spacing: 0.06em;
-    margin-bottom: 4px;
-  }
-
-  .commit-bonus {
-    color: var(--green-dim);
-    font-size: 10px;
-  }
+  #btn-launch:hover { background: rgba(255, 171, 0, 0.2); transform: scale(1.01); }
+  #btn-launch:active { transform: scale(0.99); }
+  #btn-launch:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   #btn-abort {
     display: block;
     width: 100%;
-    padding: 7px 0;
-    background: rgba(255, 23, 68, 0.06);
+    padding: 6px 0;
+    background: rgba(255, 23, 68, 0.07);
     border: 1px solid var(--red);
     color: var(--red);
     font-family: var(--font);
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.15em;
     cursor: pointer;
     transition: background 0.2s;
   }
 
-  #btn-abort:hover {
-    background: rgba(255, 23, 68, 0.14);
-  }
+  #btn-abort:hover { background: rgba(255, 23, 68, 0.16); }
 
   /* =============================================
-     HISTORY TABLE (right column)
+     RIGHT: HISTORY TABLE
   ============================================= */
   .hist-table {
     width: 100%;
@@ -763,36 +564,34 @@
 
   .hist-table th {
     color: var(--green-dim);
-    padding: 3px 4px;
+    padding: 3px 5px;
     text-align: left;
     border-bottom: 1px solid var(--green-dim);
     font-size: 10px;
-    letter-spacing: 0.06em;
   }
 
   .hist-table td {
-    padding: 4px 4px;
+    padding: 4px 5px;
     border-bottom: 1px solid #0d1a0d;
-    vertical-align: top;
-    color: var(--white-dim);
+    color: #8aaa8a;
     font-size: 10px;
+    vertical-align: top;
   }
 
   .result-badge {
     display: inline-block;
     padding: 1px 5px;
     border: 1px solid;
-    font-size: 10px;
-    letter-spacing: 0.04em;
+    font-size: 9px;
     white-space: nowrap;
   }
 
   .badge-fail    { color: var(--red);   border-color: var(--red);   background: rgba(255,23,68,0.08); }
-  .badge-partial { color: var(--amber); border-color: var(--amber-dim); background: rgba(255,171,0,0.07); }
-  .badge-success { color: var(--green); border-color: var(--green-mid); background: rgba(0,230,118,0.06); }
+  .badge-partial { color: var(--amber); border-color: #5a3c00;      background: rgba(255,171,0,0.07); }
+  .badge-prep    { color: var(--green-dim); border-color: var(--green-dim); }
 
   /* =============================================
-     STATS BOX
+     RIGHT: STATS
   ============================================= */
   .stat-row {
     display: flex;
@@ -801,94 +600,19 @@
     font-size: 11px;
     border-bottom: 1px solid #0d1a0d;
   }
-
   .stat-row:last-child { border-bottom: none; }
-  .stat-row .s-label { color: var(--white-dim); }
+  .stat-row .s-label { color: #8aaa8a; }
   .stat-row .s-val   { color: var(--green); }
   .stat-row .s-val.amber { color: var(--amber); }
   .stat-row .s-val.red   { color: var(--red); }
-
-  .stat-divider-line {
-    border: none;
-    border-top: 1px dashed var(--green-dim);
-    margin: 4px 0;
-  }
-
-  .progress-bar-outer {
-    height: 8px;
-    background: #0a1a0a;
-    border: 1px solid var(--green-dim);
-    margin-top: 3px;
-    overflow: hidden;
-  }
-
-  .progress-bar-inner {
-    height: 100%;
-    background: var(--green-mid);
-    position: relative;
-  }
-
-  .progress-bar-inner::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    width: 2px;
-    height: 100%;
-    background: var(--green);
-    box-shadow: var(--glow);
-  }
+  .stat-row .s-val.dim   { color: var(--green-dim); }
 
   /* =============================================
-     FAILURE LOG
+     SCROLLBAR
   ============================================= */
-  .fail-log-entry {
-    background: #010d02;
-    border: 1px solid #0d2010;
-    border-left: 2px solid;
-    padding: 5px 7px;
-    margin-bottom: 5px;
-    font-size: 10px;
-  }
-
-  .fail-log-entry.fail-border  { border-left-color: var(--red); }
-  .fail-log-entry.partial-border { border-left-color: var(--amber); }
-
-  .fail-log-id {
-    font-size: 11px;
-    margin-bottom: 2px;
-  }
-
-  .fail-log-id.fail    { color: var(--red); }
-  .fail-log-id.partial { color: var(--amber); }
-
-  .fail-log-line {
-    color: var(--white-dim);
-    line-height: 1.6;
-  }
-
-  .fail-log-line .arrow {
-    color: var(--green-dim);
-  }
-
-  .fail-log-acquire {
-    color: var(--green);
-    font-size: 10px;
-    margin-top: 2px;
-  }
-
-  /* =============================================
-     SCROLLBAR STYLING
-  ============================================= */
-  ::-webkit-scrollbar {
-    width: 4px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #010800;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: var(--green-dim);
-  }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--green-dim); }
 
   /* =============================================
      LAUNCH THEATER OVERLAY
@@ -901,19 +625,35 @@
     display: none;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
     overflow: hidden;
   }
 
-  #launch-theater.active {
-    display: flex;
-    animation: theater-reveal 0.4s ease-out;
+  #launch-theater.active { display: flex; }
+
+  /* Warning flash full-screen */
+  #warning-flash {
+    position: fixed;
+    inset: 0;
+    z-index: 8500;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 171, 0, 0.88);
+    font-family: var(--font);
+    color: #010800;
+    text-align: center;
+    animation: warning-flash-anim 0.6s ease-out forwards;
   }
+
+  #warning-flash.active { display: flex; }
+  #warning-flash .wf-title { font-size: 36px; letter-spacing: 6px; }
+  #warning-flash .wf-sub   { font-size: 16px; letter-spacing: 4px; margin-top: 10px; }
 
   /* Theater top bar */
   #theater-topbar {
     width: 100%;
-    padding: 8px 20px;
+    padding: 7px 18px;
     border-bottom: 1px solid var(--green-dim);
     display: flex;
     align-items: center;
@@ -923,18 +663,8 @@
     z-index: 10;
   }
 
-  .theater-mission-id {
-    color: var(--amber);
-    font-size: 13px;
-    text-shadow: var(--glow-amber);
-    letter-spacing: 0.1em;
-  }
-
-  .theater-status {
-    color: var(--green);
-    font-size: 12px;
-    letter-spacing: 0.1em;
-  }
+  .th-mission { color: var(--amber); font-size: 13px; text-shadow: var(--glow-amber); }
+  .th-status  { color: var(--green); font-size: 11px; letter-spacing: 0.1em; }
 
   #btn-theater-close {
     background: rgba(255,23,68,0.08);
@@ -942,48 +672,22 @@
     color: var(--red);
     font-family: var(--font);
     font-size: 11px;
-    padding: 4px 14px;
+    padding: 3px 12px;
     cursor: pointer;
     letter-spacing: 0.1em;
     display: none;
   }
+  #btn-theater-close:hover { background: rgba(255,23,68,0.2); }
 
-  #btn-theater-close:hover {
-    background: rgba(255,23,68,0.2);
-  }
-
-  /* Theater main area */
+  /* Theater canvas */
   #theater-main {
     flex: 1;
     width: 100%;
-    display: flex;
     position: relative;
     overflow: hidden;
-  }
-
-  /* Rocket stage */
-  #rocket-stage {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  #rocket-stage.launching {
-    animation: rocket-rise 7s cubic-bezier(0.2, 0, 0.8, 1) 2s forwards;
-  }
-
-  /* Horizon line */
-  #horizon-line {
-    position: absolute;
-    bottom: 120px;
-    left: 0;
-    right: 0;
-    border-top: 1px solid #1a3a1a;
-    z-index: 1;
+    align-items: flex-end;
+    justify-content: center;
   }
 
   /* Ground grid */
@@ -992,247 +696,234 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 120px;
+    height: 100px;
     background:
       repeating-linear-gradient(0deg, transparent, transparent 30px, #0a1a0a 30px, #0a1a0a 31px),
       repeating-linear-gradient(90deg, transparent, transparent 60px, #0a1a0a 60px, #0a1a0a 61px);
     z-index: 0;
   }
 
-  /* Altitude markers on right side */
-  #altitude-markers {
+  /* Countdown stage */
+  #countdown-stage {
     position: absolute;
-    right: 20px;
-    top: 0;
-    bottom: 120px;
+    inset: 0;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-end;
-    z-index: 5;
-    pointer-events: none;
-  }
-
-  .alt-marker {
-    color: var(--green-dim);
-    font-size: 10px;
-    display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: center;
+    z-index: 5;
   }
 
-  .alt-marker::before {
-    content: '';
-    width: 20px;
-    height: 1px;
-    background: var(--green-dim);
-    opacity: 0.4;
+  #countdown-stage.hidden { display: none; }
+
+  /* ASCII rocket + exhaust wrapper for countdown stage */
+  #cd-rocket-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
   }
 
-  /* Countdown overlay */
-  #countdown-display {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+  pre.cd-rocket {
+    display: block;
+    text-align: left;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--green);
+    white-space: pre;
+    text-shadow: 0 0 10px #00e676, 0 0 26px rgba(0,230,118,0.6), 0 0 50px rgba(0,230,118,0.3);
+    transition: transform 8s cubic-bezier(0.15, 0.7, 0.3, 1.0);
+  }
+
+  pre.cd-exhaust {
+    display: none;
     text-align: center;
-    z-index: 10;
+    font-size: 14px;
+    line-height: 1.3;
+    white-space: pre;
+    animation: exhaust-pulse 0.3s step-end infinite;
+    transition: transform 8s cubic-bezier(0.15, 0.7, 0.3, 1.0);
   }
 
   #countdown-number {
-    font-size: 96px;
-    color: var(--green);
-    text-shadow: var(--glow-strong);
+    font-size: 80px;
+    color: var(--amber);
+    text-shadow: var(--glow-amber), 0 0 40px rgba(255,171,0,0.5);
+    letter-spacing: 6px;
     line-height: 1;
+    margin-top: 12px;
     animation: countdown-pulse 0.9s ease-in-out infinite;
-    display: block;
-    min-width: 200px;
-    text-align: center;
+    transition: color 0.3s, text-shadow 0.3s;
+  }
+
+  #countdown-number.red {
+    color: var(--red);
+    text-shadow: var(--glow-red), 0 0 40px rgba(255,23,68,0.5);
+    animation: none;
+  }
+
+  #countdown-number.ignition-text {
+    font-size: 48px;
+    letter-spacing: 4px;
+    color: var(--red);
+    text-shadow: var(--glow-red), 0 0 40px rgba(255,23,68,0.7);
+    animation: blink 0.3s step-end 4;
   }
 
   #countdown-label {
-    font-size: 18px;
-    color: var(--green-dim);
-    letter-spacing: 0.3em;
-    margin-top: 8px;
-    display: block;
+    font-size: 13px;
+    color: var(--green-mid);
+    letter-spacing: 3px;
+    margin-top: 6px;
   }
 
-  /* Ignition flash */
-  #ignition-flash {
+  /* Ignition flash overlay */
+  #ignition-flash-overlay {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 30%;
-    background: radial-gradient(ellipse at 50% 100%, rgba(255,120,0,0.85) 0%, rgba(255,50,0,0.4) 30%, transparent 70%);
-    z-index: 8;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
     display: none;
   }
 
-  #ignition-flash.active {
+  #ignition-flash-overlay.active {
     display: block;
-    animation: ignition-flash 1.5s ease-out forwards;
+    animation: ignition-bg-flash 1.2s ease-out forwards;
   }
 
-  /* Telemetry scrolling feed */
-  #telemetry-feed {
+  /* =============================================
+     TELEMETRY STAGE
+  ============================================= */
+  #telemetry-stage {
+    display: none;
     position: absolute;
-    left: 20px;
-    top: 20px;
-    width: 340px;
+    inset: 0;
     z-index: 6;
-    overflow: hidden;
-    max-height: calc(100% - 40px);
+    flex-direction: row;
+    align-items: flex-end;
+    padding: 20px 30px;
+    gap: 30px;
   }
 
-  #telemetry-inner {
-    font-size: 11px;
-    line-height: 1.7;
-    color: var(--green-mid);
+  #telemetry-stage.active {
+    display: flex;
   }
 
-  .telem-line {
+  /* ASCII rocket column in telemetry */
+  #tele-rocket-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    align-self: flex-end;
+    margin-bottom: 20px;
+  }
+
+  pre.tele-rocket {
     display: block;
-    opacity: 0;
-    transition: opacity 0.3s;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--green);
+    white-space: pre;
+    text-shadow: 0 0 8px #00e676, 0 0 20px rgba(0,230,118,0.55);
+    transition: transform 8s cubic-bezier(0.1, 0.65, 0.25, 1.0);
   }
 
-  .telem-line.visible { opacity: 1; }
+  pre.tele-exhaust {
+    display: none;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.3;
+    white-space: pre;
+    animation: exhaust-pulse 0.3s step-end infinite;
+    transition: transform 8s cubic-bezier(0.1, 0.65, 0.25, 1.0);
+  }
 
-  .telem-line .t-time { color: var(--green-dim); }
-  .telem-line .t-event { color: var(--green); }
-  .telem-line .t-warn { color: var(--amber); }
-  .telem-line .t-crit { color: var(--red); }
+  /* Telemetry lines column */
+  #tele-lines-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 0;
+    padding-bottom: 20px;
+  }
 
-  /* Result screen */
+  #tele-header {
+    font-size: 12px;
+    color: var(--green);
+    letter-spacing: 3px;
+    text-shadow: var(--glow);
+    margin-bottom: 10px;
+  }
+
+  #tele-lines {
+    font-size: 11px;
+    line-height: 1.9;
+  }
+
+  .tl {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    border-bottom: 1px solid rgba(26, 92, 52, 0.2);
+    padding: 1px 0;
+  }
+
+  .tl.show { opacity: 1; }
+  .tl-time { color: var(--green-dim); }
+  .tl-msg  { color: var(--green); }
+  .tl-warn { color: var(--amber); }
+  .tl-fail { color: var(--red); }
+
+  /* =============================================
+     RESULT SCREEN
+  ============================================= */
   #result-screen {
     position: absolute;
     inset: 0;
-    background: rgba(0,3,0,0.95);
-    z-index: 15;
+    z-index: 20;
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    text-align: center;
+    background: rgba(0, 3, 0, 0.96);
   }
 
   #result-screen.active {
     display: flex;
+    animation: result-appear 0.5s ease-out;
   }
 
-  .result-tag {
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--green-dim);
-    margin-bottom: 10px;
-  }
-
-  .result-headline {
-    font-size: 32px;
-    color: var(--green);
-    text-shadow: var(--glow-strong);
-    letter-spacing: 0.1em;
-    animation: success-glow 2s ease-in-out infinite;
-    margin-bottom: 6px;
-  }
-
-  .result-subtitle {
-    font-size: 16px;
-    color: var(--amber);
-    text-shadow: var(--glow-amber);
-    letter-spacing: 0.12em;
-    margin-bottom: 24px;
-  }
-
-  .result-stats {
-    display: flex;
-    gap: 40px;
-    margin-bottom: 28px;
-  }
-
-  .result-stat-item {
-    text-align: center;
-  }
-
-  .result-stat-item .rsi-label {
-    color: var(--green-dim);
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    display: block;
-    margin-bottom: 2px;
-  }
-
-  .result-stat-item .rsi-val {
-    color: var(--green);
-    font-size: 20px;
-    text-shadow: var(--glow);
-    display: block;
-  }
-
-  .result-rewards {
-    background: rgba(0,230,118,0.06);
-    border: 1px solid var(--green-mid);
-    padding: 10px 28px;
-    margin-bottom: 24px;
+  pre.result-box {
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--red);
+    text-shadow: var(--glow-red), 0 0 20px rgba(255,23,68,0.35);
+    white-space: pre;
     text-align: left;
   }
 
-  .result-rewards .rr-title {
-    color: var(--green);
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    margin-bottom: 6px;
-    text-align: center;
-  }
+  .rb-green { color: var(--green); text-shadow: var(--glow); }
+  .rb-amber { color: var(--amber); text-shadow: var(--glow-amber); }
+  .rb-dim   { color: var(--green-mid); text-shadow: none; }
 
-  .result-rewards .rr-line {
-    color: var(--white-dim);
-    font-size: 11px;
-    padding: 1px 0;
-  }
-
-  .result-rewards .rr-line span {
+  #btn-reset {
+    margin-top: 14px;
+    padding: 8px 28px;
+    background: rgba(0, 230, 118, 0.08);
+    border: 2px solid var(--green);
     color: var(--green);
+    font-family: var(--font);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    cursor: pointer;
     text-shadow: var(--glow);
+    transition: background 0.2s;
   }
 
-  /* =============================================
-     HELPERS
-  ============================================= */
-  .mono-label {
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--green-dim);
-  }
-
-  .section-div {
-    color: var(--green-dim);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    margin: 2px 0;
-  }
-
-  .cursor-blink::after {
-    content: '█';
-    animation: blink 0.8s step-end infinite;
-  }
-
-  /* Stars background in theater */
-  #star-field {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .star {
-    position: absolute;
-    background: var(--green);
-    border-radius: 50%;
-    opacity: 0.5;
-  }
+  #btn-reset:hover { background: rgba(0, 230, 118, 0.2); box-shadow: 0 0 12px var(--green); }
 
 </style>
 </head>
@@ -1241,21 +932,13 @@
 
   <!-- ============ TOP BAR ============ -->
   <div id="topbar">
-    <span class="topbar-logo">MOON IDLE — 발사 관제</span>
-    <span class="topbar-sep">|</span>
-    <span class="topbar-mission">ML-004 BETA mk.2 &nbsp;▶ 발사 대기</span>
-    <span class="topbar-countdown">&nbsp;&nbsp;T- 카운트다운: <span>STANDBY</span></span>
-    <span class="topbar-spacer"></span>
-    <span class="topbar-rep">평판: ★★★☆☆</span>
-    <span class="mono-label">&nbsp;|&nbsp;DAY D+52</span>
-  </div>
-
-  <!-- ============ TABS ============ -->
-  <div id="tabs">
-    <button class="tab"><span class="tab-dot"></span>생산 / 자원</button>
-    <button class="tab"><span class="tab-dot"></span>연구 / 기술</button>
-    <button class="tab"><span class="tab-dot"></span>로켓 조립</button>
-    <button class="tab active"><span class="tab-dot"></span>발사 관제</button>
+    <span class="tb-logo">&#9654; MOON IDLE &mdash; 발사 관제</span>
+    <span class="tb-sep">|</span>
+    <span class="tb-mission">ML-004 BETA mk.2</span>
+    <span class="tb-standby">T- STANDBY</span>
+    <span class="tb-day">D+52</span>
+    <span class="tb-spacer"></span>
+    <span class="tb-clock" id="clock">--:--:--</span>
   </div>
 
   <!-- ============ 3-COLUMN CONTENT ============ -->
@@ -1266,65 +949,41 @@
 
       <!-- GO/NO-GO CHECKLIST -->
       <div class="panel">
-        <div class="panel-title green-bright">PRE-LAUNCH GO/NO-GO POLL</div>
+        <div class="panel-title green">PRE-LAUNCH GO / NO-GO POLL</div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">추진제 주입</div>
-            <div class="chk-detail">LOX 100% / RP-1 100%</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">추진제 주입</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">엔진 계통</div>
-            <div class="chk-detail">연소실 가압 완료</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">엔진 계통</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">유도 항전</div>
-            <div class="chk-detail">자이로 초기화 완료</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">유도 항전</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">기상 조건</div>
-            <div class="chk-detail">바람 12kt / 허용 18kt</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">자이로스코프</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">추적 안테나</div>
-            <div class="chk-detail">신호 세기 98%</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">기상 조건</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">범위 안전망</div>
-            <div class="chk-detail">종료 시스템 대기</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">추적 안테나</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">지상 지원</div>
-            <div class="chk-detail">냉각수 시스템 가동</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">범위 안전망</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
         <div class="checklist-row">
-          <div>
-            <div class="chk-name">발사통제관</div>
-            <div class="chk-detail">최종 승인</div>
-          </div>
-          <span class="chk-status go">GO ✓</span>
+          <span class="chk-name">발사통제관</span>
+          <span class="chk-badge">GO &#10003;</span>
         </div>
-        <div class="mission-status-banner">
-          ALL SYSTEMS GO — 발사 승인됨<br>
+        <div class="all-go-banner">
+          &#9654;&#9654; ALL SYSTEMS GO &#9664;&#9664;<br>
           <span style="font-size:10px;color:var(--green-dim);">8 / 8 GO</span>
         </div>
       </div>
@@ -1332,58 +991,27 @@
       <!-- LAUNCH DATA BONUS -->
       <div class="panel">
         <div class="panel-title">발사 데이터 보너스</div>
-        <div class="data-line">
-          <span>누적 데이터</span>
-          <span style="color:var(--green);text-shadow:var(--glow);">12 units</span>
-        </div>
-        <div class="section-div">─────────────────</div>
-        <div class="data-line">
-          <span>Max-Q 데이터 ×4</span>
-          <span class="bonus">구조 실패율 -8%</span>
-        </div>
-        <div class="data-line">
-          <span>엔진 데이터 ×6</span>
-          <span class="bonus">엔진 실패율 -12%</span>
-        </div>
-        <div class="data-line">
-          <span>유도 데이터 ×2</span>
-          <span class="bonus">유도 실패율 -4%</span>
-        </div>
-        <div class="section-div">─────────────────</div>
-        <div class="data-total-line">
-          <span class="label">총 성공률</span>
-          <span class="val">72%</span>
-        </div>
-        <div style="font-size:10px;color:var(--green-dim);text-align:right;margin-top:2px;">
-          (데이터 없었다면: 55%)
+        <div class="data-row"><span>연구 데이터</span><span class="val">+12</span></div>
+        <div class="data-row"><span>비행 경험</span><span class="val">+8</span></div>
+        <div class="data-row"><span>실패 데이터</span><span class="val-amber">+24</span></div>
+        <div style="border-top:1px solid var(--green-dim);margin-top:5px;padding-top:4px;">
+          <div class="data-row" style="font-size:11px;">
+            <span>총 획득 예상</span>
+            <span class="val">+44 pt</span>
+          </div>
         </div>
       </div>
 
       <!-- WEATHER -->
       <div class="panel">
-        <div class="panel-title">기상 현황</div>
-        <div class="weather-nominal">
-          <div class="weather-header">STATUS: <span style="color:var(--green);text-shadow:var(--glow);">NOMINAL</span></div>
-          <div class="weather-row">
-            <span>풍속</span>
-            <span class="val">12 kt <span style="color:var(--green-dim);font-size:10px;">← 허용 18kt</span></span>
-          </div>
-          <div class="weather-row">
-            <span>기온</span>
-            <span class="val">-3°C</span>
-          </div>
-          <div class="weather-row">
-            <span>습도</span>
-            <span class="val">34%</span>
-          </div>
-          <div class="weather-row">
-            <span>시야</span>
-            <span class="val">20km+</span>
-          </div>
-          <div class="weather-row">
-            <span>발사 창</span>
-            <span style="color:var(--amber);font-size:10px;">오늘 08:00 최적</span>
-          </div>
+        <div class="panel-title">기상 현황 &mdash; NOMINAL</div>
+        <div class="data-row"><span>풍속</span><span class="val">3.2 m/s</span></div>
+        <div class="data-row"><span>기온</span><span class="val">-4 &deg;C</span></div>
+        <div class="data-row"><span>습도</span><span class="val">34%</span></div>
+        <div class="data-row"><span>시정</span><span class="val">22 km</span></div>
+        <div class="data-row" style="margin-top:4px;">
+          <span style="color:var(--green-mid);font-size:10px;">발사 창</span>
+          <span style="color:var(--amber);font-size:10px;">TODAY 08:00 OPTIMAL</span>
         </div>
       </div>
 
@@ -1393,180 +1021,122 @@
     <!-- ===== CENTER COLUMN ===== -->
     <div id="col-center">
 
-      <!-- VEHICLE STATUS -->
-      <div class="panel">
-        <div class="panel-title green-bright">VEHICLE STATUS — ML-004</div>
-        <div class="veh-header">BETA mk.2 &nbsp;|&nbsp; PRE-LAUNCH NOMINAL</div>
-        <hr class="veh-divider">
-        <div class="veh-row">
-          <span class="veh-label">LOX</span>
-          <div class="veh-bar-wrap"><div class="veh-bar" style="width:100%"></div></div>
-          <span class="veh-val">100% (180L) <span class="veh-status-tag tag-nominal">FULL</span></span>
-        </div>
-        <div class="veh-row">
-          <span class="veh-label">RP-1</span>
-          <div class="veh-bar-wrap"><div class="veh-bar" style="width:100%"></div></div>
-          <span class="veh-val">100% (120L) <span class="veh-status-tag tag-nominal">FULL</span></span>
-        </div>
-        <div class="veh-row">
-          <span class="veh-label">추력</span>
-          <div class="veh-bar-wrap"><div class="veh-bar amber" style="width:90%"></div></div>
-          <span class="veh-val">18.0 kN <span class="veh-status-tag tag-check">CHECK</span></span>
-        </div>
-        <div class="veh-row">
-          <span class="veh-label">압력</span>
-          <div class="veh-bar-wrap"><div class="veh-bar" style="width:98%"></div></div>
-          <span class="veh-val">98.2 bar <span class="veh-status-tag tag-nominal">NOM</span></span>
-        </div>
-        <div class="veh-row">
-          <span class="veh-label">LOX 온도</span>
-          <div class="veh-bar-wrap"><div class="veh-bar" style="width:96%"></div></div>
-          <span class="veh-val">-183°C <span class="veh-status-tag tag-nominal">NOM</span></span>
-        </div>
-        <hr class="veh-divider">
-        <div class="veh-row" style="justify-content:flex-start;gap:16px;margin-top:4px;">
-          <span class="veh-label">자세 제어:</span>
-          <span class="veh-status-tag tag-armed">ARMED</span>
-          <span class="veh-label" style="margin-left:20px;">안전 장치:</span>
-          <span class="veh-status-tag tag-armed">ARMED</span>
-        </div>
-        <div class="veh-row" style="margin-top:6px;">
-          <span class="veh-label">추적 신호</span>
-          <div class="veh-bar-wrap"><div class="veh-bar" style="width:98%"></div></div>
-          <span class="veh-val">98% <span class="veh-status-tag tag-nominal">STRONG</span></span>
-        </div>
+      <div style="padding:6px 12px;font-size:10px;color:var(--green-mid);letter-spacing:1px;background:var(--panel-bg);border-bottom:1px solid var(--green-dim);">&#9654; VEHICLE &mdash; ML-004 BETA mk.2 &nbsp;|&nbsp; LAUNCH PAD ALPHA-3 &nbsp;|&nbsp; STATUS: PRE-LAUNCH NOMINAL</div>
+
+      <!-- ASCII ROCKET ON PAD (hero element) -->
+      <div class="rocket-display">
+        <pre class="rocket-pad">           *
+          /|\
+         / | \
+        /  |  \
+       / BETA  \
+      /___mk.2__\
+     |  [PAYLOAD] |
+     |   _______  |
+     |  | NAV   | |
+     |  | SYS   | |
+     |  |_______| |
+     |  [AVIONICS]|
+     |   _______  |
+     |  |O     O| |
+     |  | GYRO  | |
+     |  |_______| |
+     |  [ENGINE]  |
+     |   _______  |
+     |  |156 kN | |
+     |  |_______| |
+     |_____________|
+    /   [LOX][RP1]  \
+   /___________________\
+         |  |  |
+        /|  |  |\
+       /_|__|__|_\</pre>
       </div>
 
-      <!-- MISSION PROFILE -->
-      <div id="mission-profile">
-        <div class="panel-title" style="margin-bottom:4px;">미션 프로파일 — ML-004 (목표: 100km 카르만선)</div>
-        <svg viewBox="0 0 580 130" width="100%" height="130" style="display:block;">
-          <!-- background grid -->
-          <defs>
-            <pattern id="grid" width="40" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 40 0 L 0 0 0 20" fill="none" stroke="#0d200d" stroke-width="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="580" height="130" fill="#000d01"/>
-          <rect width="580" height="130" fill="url(#grid)"/>
-
-          <!-- Ground -->
-          <line x1="0" y1="118" x2="580" y2="118" stroke="#1a3a1a" stroke-width="1"/>
-          <!-- Karman line marker -->
-          <line x1="0" y1="14" x2="580" y2="14" stroke="#1a4a1a" stroke-width="0.7" stroke-dasharray="4,4"/>
-          <text x="4" y="12" fill="#1a6a1a" font-family="'Share Tech Mono',monospace" font-size="8">100km 카르만선</text>
-
-          <!-- Max-Q zone band -->
-          <rect x="90" y="75" width="60" height="20" fill="rgba(255,171,0,0.06)" stroke="rgba(255,171,0,0.2)" stroke-width="0.5"/>
-          <text x="95" y="71" fill="#ffab0088" font-family="'Share Tech Mono',monospace" font-size="7">MAX-Q</text>
-
-          <!-- Planned trajectory arc -->
-          <path d="M 30 118 Q 140 8 320 20 Q 420 26 480 118" fill="none" stroke="#00994d" stroke-width="1.5" stroke-dasharray="3,2"/>
-          <!-- ML-003 actual trajectory (shorter) -->
-          <path d="M 30 118 Q 130 16 295 24 Q 340 28 380 118" fill="none" stroke="#00e67650" stroke-width="1" stroke-dasharray="2,3"/>
-          <!-- ML-002 -->
-          <path d="M 30 118 Q 100 70 175 90 L 210 118" fill="none" stroke="#ff174450" stroke-width="1"/>
-          <!-- ML-001 -->
-          <path d="M 30 118 Q 65 95 95 100 L 110 118" fill="none" stroke="#ff174435" stroke-width="1"/>
-
-          <!-- Launch point -->
-          <circle cx="30" cy="118" r="4" fill="#00e676" opacity="0.9"/>
-          <text x="34" y="115" fill="#00e676" font-family="'Share Tech Mono',monospace" font-size="7">발사</text>
-
-          <!-- ML-004 target (planned apogee) -->
-          <circle cx="320" cy="20" r="4" fill="none" stroke="#ffab00" stroke-width="1.5"/>
-          <text x="290" y="12" fill="#ffab00" font-family="'Share Tech Mono',monospace" font-size="7">목표 정점</text>
-
-          <!-- Engine cutoff marker for ML-004 -->
-          <circle cx="270" cy="22" r="3" fill="none" stroke="#00994d" stroke-width="1"/>
-          <text x="240" y="32" fill="#00994d88" font-family="'Share Tech Mono',monospace" font-size="7">엔진 OFF</text>
-
-          <!-- Failure dots -->
-          <circle cx="95" cy="100" r="3" fill="#ff1744" opacity="0.8"/>
-          <text x="70" y="96" fill="#ff174480" font-family="'Share Tech Mono',monospace" font-size="7">ML-001↑</text>
-          <circle cx="175" cy="90" r="3" fill="#ff1744" opacity="0.7"/>
-          <text x="150" y="86" fill="#ff174480" font-family="'Share Tech Mono',monospace" font-size="7">ML-002↑</text>
-          <circle cx="295" cy="24" r="3" fill="#ffab00" opacity="0.8"/>
-          <text x="270" y="38" fill="#ffab0080" font-family="'Share Tech Mono',monospace" font-size="7">ML-003↑</text>
-
-          <!-- Legend -->
-          <line x1="420" y1="104" x2="440" y2="104" stroke="#00994d" stroke-width="1.5" stroke-dasharray="3,2"/>
-          <text x="443" y="107" fill="#00994d" font-family="'Share Tech Mono',monospace" font-size="7">ML-004 계획</text>
-          <line x1="420" y1="114" x2="440" y2="114" stroke="#ff1744" stroke-width="1"/>
-          <text x="443" y="117" fill="#ff174480" font-family="'Share Tech Mono',monospace" font-size="7">실패 비행</text>
-        </svg>
+      <!-- VEHICLE STATUS BARS -->
+      <div class="status-bars">
+        <div style="font-size:10px;color:var(--green-mid);letter-spacing:1px;margin-bottom:6px;">&#9654; VEHICLE STATUS</div>
+        <div class="sbar-row">
+          <span class="sbar-label">LOX</span>
+          <div class="sbar-track"><div class="sbar-fill" style="width:94%"></div></div>
+          <span class="sbar-pct">94%</span>
+          <span class="sbar-tag">ARMED</span>
+        </div>
+        <div class="sbar-row">
+          <span class="sbar-label">RP-1</span>
+          <div class="sbar-track"><div class="sbar-fill" style="width:91%"></div></div>
+          <span class="sbar-pct">91%</span>
+          <span class="sbar-tag">ARMED</span>
+        </div>
+        <div class="sbar-row">
+          <span class="sbar-label">Thrust</span>
+          <div class="sbar-track"><div class="sbar-fill amber" style="width:100%"></div></div>
+          <span class="sbar-pct">156kN</span>
+          <span class="sbar-tag" style="animation:none;color:var(--green);border-color:var(--green-mid);">NOMINAL</span>
+        </div>
+        <div class="sbar-row">
+          <span class="sbar-label">Pressure</span>
+          <div class="sbar-track"><div class="sbar-fill" style="width:87%"></div></div>
+          <span class="sbar-pct">87%</span>
+          <span class="sbar-tag" style="animation:none;color:var(--green);border-color:var(--green-mid);">NOMINAL</span>
+        </div>
       </div>
 
       <!-- FAILURE PROBABILITY -->
-      <div class="panel">
-        <div class="panel-title amber">실패 확률 평가 — ML-004</div>
-        <div class="fail-row">
-          <span class="fail-name">Max-Q 구조 파손</span>
-          <div class="fail-bar-wrap"><div class="fail-bar low" style="width:8%"></div></div>
-          <span class="fail-pct">8%</span>
-          <span style="font-size:10px;color:var(--green-dim);margin-left:6px;">S03 CFRP 미완성</span>
-        </div>
+      <div class="fail-section">
+        <div style="font-size:10px;color:var(--amber);letter-spacing:1px;margin-bottom:6px;">&#9654; 실패 확률 분석 &mdash; ML-004</div>
         <div class="fail-row">
           <span class="fail-name">엔진 정지</span>
-          <div class="fail-bar-wrap"><div class="fail-bar medium" style="width:12%"></div></div>
-          <span class="fail-pct medium">12%</span>
-          <span style="font-size:10px;color:var(--green-dim);margin-left:6px;">터보펌프 미검증</span>
+          <span class="fail-bar-str">&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;&#9617;&#9617;</span>
+          <span class="fail-pct">12%</span>
+          <span class="fail-lvl low">[저]</span>
         </div>
         <div class="fail-row">
-          <span class="fail-name">유도 오류</span>
-          <div class="fail-bar-wrap"><div class="fail-bar high" style="width:15%"></div></div>
-          <span class="fail-pct high">15%</span>
-          <span style="font-size:10px;color:var(--green-dim);margin-left:6px;">INS 미적용</span>
+          <span class="fail-name">자이로 오작동</span>
+          <span class="fail-bar-str">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;</span>
+          <span class="fail-pct">15%</span>
+          <span class="fail-lvl mid">[중]</span>
         </div>
         <div class="fail-row">
-          <span class="fail-name">연료 부족</span>
-          <div class="fail-bar-wrap"><div class="fail-bar low" style="width:4%"></div></div>
-          <span class="fail-pct">4%</span>
-          <span style="font-size:10px;color:var(--green-dim);margin-left:6px;"></span>
+          <span class="fail-name">MaxQ 과부하</span>
+          <span class="fail-bar-str">&#9608;&#9608;&#9608;&#9617;&#9617;&#9617;&#9617;&#9617;</span>
+          <span class="fail-pct">8%</span>
+          <span class="fail-lvl low">[저]</span>
         </div>
         <div class="fail-row">
-          <span class="fail-name">스테이징 실패</span>
-          <div class="fail-bar-wrap"><div class="fail-bar low" style="width:6%"></div></div>
-          <span class="fail-pct">6%</span>
-          <span style="font-size:10px;color:var(--green-dim);margin-left:6px;"></span>
+          <span class="fail-name">LOX 차단</span>
+          <span class="fail-bar-str">&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;&#9617;&#9617;</span>
+          <span class="fail-pct">11%</span>
+          <span class="fail-lvl low">[저]</span>
         </div>
-        <hr style="border:none;border-top:1px dashed var(--green-dim);margin:5px 0;">
-        <div class="fail-row" style="font-size:12px;">
-          <span style="color:var(--white-dim);">총합 성공률</span>
-          <span></span>
-          <span style="color:var(--green);font-size:14px;text-shadow:var(--glow);font-weight:bold;">72%</span>
-          <span style="font-size:10px;color:var(--green-dim);margin-left:8px;">(누적 데이터 보너스 -3%)</span>
+        <div class="fail-row">
+          <span class="fail-name">유도 계통</span>
+          <span class="fail-bar-str">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;&#9617;&#9617;</span>
+          <span class="fail-pct">14%</span>
+          <span class="fail-lvl mid">[중]</span>
         </div>
       </div>
 
-      <!-- BIG LAUNCH COMMIT BOX -->
+      <!-- LAUNCH COMMIT BOX -->
       <div id="launch-commit-box">
-        <div class="commit-header">&gt;&gt; LAUNCH COMMIT &lt;&lt;</div>
-        <div class="commit-mission-id">[ML-004 BETA mk.2]</div>
+        <div class="commit-header">&gt;&gt; LAUNCH COMMIT &lt;&lt; &nbsp; [ML-004]</div>
         <div class="commit-stats">
           <div class="commit-stat">
+            <span class="cs-val green">72%</span>
             <span class="cs-label">성공률</span>
-            <span class="cs-val">72%</span>
           </div>
           <div class="commit-stat">
-            <span class="cs-label">목표 고도</span>
             <span class="cs-val amber">100km</span>
+            <span class="cs-label">목표 고도</span>
           </div>
           <div class="commit-stat">
-            <span class="cs-label">실패 위험</span>
             <span class="cs-val red">28%</span>
+            <span class="cs-label">위험도</span>
           </div>
         </div>
-        <div style="font-size:11px;color:var(--green-dim);margin-bottom:8px;letter-spacing:0.05em;">
-          목표: 100km 카르만선 돌파
-        </div>
-        <button id="btn-launch" onclick="startLaunchSequence()">
-          ▶▶ 발사 실행
-        </button>
-        <div class="commit-warning">WARNING: 실패 가능성 28% — 발사 데이터 획득 보장</div>
-        <div class="commit-bonus">실패 시에도 획득: 발사 데이터 +2~4 units</div>
+        <button id="btn-launch" onclick="startLaunchSequence()">[ &#9658;&#9658; 발사 실행 ]</button>
+        <button id="btn-abort" onclick="doAbort()">[ ABORT ]</button>
       </div>
-      <button id="btn-abort">[ ABORT MISSION — 발사 취소 ]</button>
 
     </div>
     <!-- end col-center -->
@@ -1576,52 +1146,55 @@
 
       <!-- LAUNCH HISTORY TABLE -->
       <div class="panel">
-        <div class="panel-title amber">발사 이력 — ML-001 ~ ML-003</div>
+        <div class="panel-title amber">발사 이력 &mdash; ML-001 ~ ML-003</div>
         <table class="hist-table">
           <thead>
             <tr>
               <th>ID</th>
-              <th>날짜</th>
               <th>결과</th>
-              <th>최대고도</th>
+              <th>최고도</th>
+              <th>시간</th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td style="color:var(--green);">ML-001</td>
-              <td>D+07</td>
               <td><span class="result-badge badge-fail">실패</span></td>
-              <td>2,300m</td>
+              <td>1.2km</td>
+              <td>4s</td>
             </tr>
             <tr>
-              <td colspan="4" style="color:#4a6a4a;font-size:10px;padding-left:8px;">
-                Alpha mk.1 / ΔV 842m/s / 87s<br>
-                Max-Q 구조 파손
+              <td colspan="4" style="color:#4a6a4a;font-size:9px;padding-left:8px;padding-bottom:5px;">
+                실패 원인: LOX 밸브 즉시 폐쇄
               </td>
             </tr>
             <tr>
               <td style="color:var(--green);">ML-002</td>
-              <td>D+18</td>
               <td><span class="result-badge badge-fail">실패</span></td>
-              <td>12,700m</td>
+              <td>23.1km</td>
+              <td>38s</td>
             </tr>
             <tr>
-              <td colspan="4" style="color:#4a6a4a;font-size:10px;padding-left:8px;">
-                Alpha mk.2 / ΔV 1,840m/s / 183s<br>
-                터보펌프 공동현상 T+71s
+              <td colspan="4" style="color:#4a6a4a;font-size:9px;padding-left:8px;padding-bottom:5px;">
+                실패 원인: MaxQ 구간 구조 파손
               </td>
             </tr>
             <tr>
               <td style="color:var(--amber);">ML-003</td>
-              <td>D+35</td>
               <td><span class="result-badge badge-partial">준성공</span></td>
-              <td>89,400m</td>
+              <td style="color:var(--amber);">89.4km</td>
+              <td>187s</td>
             </tr>
             <tr>
-              <td colspan="4" style="color:#4a6a4a;font-size:10px;padding-left:8px;">
-                Beta mk.1 / ΔV 2,970m/s / 314s<br>
-                자이로 오작동 T+105s
+              <td colspan="4" style="color:#4a6a4a;font-size:9px;padding-left:8px;padding-bottom:5px;">
+                실패 원인: 유도 계통 표류, 카르만선 미달
               </td>
+            </tr>
+            <tr>
+              <td style="color:var(--green-dim);">ML-004</td>
+              <td><span class="result-badge badge-prep">준비중</span></td>
+              <td style="color:var(--green-dim);">&mdash;</td>
+              <td>&mdash;</td>
             </tr>
           </tbody>
         </table>
@@ -1630,65 +1203,43 @@
       <!-- STATS SUMMARY -->
       <div class="panel">
         <div class="panel-title">통계 요약</div>
-        <div class="stat-row"><span class="s-label">총 발사 시도</span><span class="s-val">3</span></div>
-        <div class="stat-row"><span class="s-label">성공</span><span class="s-val">0 (0.0%)</span></div>
-        <div class="stat-row"><span class="s-label">준성공</span><span class="s-val amber">1 (33.3%)</span></div>
-        <div class="stat-row"><span class="s-label">실패</span><span class="s-val red">2 (66.7%)</span></div>
-        <hr class="stat-divider-line">
-        <div class="stat-row"><span class="s-label">최대 도달 고도</span><span class="s-val amber">89.4 km</span></div>
-        <div class="stat-row"><span class="s-label">&nbsp;&nbsp;카르만선까지</span><span class="s-val" style="color:var(--green-dim);">-10.6 km</span></div>
-        <div class="stat-row"><span class="s-label">최고 ΔV</span><span class="s-val">2,970 m/s</span></div>
-        <div class="stat-row"><span class="s-label">최고 속도</span><span class="s-val">2,340 m/s</span></div>
-        <div class="stat-row"><span class="s-label">누적 비행시간</span><span class="s-val">847 s</span></div>
-        <div class="stat-row"><span class="s-label">소모 추진제</span><span class="s-val">11.2 t</span></div>
-        <div class="stat-row"><span class="s-label">누적 비용</span><span class="s-val" style="color:var(--green-dim);">₩3,240,000</span></div>
-        <hr class="stat-divider-line">
-        <div class="mono-label" style="margin-bottom:3px;">목표 달성도 — 100km 카르만선</div>
-        <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;">
-          <span style="color:var(--white-dim);">89.4 km / 100 km</span>
-          <span style="color:var(--amber);">89%</span>
-        </div>
-        <div class="progress-bar-outer">
-          <div class="progress-bar-inner" style="width:89.4%;background:var(--amber);"></div>
-        </div>
-        <div style="font-size:10px;color:var(--green-dim);margin-top:3px;text-align:right;">
-          카르만선까지: 10.6km
+        <div class="stat-row"><span class="s-label">총 시도</span><span class="s-val">3 회</span></div>
+        <div class="stat-row"><span class="s-label">성공률</span><span class="s-val red">0%</span></div>
+        <div class="stat-row"><span class="s-label">최고도</span><span class="s-val amber">89.4 km</span></div>
+        <div class="stat-row"><span class="s-label">카르만선</span><span class="s-val red">미달</span></div>
+        <div class="stat-row"><span class="s-label">총 비행시간</span><span class="s-val">229 초</span></div>
+        <div class="stat-row"><span class="s-label">누적 데이터</span><span class="s-val">348 pt</span></div>
+        <div style="border-top:1px dashed var(--green-dim);margin-top:6px;padding-top:5px;">
+          <div style="font-size:10px;color:var(--green-mid);margin-bottom:3px;">목표 달성도 (ML-003 기준)</div>
+          <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px;">
+            <span style="color:#8aaa8a;">89.4 km / 100 km</span>
+            <span style="color:var(--amber);">89.4%</span>
+          </div>
+          <div style="height:7px;background:#0a1a0a;border:1px solid var(--green-dim);overflow:hidden;">
+            <div style="height:100%;width:89.4%;background:var(--amber);"></div>
+          </div>
+          <div style="font-size:10px;color:var(--green-dim);margin-top:2px;text-align:right;">카르만선까지 -10.6km</div>
         </div>
       </div>
 
-      <!-- FAILURE LOG -->
+      <!-- IMPROVEMENT NOTES -->
       <div class="panel">
-        <div class="panel-title">실패 분석 로그</div>
-
-        <div class="fail-log-entry fail-border">
-          <div class="fail-log-id fail">&gt; ML-001 [D+07] 실패</div>
-          <div class="fail-log-line">
-            원인: Max-Q 구조 하중 초과<br>
-            T+52s 기체 분해<br>
-            <span class="arrow">→</span> S01 구조 강화 연구 시작
-          </div>
-          <div class="fail-log-acquire">획득: 구조 데이터 ×4</div>
+        <div class="panel-title">개선 포인트</div>
+        <div class="data-row" style="font-size:10px;">
+          <span>자이로 보정 적용</span>
+          <span class="val">+8% 성공률</span>
         </div>
-
-        <div class="fail-log-entry fail-border">
-          <div class="fail-log-id fail">&gt; ML-002 [D+18] 실패</div>
-          <div class="fail-log-line">
-            원인: LOX 터보펌프 공동현상<br>
-            T+71s 엔진 정지 → 탄도 궤적<br>
-            <span class="arrow">→</span> P02 터보펌프 개선 연구
-          </div>
-          <div class="fail-log-acquire">획득: 엔진 데이터 ×6</div>
+        <div class="data-row" style="font-size:10px;">
+          <span>유도 계통 업그레이드</span>
+          <span class="val">+5% 성공률</span>
         </div>
-
-        <div class="fail-log-entry partial-border">
-          <div class="fail-log-id partial">&gt; ML-003 [D+35] 준성공</div>
-          <div class="fail-log-line">
-            원인: 자이로 오작동 T+105s<br>
-            89.4km 달성 (목표의 89%)<br>
-            제어 상실 → 비행 종료<br>
-            <span class="arrow">→</span> A01 자이로 보정 연구
-          </div>
-          <div class="fail-log-acquire">획득: 유도 데이터 ×2</div>
+        <div class="data-row" style="font-size:10px;">
+          <span>ML-003 자이로 교훈</span>
+          <span class="val-amber">적용됨</span>
+        </div>
+        <div class="data-row" style="font-size:10px;margin-top:4px;border-top:1px solid var(--green-dim);padding-top:4px;">
+          <span>예상 달성 고도</span>
+          <span class="val">~95~105km</span>
         </div>
       </div>
 
@@ -1705,343 +1256,360 @@
 
     <!-- Theater top bar -->
     <div id="theater-topbar">
-      <span class="theater-mission-id">ML-004 BETA mk.2 — 발사 시퀀스</span>
-      <span class="theater-status" id="theater-status-text">T-10 시퀀스 진행중...</span>
-      <button id="btn-theater-close" onclick="closeTheater()">[ 결과 확인 후 닫기 ]</button>
+      <span class="th-mission">ML-004 BETA mk.2 &mdash; 발사 시퀀스</span>
+      <span class="th-status" id="th-status">T-10 시퀀스 진행중...</span>
+      <button id="btn-theater-close" onclick="resetTheater()">[ 결과 확인 후 닫기 ]</button>
     </div>
 
-    <!-- Theater main canvas -->
+    <!-- Theater canvas -->
     <div id="theater-main">
-
-      <!-- Star field -->
-      <svg id="star-field" width="100%" height="100%"></svg>
 
       <!-- Ground grid -->
       <div id="ground-grid"></div>
 
-      <!-- Horizon line -->
-      <div id="horizon-line"></div>
-
-      <!-- Altitude markers -->
-      <div id="altitude-markers">
-        <div class="alt-marker">100km 카르만선</div>
-        <div class="alt-marker">75km</div>
-        <div class="alt-marker">50km</div>
-        <div class="alt-marker">25km</div>
-        <div class="alt-marker">10km</div>
-        <div class="alt-marker">0m</div>
+      <!-- COUNTDOWN STAGE -->
+      <div id="countdown-stage">
+        <div id="cd-rocket-wrap">
+          <pre class="cd-rocket" id="cd-rocket">       *
+      /|\
+     / | \
+    /  |  \
+   / BETA  \
+  /__mk.2___\
+ |           |
+ |  ENGINE   |
+ |___________|</pre>
+          <pre class="cd-exhaust" id="cd-exhaust">   | | |
+  /|X|X|\
+ / |X|X| \
+   |||||||
+  |||||||||
+ |||||||||||
+  |||||||||
+   |||||||
+    |||||
+     |||
+      |</pre>
+        </div>
+        <div id="countdown-number">T-10</div>
+        <div id="countdown-label">T-MINUS 10 &mdash; ALL SYSTEMS GO</div>
       </div>
 
-      <!-- Rocket SVG -->
-      <div id="rocket-stage">
-        <!-- Exhaust -->
-        <svg id="exhaust-svg" viewBox="0 0 40 60" width="40" height="60" style="margin-top:-2px;display:none;">
-          <defs>
-            <radialGradient id="exhaust-grad" cx="50%" cy="0%" r="80%">
-              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
-              <stop offset="20%" stop-color="#ffcc00" stop-opacity="0.85"/>
-              <stop offset="50%" stop-color="#ff6600" stop-opacity="0.6"/>
-              <stop offset="100%" stop-color="#ff2200" stop-opacity="0"/>
-            </radialGradient>
-          </defs>
-          <ellipse cx="20" cy="5" rx="8" ry="5" fill="url(#exhaust-grad)" style="animation:exhaust-flicker 0.15s ease-in-out infinite;"/>
-          <ellipse cx="20" cy="15" rx="12" ry="10" fill="url(#exhaust-grad)" opacity="0.7" style="animation:exhaust-flicker 0.2s ease-in-out 0.05s infinite;"/>
-          <ellipse cx="20" cy="30" rx="14" ry="18" fill="url(#exhaust-grad)" opacity="0.4" style="animation:exhaust-flicker 0.25s ease-in-out 0.1s infinite;"/>
-          <ellipse cx="20" cy="50" rx="10" ry="14" fill="url(#exhaust-grad)" opacity="0.2"/>
-        </svg>
-        <!-- Rocket body -->
-        <svg viewBox="0 0 40 100" width="40" height="100">
-          <defs>
-            <linearGradient id="rkt-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#00994d" stop-opacity="0.6"/>
-              <stop offset="40%" stop-color="#00e676" stop-opacity="0.9"/>
-              <stop offset="100%" stop-color="#00994d" stop-opacity="0.5"/>
-            </linearGradient>
-          </defs>
-          <!-- Nose cone -->
-          <polygon points="20,2 10,22 30,22" fill="url(#rkt-grad)" stroke="#00e676" stroke-width="0.5"/>
-          <!-- Body -->
-          <rect x="12" y="22" width="16" height="50" fill="url(#rkt-grad)" stroke="#00e676" stroke-width="0.5"/>
-          <!-- Stage separation line -->
-          <line x1="12" y1="55" x2="28" y2="55" stroke="#00e676" stroke-width="0.5" stroke-dasharray="2,1" opacity="0.6"/>
-          <!-- Fins -->
-          <polygon points="12,72 5,90 12,82" fill="#00994d" stroke="#00e676" stroke-width="0.5"/>
-          <polygon points="28,72 35,90 28,82" fill="#00994d" stroke="#00e676" stroke-width="0.5"/>
-          <!-- Engine nozzle -->
-          <rect x="15" y="72" width="10" height="10" fill="#00e676" opacity="0.3"/>
-          <ellipse cx="20" cy="82" rx="8" ry="4" fill="#00994d" stroke="#00e676" stroke-width="0.5"/>
-          <!-- Detail lines -->
-          <line x1="20" y1="22" x2="20" y2="72" stroke="#00e676" stroke-width="0.3" opacity="0.4"/>
-          <rect x="14" y="30" width="4" height="6" fill="#00e676" opacity="0.15"/>
-          <rect x="22" y="30" width="4" height="6" fill="#00e676" opacity="0.15"/>
-          <rect x="14" y="42" width="4" height="4" fill="#00e676" opacity="0.12"/>
-        </svg>
+      <!-- TELEMETRY STAGE -->
+      <div id="telemetry-stage">
+        <div id="tele-rocket-col">
+          <pre class="tele-rocket" id="tele-rocket">       *
+      /|\
+     / | \
+    /  |  \
+   / BETA  \
+  /__mk.2___\
+ |           |
+ |  ENGINE   |
+ |___________|</pre>
+          <pre class="tele-exhaust" id="tele-exhaust">   | | |
+  /|X|X|\
+ / |X|X| \
+   |||||||
+  |||||||||
+ |||||||||||
+  |||||||||
+   |||||||
+    |||||
+     |||
+      |</pre>
+        </div>
+        <div id="tele-lines-col">
+          <div id="tele-header">&#9654;&#9654; ML-004 BETA mk.2 &mdash; 비행 텔레메트리 &#9664;&#9664;</div>
+          <div id="tele-lines">
+            <div class="tl" id="tl0"><span class="tl-time">[T+0.0s]&nbsp;&nbsp;</span><span class="tl-msg">IGNITION CONFIRMED &mdash; 엔진 점화</span></div>
+            <div class="tl" id="tl1"><span class="tl-time">[T+1.2s]&nbsp;&nbsp;</span><span class="tl-msg">이륙 확인 &mdash; 고도 12m</span></div>
+            <div class="tl" id="tl2"><span class="tl-time">[T+3.4s]&nbsp;&nbsp;</span><span class="tl-msg">고도 500m &mdash; 속도 142 m/s</span></div>
+            <div class="tl" id="tl3"><span class="tl-time">[T+12.8s]&nbsp;</span><span class="tl-msg">고도 5.4km &mdash; 속도 640 m/s</span></div>
+            <div class="tl" id="tl4"><span class="tl-time">[T+28.7s]&nbsp;</span><span class="tl-warn">&#9888; MaxQ 진입 &mdash; 동압 38.4 kPa 모니터링</span></div>
+            <div class="tl" id="tl5"><span class="tl-time">[T+45.2s]&nbsp;</span><span class="tl-msg">MaxQ 통과 &mdash; 고도 28.3km</span></div>
+            <div class="tl" id="tl6"><span class="tl-time">[T+68.9s]&nbsp;</span><span class="tl-msg">고도 47.6km &mdash; 속도 1,680 m/s</span></div>
+            <div class="tl" id="tl7"><span class="tl-time">[T+98.4s]&nbsp;</span><span class="tl-warn">&#9888; 자이로 Yaw 편류 +1.2&deg;/s 감지</span></div>
+            <div class="tl" id="tl8"><span class="tl-time">[T+125.7s]</span><span class="tl-msg"> 고도 62.4km &mdash; 속도 1,810 m/s</span></div>
+            <div class="tl" id="tl9"><span class="tl-time">[T+143.0s]</span><span class="tl-fail"> &#10007; 고도 67.2km &mdash; 제어 상실. 자폭</span></div>
+          </div>
+        </div>
       </div>
 
-      <!-- Ignition flash -->
-      <div id="ignition-flash"></div>
+      <!-- Ignition flash overlay -->
+      <div id="ignition-flash-overlay"></div>
 
-      <!-- Countdown display -->
-      <div id="countdown-display">
-        <span id="countdown-number">T-10</span>
-        <span id="countdown-label">발사 카운트다운</span>
-      </div>
-
-      <!-- Telemetry feed -->
-      <div id="telemetry-feed">
-        <div id="telemetry-inner"></div>
-      </div>
-
-      <!-- Result screen -->
+      <!-- RESULT SCREEN -->
       <div id="result-screen">
-        <div class="result-tag">MISSION ML-004 RESULT</div>
-        <div class="result-headline" id="result-headline">YOU REACHED SPACE</div>
-        <div class="result-subtitle" id="result-subtitle">91.8km — 카르만선 돌파!</div>
-        <div class="result-stats">
-          <div class="result-stat-item">
-            <span class="rsi-label">최대 고도</span>
-            <span class="rsi-val">91.8 km</span>
-          </div>
-          <div class="result-stat-item">
-            <span class="rsi-label">비행 시간</span>
-            <span class="rsi-val">310 s</span>
-          </div>
-          <div class="result-stat-item">
-            <span class="rsi-label">최고 속도</span>
-            <span class="rsi-val">2,410 m/s</span>
-          </div>
-          <div class="result-stat-item">
-            <span class="rsi-label">최대 ΔV</span>
-            <span class="rsi-val">3,140 m/s</span>
-          </div>
-        </div>
-        <div class="result-rewards">
-          <div class="rr-title">— 임무 보상 획득 —</div>
-          <div class="rr-line">발사 데이터 <span>+4 units</span></div>
-          <div class="rr-line">평판 포인트 <span>+300 RP</span></div>
-          <div class="rr-line">카르만선 달성 보너스 <span>+500 RP</span></div>
-          <div class="rr-line">성공 데이터 <span>+1 (성공률 추가 -5%)</span></div>
-        </div>
-        <button id="btn-theater-close-2" onclick="closeTheater()" style="
-          background: rgba(0,230,118,0.08);
-          border: 1px solid var(--green);
-          color: var(--green);
-          font-family: var(--font);
-          font-size: 13px;
-          padding: 10px 40px;
-          cursor: pointer;
-          letter-spacing: 0.15em;
-          text-shadow: var(--glow);
-        ">[ 결과 확인 완료 — 메인으로 ]</button>
+        <pre class="result-box" id="result-box">&#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9557;
+&#9553;   &#10007;  MISSION FAILURE  &#10007;      &#9553;
+&#9553;  <span class="rb-dim">ML-004 임무 종료 보고서</span>      &#9553;
+&#9553;                               &#9553;
+&#9553;  최대 고도   : <span class="rb-amber">67.2 km</span>        &#9553;
+&#9553;  최고 속도   : <span class="rb-amber">1,840 m/s</span>      &#9553;
+&#9553;  비행 시간   : <span class="rb-amber">143 초</span>         &#9553;
+&#9553;  실패 원인   : <span class="rb-amber">자이로 오작동</span>   &#9553;
+&#9553;  카르만선    : <span class="rb-amber">32.8km 미달</span>     &#9553;
+&#9553;                               &#9553;
+&#9553;  <span class="rb-green">[ 분석 데이터 수집 완료 ]</span>     &#9553;
+&#9553;  <span class="rb-green">연구 포인트 +24 획득</span>          &#9553;
+&#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;</pre>
+        <button id="btn-reset" onclick="resetTheater()">[ RESET &mdash; 작전 기지로 복귀 ]</button>
       </div>
 
-    </div><!-- end theater-main -->
+    </div>
+    <!-- end theater-main -->
 
-  </div><!-- end launch-theater -->
+  </div>
+  <!-- end launch-theater -->
 
 </div><!-- end app -->
 
+<!-- WARNING FLASH (outside app, full fixed) -->
+<div id="warning-flash">
+  <div class="wf-title">&#9888; WARNING &#9888;</div>
+  <div class="wf-sub">발사 시퀀스 시작</div>
+</div>
+
 <script>
   // =============================================
-  // LAUNCH SEQUENCE ENGINE
+  // CLOCK
   // =============================================
+  function updateClock() {
+    const n = new Date();
+    const p = v => String(v).padStart(2, '0');
+    document.getElementById('clock').textContent =
+      p(n.getHours()) + ':' + p(n.getMinutes()) + ':' + p(n.getSeconds());
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
 
-  const TELEMETRY = [
-    { t: 0,   text: '<span class="t-time">T+00:</span> <span class="t-event">점화 — 추력 18kN 확인</span>' },
-    { t: 1.2, text: '<span class="t-time">T+01:</span> <span class="t-event">메인 엔진 가속 중 — 지상 홀드다운 해제</span>' },
-    { t: 2.8, text: '<span class="t-time">T+03:</span> <span class="t-event">이륙 — 고도 0m → 150m</span>' },
-    { t: 4.0, text: '<span class="t-time">T+05:</span> 고도 820m / 속도 48m/s' },
-    { t: 5.2, text: '<span class="t-time">T+08:</span> 롤 기동 완료 — 비행 방위각 수정' },
-    { t: 6.0, text: '<span class="t-time">T+12:</span> 고도 3,200m / 속도 180m/s' },
-    { t: 7.0, text: '<span class="t-time">T+22:</span> 고도 8,400m / 속도 480m/s' },
-    { t: 7.8, text: '<span class="t-time">T+38:</span> <span class="t-warn">MAX-Q 진입 — 동압 최대 구간</span>' },
-    { t: 8.4, text: '<span class="t-time">T+52:</span> <span class="t-event">MAX-Q 통과 완료 — 구조 무결성 OK</span>' },
-    { t: 9.0, text: '<span class="t-time">T+60:</span> 고도 24,700m / 속도 1,240m/s' },
-    { t: 10.2,text: '<span class="t-time">T+78:</span> 음속 돌파 — 마하 1.0 확인' },
-    { t: 11.0,text: '<span class="t-time">T+90:</span> 고도 58,200m / 속도 1,980m/s' },
-    { t: 12.0,text: '<span class="t-time">T+105:</span> 고도 74,100m / 속도 2,220m/s' },
-    { t: 13.0,text: '<span class="t-time">T+115:</span> <span class="t-event">엔진 컷오프 — 고도 84,600m 연료 소진</span>' },
-    { t: 13.8,text: '<span class="t-time">T+119:</span> 관성 비행 지속 — 정점 접근 중' },
-    { t: 14.6,text: '<span class="t-time">T+125:</span> <span class="t-event">최대 고도 91,800m — 목표 초과!</span>' },
-    { t: 15.4,text: '<span class="t-time">T+125:</span> <span class="t-event" style="color:var(--green);text-shadow:var(--glow);">카르만선(100km) 목표 -8.2km... 재검토</span>' },
-    { t: 16.2,text: '<span class="t-time">T+180:</span> 하강 궤적 — 속도 감소 중' },
-    { t: 17.0,text: '<span class="t-time">T+240:</span> 고도 45,200m — 대기 재진입' },
-    { t: 17.8,text: '<span class="t-time">T+310:</span> <span class="t-event">낙하산 전개 — 회수 시퀀스 개시</span>' },
-    { t: 18.6,text: '<span class="t-time">T+410:</span> 회수 낙하산 완전 전개 확인' },
-    { t: 19.4,text: '<span class="t-time">T+480:</span> <span class="t-event" style="color:var(--green);text-shadow:var(--glow-strong);">착수 확인 — ML-004 미션 완료</span>' },
-  ];
+  // =============================================
+  // UTILITY
+  // =============================================
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   let launchActive = false;
 
-  function buildStarField() {
-    const svg = document.getElementById('star-field');
-    const W = svg.clientWidth || 1200;
-    const H = svg.clientHeight || 500;
-    let stars = '';
-    for (let i = 0; i < 120; i++) {
-      const x = Math.random() * W;
-      const y = Math.random() * H * 0.7;
-      const r = Math.random() * 1.2 + 0.3;
-      const op = (Math.random() * 0.4 + 0.1).toFixed(2);
-      stars += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="#00e676" opacity="${op}"/>`;
-    }
-    svg.innerHTML = stars;
+  // =============================================
+  // ABORT (standalone, never enters theater)
+  // =============================================
+  async function doAbort() {
+    if (launchActive) return;
+    const wf = document.getElementById('warning-flash');
+    const title = wf.querySelector('.wf-title');
+    const sub   = wf.querySelector('.wf-sub');
+    title.textContent = '⚠ ABORT ⚠';
+    sub.textContent = '발사 중단 — 시스템 안전 복귀';
+    wf.style.background = 'rgba(255, 23, 68, 0.88)';
+    wf.style.animation = 'none';
+    wf.style.display = 'flex';
+    wf.style.opacity = '1';
+    await sleep(1200);
+    wf.style.display = 'none';
+    wf.style.opacity = '';
+    wf.style.background = '';
+    title.textContent = '⚠ WARNING ⚠';
+    sub.textContent = '발사 시퀀스 시작';
   }
 
-  function startLaunchSequence() {
+  // =============================================
+  // MAIN LAUNCH SEQUENCE
+  // =============================================
+  async function startLaunchSequence() {
     if (launchActive) return;
     launchActive = true;
 
-    const theater = document.getElementById('launch-theater');
-    const colLeft = document.getElementById('col-left');
-    const colRight = document.getElementById('col-right');
     const btnLaunch = document.getElementById('btn-launch');
-
     btnLaunch.disabled = true;
-    btnLaunch.textContent = '▶▶ 발사 진행 중...';
 
-    buildStarField();
+    // ------- STEP 1: WARNING FLASH (0-600ms) -------
+    const wf = document.getElementById('warning-flash');
+    wf.style.animation = 'warning-flash-anim 0.6s ease-out forwards';
+    wf.style.display = 'flex';
+    await sleep(600);
+    wf.style.display = 'none';
+    wf.style.animation = '';
 
-    // Slide out side panels
+    // ------- STEP 2: SCREEN SPLIT (slide panels out, show theater) -------
+    const colLeft  = document.getElementById('col-left');
+    const colRight = document.getElementById('col-right');
     colLeft.classList.add('slide-out');
     colRight.classList.add('slide-out');
 
-    // Show theater after brief delay
-    setTimeout(() => {
-      theater.classList.add('active');
-      runCountdown();
-    }, 550);
-  }
+    await sleep(400);
 
-  function runCountdown() {
-    const numEl = document.getElementById('countdown-number');
-    const labelEl = document.getElementById('countdown-label');
-    const statusEl = document.getElementById('theater-status-text');
+    const theater = document.getElementById('launch-theater');
+    theater.classList.add('active');
 
-    let count = 10;
+    // Reset rocket positions
+    const cdRocket  = document.getElementById('cd-rocket');
+    const cdExhaust = document.getElementById('cd-exhaust');
+    cdRocket.style.transition  = 'none';
+    cdExhaust.style.transition = 'none';
+    cdRocket.style.transform   = 'translateY(0)';
+    cdExhaust.style.transform  = 'translateY(0)';
+    cdExhaust.style.display    = 'none';
 
-    function tick() {
-      if (count > 0) {
-        numEl.textContent = 'T-' + count;
-        numEl.style.color = count <= 3 ? 'var(--amber)' : 'var(--green)';
-        numEl.style.textShadow = count <= 3 ? 'var(--glow-amber)' : 'var(--glow-strong)';
-        statusEl.textContent = 'T-' + count + ' 시퀀스 진행중...';
-        count--;
-        setTimeout(tick, 900);
-      } else {
-        // T-0: IGNITION
-        numEl.textContent = 'T-0';
-        numEl.style.color = 'var(--red)';
-        numEl.style.textShadow = 'var(--glow-red), 0 0 40px #ff1744';
-        labelEl.textContent = 'IGNITION';
-        statusEl.textContent = '점화 — 엔진 가동';
+    document.getElementById('countdown-stage').classList.remove('hidden');
+    document.getElementById('telemetry-stage').classList.remove('active');
+    document.getElementById('result-screen').classList.remove('active');
+    document.getElementById('ignition-flash-overlay').classList.remove('active');
 
-        // Ignition flash
-        const flash = document.getElementById('ignition-flash');
-        flash.classList.add('active');
+    await sleep(600);
 
-        setTimeout(() => {
-          // Hide countdown, start rocket
-          document.getElementById('countdown-display').style.display = 'none';
-          const exhaust = document.getElementById('exhaust-svg');
-          exhaust.style.display = 'block';
+    // ------- STEP 3: COUNTDOWN T-10 to T-0 -------
+    const numEl   = document.getElementById('countdown-number');
+    const lblEl   = document.getElementById('countdown-label');
+    const stEl    = document.getElementById('th-status');
 
-          const rocketStage = document.getElementById('rocket-stage');
-          rocketStage.classList.add('launching');
-
-          statusEl.textContent = '비행 진행 중 — 텔레메트리 수신 중';
-
-          // Start telemetry feed
-          startTelemetry();
-        }, 1200);
-      }
+    for (let i = 10; i >= 1; i--) {
+      numEl.textContent = 'T-' + i;
+      numEl.className   = i <= 3 ? 'red' : '';
+      lblEl.textContent = 'T-MINUS ' + i + (i <= 3 ? ' — TERMINAL COUNT' : ' — ALL SYSTEMS GO');
+      stEl.textContent  = 'T-' + i + ' 시퀀스 진행중...';
+      await sleep(900);
     }
 
-    tick();
-  }
+    // T-0
+    numEl.textContent  = 'IGNITION';
+    numEl.className    = 'ignition-text';
+    lblEl.textContent  = 'T-0 — 점화';
+    stEl.textContent   = '점화 — 엔진 가동';
 
-  function startTelemetry() {
-    const inner = document.getElementById('telemetry-inner');
-    inner.innerHTML = '';
+    await sleep(600);
 
-    TELEMETRY.forEach((entry, idx) => {
-      setTimeout(() => {
-        const line = document.createElement('span');
-        line.className = 'telem-line';
-        line.innerHTML = entry.text;
-        inner.appendChild(line);
+    // ------- STEP 4: LIFTOFF -------
+    // Ignition flash
+    const iff = document.getElementById('ignition-flash-overlay');
+    iff.classList.add('active');
 
-        requestAnimationFrame(() => {
-          line.classList.add('visible');
-        });
+    // Show exhaust
+    cdExhaust.style.display = 'inline-block';
 
-        // Scroll to bottom
-        const feed = document.getElementById('telemetry-feed');
-        feed.scrollTop = feed.scrollHeight;
+    await sleep(400);
 
-        // Show result at last telemetry entry
-        if (idx === TELEMETRY.length - 1) {
-          setTimeout(showResult, 1200);
-        }
-      }, entry.t * 1000);
-    });
-  }
+    // Rocket rises (8s CSS transition)
+    cdRocket.style.transition  = 'transform 8s cubic-bezier(0.12, 0.7, 0.28, 1.0)';
+    cdExhaust.style.transition = 'transform 8s cubic-bezier(0.12, 0.7, 0.28, 1.0)';
+    cdRocket.style.transform   = 'translateY(-480px)';
+    cdExhaust.style.transform  = 'translateY(-480px)';
 
-  function showResult() {
+    stEl.textContent = '비행 진행 중 — 텔레메트리 수신 중';
+
+    // After 2.5s switch to telemetry stage
+    await sleep(2500);
+
+    document.getElementById('countdown-stage').classList.add('hidden');
+    iff.classList.remove('active');
+
+    // ------- STEP 5: TELEMETRY STAGE -------
+    const teleStage   = document.getElementById('telemetry-stage');
+    const teleRocket  = document.getElementById('tele-rocket');
+    const teleExhaust = document.getElementById('tele-exhaust');
+
+    teleRocket.style.transition  = 'none';
+    teleExhaust.style.transition = 'none';
+    teleRocket.style.transform   = 'translateY(0)';
+    teleExhaust.style.transform  = 'translateY(0)';
+    teleExhaust.style.display    = 'none';
+
+    teleStage.classList.add('active');
+
+    // Start telemetry rocket rise + exhaust
+    await sleep(200);
+    teleExhaust.style.display = 'block';
+    await sleep(100);
+    teleRocket.style.transition  = 'transform 8s cubic-bezier(0.08, 0.6, 0.2, 1.0)';
+    teleExhaust.style.transition = 'transform 8s cubic-bezier(0.08, 0.6, 0.2, 1.0)';
+    teleRocket.style.transform   = 'translateY(-380px)';
+    teleExhaust.style.transform  = 'translateY(-380px)';
+
+    // Reveal telemetry lines
+    const TELE_DELAYS = [0, 800, 1600, 2800, 4200, 5600, 6800, 8200, 9800, 11400];
+    const startTs = Date.now();
+
+    for (let i = 0; i < 10; i++) {
+      const wait = TELE_DELAYS[i] - (Date.now() - startTs);
+      if (wait > 0) await sleep(wait);
+      const el = document.getElementById('tl' + i);
+      if (el) el.classList.add('show');
+    }
+
+    // Stop rocket (at ~67km — control lost)
+    teleRocket.style.transition  = 'transform 0.8s ease';
+    teleExhaust.style.transition = 'transform 0.8s ease';
+
+    // ------- STEP 6: RESULT SCREEN -------
+    await sleep(2000);
+    teleStage.classList.remove('active');
     const resultScreen = document.getElementById('result-screen');
-    const statusEl = document.getElementById('theater-status-text');
-    const closeBtn = document.getElementById('btn-theater-close');
-
-    statusEl.textContent = 'ML-004 미션 완료 — 결과 집계';
     resultScreen.classList.add('active');
+
+    const closeBtn = document.getElementById('btn-theater-close');
     closeBtn.style.display = 'block';
+    stEl.textContent = 'ML-004 임무 종료 — 결과 집계 완료';
   }
 
-  function closeTheater() {
-    const theater = document.getElementById('launch-theater');
-    const colLeft = document.getElementById('col-left');
+  // =============================================
+  // RESET / CLOSE THEATER
+  // =============================================
+  function resetTheater() {
+    const theater  = document.getElementById('launch-theater');
+    const colLeft  = document.getElementById('col-left');
     const colRight = document.getElementById('col-right');
-    const btnLaunch = document.getElementById('btn-launch');
-    const exhaust = document.getElementById('exhaust-svg');
-    const rocketStage = document.getElementById('rocket-stage');
-    const countdownDisplay = document.getElementById('countdown-display');
-    const numEl = document.getElementById('countdown-number');
-    const labelEl = document.getElementById('countdown-label');
-    const flash = document.getElementById('ignition-flash');
-    const resultScreen = document.getElementById('result-screen');
-    const inner = document.getElementById('telemetry-inner');
 
-    // Hide theater
     theater.classList.remove('active');
+    colLeft.classList.remove('slide-out');
+    colRight.classList.remove('slide-out');
 
-    // Restore side panels
     setTimeout(() => {
-      colLeft.classList.remove('slide-out');
-      colRight.classList.remove('slide-out');
-    }, 100);
-
-    // Reset theater state for next launch
-    setTimeout(() => {
-      rocketStage.classList.remove('launching');
-      exhaust.style.display = 'none';
-      flash.classList.remove('active');
-      resultScreen.classList.remove('active');
-      countdownDisplay.style.display = '';
-      numEl.textContent = 'T-10';
-      numEl.style.color = 'var(--green)';
-      numEl.style.textShadow = 'var(--glow-strong)';
-      labelEl.textContent = '발사 카운트다운';
-      inner.innerHTML = '';
-      document.getElementById('theater-status-text').textContent = 'T-10 시퀀스 진행중...';
+      // Reset all stage states
+      document.getElementById('countdown-stage').classList.remove('hidden');
+      document.getElementById('telemetry-stage').classList.remove('active');
+      document.getElementById('result-screen').classList.remove('active');
+      document.getElementById('ignition-flash-overlay').classList.remove('active');
       document.getElementById('btn-theater-close').style.display = 'none';
-      btnLaunch.disabled = false;
-      btnLaunch.textContent = '▶▶ 발사 실행';
-      launchActive = false;
-    }, 600);
-  }
 
-  // Build star field on resize
-  window.addEventListener('resize', buildStarField);
+      // Reset countdown
+      const numEl = document.getElementById('countdown-number');
+      numEl.textContent = 'T-10';
+      numEl.className   = '';
+      document.getElementById('countdown-label').textContent = 'T-MINUS 10 — ALL SYSTEMS GO';
+      document.getElementById('th-status').textContent       = 'T-10 시퀀스 진행중...';
+
+      // Reset cd rocket
+      const cdRocket  = document.getElementById('cd-rocket');
+      const cdExhaust = document.getElementById('cd-exhaust');
+      cdRocket.style.transition  = 'none';
+      cdExhaust.style.transition = 'none';
+      cdRocket.style.transform   = 'translateY(0)';
+      cdExhaust.style.transform  = 'translateY(0)';
+      cdExhaust.style.display    = 'none';
+
+      // Reset tele rocket
+      const teleRocket  = document.getElementById('tele-rocket');
+      const teleExhaust = document.getElementById('tele-exhaust');
+      teleRocket.style.transition  = 'none';
+      teleExhaust.style.transition = 'none';
+      teleRocket.style.transform   = 'translateY(0)';
+      teleExhaust.style.transform  = 'translateY(0)';
+      teleExhaust.style.display    = 'none';
+
+      // Reset telemetry lines
+      for (let i = 0; i < 10; i++) {
+        const el = document.getElementById('tl' + i);
+        if (el) el.classList.remove('show');
+      }
+
+      // Re-enable launch button
+      const btnLaunch = document.getElementById('btn-launch');
+      btnLaunch.disabled = false;
+
+      launchActive = false;
+    }, 550);
+  }
 </script>
+
 </body>
 </html>

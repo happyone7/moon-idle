@@ -110,6 +110,27 @@
     100% { transform: translateY(200%); opacity: 0.05; }
   }
 
+  @keyframes ascii-blink {
+    0%, 45%  { opacity: 1; }
+    50%, 95% { opacity: 0.55; }
+    100%     { opacity: 1; }
+  }
+
+  @keyframes ascii-scanline-move {
+    0%   { background-position: 0 0; }
+    100% { background-position: 0 48px; }
+  }
+
+  @keyframes ascii-glow-pulse {
+    0%, 100% { text-shadow: 0 0 8px #00e676, 0 0 2px #00e676; }
+    50%      { text-shadow: 0 0 14px #00e676, 0 0 4px #00e676, 0 0 24px #00e67640; }
+  }
+
+  @keyframes ascii-amber-pulse {
+    0%, 100% { text-shadow: 0 0 8px #ffab00, 0 0 2px #ffab00; opacity: 1; }
+    50%      { text-shadow: 0 0 14px #ffab00, 0 0 4px #ffab00; opacity: 0.75; }
+  }
+
   /* =============================================
      MAIN WRAPPER
   ============================================= */
@@ -860,6 +881,234 @@
   ::-webkit-scrollbar-thumb { background: var(--green-dim); }
   ::-webkit-scrollbar-thumb:hover { background: var(--green-mid); }
 
+  /* =============================================
+     ASCII ART PANELS
+  ============================================= */
+
+  .ascii-panel {
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: #010c03;
+    border: 1px solid var(--green-dim);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ascii-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 230, 118, 0.025) 3px,
+      rgba(0, 230, 118, 0.025) 6px
+    );
+    pointer-events: none;
+    animation: ascii-scanline-move 4s linear infinite;
+  }
+
+  .ascii-panel.amber-ascii {
+    border-color: var(--amber-dim);
+    background: #0a0600;
+  }
+
+  .ascii-panel-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 4px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #0d2016;
+  }
+
+  .ascii-panel.amber-ascii .ascii-panel-label {
+    color: var(--amber-dim);
+    border-color: #2a1800;
+  }
+
+  .ascii-art {
+    font-family: var(--font);
+    font-size: 9px;
+    line-height: 1.35;
+    color: var(--green);
+    text-shadow: 0 0 8px #00e676;
+    white-space: pre;
+    animation: ascii-glow-pulse 3s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ascii-art.amber-art {
+    color: var(--amber);
+    text-shadow: 0 0 8px #ffab00;
+    animation: ascii-amber-pulse 2s ease-in-out infinite;
+  }
+
+  .ascii-art.in-progress-art {
+    animation: ascii-amber-pulse 1.8s ease-in-out infinite;
+  }
+
+  /* =============================================
+     COMPLETED TECHS PANEL — below tree
+  ============================================= */
+  #completed-panel {
+    border-top: 1px solid var(--green-dim);
+    background: #010a02;
+    padding: 8px 12px;
+    flex-shrink: 0;
+    max-height: 130px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) transparent;
+  }
+
+  .completed-panel-header {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green);
+    text-shadow: var(--glow);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .completed-panel-header::before {
+    content: '//';
+    color: var(--green-dim);
+  }
+
+  .completed-tech-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 3px 16px;
+  }
+
+  .completed-tech-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    color: var(--green-text);
+    padding: 2px 0;
+    border-bottom: 1px solid #091608;
+  }
+
+  .ctr-id {
+    color: var(--green-dim);
+    letter-spacing: 1px;
+    min-width: 38px;
+    font-size: 9px;
+  }
+
+  .ctr-name {
+    flex: 1;
+    color: var(--green-text);
+  }
+
+  .ctr-bar {
+    color: var(--green);
+    text-shadow: var(--glow);
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .ctr-icon {
+    font-family: var(--font);
+    font-size: 9px;
+    color: var(--green);
+    text-shadow: 0 0 6px #00e676;
+    min-width: 30px;
+    text-align: right;
+    white-space: pre;
+  }
+
+  /* =============================================
+     LAB VISUALIZATION PANEL — bottom of left panel
+  ============================================= */
+  .lab-viz-panel {
+    margin-top: 12px;
+    border-top: 1px solid #0d2016;
+    padding-top: 8px;
+  }
+
+  .lab-viz-header {
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 5px;
+  }
+
+  .lab-ascii {
+    font-family: var(--font);
+    font-size: 8px;
+    line-height: 1.3;
+    color: var(--green-mid);
+    text-shadow: 0 0 6px #00994d60;
+    white-space: pre;
+    animation: ascii-glow-pulse 5s ease-in-out infinite;
+  }
+
+  /* =============================================
+     ASCII ART IN RIGHT DETAIL PANEL
+  ============================================= */
+  #dt-ascii-wrap {
+    margin-top: 10px;
+  }
+
+  .detail-ascii-label {
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-bottom: 4px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #0d2016;
+  }
+
+  .detail-ascii-art {
+    font-family: var(--font);
+    font-size: 9px;
+    line-height: 1.35;
+    color: var(--green);
+    text-shadow: 0 0 8px #00e676;
+    white-space: pre;
+    background: #010c03;
+    border: 1px solid var(--green-dim);
+    padding: 6px 8px;
+    animation: ascii-glow-pulse 3.5s ease-in-out infinite;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .detail-ascii-art.amber-detail {
+    color: var(--amber);
+    text-shadow: 0 0 8px #ffab00;
+    border-color: var(--amber-dim);
+    background: #0a0600;
+    animation: ascii-amber-pulse 2s ease-in-out infinite;
+  }
+
+  .detail-ascii-art::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 3px,
+      rgba(0, 230, 118, 0.02) 3px,
+      rgba(0, 230, 118, 0.02) 6px
+    );
+    pointer-events: none;
+    animation: ascii-scanline-move 4s linear infinite;
+  }
+
 </style>
 </head>
 <body>
@@ -928,6 +1177,19 @@
             <span class="pct">67%</span>
           </div>
           <div class="arc-eta">ETA: <span style="color:var(--green);text-shadow:var(--glow)">47분</span></div>
+          <!-- ASCII Art: CFRP Lamination -->
+          <div class="ascii-panel">
+            <div class="ascii-panel-label">CFRP 적층 시뮬레이션</div>
+            <pre class="ascii-art in-progress-art">  ///////  ← 0° ply
+ ///////
+///////
+=======  ← 90° ply
+=======
+=======
+ \\\\\\\ ← ±45° ply
+  \\\\\\
+[CURE 140°C ████░░ 67%]</pre>
+          </div>
           <button class="btn-cancel" onclick="cancelResearch('s03')">◼ 취소</button>
         </div>
 
@@ -943,6 +1205,19 @@
             <span class="pct amber">45%</span>
           </div>
           <div class="arc-eta" style="color:var(--amber-dim)">ETA: <span style="color:var(--amber);text-shadow:var(--amber-glow)">83분</span></div>
+          <!-- ASCII Art: Ablative Coating -->
+          <div class="ascii-panel amber-ascii">
+            <div class="ascii-panel-label">삭마 열차폐 도포</div>
+            <pre class="ascii-art amber-art">   ___________
+  /  RE-ENTRY  \
+ |  >>>>>>>>>>>|← heat flux
+ |[=ABLATIVE==]|← char layer
+ |[============]← virgin
+ |  CAPSULE    |
+  \___________/
+ TEMP: 1,640°C ▲
+[COAT 45%████░░░░]</pre>
+          </div>
         </div>
 
         <!-- Empty queue slot -->
@@ -979,6 +1254,22 @@
             <span>RP 700</span>
             <span style="color:var(--amber-dim);font-size:10px">T02용</span>
           </div>
+        </div>
+
+        <!-- Research Lab ASCII Visualization -->
+        <div class="lab-viz-panel">
+          <div class="lab-viz-header">RESEARCH LAB — SECTOR 3</div>
+          <pre class="lab-ascii">┌────────────────────────┐
+│  [TERMINAL]  [SCOPE]   │
+│   ____        ____     │
+│  |    |      (    )    │
+│  |COMP|       )  (     │
+│  |UTER|      (MICRO)   │
+│  |____|      (SCOPE)   │
+│                        │
+│  ~~~~~~~~~~~~~~~~~~~~  │
+│  POWER: ████████ 94%   │
+└────────────────────────┘</pre>
         </div>
 
       </div>
@@ -1359,6 +1650,78 @@
         </svg>
 
       </div>
+
+      <!-- === COMPLETED TECHNOLOGIES ASCII PANEL === -->
+      <div id="completed-panel">
+        <div class="completed-panel-header">COMPLETED TECHNOLOGIES — 8 기술 완료</div>
+        <div class="completed-tech-list">
+
+          <div class="completed-tech-row">
+            <span class="ctr-id">S01</span>
+            <span class="ctr-name">기초 용접술</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon"> /=\ </span>
+          </div>
+          <div class="completed-tech-row">
+            <span class="ctr-id">S02</span>
+            <span class="ctr-name">알루미늄 가공</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon"> [Al] </span>
+          </div>
+          <div class="completed-tech-row">
+            <span class="ctr-id">P01</span>
+            <span class="ctr-name">고압 연소실 I</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon">)||(</span>
+          </div>
+          <div class="completed-tech-row">
+            <span class="ctr-id">P02</span>
+            <span class="ctr-name">터보펌프 기초</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon"> &gt;&gt;&gt; </span>
+          </div>
+          <div class="completed-tech-row">
+            <span class="ctr-id">A01</span>
+            <span class="ctr-name">자이로스코프 안정화</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon"> [◉] </span>
+          </div>
+          <div class="completed-tech-row">
+            <span class="ctr-id">T01</span>
+            <span class="ctr-name">기초 절열재</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon"> ≡≡≡ </span>
+          </div>
+          <div class="completed-tech-row">
+            <span class="ctr-id">O01</span>
+            <span class="ctr-name">발사 자동화 I</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon"> [▶] </span>
+          </div>
+          <div class="completed-tech-row">
+            <span class="ctr-id">O02</span>
+            <span class="ctr-name">카운트다운 시스템</span>
+            <span class="ctr-bar">▓▓▓▓▓ DONE</span>
+            <span class="ctr-icon"> T-0 </span>
+          </div>
+
+          <!-- In-progress entries (partial) -->
+          <div class="completed-tech-row" style="color:var(--amber-dim)">
+            <span class="ctr-id" style="color:#5a3a00">S03</span>
+            <span class="ctr-name" style="color:var(--amber-dim)">CFRP 적층 기술</span>
+            <span class="ctr-bar" style="color:var(--amber)">▓▓▓░░ 67%</span>
+            <span class="ctr-icon" style="color:var(--amber);text-shadow:0 0 6px #ffab00"> /// </span>
+          </div>
+          <div class="completed-tech-row" style="color:var(--amber-dim)">
+            <span class="ctr-id" style="color:#5a3a00">T02</span>
+            <span class="ctr-name" style="color:var(--amber-dim)">삭마 코팅</span>
+            <span class="ctr-bar" style="color:var(--amber)">▓▓░░░ 45%</span>
+            <span class="ctr-icon" style="color:var(--amber);text-shadow:0 0 6px #ffab00"> ~~~ </span>
+          </div>
+
+        </div>
+      </div>
+
     </div>
 
     <!-- === RIGHT PANEL — TECH DETAIL === -->
@@ -1453,6 +1816,12 @@
 
           <button class="btn-research" id="dt-btn" onclick="startResearch()">▶ 연구 시작</button>
           <div class="rp-check" id="dt-rp-check"></div>
+
+          <!-- ASCII visualization for the selected tech -->
+          <div id="dt-ascii-wrap" style="display:none">
+            <div class="detail-ascii-label">// TECH VISUALIZATION</div>
+            <pre class="detail-ascii-art" id="dt-ascii-art"></pre>
+          </div>
         </div>
 
       </div>
@@ -1680,6 +2049,265 @@ const CURRENT_RP = 847;
 let selectedTech = null;
 
 /* =============================================
+   ASCII ART VISUALIZATIONS PER TECH
+============================================= */
+const TECH_ASCII = {
+  S01: `     ___
+    /   \\      WELD
+   / ~~~ \\   ARC
+  |  ))) |  ~~~~~
+  |  ))) |──[JOINT]
+   \\     /
+    \\___/
+  [STRUCT BOND OK]`,
+
+  S02: `  ┌──────────┐
+  │ Al-7075  │
+  │ ██████   │ ← billet
+  │  ││││    │
+  │  MILL    │
+  │  ────    │
+  │  PART    │
+  └──────────┘
+  -20% MATERIAL USE`,
+
+  S03: `  ///////  ← 0° ply
+ ///////
+///////
+=======  ← 90° ply
+=======
+ \\\\\\\\  ← ±45° ply
+  \\\\\\\\
+[CURE 140°C ████░░ 67%]`,
+
+  S04: `  ┌──────────┐
+  │ Ti-6Al-4V│
+  │   _____  │
+  │  /FORGE\\ │ ← 1,200°C
+  │ |_PRESS_|│
+  │   │││   │
+  │  MOUNT   │
+  └──────────┘
+  [HIGH-TEMP OK]`,
+
+  S05: `  ╔══════════╗
+  ║ FRAME    ║
+  ║  ░░░░░░  ║ ← lattice
+  ║ ░░▓░░░░  ║   cutout
+  ║  ░░░░░░  ║
+  ║ LIGHTENED║
+  ╚══════════╝
+  -35% MASS`,
+
+  S06: `  ─────────
+  ▒▒▒▒▒▒▒▒▒ ← face sheet
+  ═════════
+  ░░░░░░░░░ ← core
+  ═════════
+  ▒▒▒▒▒▒▒▒▒ ← face sheet
+  ─────────
+  [SANDWICH PANEL]`,
+
+  S07: `    ≈≈≈≈≈≈≈
+   ≈CNT TUBE≈
+    ≈≈≈≈≈≈≈
+   /│││││││\\
+  [ NANOTUBE ]
+   \\│││││││/
+  TENSILE: +500%
+  [LUNAR GRADE]`,
+
+  P01: `    ___________
+   /           \\
+  |  COMBUSTION |
+  |   CHAMBER   |
+  |  ___   ___  |
+  | | O | | O | |← injectors
+  | |___| |___| |
+  |   \\_____/   |
+  |    NOZZLE    |
+   \\___________/
+        |||
+       /|||\\
+      //|||\\\\`,
+
+  P02: `   ___
+  /   \\──[LOX IN]
+ | >>> |  (turbine)
+  \\___/──[HIGH P]
+    │
+  ──┴──
+ |PUMP |
+  ──┬──
+    │
+ [THRUST ↑]`,
+
+  P03: `  ╔═════════╗
+  ║FUEL CHAN.║← coolant
+  ╠═════════╣
+  ║ CHAMBER ║← 3500°C
+  ╠═════════╣
+  ║RE-GEN   ║← cooling
+  ╚════╤════╝
+       │
+   ╔═══╧═══╗
+   ║ NOZZLE ║
+   ╚═══════╝
+  [Isp +12%]`,
+
+  P04: `    ┌──────┐
+    │PINTLE│← injector
+    │  ╱╲  │
+    │ ╱  ╲ │← spray
+    │╱    ╲│
+    │FLAME │
+    └──┬───┘
+  20%──┴──100%
+   THROTTLE OK`,
+
+  P05: `  ┌─────┐
+  │STAGE│ 1st
+  │  1  │
+  └──┬──┘
+  ═══╪═══ ← sep ring
+  ┌──┴──┐
+  │STAGE│ 2nd
+  │  2  │
+  └─────┘
+  [PAYLOAD +20%]`,
+
+  P06: `  [CH4 + LOX]
+   ↓       ↓
+  ╔═════════╗
+  ║METHANE  ║
+  ║ ENGINE  ║
+  ╚════╤════╝
+       ║
+   ╔═══╧═══╗
+   ║EXHAUST ║
+   ╚═══════╝
+  Isp +25%`,
+
+  A01: `     ___
+    /   \\
+   | o─o |   ← X axis
+   |  │  |
+   | ─┼─ |   ← Y axis
+   |  │  |
+    \\___/
+   Z──╯
+  [GYRO LOCK 3-AXIS]`,
+
+  A02: `  ┌──────────┐
+  │  INS     │
+  │  ┌────┐  │
+  │  │ACCEL│  │← 3-axis
+  │  └────┘  │
+  │  ┌────┐  │
+  │  │GYRO│  │← rate
+  │  └────┘  │
+  └──────────┘
+  POSITION ±0.1m`,
+
+  A03: `  ╔════════╗
+  ║ GPS RX ║
+  ║ ┌────┐ ║← satellite
+  ║ │▲▲▲▲│ ║  lock
+  ║ └────┘ ║
+  ║ΔPOS:   ║
+  ║ -60%   ║
+  ╚════════╝`,
+
+  A04: `  [FLIGHT COMPUTER]
+   ┌──────────┐
+   │ AI PILOT │
+   │  ██████  │← neural
+   │  ██████  │  net
+   │  ██████  │
+   └────┬─────┘
+    AUTONOMOUS
+   [NO CREW REQ]`,
+
+  T01: `  ║║║║║║║║║ ← insulation
+  ─────────
+  ░░░░░░░░░ ← MLI layer
+  ─────────
+  ▓▓▓▓▓▓▓▓▓ ← structure
+  -10% OVERHEAT`,
+
+  T02: `   ___________
+  /  RE-ENTRY  \\
+ |  >>>>>>>>>>>|← heat flux
+ |[=ABLATIVE==]|← char layer
+ |[============]← virgin
+ |  CAPSULE    |
+  \\___________/
+ TEMP: 1,640°C ▲
+ [COAT 45%████░]`,
+
+  T03: `  [FUEL]──[PUMP]
+     │
+  ╔══╧══════╗
+  ║  COOLING ║← active
+  ║  CHANNEL ║  circuit
+  ╠══════════╣
+  ║  ENGINE  ║
+  ╚══╤═══════╝
+     │
+  [EXHAUST]
+  BURN TIME ×2`,
+
+  T04: `  ▓▓▓▓▓▓▓▓▓▓▓
+  ▒▒▒TILES▒▒▒ ← TPS
+  ▓▓▓▓▓▓▓▓▓▓▓
+  ┌─────────┐
+  │  BODY   │
+  │ STRUCT  │
+  └─────────┘
+  1,600°C OK
+  [FULLY REUSABLE]`,
+
+  O01: `  ┌──────────────┐
+  │ LAUNCH SEQ   │
+  │ T-120: INIT  │
+  │  T-60: FUEL  │
+  │  T-30: PRESS │
+  │  T-10: ARM   │
+  │   T-0: FIRE  │
+  └──────────────┘
+  PREP TIME -20%`,
+
+  O02: `  ╔════════════╗
+  ║ T-00:00:00 ║← live
+  ║ ██████████ ║
+  ║            ║
+  ║  IGNITION  ║
+  ║  SEQUENCE  ║
+  ╚════════════╝
+  AUTO T-0 OK`,
+
+  O03: `      _____
+     /     \\
+    | CHUTE |← drogue
+     \\     /
+      │ │ │
+   ───┴─┴─┴───
+   [ CAPSULE ]
+  ────────────
+  RECOVERY 65%`,
+
+  O04: `  ┌──────────┐
+  │ BOOSTER  │
+  │    ↓↓↓   │← retro burn
+  │  ═══════ │← grid fins
+  │   ████   │
+  └────┬─────┘
+   ════╧════  ← landing pad
+  [REUSE -60%$]`,
+};
+
+
+/* =============================================
    TECH SELECTION & DETAIL PANEL
 ============================================= */
 function selectTech(id) {
@@ -1776,6 +2404,23 @@ function selectTech(id) {
     if (!canAfford) {
       btn.className = 'btn-research disabled';
     }
+  }
+
+  // ASCII art visualization
+  const asciiWrap = document.getElementById('dt-ascii-wrap');
+  const asciiArt = document.getElementById('dt-ascii-art');
+  const asciiDef = TECH_ASCII[id];
+  if (asciiDef) {
+    asciiWrap.style.display = 'block';
+    asciiArt.textContent = asciiDef;
+    // Apply amber style for in-progress or thermal techs
+    if (tech.status === 'progress' || id.startsWith('T')) {
+      asciiArt.className = 'detail-ascii-art amber-detail';
+    } else {
+      asciiArt.className = 'detail-ascii-art';
+    }
+  } else {
+    asciiWrap.style.display = 'none';
   }
 }
 

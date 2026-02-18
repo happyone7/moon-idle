@@ -515,7 +515,7 @@
   }
 
   /* =============================================
-     CENTER: ROCKET SVG
+     CENTER: ASCII ROCKET SCHEMATIC
   ============================================= */
   #rocket-schematic-wrap {
     padding: 8px 12px 4px;
@@ -525,10 +525,180 @@
     flex-shrink: 0;
   }
 
-  #rocket-svg {
+  #ascii-rocket-container {
+    position: relative;
     width: 100%;
-    max-width: 380px;
-    height: 280px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  #ascii-rocket {
+    font-family: var(--font);
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--green-dim);
+    letter-spacing: 0;
+    white-space: pre;
+    text-shadow: none;
+    user-select: none;
+    position: relative;
+  }
+
+  /* ASCII rocket section states */
+  .ascii-section {
+    display: inline;
+    transition: color 0.15s, text-shadow 0.15s;
+  }
+
+  .ascii-section.state-complete {
+    color: #00e676;
+    text-shadow: 0 0 5px #00e67660;
+  }
+
+  .ascii-section.state-progress {
+    color: #ffab00;
+    text-shadow: 0 0 5px #ffab0060;
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+
+  .ascii-section.state-locked {
+    color: #1a5c34;
+    text-shadow: none;
+  }
+
+  /* When highlighted by BOM hover */
+  .ascii-section.lit.state-complete {
+    color: #80ffc0;
+    text-shadow: 0 0 8px #00e676, 0 0 16px #00e67660;
+    animation: ascii-highlight-green 0.3s ease-out;
+  }
+
+  .ascii-section.lit.state-progress {
+    color: #ffd060;
+    text-shadow: 0 0 8px #ffab00, 0 0 16px #ffab0060;
+    animation: ascii-highlight-amber 0.3s ease-out;
+  }
+
+  .ascii-section.lit.state-locked {
+    color: #00994d;
+    text-shadow: 0 0 6px #00994d80;
+  }
+
+  @keyframes ascii-highlight-green {
+    0%   { color: #ffffff; text-shadow: 0 0 20px #00e676; }
+    100% { color: #80ffc0; text-shadow: 0 0 8px #00e676, 0 0 16px #00e67660; }
+  }
+
+  @keyframes ascii-highlight-amber {
+    0%   { color: #ffffff; text-shadow: 0 0 20px #ffab00; }
+    100% { color: #ffd060; text-shadow: 0 0 8px #ffab00, 0 0 16px #ffab0060; }
+  }
+
+  /* Annotation arrow that appears on hover */
+  .ascii-annotation {
+    display: none;
+    position: absolute;
+    right: 4px;
+    font-size: 10px;
+    color: var(--green-mid);
+    text-shadow: none;
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: 0.5px;
+  }
+
+  .ascii-annotation.visible {
+    display: block;
+  }
+
+  /* =============================================
+     ASCII PROGRESS DISPLAY
+  ============================================= */
+  #ascii-progress-display {
+    font-family: var(--font);
+    font-size: 10px;
+    line-height: 1.6;
+    color: var(--green-mid);
+    white-space: pre;
+    letter-spacing: 0;
+    padding: 6px 8px;
+  }
+
+  .ascii-prog-title {
+    color: var(--green);
+    text-shadow: var(--glow);
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  .ascii-prog-bar-done {
+    color: #00e676;
+    text-shadow: 0 0 4px #00e67660;
+  }
+
+  .ascii-prog-bar-empty {
+    color: #1a5c34;
+  }
+
+  .ascii-prog-pct {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+  }
+
+  .ascii-stage-done {
+    color: #00e676;
+  }
+
+  .ascii-stage-active {
+    color: var(--amber);
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+
+  .ascii-stage-locked {
+    color: #1a5c34;
+  }
+
+  .ascii-stage-label-done {
+    color: var(--green-mid);
+  }
+
+  .ascii-stage-label-active {
+    color: #ffab00;
+  }
+
+  .ascii-stage-label-locked {
+    color: #0a2e14;
+  }
+
+  /* =============================================
+     ASSEMBLY TOOLS PANEL
+  ============================================= */
+  #tools-panel {
+    font-family: var(--font);
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--green-dim);
+    white-space: pre;
+    letter-spacing: 0;
+    padding: 6px 10px;
+    border-top: var(--border);
+    background: #010b03;
+  }
+
+  .tools-title {
+    color: var(--green-mid);
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+
+  .tools-art {
+    color: #00994d;
+  }
+
+  .tools-calibrated {
+    color: #1a5c34;
+    font-size: 9px;
   }
 
   /* =============================================
@@ -1039,50 +1209,6 @@
     color: var(--green-mid);
   }
 
-  /* =============================================
-     SVG HELPERS
-  ============================================= */
-  .svg-label-line {
-    stroke: #1a5c34;
-    stroke-width: 0.5;
-  }
-
-  .svg-section-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 8px;
-    fill: #00994d;
-    letter-spacing: 1px;
-  }
-
-  .svg-section-complete {
-    fill: #00e676;
-    opacity: 0.15;
-    stroke: #00e676;
-    stroke-width: 0.5;
-  }
-
-  .svg-section-progress {
-    fill: #ffab00;
-    opacity: 0.15;
-    stroke: #ffab00;
-    stroke-width: 0.5;
-  }
-
-  .svg-section-pending {
-    fill: #1a5c34;
-    opacity: 0.08;
-    stroke: #1a5c34;
-    stroke-width: 0.5;
-  }
-
-  .svg-highlight {
-    transition: opacity 0.2s;
-  }
-
-  .svg-highlight.lit {
-    opacity: 0.35 !important;
-    filter: drop-shadow(0 0 4px currentColor);
-  }
 
 </style>
 </head>
@@ -1242,183 +1368,70 @@
       <div class="col-header">로켓 도면 &amp; 부품 목록 (BOM)</div>
       <div class="col-body">
 
-        <!-- SVG Rocket Schematic -->
+        <!-- ASCII Rocket Schematic -->
         <div id="rocket-schematic-wrap">
-          <svg id="rocket-svg" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
-                <line x1="0" y1="0" x2="0" y2="4" stroke="#1a5c34" stroke-width="0.5"/>
-              </pattern>
-            </defs>
+          <div id="ascii-rocket-container">
+            <pre id="ascii-rocket"><span style="color:#0a2e14; font-size:9px; letter-spacing:1px;">BETA mk.2 — NANO CLASS — 2STAGE — REV.C — 조립 57% — D+54</span>
 
-            <!-- Background grid -->
-            <line x1="0" y1="0" x2="380" y2="0" stroke="#030f05" stroke-width="0.5"/>
-            <line x1="0" y1="280" x2="380" y2="280" stroke="#030f05" stroke-width="0.5"/>
+<span id="ascii-payload" class="ascii-section state-complete">              *
+             /|\
+            / | \
+           /  |  \
+          /───────────\
+         /  PAYLOAD    \
+        /───────────────\</span>
+<span id="ascii-nav" class="ascii-section state-locked">       |  ┌─────────┐  |
+       |  │  NAV    │  |
+       |  │  SYS    │  |
+       |  └─────────┘  |
+       |               |</span>
+<span id="ascii-avionics" class="ascii-section state-locked">       |  ┌─────────┐  |
+       |  │ AVIONICS│  |
+       |  │ ◉  ◉  ◉│  |
+       |  └─────────┘  |
+       |               |</span>
+<span id="ascii-propulsion" class="ascii-section state-progress">       |  ┌─────────┐  |
+       |  │ ENGINE  │  |
+       |  │ 156 kN  │  |
+       |  └─────────┘  |
+       |               |
+       |_______________|</span>
+<span id="ascii-fueltank" class="ascii-section state-complete">      /                 \
+     / [LOX]  │  [RP-1]  \
+    /────────────────────\/</span>
+<span id="ascii-nozzle" class="ascii-section state-progress">          │   │   │
+          │   │   │
+         /│   │   │\
+        / │   │   │ \
+       /──│───│───│──\</span>
+<span id="ascii-exhaust-art" style="color:#ffab0060; animation: pulse-amber 1.5s ease-in-out infinite;">        ░░░ ░░░ ░░░
+         ░░░░░░░░░
+          ░░░░░░░</span>
 
-            <!-- Grid dots -->
-            <g opacity="0.2">
-              <line x1="20" y1="0" x2="20" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="60" y1="0" x2="60" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="100" y1="0" x2="100" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="140" y1="0" x2="140" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="180" y1="0" x2="180" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="220" y1="0" x2="220" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="260" y1="0" x2="260" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="300" y1="0" x2="300" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="340" y1="0" x2="340" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="0" y1="40" x2="380" y2="40" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="0" y1="80" x2="380" y2="80" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="0" y1="120" x2="380" y2="120" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="0" y1="160" x2="380" y2="160" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="0" y1="200" x2="380" y2="200" stroke="#1a5c34" stroke-width="0.3"/>
-              <line x1="0" y1="240" x2="380" y2="240" stroke="#1a5c34" stroke-width="0.3"/>
-            </g>
-
-            <!-- ========================
-                 ROCKET BODY (centered at x=155, total height ~250px)
-            ======================== -->
-
-            <!-- PAYLOAD FAIRING (top, Stage 2 nose cone) — COMPLETE -->
-            <!-- Fairing cone shape -->
-            <polygon points="155,14 135,46 175,46" class="svg-section-complete svg-highlight" id="svg-fairing"/>
-            <rect x="135" y="46" width="40" height="18" class="svg-section-complete svg-highlight" id="svg-fairing2"/>
-            <!-- Fairing outline -->
-            <polygon points="155,14 135,46 135,64 175,64 175,46" fill="none" stroke="#00e676" stroke-width="0.8"/>
-            <!-- Star/payload icon inside fairing -->
-            <text x="155" y="42" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#00e676" opacity="0.7">PL</text>
-
-            <!-- STAGE 2 body -->
-            <rect x="140" y="64" width="30" height="38" class="svg-section-pending svg-highlight" id="svg-stage2"/>
-            <rect x="140" y="64" width="30" height="38" fill="none" stroke="#1a5c34" stroke-width="0.8"/>
-            <text x="155" y="86" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#1a5c34">S2</text>
-            <!-- Stage 2 propellant mini bars -->
-            <rect x="144" y="70" width="8" height="3" fill="#1a5c34" opacity="0.5" rx="0"/>
-            <rect x="153" y="70" width="8" height="3" fill="#1a5c34" opacity="0.5" rx="0"/>
-            <text x="148" y="78" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="5" fill="#1a5c34">LOX</text>
-            <text x="157" y="78" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="5" fill="#1a5c34">RP1</text>
-
-            <!-- Stage 2 engine nozzle (small) -->
-            <polygon points="147,102 163,102 160,112 150,112" class="svg-section-pending" id="svg-s2-engine"/>
-            <polygon points="147,102 163,102 160,112 150,112" fill="none" stroke="#1a5c34" stroke-width="0.7"/>
-
-            <!-- INTERSTAGE — COMPLETE -->
-            <rect x="133" y="114" width="44" height="12" class="svg-section-complete svg-highlight" id="svg-interstage"/>
-            <rect x="133" y="114" width="44" height="12" fill="none" stroke="#00e676" stroke-width="0.8"/>
-            <!-- Hatch pattern on interstage -->
-            <rect x="133" y="114" width="44" height="12" fill="url(#hatch)" opacity="0.4"/>
-            <text x="155" y="123" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00e676">INTERSTAGE</text>
-
-            <!-- STAGE 1 LOX TANK — COMPLETE -->
-            <rect x="130" y="126" width="50" height="50" class="svg-section-complete svg-highlight" id="svg-lox"/>
-            <rect x="130" y="126" width="50" height="50" fill="none" stroke="#00e676" stroke-width="0.8"/>
-            <!-- LOX fill level (full) -->
-            <rect x="132" y="128" width="46" height="46" fill="#00e67610"/>
-            <rect x="132" y="128" width="46" height="46" fill="#00e67618"/>
-            <text x="155" y="148" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#00e676">LOX</text>
-            <text x="155" y="158" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00994d">180L</text>
-            <!-- Fill level line -->
-            <line x1="132" y1="172" x2="178" y2="172" stroke="#00e676" stroke-width="0.5" opacity="0.4"/>
-
-            <!-- STAGE 1 RP-1 TANK — COMPLETE -->
-            <rect x="130" y="176" width="50" height="36" class="svg-section-complete svg-highlight" id="svg-rp1"/>
-            <rect x="130" y="176" width="50" height="36" fill="none" stroke="#00e676" stroke-width="0.8"/>
-            <rect x="132" y="178" width="46" height="32" fill="#00e67610"/>
-            <text x="155" y="194" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#00e676">RP-1</text>
-            <text x="155" y="204" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00994d">120L</text>
-
-            <!-- ENGINE ASSEMBLY — IN PROGRESS (AMBER) -->
-            <polygon points="130,212 180,212 188,228 122,228" class="svg-section-progress svg-highlight" id="svg-engine"/>
-            <polygon points="130,212 180,212 188,228 122,228" fill="none" stroke="#ffab00" stroke-width="0.8"/>
-            <!-- Nozzle extension -->
-            <polygon points="140,228 170,228 165,248 145,248" class="svg-section-progress"/>
-            <polygon points="140,228 170,228 165,248 145,248" fill="none" stroke="#ffab00" stroke-width="0.7"/>
-            <!-- Engine label -->
-            <text x="155" y="222" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#ffab00">ENGINE</text>
-            <!-- Turbopump indicators -->
-            <circle cx="140" cy="220" r="3" fill="none" stroke="#ffab00" stroke-width="0.6"/>
-            <circle cx="170" cy="220" r="3" fill="none" stroke="#ffab00" stroke-width="0.6"/>
-
-            <!-- Exhaust flame (animated) -->
-            <g id="exhaust" opacity="0.3">
-              <ellipse cx="155" cy="256" rx="8" ry="6" fill="#ffab00"/>
-              <ellipse cx="155" cy="262" rx="5" ry="4" fill="#ff6d00" opacity="0.7"/>
-            </g>
-
-            <!-- ======================
-                 FINS
-            ====================== -->
-            <polygon points="122,228 110,248 130,236" fill="#00e67615" stroke="#00e676" stroke-width="0.6"/>
-            <polygon points="188,228 200,248 180,236" fill="#00e67615" stroke="#00e676" stroke-width="0.6"/>
-
-            <!-- ======================
-                 CALLOUT LINES (right side labels)
-            ====================== -->
-            <!-- Fairing callout -->
-            <line x1="175" y1="30" x2="215" y2="22" class="svg-label-line"/>
-            <text x="218" y="25" class="svg-section-label">PAYLOAD / FAIRING</text>
-
-            <!-- Stage 2 callout -->
-            <line x1="170" y1="82" x2="215" y2="74" class="svg-label-line"/>
-            <text x="218" y="77" class="svg-section-label">STAGE 2 (대기)</text>
-
-            <!-- Interstage callout -->
-            <line x1="177" y1="120" x2="215" y2="115" class="svg-label-line"/>
-            <text x="218" y="118" class="svg-section-label">INTERSTAGE ✓</text>
-
-            <!-- LOX callout -->
-            <line x1="180" y1="151" x2="215" y2="148" class="svg-label-line"/>
-            <text x="218" y="151" class="svg-section-label">LOX TANK ✓</text>
-
-            <!-- RP-1 callout -->
-            <line x1="180" y1="194" x2="215" y2="191" class="svg-label-line"/>
-            <text x="218" y="194" class="svg-section-label">RP-1 TANK ✓</text>
-
-            <!-- Engine callout (amber) -->
-            <line x1="188" y1="220" x2="215" y2="225" class="svg-label-line" stroke="#ffab00"/>
-            <text x="218" y="228" class="svg-section-label" fill="#ffab00">ENGINE ▶57%</text>
-
-            <!-- ======================
-                 LEFT SIDE LABELS (dimensions)
-            ====================== -->
-            <!-- Height dimension line -->
-            <line x1="118" y1="14" x2="118" y2="248" stroke="#0a2e14" stroke-width="0.5"/>
-            <line x1="114" y1="14" x2="122" y2="14" stroke="#0a2e14" stroke-width="0.5"/>
-            <line x1="114" y1="248" x2="122" y2="248" stroke="#0a2e14" stroke-width="0.5"/>
-            <text x="105" y="135" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14" transform="rotate(-90,105,135)">~8.4m EST</text>
-
-            <!-- Width dimension for S1 -->
-            <line x1="130" y1="270" x2="180" y2="270" stroke="#0a2e14" stroke-width="0.5"/>
-            <line x1="130" y1="267" x2="130" y2="273" stroke="#0a2e14" stroke-width="0.5"/>
-            <line x1="180" y1="267" x2="180" y2="273" stroke="#0a2e14" stroke-width="0.5"/>
-            <text x="155" y="279" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14">0.4m Ø</text>
-
-            <!-- Title bar -->
-            <text x="8" y="14" font-family="Share Tech Mono,monospace" font-size="8" fill="#1a5c34" letter-spacing="1">BETA mk.2 — NANO CLASS — 2STAGE</text>
-            <text x="8" y="24" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14" letter-spacing="0.5">REV.C — 조립 57% — D+54</text>
-
-            <!-- Scale bar -->
-            <line x1="8" y1="270" x2="58" y2="270" stroke="#0a2e14" stroke-width="0.8"/>
-            <line x1="8" y1="267" x2="8" y2="273" stroke="#0a2e14" stroke-width="0.8"/>
-            <line x1="58" y1="267" x2="58" y2="273" stroke="#0a2e14" stroke-width="0.8"/>
-            <text x="33" y="279" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14">1m</text>
-
-          </svg>
+<span style="color:#0a2e14; font-size:9px;">◄──── ~8.4m EST ────► &nbsp; Ø 0.4m &nbsp; [1m scale]</span></pre>
+            <!-- Annotation overlays (shown on BOM hover) -->
+            <div id="annot-payload"  class="ascii-annotation" style="top:24px;">◄ PAYLOAD FAIRING ✓</div>
+            <div id="annot-nav"      class="ascii-annotation" style="top:96px;">◄ NAV SYS [LOCKED]</div>
+            <div id="annot-avionics" class="ascii-annotation" style="top:138px;">◄ AVIONICS [LOCKED]</div>
+            <div id="annot-propulsion" class="ascii-annotation" style="top:180px;">◄ ENGINE ▶ 57%</div>
+            <div id="annot-fueltank" class="ascii-annotation" style="top:250px;">◄ FUEL TANKS ✓</div>
+            <div id="annot-nozzle"   class="ascii-annotation" style="top:294px;">◄ NOZZLE ▶ IN PROG</div>
+          </div>
         </div>
 
-        <!-- Progress Bar -->
+        <!-- ASCII Progress Display -->
         <div class="section">
-          <div class="progress-wrap">
-            <div class="progress-label">
-              <span>조립 진행률</span>
-              <span class="pct">57%</span>
-            </div>
-            <div class="progress-track">
-              <div class="progress-fill" style="width:57%;"></div>
-              <div class="progress-tick" style="left:25%;"></div>
-              <div class="progress-tick" style="left:50%;"></div>
-              <div class="progress-tick" style="left:75%;"></div>
-            </div>
-          </div>
+          <pre id="ascii-progress-display"><span class="ascii-prog-title">  ASSEMBLY PROGRESS — BETA mk.2</span>
+
+  <span class="ascii-prog-bar-done">████████████████</span><span class="ascii-prog-bar-empty">░░░░░░░░░░░</span> <span class="ascii-prog-pct">57%</span>
+
+  <span class="ascii-stage-label-done">STAGE 01: 원자재 정제    </span><span class="ascii-stage-done">[██████████]</span> <span class="ascii-stage-done">DONE</span>
+  <span class="ascii-stage-label-done">STAGE 02: 구조물 제작    </span><span class="ascii-stage-done">[██████████]</span> <span class="ascii-stage-done">DONE</span>
+  <span class="ascii-stage-label-active">STAGE 03: 추진 계통 조립 </span><span class="ascii-stage-active">[█████░░░░░]</span> <span class="ascii-stage-active">57% ← ACTIVE</span>
+  <span class="ascii-stage-label-locked">STAGE 04: 항전 탑재      </span><span class="ascii-stage-locked">[░░░░░░░░░░]</span> <span class="ascii-stage-locked">LOCKED</span>
+  <span class="ascii-stage-label-locked">STAGE 05: 연소 시험      </span><span class="ascii-stage-locked">[░░░░░░░░░░]</span> <span class="ascii-stage-locked">LOCKED</span>
+  <span class="ascii-stage-label-locked">STAGE 06: 단 통합        </span><span class="ascii-stage-locked">[░░░░░░░░░░]</span> <span class="ascii-stage-locked">LOCKED</span>
+  <span class="ascii-stage-label-locked">STAGE 07: 발사 준비      </span><span class="ascii-stage-locked">[░░░░░░░░░░]</span> <span class="ascii-stage-locked">LOCKED</span></pre>
           <div class="eta-display">
             <div>
               <div class="eta-label">완료 예정</div>
@@ -1430,6 +1443,18 @@
             </div>
           </div>
         </div>
+
+        <!-- Assembly Tools ASCII Art -->
+        <div id="tools-panel"><span class="tools-title">  ASSEMBLY TOOLS — SECTOR 7</span>
+
+<span class="tools-art">  [TORQUE   ]  [WELDING  ]  [PRESSURE ]
+  [ WRENCH  ]  [  ARC    ]  [  TEST   ]
+  |         |   ) ))) )    ┌────────┐
+  |  ═══════|   ) ))) )    │  ↑ ↑ ↑ │
+  |    ───  |              │ gauge  │
+  |_________|              └────────┘</span>
+
+<span class="tools-calibrated">  LAST CALIBRATED: D+51 14:22 &nbsp;|&nbsp; TORQUE: 42 N·m &nbsp;|&nbsp; ARC: 6000°C &nbsp;|&nbsp; PRESS: 3.2 bar</span></div>
 
         <!-- BOM Table -->
         <div class="section" style="padding-bottom:0;">
@@ -1445,7 +1470,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr class="tooltip-host" data-svg="svg-fairing,svg-fairing2" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="tooltip-host" data-ascii="ascii-payload" data-annot="annot-payload" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td>기체 구조 링 ×8</td>
                 <td>Al-7075</td>
                 <td>240kg</td>
@@ -1457,7 +1482,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">가공</span><span>CNC 밀링 완료</span></div>
                 </td>
               </tr>
-              <tr class="tooltip-host" data-svg="svg-lox" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="tooltip-host" data-ascii="ascii-fueltank" data-annot="annot-fueltank" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td>LOX 탱크 쉘</td>
                 <td>Al-2219</td>
                 <td>80kg</td>
@@ -1469,7 +1494,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">내압</span><span>3.2 bar</span></div>
                 </td>
               </tr>
-              <tr class="tooltip-host" data-svg="svg-rp1" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="tooltip-host" data-ascii="ascii-fueltank" data-annot="annot-fueltank" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td>RP-1 탱크 쉘</td>
                 <td>Al-2219</td>
                 <td>60kg</td>
@@ -1481,7 +1506,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">내압</span><span>2.8 bar</span></div>
                 </td>
               </tr>
-              <tr class="tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()" style="background:#0a1c00;">
+              <tr class="tooltip-host" data-ascii="ascii-propulsion,ascii-nozzle" data-annot="annot-propulsion" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()" style="background:#0a1c00;">
                 <td style="color:var(--amber);">추진 어셈블리</td>
                 <td>Inconel-718</td>
                 <td>34kg</td>
@@ -1493,7 +1518,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">예상완료</span><span>2h 14m</span></div>
                 </td>
               </tr>
-              <tr class="bom-sub tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="bom-sub tooltip-host" data-ascii="ascii-propulsion" data-annot="annot-propulsion" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td>└ 연소실</td>
                 <td>Inconel-718</td>
                 <td>18kg</td>
@@ -1504,7 +1529,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">목 직경</span><span>42mm</span></div>
                 </td>
               </tr>
-              <tr class="bom-sub tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="bom-sub tooltip-host" data-ascii="ascii-nozzle" data-annot="annot-nozzle" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td>└ 터보펌프 LOX</td>
                 <td>Ti-6Al-4V</td>
                 <td>8kg</td>
@@ -1515,7 +1540,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">RPM</span><span>36,000</span></div>
                 </td>
               </tr>
-              <tr class="bom-sub tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()" style="background:#1a040a10;">
+              <tr class="bom-sub tooltip-host" data-ascii="ascii-nozzle" data-annot="annot-nozzle" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()" style="background:#1a040a10;">
                 <td style="color:var(--red);">└ 터보펌프 RP-1</td>
                 <td>Ti-6Al-4V</td>
                 <td>8kg</td>
@@ -1526,7 +1551,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">획득</span><span>Ti 제련 필요</span></div>
                 </td>
               </tr>
-              <tr class="tooltip-host" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="tooltip-host" data-ascii="ascii-avionics" data-annot="annot-avionics" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td style="color:var(--green-mid);">항전 장비</td>
                 <td>Circuit Bd.</td>
                 <td>5ea</td>
@@ -1538,7 +1563,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">영향</span><span style="color:var(--red);">미탑재 시 실패율+40%</span></div>
                 </td>
               </tr>
-              <tr class="tooltip-host" data-svg="svg-interstage" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="tooltip-host" data-ascii="ascii-propulsion" data-annot="annot-propulsion" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td>인터스테이지</td>
                 <td>CFRP</td>
                 <td>45kg</td>
@@ -1549,7 +1574,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">강도/중량</span><span>최상</span></div>
                 </td>
               </tr>
-              <tr class="tooltip-host" data-svg="svg-fairing,svg-fairing2" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="tooltip-host" data-ascii="ascii-payload" data-annot="annot-payload" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td>페이로드 페어링</td>
                 <td>Al-7075</td>
                 <td>28kg</td>
@@ -1560,7 +1585,7 @@
                   <div class="tooltip-row"><span class="tooltip-label">분리</span><span>폭발 볼트식</span></div>
                 </td>
               </tr>
-              <tr class="tooltip-host" data-svg="svg-s2-engine,svg-stage2" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+              <tr class="tooltip-host" data-ascii="ascii-nav" data-annot="annot-nav" onmouseenter="highlightAscii(this)" onmouseleave="unhighlightAscii()">
                 <td style="color:var(--green-mid);">2단 엔진 어셈블리</td>
                 <td>Inconel-718</td>
                 <td>12kg</td>
@@ -1804,40 +1829,53 @@
   }
 
   /* ============================================
-     SVG HIGHLIGHT ON BOM HOVER
+     ASCII ROCKET HIGHLIGHT ON BOM HOVER
   ============================================ */
-  function highlightSvg(row) {
-    clearSvgHighlights();
-    const ids = row.getAttribute('data-svg');
-    if (!ids) return;
-    ids.split(',').forEach(id => {
-      const el = document.getElementById(id.trim());
-      if (el) el.classList.add('lit');
-    });
+  function highlightAscii(row) {
+    clearAsciiHighlights();
+    const ids = row.getAttribute('data-ascii');
+    const annotId = row.getAttribute('data-annot');
+    if (ids) {
+      ids.split(',').forEach(id => {
+        const el = document.getElementById(id.trim());
+        if (el) el.classList.add('lit');
+      });
+    }
+    if (annotId) {
+      const annot = document.getElementById(annotId.trim());
+      if (annot) annot.classList.add('visible');
+    }
   }
 
-  function unhighlightSvg() {
-    clearSvgHighlights();
+  function unhighlightAscii() {
+    clearAsciiHighlights();
   }
 
-  function clearSvgHighlights() {
-    document.querySelectorAll('.svg-highlight.lit').forEach(el => el.classList.remove('lit'));
+  function clearAsciiHighlights() {
+    document.querySelectorAll('.ascii-section.lit').forEach(el => el.classList.remove('lit'));
+    document.querySelectorAll('.ascii-annotation.visible').forEach(el => el.classList.remove('visible'));
   }
+
+  /* Keep old names as aliases so nothing breaks if called elsewhere */
+  var highlightSvg = highlightAscii;
+  var unhighlightSvg = unhighlightAscii;
 
   /* ============================================
-     EXHAUST ANIMATION
+     ASCII EXHAUST FLICKER ANIMATION
   ============================================ */
-  (function animateExhaust() {
-    const ex = document.getElementById('exhaust');
+  (function animateAsciiExhaust() {
+    const ex = document.getElementById('ascii-exhaust-art');
     if (!ex) return;
-    let t = 0;
+    const frames = [
+      '        ░░░ ░░░ ░░░\n         ░░░░░░░░░\n          ░░░░░░░',
+      '        ▒▒▒ ▒▒▒ ▒▒▒\n         ▒▒▒▒▒▒▒▒▒\n          ▒▒▒▒▒▒▒',
+      '        ░░░ ▒░▒ ░░░\n         ░▒░░░░▒░░\n          ░░▒░░░░',
+    ];
+    let fi = 0;
     setInterval(() => {
-      t += 0.12;
-      const opacity = 0.15 + 0.2 * Math.abs(Math.sin(t));
-      const scale = 1 + 0.15 * Math.sin(t * 1.3);
-      ex.style.opacity = opacity;
-      ex.style.transform = `scaleY(${scale})`;
-    }, 60);
+      fi = (fi + 1) % frames.length;
+      ex.textContent = frames[fi];
+    }, 200);
   })();
 
   /* ============================================

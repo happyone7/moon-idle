@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MOON IDLE — 생산 허브 v7a</title>
+<title>MOON IDLE — 생산 허브 v7a (Graphic Idle)</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 /* =============================================
@@ -21,19 +21,20 @@
   --green:       #00e676;
   --green-dim:   #1a5c34;
   --green-mid:   #00994d;
-  --green-dark:  #013a1a;
   --amber:       #ffab00;
-  --amber-dim:   #5c3d00;
   --red:         #ff1744;
+  --cyan:        #00e5ff;
+  --cyan-dim:    #006070;
+  --amber-dim:   #5c3d00;
   --red-dim:     #5c0011;
-  --locked-fg:   #2a4030;
-  --locked-bg:   #010f05;
+  --locked-fg:   #1a3020;
+  --locked-bg:   #010b03;
   --font:        'Share Tech Mono', monospace;
   --border:      1px solid #1a5c34;
-  --border-dim:  1px solid #0d3020;
   --glow:        0 0 6px #00e67680;
   --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
   --glow-amber:  0 0 8px #ffab0080;
+  --glow-cyan:   0 0 8px #00e5ff60;
 }
 
 html, body {
@@ -42,13 +43,13 @@ html, body {
   background: var(--bg);
   color: var(--green);
   font-family: var(--font);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.4;
   overflow: hidden;
 }
 
 /* =============================================
-   CRT EFFECTS
+   CRT OVERLAYS
 ============================================= */
 body::before {
   content: '';
@@ -58,8 +59,8 @@ body::before {
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 0, 0, 0.15) 2px,
-    rgba(0, 0, 0, 0.15) 4px
+    rgba(0,0,0,0.13) 2px,
+    rgba(0,0,0,0.13) 4px
   );
   pointer-events: none;
   z-index: 9999;
@@ -69,1988 +70,1936 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0,0,0,0.82) 100%);
   pointer-events: none;
   z-index: 9998;
 }
 
 @keyframes crt-flicker {
   0%   { opacity: 1; }
-  91%  { opacity: 1; }
-  92%  { opacity: 0.88; }
-  93%  { opacity: 1; }
-  97%  { opacity: 0.93; }
-  98%  { opacity: 1; }
+  92%  { opacity: 1; }
+  93%  { opacity: 0.91; }
+  94%  { opacity: 1; }
+  97%  { opacity: 1; }
+  98%  { opacity: 0.94; }
   100% { opacity: 1; }
 }
 
-@keyframes blink {
-  0%, 49%  { opacity: 1; }
-  50%, 100% { opacity: 0; }
-}
-
-@keyframes pulse-green {
-  0%, 100% { box-shadow: 0 0 4px #00e67660; }
-  50%       { box-shadow: 0 0 10px #00e676, 0 0 20px #00e67640; }
-}
-
-@keyframes pulse-amber {
-  0%, 100% { box-shadow: 0 0 4px #ffab0060; }
-  50%       { box-shadow: 0 0 10px #ffab00, 0 0 20px #ffab0040; }
-}
-
-@keyframes bar-fill {
-  from { width: 0%; }
-}
-
-@keyframes scan-line {
-  0%   { top: -10%; }
-  100% { top: 110%; }
-}
-
-.crt-scan {
-  position: fixed;
-  left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(transparent, rgba(0,230,118,0.06), transparent);
-  pointer-events: none;
-  z-index: 9997;
-  animation: scan-line 8s linear infinite;
-}
-
 /* =============================================
-   LAYOUT SHELL
+   LAYOUT SKELETON
 ============================================= */
-#app {
+.app {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  animation: crt-flicker 12s infinite;
+  animation: crt-flicker 8s infinite;
 }
 
-/* =============================================
-   TOP BAR
-============================================= */
-#topbar {
-  flex-shrink: 0;
-  height: 40px;
-  background: var(--panel-bg);
-  border-bottom: 2px solid var(--green-dim);
+/* TOP BAR */
+.topbar {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  gap: 0;
-}
-
-#topbar .title {
-  font-size: 15px;
-  color: var(--green);
-  text-shadow: var(--glow-strong);
-  letter-spacing: 2px;
-  white-space: nowrap;
-  margin-right: 20px;
-}
-
-#topbar .sep {
-  color: var(--green-dim);
-  margin: 0 10px;
-}
-
-#topbar .era-label {
-  color: var(--amber);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-#topbar .era-bar-wrap {
-  flex: 1;
-  margin: 0 14px;
-  min-width: 80px;
-  max-width: 200px;
-}
-
-#topbar .era-bar-track {
-  height: 6px;
-  background: var(--green-dark);
-  border: 1px solid var(--green-dim);
-  position: relative;
-  overflow: hidden;
-}
-
-#topbar .era-bar-fill {
-  height: 100%;
-  width: 34%;
-  background: linear-gradient(90deg, var(--amber), #ffd740);
-  box-shadow: 0 0 8px var(--amber);
-  animation: bar-fill 1.2s ease-out;
-}
-
-#topbar .era-pct {
-  font-size: 10px;
-  color: var(--amber);
-  margin-left: 5px;
-}
-
-#topbar .datetime {
-  font-size: 11px;
-  color: var(--green-mid);
-  white-space: nowrap;
-  margin-left: auto;
-  margin-right: 16px;
-}
-
-#topbar .rep {
-  font-size: 13px;
-  white-space: nowrap;
-  color: var(--amber);
-}
-
-#topbar .rep span {
-  color: var(--amber);
-  text-shadow: var(--glow-amber);
-}
-
-#topbar .rep .empty {
-  color: var(--green-dim);
-  text-shadow: none;
-}
-
-/* =============================================
-   MAIN TABS
-============================================= */
-#tabbar {
-  flex-shrink: 0;
-  height: 32px;
-  background: var(--bg);
+  justify-content: space-between;
+  padding: 0 14px;
+  height: 34px;
+  min-height: 34px;
   border-bottom: 1px solid var(--green-dim);
-  display: flex;
-  align-items: stretch;
+  background: var(--panel-bg);
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
 }
 
-.tab-btn {
-  padding: 0 18px;
-  font-family: var(--font);
-  font-size: 11px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  border: none;
-  border-right: 1px solid var(--green-dim);
-  background: transparent;
+.topbar-title {
+  color: var(--green);
+  font-size: 13px;
+  text-shadow: var(--glow);
+}
+
+.topbar-title span {
+  color: var(--amber);
+}
+
+.topbar-center {
   color: var(--green-dim);
-  transition: color 0.15s, background 0.15s;
+  font-size: 12px;
+}
+
+.topbar-right {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 18px;
+  font-size: 11px;
+  color: var(--green-mid);
 }
 
-.tab-btn:hover {
-  color: var(--green);
-  background: var(--green-dark);
-}
+.topbar-right .ok   { color: var(--green); }
+.topbar-right .warn { color: var(--amber); }
 
-.tab-btn.active {
-  background: var(--green-dim);
-  color: var(--bg);
-  font-weight: bold;
-}
-
-.tab-btn .tab-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
-}
-
-.tab-btn.active .tab-dot {
-  animation: pulse-green 1.5s infinite;
-  background: var(--bg);
-  box-shadow: 0 0 6px var(--bg);
-}
-
-/* =============================================
-   CONTENT AREA
-============================================= */
-#content-area {
+/* MAIN CONTENT */
+.main {
+  display: flex;
   flex: 1;
   overflow: hidden;
-  display: flex;
-}
-
-.tab-panel {
-  display: none;
-  flex: 1;
-  overflow: hidden;
-}
-
-.tab-panel.active {
-  display: flex;
-}
-
-/* =============================================
-   THREE-COLUMN LAYOUT (Production Tab)
-============================================= */
-#production-tab {
-  display: none;
-  flex-direction: row;
   gap: 0;
-  flex: 1;
-  overflow: hidden;
 }
-
-#production-tab.active {
-  display: flex;
-}
-
-/* LEFT COLUMN */
-#col-left {
-  width: 25%;
-  min-width: 220px;
-  flex-shrink: 0;
-  background: var(--panel-bg);
-  border-right: 2px solid var(--green-dim);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-#col-left::-webkit-scrollbar { width: 4px; }
-#col-left::-webkit-scrollbar-track { background: var(--bg); }
-#col-left::-webkit-scrollbar-thumb { background: var(--green-dim); }
-
-/* CENTER COLUMN */
-#col-center {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--bg);
-}
-
-#col-center::-webkit-scrollbar { width: 4px; }
-#col-center::-webkit-scrollbar-track { background: var(--bg); }
-#col-center::-webkit-scrollbar-thumb { background: var(--green-dim); }
-
-/* RIGHT COLUMN */
-#col-right {
-  width: 25%;
-  min-width: 220px;
-  flex-shrink: 0;
-  background: var(--panel-bg);
-  border-left: 2px solid var(--green-dim);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-#col-right::-webkit-scrollbar { width: 4px; }
-#col-right::-webkit-scrollbar-track { background: var(--bg); }
-#col-right::-webkit-scrollbar-thumb { background: var(--green-dim); }
 
 /* =============================================
-   SECTION HEADERS
+   LEFT PANEL — Resource Dashboard
 ============================================= */
-.section-header {
-  padding: 6px 10px;
-  background: var(--green-dark);
-  border-bottom: var(--border);
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--green);
-  text-transform: uppercase;
+.panel-left {
+  width: 25%;
+  min-width: 200px;
+  max-width: 280px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex-direction: column;
+  border-right: 1px solid var(--green-dim);
+  background: var(--panel-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0 0;
 }
 
-.section-header::before {
-  content: '▶';
-  color: var(--green-mid);
-  font-size: 8px;
-}
+.panel-left::-webkit-scrollbar { width: 4px; }
+.panel-left::-webkit-scrollbar-track { background: var(--bg); }
+.panel-left::-webkit-scrollbar-thumb { background: var(--green-dim); }
 
-.section-header .count {
-  margin-left: auto;
-  color: var(--green-mid);
+.panel-label {
   font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--green-dim);
+  padding: 0 10px 4px;
+  border-bottom: 1px solid var(--green-dim);
+  margin-bottom: 6px;
 }
+
+/* Resource Tier Block */
+.tier-block {
+  margin: 0 8px 8px;
+  border: 1px solid;
+  padding: 6px 8px;
+}
+
+.tier-block.t1 { border-color: var(--green-dim); }
+.tier-block.t2 { border-color: var(--amber-dim); }
+.tier-block.t3 { border-color: var(--cyan-dim); }
+.tier-block.t4 { border-color: var(--red-dim); }
 
 .tier-header {
-  padding: 4px 10px;
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: var(--green-mid);
-  border-bottom: var(--border-dim);
-  background: var(--bg);
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tier-header::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--green-dim);
-  opacity: 0.4;
-}
-
-/* =============================================
-   RESOURCE ROWS (LEFT COLUMN)
-============================================= */
-.resource-row {
-  display: flex;
-  flex-direction: column;
-  padding: 5px 10px;
-  border-bottom: var(--border-dim);
-  gap: 3px;
-  transition: background 0.15s;
-}
-
-.resource-row:hover {
-  background: var(--green-dark);
-}
-
-.resource-row .r-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.resource-row .r-code {
-  font-size: 9px;
-  color: var(--green-dim);
-  letter-spacing: 1px;
-  min-width: 32px;
-}
-
-.resource-row .r-name {
-  flex: 1;
-  font-size: 11px;
-  color: var(--green);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.resource-row .r-status {
-  font-size: 9px;
-  padding: 1px 5px;
-  border: 1px solid currentColor;
-}
-
-.resource-row .r-status.ok   { color: var(--green); }
-.resource-row .r-status.warn { color: var(--amber); }
-.resource-row .r-status.crit { color: var(--red); animation: blink 1s infinite; }
-
-.resource-row .r-amounts {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-}
-
-.resource-row .r-current { color: var(--green); }
-.resource-row .r-max { color: var(--green-dim); }
-.resource-row .r-rate {
-  margin-left: auto;
   font-size: 10px;
-  color: var(--green-mid);
-}
-
-.resource-row .r-rate.pos { color: var(--green); }
-.resource-row .r-rate.warn { color: var(--amber); }
-
-.mini-bar {
-  height: 3px;
-  background: var(--green-dark);
-  border: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.mini-bar-fill {
-  height: 100%;
-  background: var(--green-mid);
-  transition: width 1s linear;
-}
-
-.mini-bar-fill.warn { background: var(--amber); }
-.mini-bar-fill.crit { background: var(--red); }
-
-/* Special resources */
-.resource-special {
-  padding: 5px 10px;
-  border-bottom: var(--border-dim);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.resource-special .rs-label {
-  flex: 1;
-  font-size: 11px;
-  color: var(--amber);
-}
-
-.resource-special .rs-val {
-  font-size: 12px;
-  color: var(--amber);
-  text-shadow: var(--glow-amber);
-}
-
-/* =============================================
-   FACILITY GRID (CENTER COLUMN)
-============================================= */
-.facility-section-header {
-  padding: 8px 12px;
-  background: var(--panel-bg);
-  border-bottom: 2px solid var(--green-dim);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.facility-section-header .fsh-title {
-  font-size: 12px;
-  color: var(--green);
-  letter-spacing: 1px;
-}
-
-.facility-section-header .fsh-count {
-  font-size: 10px;
-  color: var(--green-mid);
-}
-
-.facility-section-header .fsh-eff {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--amber);
-}
-
-.facility-category {
-  margin-bottom: 0;
-}
-
-.fac-cat-header {
-  padding: 5px 12px;
-  background: #010f07;
-  border-bottom: var(--border-dim);
-  border-top: var(--border-dim);
-  font-size: 9px;
-  letter-spacing: 3px;
-  color: var(--green-mid);
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 2px;
-}
-
-.fac-cat-header .cat-icon {
-  font-size: 10px;
-}
-
-.fac-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background: var(--green-dark);
-  padding: 0;
-}
-
-/* Facility Card */
-.fac-card {
-  background: var(--panel-bg);
-  padding: 8px 10px;
-  border: none;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.fac-card:hover {
-  background: #031808;
-}
-
-.fac-card.locked {
-  background: var(--locked-bg);
-  cursor: default;
-}
-
-.fac-card:hover .fac-tooltip {
-  display: block;
-}
-
-.fac-card-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
-.status-dot.on    { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse-green 2s infinite; }
-.status-dot.idle  { background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: pulse-amber 2s infinite; }
-.status-dot.ready { background: #00bcd4; box-shadow: 0 0 6px #00bcd4; }
-.status-dot.off   { background: var(--green-dim); }
-.status-dot.locked-dot { background: var(--locked-fg); }
-
-.fac-name {
-  font-size: 11px;
-  color: var(--green);
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.fac-name.locked { color: var(--locked-fg); }
-
-.fac-level {
-  font-size: 10px;
-  padding: 0 5px;
-  background: var(--green-dark);
-  color: var(--green-mid);
-  border: 1px solid var(--green-dim);
-  flex-shrink: 0;
-}
-
-.fac-level.locked { color: var(--locked-fg); background: transparent; border-color: var(--locked-fg); }
-
-.fac-io {
-  font-size: 10px;
-  color: var(--green-dim);
-  line-height: 1.6;
-  min-height: 28px;
-}
-
-.fac-io .io-line { display: flex; gap: 4px; }
-.fac-io .io-label { color: #2a6040; min-width: 40px; }
-.fac-io .io-val   { color: var(--green-mid); }
-
-.fac-io.locked-text { color: var(--locked-fg); }
-
-.fac-lock-overlay {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10px;
-  color: var(--locked-fg);
-  margin-top: 4px;
-}
-
-.fac-upgrade-btn {
-  margin-top: 6px;
-  width: 100%;
-  padding: 4px 6px;
-  font-family: var(--font);
-  font-size: 10px;
-  letter-spacing: 1px;
-  background: var(--green-dark);
-  color: var(--green-mid);
-  border: 1px solid var(--green-dim);
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.15s;
-}
-
-.fac-upgrade-btn:hover {
-  background: var(--green-dim);
-  color: var(--bg);
-  box-shadow: var(--glow);
-}
-
-.fac-upgrade-btn:disabled,
-.fac-upgrade-btn.locked-btn {
-  color: var(--locked-fg);
-  border-color: var(--locked-fg);
-  background: transparent;
-  cursor: not-allowed;
-}
-
-/* Tooltip */
-.fac-tooltip {
-  display: none;
-  position: absolute;
-  z-index: 200;
-  bottom: calc(100% + 4px);
-  left: 0;
-  min-width: 200px;
-  background: #010f07;
-  border: 1px solid var(--green-mid);
-  padding: 8px 10px;
-  font-size: 11px;
-  color: var(--green);
-  pointer-events: none;
-  box-shadow: 0 0 20px rgba(0,230,118,0.2);
-}
-
-.fac-tooltip h4 {
-  font-size: 12px;
-  margin-bottom: 6px;
-  border-bottom: 1px solid var(--green-dim);
-  padding-bottom: 4px;
-}
-
-.fac-tooltip .tt-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 2px;
-}
-
-.fac-tooltip .tt-label { color: var(--green-dim); }
-.fac-tooltip .tt-val   { color: var(--green); }
-
-/* =============================================
-   RIGHT COLUMN — SUMMARY
-============================================= */
-.right-section {
-  padding: 0;
-}
-
-.right-section-title {
-  padding: 6px 10px;
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--green);
-  border-bottom: var(--border);
-  background: var(--green-dark);
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.right-section-title::before { content: '▶'; color: var(--green-mid); font-size: 8px; }
-
-/* Auto-managers */
-.manager-card {
-  padding: 8px 10px;
-  border-bottom: var(--border-dim);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  transition: background 0.15s;
-}
-
-.manager-card:hover { background: var(--green-dark); }
-
-.manager-card .mc-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.manager-card .mc-name {
-  flex: 1;
-  font-size: 11px;
-  color: var(--green);
-}
-
-.manager-card .mc-badge {
-  font-size: 9px;
-  padding: 1px 5px;
-  border: 1px solid var(--green);
-  color: var(--green);
-  letter-spacing: 1px;
-}
-
-.manager-card .mc-badge.inactive {
-  border-color: var(--amber);
-  color: var(--amber);
-}
-
-.manager-card .mc-desc {
-  font-size: 10px;
-  color: var(--green-mid);
-}
-
-.manager-card .mc-lv {
-  font-size: 10px;
-  color: var(--green-dim);
-}
-
-.hire-btn {
-  margin-top: 4px;
-  padding: 5px 10px;
-  font-family: var(--font);
-  font-size: 10px;
-  letter-spacing: 1px;
-  background: transparent;
-  color: var(--amber);
-  border: 1px solid var(--amber);
-  cursor: pointer;
-  width: 100%;
-  transition: all 0.15s;
-}
-
-.hire-btn:hover {
-  background: var(--amber-dim);
-  box-shadow: var(--glow-amber);
-}
-
-/* Production summary table */
-.prod-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 10px;
-}
-
-.prod-table tr {
-  border-bottom: var(--border-dim);
-}
-
-.prod-table tr:hover td { background: var(--green-dark); }
-
-.prod-table td {
-  padding: 4px 10px;
-}
-
-.prod-table .pt-name { color: var(--green-mid); }
-.prod-table .pt-rate {
-  text-align: right;
-  color: var(--green);
-}
-.prod-table .pt-rate.warn { color: var(--amber); }
-
-/* Efficiency gauge */
-.eff-wrap {
-  padding: 10px;
-}
-
-.eff-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
+  letter-spacing: 0.1em;
   margin-bottom: 5px;
 }
 
-.eff-label .eff-name { color: var(--green-mid); }
-.eff-label .eff-pct  { color: var(--green); text-shadow: var(--glow); }
+.tier-block.t1 .tier-header { color: var(--green); }
+.tier-block.t2 .tier-header { color: var(--amber); }
+.tier-block.t3 .tier-header { color: var(--cyan); }
+.tier-block.t4 .tier-header { color: var(--red); }
 
-.eff-track {
-  height: 8px;
-  background: var(--green-dark);
-  border: 1px solid var(--green-dim);
-  overflow: hidden;
-}
-
-.eff-fill {
-  height: 100%;
-  width: 73%;
-  background: linear-gradient(90deg, var(--green-mid), var(--green));
-  box-shadow: 0 0 8px var(--green);
-  animation: bar-fill 1.5s ease-out;
-}
-
-/* Offline reward */
-.offline-box {
-  margin: 8px 10px;
-  padding: 8px;
-  border: 1px solid var(--amber-dim);
-  background: #0d0800;
-}
-
-.offline-box .ob-title {
-  font-size: 10px;
-  color: var(--amber);
-  margin-bottom: 4px;
-  letter-spacing: 1px;
-}
-
-.offline-box .ob-row {
-  font-size: 11px;
-  color: var(--green-mid);
-  margin-bottom: 2px;
-}
-
-.offline-box .ob-val {
-  color: var(--amber);
-}
-
-.collect-btn {
-  margin-top: 6px;
-  width: 100%;
-  padding: 5px;
-  font-family: var(--font);
-  font-size: 10px;
-  letter-spacing: 1px;
-  background: var(--amber-dim);
-  color: var(--amber);
-  border: 1px solid var(--amber);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.collect-btn:hover {
-  background: #3d2600;
-  box-shadow: var(--glow-amber);
-}
-
-/* =============================================
-   BOTTOM BAR
-============================================= */
-#bottombar {
-  flex-shrink: 0;
-  height: 36px;
-  background: var(--panel-bg);
-  border-top: 2px solid var(--green-dim);
+.res-row {
   display: flex;
   align-items: center;
-  padding: 0 12px;
-  gap: 16px;
+  gap: 5px;
+  margin-bottom: 4px;
 }
 
-#bottombar .mission-timer {
-  font-size: 13px;
-  color: var(--green);
-  letter-spacing: 2px;
-  white-space: nowrap;
-}
-
-#bottombar .mission-timer .d-prefix {
-  color: var(--green-dim);
+.res-name {
+  width: 75px;
   font-size: 10px;
-}
-
-#bottombar .launch-btn {
-  padding: 0 18px;
-  height: 24px;
-  font-family: var(--font);
-  font-size: 11px;
-  letter-spacing: 2px;
-  background: var(--green-dark);
-  color: var(--green);
-  border: 1px solid var(--green);
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-
-#bottombar .launch-btn:hover {
-  background: var(--green-dim);
-  color: var(--bg);
-  box-shadow: var(--glow-strong);
-}
-
-#bottombar .notif-strip {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.notif-line {
-  font-size: 10px;
-  color: var(--green-dim);
+  color: #88aa88;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.notif-line .notif-time { color: #1a5c34; margin-right: 6px; }
-.notif-line.notif-warn .notif-body { color: var(--amber); }
-.notif-line.notif-ok   .notif-body { color: var(--green-mid); }
+.res-bar-bg {
+  flex: 1;
+  height: 5px;
+  background: #020d04;
+  border: 1px solid #0d3020;
+  position: relative;
+  overflow: hidden;
+}
 
-#bottombar .conn-status {
-  font-size: 10px;
-  color: var(--green);
-  letter-spacing: 1px;
+.res-bar-fill {
+  height: 100%;
+  position: relative;
+}
+
+@keyframes bar-tick {
+  0%   { width: var(--from); }
+  100% { width: var(--to); }
+}
+
+.res-bar-fill.c-green  { background: var(--green); box-shadow: 0 0 4px #00e67660; }
+.res-bar-fill.c-amber  { background: var(--amber); box-shadow: 0 0 4px #ffab0060; }
+.res-bar-fill.c-cyan   { background: var(--cyan);  box-shadow: 0 0 4px #00e5ff50; }
+.res-bar-fill.c-red    { background: var(--red);   box-shadow: 0 0 4px #ff174450; }
+
+.res-val {
+  width: 36px;
+  font-size: 9px;
+  text-align: right;
   white-space: nowrap;
+}
+
+.res-rate {
+  font-size: 9px;
+  color: var(--green-dim);
+  width: 44px;
+  text-align: right;
+}
+
+.tier-block.t1 .res-val { color: var(--green-mid); }
+.tier-block.t2 .res-val { color: var(--amber); }
+.tier-block.t3 .res-val { color: var(--cyan); }
+.tier-block.t4 .res-val { color: var(--red); }
+
+/* Efficiency bar at bottom of left panel */
+.eff-block {
+  margin: 4px 8px 8px;
+  border: 1px solid var(--green-dim);
+  padding: 6px 8px;
+}
+
+.eff-label {
+  font-size: 10px;
+  color: var(--green-dim);
+  margin-bottom: 4px;
+}
+
+.eff-bar-bg {
+  height: 8px;
+  background: #010800;
+  border: 1px solid var(--green-dim);
+  overflow: hidden;
+}
+
+.eff-bar-fill {
+  height: 100%;
+  width: 73%;
+  background: linear-gradient(90deg, var(--green-mid), var(--green));
+  box-shadow: var(--glow);
+  position: relative;
+}
+
+.eff-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: #fff;
+  opacity: 0.7;
+  animation: eff-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes eff-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.9; }
+}
+
+.eff-pct {
+  font-size: 11px;
+  color: var(--green);
+  text-shadow: var(--glow);
+  margin-top: 3px;
+}
+
+/* =============================================
+   CENTER — WORLD VIEW
+============================================= */
+.panel-center {
+  flex: 1;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.world-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--green-dim);
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--green-dim);
+  background: var(--panel-bg);
+  flex-shrink: 0;
+}
+
+.world-view {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #000800 0%, #010d02 60%, #010800 100%);
+}
+
+/* Stars */
+.stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  background: var(--green);
+  opacity: 0.3;
+  border-radius: 50%;
+}
+
+.star.bright {
+  width: 2px;
+  height: 2px;
+  opacity: 0.5;
+  box-shadow: 0 0 3px #00e676;
+}
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.55; }
+}
+
+/* Subtle horizon grid on ground */
+.ground {
+  position: absolute;
+  bottom: 60px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--green-dim);
+  box-shadow: 0 0 6px #00e67640;
+  z-index: 2;
+}
+
+.ground-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(180deg, #020d04 0%, #010800 100%);
+  border-top: 1px solid var(--green-dim);
+  z-index: 1;
+}
+
+/* Ground grid lines */
+.ground-grid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-image:
+    linear-gradient(90deg, #00e67610 1px, transparent 1px),
+    linear-gradient(0deg, #00e67610 1px, transparent 1px);
+  background-size: 40px 20px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* =============================================
+   BUILDINGS
+============================================= */
+.buildings {
+  position: absolute;
+  bottom: 61px;   /* sit on the ground line */
+  left: 0;
+  right: 0;
+  height: calc(100% - 61px);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 16px;
+  gap: 18px;
+  z-index: 5;
+}
+
+.building-slot {
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.building-label {
+  font-size: 9px;
+  color: var(--green-mid);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 4px #00e67670;
+}
+
+.building-label.locked-text {
+  color: var(--locked-fg);
+  text-shadow: none;
+}
+
+.building-status {
+  font-size: 8px;
+  color: var(--amber);
+  margin-bottom: 2px;
+  letter-spacing: 0.05em;
+}
+
+/* Generic building glow animation */
+@keyframes building-glow {
+  0%, 100% { box-shadow: 0 0 3px #00e67630; }
+  50%       { box-shadow: 0 0 10px #00e676, 0 0 20px #00e67650; }
+}
+
+@keyframes building-glow-amber {
+  0%, 100% { box-shadow: 0 0 3px #ffab0030; }
+  50%       { box-shadow: 0 0 10px #ffab00, 0 0 20px #ffab0050; }
+}
+
+@keyframes building-glow-cyan {
+  0%, 100% { box-shadow: 0 0 3px #00e5ff20; }
+  50%       { box-shadow: 0 0 8px #00e5ff, 0 0 16px #00e5ff40; }
+}
+
+/* =============================================
+   BUILDING 1 — 제련소 (Smelter)
+============================================= */
+.smelter-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
   gap: 4px;
 }
 
-#bottombar .conn-status .dot {
-  width: 6px; height: 6px;
+.smelter-body {
+  width: 44px;
+  height: 90px;
+  background: linear-gradient(180deg, #0a1f0a 0%, #020d04 100%);
+  border: 1px solid var(--green-dim);
+  border-bottom: none;
+  position: relative;
+  animation: building-glow 2.4s ease-in-out infinite;
+}
+
+.smelter-body::before {
+  content: '';
+  position: absolute;
+  top: 12px; left: 6px; right: 6px; bottom: 16px;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 6px,
+    #00e67615 6px, #00e67615 7px
+  );
+}
+
+/* window */
+.smelter-window {
+  position: absolute;
+  bottom: 20px; left: 50%; transform: translateX(-50%);
+  width: 16px; height: 10px;
+  background: #001a08;
+  border: 1px solid var(--green-mid);
+  overflow: hidden;
+}
+
+@keyframes forge-glow {
+  0%, 100% { background: #ff6600; opacity: 0.5; }
+  50%       { background: #ff9900; opacity: 1; }
+}
+
+.smelter-window::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #ff6600;
+  animation: forge-glow 0.8s ease-in-out infinite;
+}
+
+/* chimney */
+.smelter-chimney {
+  position: absolute;
+  top: -24px; right: 8px;
+  width: 8px;
+  height: 26px;
+  background: #0a1a0a;
+  border: 1px solid var(--green-dim);
+  border-bottom: none;
+}
+
+/* Smoke puffs */
+.smoke-container {
+  position: absolute;
+  top: -60px;
+  right: 6px;
+  width: 24px;
+  height: 60px;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.smoke-puff {
+  position: absolute;
   border-radius: 50%;
-  background: var(--green);
-  animation: pulse-green 1.5s infinite;
+  background: radial-gradient(circle, #1a3320 0%, transparent 70%);
+  animation: smoke-rise linear infinite;
+  opacity: 0;
+}
+
+.smoke-puff:nth-child(1) { width: 14px; height: 14px; left: 4px; animation-duration: 3s; animation-delay: 0s; }
+.smoke-puff:nth-child(2) { width: 18px; height: 18px; left: 0px; animation-duration: 3.5s; animation-delay: 0.8s; }
+.smoke-puff:nth-child(3) { width: 12px; height: 12px; left: 6px; animation-duration: 3.2s; animation-delay: 1.6s; }
+.smoke-puff:nth-child(4) { width: 16px; height: 16px; left: 2px; animation-duration: 3.8s; animation-delay: 2.4s; }
+
+@keyframes smoke-rise {
+  0%   { bottom: 0; opacity: 0;    transform: translateX(0) scale(0.5); }
+  15%  { opacity: 0.7; }
+  80%  { opacity: 0.3; }
+  100% { bottom: 70px; opacity: 0; transform: translateX(8px) scale(2); }
 }
 
 /* =============================================
-   PLACEHOLDER TABS
+   BUILDING 2 — 합금 제조공장 (Alloy Plant)
 ============================================= */
-.placeholder-tab {
-  display: none;
-  flex: 1;
+.alloy-body {
+  width: 62px;
+  height: 72px;
+  background: linear-gradient(180deg, #0d1a08 0%, #020d04 100%);
+  border: 1px solid var(--green-dim);
+  border-bottom: none;
+  position: relative;
+  animation: building-glow-amber 3s ease-in-out infinite;
+}
+
+/* roof detail */
+.alloy-body::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+  background: #1a3310;
+  border-bottom: 1px solid var(--amber-dim);
+}
+
+.alloy-window {
+  position: absolute;
+  top: 16px; left: 8px; right: 8px; height: 20px;
+  background: #010800;
+  border: 1px solid var(--amber-dim);
+  display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 9px;
+  color: var(--amber);
+  letter-spacing: 0;
+}
+
+/* Conveyor belt on side */
+.alloy-conveyor {
+  position: absolute;
+  bottom: 10px; left: 0; right: 0;
+  height: 6px;
+  background: #020d04;
+  border-top: 1px solid var(--amber-dim);
+  overflow: hidden;
+}
+
+@keyframes conveyor-move {
+  from { background-position: 0 0; }
+  to   { background-position: 20px 0; }
+}
+
+.alloy-conveyor::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    transparent 0px, transparent 8px,
+    var(--amber-dim) 8px, var(--amber-dim) 10px
+  );
+  animation: conveyor-move 0.6s linear infinite;
+}
+
+/* =============================================
+   BUILDING 3 — CFRP 압출 시설
+============================================= */
+.cfrp-body {
+  width: 36px;
+  height: 110px;
+  background: linear-gradient(180deg, #001a1a 0%, #020d04 100%);
+  border: 1px solid var(--cyan-dim);
+  border-bottom: none;
+  position: relative;
+  animation: building-glow-cyan 2.8s ease-in-out infinite;
+}
+
+.cfrp-body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 10px,
+    #00e5ff18 10px, #00e5ff18 11px
+  );
+}
+
+.cfrp-top {
+  position: absolute;
+  top: -10px; left: 50%; transform: translateX(-50%);
+  width: 18px; height: 12px;
+  background: #001020;
+  border: 1px solid var(--cyan-dim);
+  border-bottom: none;
+}
+
+.cfrp-light {
+  position: absolute;
+  top: 18px; left: 50%; transform: translateX(-50%);
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  animation: cfrp-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes cfrp-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* =============================================
+   BUILDING 4 — 추진제 저장 탱크 (Propellant Tanks)
+============================================= */
+.tanks-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.tank {
+  width: 28px;
+  position: relative;
+  display: flex;
   flex-direction: column;
-  gap: 16px;
-  color: var(--green-dim);
+  align-items: center;
 }
 
-.placeholder-tab.active { display: flex; }
+.tank-top {
+  width: 28px;
+  height: 14px;
+  border-radius: 50% 50% 0 0;
+  border: 1px solid;
+  border-bottom: none;
+  position: relative;
+  overflow: hidden;
+}
 
-.placeholder-tab .ph-title {
-  font-size: 20px;
-  letter-spacing: 4px;
+.tank-top::after {
+  content: '';
+  position: absolute;
+  top: 4px; left: 4px; right: 4px;
+  height: 4px;
+  border-radius: 50%;
+  opacity: 0.4;
+}
+
+.tank.lox .tank-top {
+  background: linear-gradient(180deg, #003050 0%, #001a30 100%);
+  border-color: #0070a0;
+}
+.tank.lox .tank-top::after { background: #00c0ff; }
+
+.tank.rp1 .tank-top {
+  background: linear-gradient(180deg, #301000 0%, #1a0800 100%);
+  border-color: #803000;
+}
+.tank.rp1 .tank-top::after { background: #ff6010; }
+
+.tank.gh2 .tank-top {
+  background: linear-gradient(180deg, #102010 0%, #080f08 100%);
+  border-color: var(--green-dim);
+}
+.tank.gh2 .tank-top::after { background: var(--green); }
+
+.tank-body {
+  width: 28px;
+  border: 1px solid;
+  border-top: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.tank.lox .tank-body { height: 80px; background: linear-gradient(180deg, #001a30, #000c18); border-color: #0070a0; }
+.tank.rp1 .tank-body { height: 70px; background: linear-gradient(180deg, #1a0800, #0d0400); border-color: #803000; }
+.tank.gh2 .tank-body { height: 56px; background: linear-gradient(180deg, #081808, #010800); border-color: var(--green-dim); }
+
+/* level fill inside tank */
+.tank-fill {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  opacity: 0.35;
+  animation: tank-slosh 4s ease-in-out infinite;
+}
+
+.tank.lox .tank-fill { height: 55%; background: #0090c0; }
+.tank.rp1 .tank-fill { height: 68%; background: #cc4400; }
+.tank.gh2 .tank-fill { height: 40%; background: var(--green-mid); }
+
+@keyframes tank-slosh {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+/* Pipe connecting tanks to ground */
+.tank-pipe {
+  width: 4px;
+  height: 12px;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  margin-bottom: 0;
+}
+.tank.lox .tank-pipe { border-color: #0070a0; }
+.tank.rp1 .tank-pipe { border-color: #803000; }
+.tank.gh2 .tank-pipe { border-color: var(--green-dim); }
+
+.tank-label {
+  font-size: 8px;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.tank.lox .tank-label { color: #00a0d0; }
+.tank.rp1 .tank-label { color: #cc6020; }
+.tank.gh2 .tank-label { color: var(--green-mid); }
+
+/* LOX warning flash */
+@keyframes lox-warn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.tank.lox .tank-label { animation: lox-warn 1.8s ease-in-out infinite; }
+
+/* =============================================
+   BUILDING 5 — 조립 공장 (Assembly Hall) — LARGEST
+============================================= */
+.assembly-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.assembly-body {
+  width: 90px;
+  height: 120px;
+  background: linear-gradient(180deg, #060f06 0%, #020d04 100%);
+  border: 1px solid var(--green);
+  border-bottom: none;
+  position: relative;
+  animation: building-glow 2s ease-in-out infinite;
+}
+
+/* Roof slant */
+.assembly-roof {
+  width: 0;
+  height: 0;
+  border-left: 45px solid transparent;
+  border-right: 45px solid transparent;
+  border-bottom: 18px solid #0a1f0a;
+  position: absolute;
+  top: -18px; left: 0;
+}
+
+.assembly-roof::after {
+  content: '';
+  position: absolute;
+  top: 18px; left: -45px; right: -45px;
+  height: 1px;
+  background: var(--green);
+  box-shadow: var(--glow);
+}
+
+/* Big door */
+.assembly-door {
+  position: absolute;
+  bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 32px; height: 48px;
+  background: #000d02;
+  border: 1px solid var(--green-dim);
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ASCII rocket inside door */
+.assembly-rocket {
+  font-size: 9px;
+  line-height: 1.1;
   color: var(--green-mid);
+  text-align: center;
+  letter-spacing: -1px;
+  white-space: pre;
 }
 
-.placeholder-tab .ph-sub {
-  font-size: 12px;
-  letter-spacing: 2px;
+/* Side windows */
+.assembly-windows {
+  position: absolute;
+  top: 20px; left: 8px; right: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.assembly-win {
+  width: 12px; height: 8px;
+  background: #001a08;
+  border: 1px solid var(--green-dim);
+  animation: win-flicker 4s ease-in-out infinite;
+}
+
+.assembly-win:nth-child(2) { animation-delay: 1.2s; }
+.assembly-win:nth-child(3) { animation-delay: 2.4s; }
+
+@keyframes win-flicker {
+  0%, 85%, 100% { background: #001a08; }
+  88% { background: #00e67630; }
+  92% { background: #001a08; }
+  95% { background: #00e67620; }
 }
 
 /* =============================================
-   SCROLLBAR GLOBAL
+   BUILDING 6 — 발사대 (Launch Pad) — far right
 ============================================= */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--green-dim); }
+.launchpad-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Gantry tower */
+.gantry {
+  width: 6px;
+  height: 130px;
+  background: #0a1a0a;
+  border: 1px solid var(--green-dim);
+  border-bottom: none;
+  position: relative;
+}
+
+/* Horizontal arms on gantry */
+.gantry-arm {
+  position: absolute;
+  height: 1px;
+  background: var(--green-dim);
+  left: 5px;
+}
+
+.gantry-arm::after {
+  content: '';
+  position: absolute;
+  top: -2px; right: 0;
+  width: 3px; height: 5px;
+  background: var(--green-dim);
+}
+
+/* Launch platform */
+.launch-platform {
+  width: 60px;
+  height: 8px;
+  background: #0d1f0d;
+  border: 1px solid var(--green-mid);
+  position: relative;
+}
+
+/* Exhaust vents */
+.launch-vents {
+  display: flex;
+  justify-content: space-around;
+  width: 60px;
+}
+
+.launch-vent {
+  width: 10px;
+  height: 6px;
+  background: #010800;
+  border: 1px solid var(--green-dim);
+  border-top: none;
+}
+
+/* Rocket on pad (tiny) */
+.pad-rocket {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: var(--green);
+  white-space: pre;
+  line-height: 1;
+  text-shadow: 0 0 6px #00e676;
+}
+
+/* Gantry tower 2 (taller, right side) */
+.gantry2 {
+  width: 4px;
+  height: 145px;
+  background: #080f08;
+  border: 1px solid #0d3020;
+  border-bottom: none;
+  position: absolute;
+  right: 4px;
+  bottom: 8px;
+}
+
+/* Connection cable between gantry arms */
+.gantry-cable {
+  position: absolute;
+  height: 1px;
+  background: #0d3020;
+}
 
 /* =============================================
-   UTILITY
+   LOCKED BUILDINGS
 ============================================= */
-.glow-text { text-shadow: var(--glow); }
-.amber-text { color: var(--amber); }
-.red-text   { color: var(--red); }
-.dim-text   { color: var(--green-dim); }
+.locked-body {
+  background: var(--locked-bg);
+  border-color: #0d2010;
+  opacity: 0.5;
+}
 
-.blinking { animation: blink 1s infinite; }
+.locked-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: var(--locked-fg);
+  background: rgba(0,0,0,0.4);
+  letter-spacing: 0.05em;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.locked-icon {
+  font-size: 14px;
+  color: #1a3020;
+}
+
+/* LOCKED BUILDING 7 — 정제소 */
+.refinery-body {
+  width: 48px;
+  height: 80px;
+  border: 1px solid #0d2010;
+  border-bottom: none;
+  position: relative;
+}
+
+/* LOCKED BUILDING 8 — 발사체 조립동 */
+.vab-body {
+  width: 70px;
+  height: 100px;
+  border: 1px solid #0d2010;
+  border-bottom: none;
+  position: relative;
+}
+
+/* =============================================
+   WORKERS (animated dots on ground level)
+============================================= */
+.workers-layer {
+  position: absolute;
+  bottom: 61px;
+  left: 0;
+  right: 0;
+  height: 12px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.worker {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  bottom: 0;
+  font-size: 8px;
+  line-height: 8px;
+  text-align: center;
+}
+
+/* Worker movement keyframes — varied start/end positions */
+@keyframes worker1 {
+  0%   { left: 5%; }
+  40%  { left: 30%; }
+  60%  { left: 30%; }
+  100% { left: 5%; }
+}
+
+@keyframes worker2 {
+  0%   { left: 35%; }
+  45%  { left: 60%; }
+  65%  { left: 60%; }
+  100% { left: 35%; }
+}
+
+@keyframes worker3 {
+  0%   { left: 55%; }
+  50%  { left: 78%; }
+  70%  { left: 78%; }
+  100% { left: 55%; }
+}
+
+@keyframes worker4 {
+  0%   { left: 20%; }
+  35%  { left: 48%; }
+  55%  { left: 48%; }
+  100% { left: 20%; }
+}
+
+@keyframes worker5 {
+  0%   { left: 70%; }
+  40%  { left: 90%; }
+  60%  { left: 90%; }
+  100% { left: 70%; }
+}
+
+.worker.w1 { background: var(--green); box-shadow: 0 0 4px var(--green); animation: worker1 8s linear infinite; }
+.worker.w2 { background: var(--amber); box-shadow: 0 0 4px var(--amber); animation: worker2 6s linear infinite 1s; }
+.worker.w3 { background: var(--green); box-shadow: 0 0 4px var(--green); animation: worker3 9s linear infinite 2s; }
+.worker.w4 { background: var(--green-dim); animation: worker4 11s linear infinite 0.5s; }
+.worker.w5 { background: var(--amber); box-shadow: 0 0 4px var(--amber); animation: worker5 7s linear infinite 3s; }
+
+/* =============================================
+   RIGHT PANEL — Staff & Automation
+============================================= */
+.panel-right {
+  width: 25%;
+  min-width: 200px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--green-dim);
+  background: var(--panel-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0 0;
+}
+
+.panel-right::-webkit-scrollbar { width: 4px; }
+.panel-right::-webkit-scrollbar-track { background: var(--bg); }
+.panel-right::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+/* Staff list */
+.staff-block {
+  margin: 0 8px 8px;
+  border: 1px solid var(--green-dim);
+  padding: 6px 8px;
+}
+
+.staff-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #0d2010;
+}
+
+.staff-row:last-child { border-bottom: none; }
+
+.staff-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.staff-dot.engineer { background: var(--green); box-shadow: 0 0 4px var(--green); }
+.staff-dot.manager  { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
+.staff-dot.scientist{ background: var(--cyan);  box-shadow: 0 0 4px var(--cyan); }
+
+.staff-name {
+  flex: 1;
+  font-size: 10px;
+  color: #88aa88;
+}
+
+.staff-badge {
+  font-size: 8px;
+  padding: 1px 4px;
+  border: 1px solid;
+  letter-spacing: 0.05em;
+}
+
+.staff-badge.eng  { border-color: var(--green-dim); color: var(--green-mid); }
+.staff-badge.mgr  { border-color: var(--amber-dim); color: var(--amber); }
+.staff-badge.sci  { border-color: var(--cyan-dim);  color: var(--cyan); }
+
+.staff-assign {
+  font-size: 8px;
+  color: var(--green-dim);
+  white-space: nowrap;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Hire button */
+.btn-hire {
+  display: block;
+  margin: 0 8px 8px;
+  padding: 5px 0;
+  text-align: center;
+  border: 1px solid var(--amber);
+  background: var(--bg);
+  color: var(--amber);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.btn-hire:hover {
+  background: #1a0e00;
+  box-shadow: var(--glow-amber);
+}
+
+/* Automation section */
+.auto-block {
+  margin: 0 8px 8px;
+  border: 1px solid var(--green-dim);
+  padding: 6px 8px;
+}
+
+.auto-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid #0a1a0a;
+  font-size: 10px;
+}
+
+.auto-row:last-child { border-bottom: none; }
+
+.auto-name { color: #88aa88; }
+
+.auto-status {
+  font-size: 9px;
+  padding: 1px 5px;
+  border: 1px solid;
+}
+
+.auto-status.on  { border-color: var(--green-dim); color: var(--green); background: #001a08; }
+.auto-status.off { border-color: #1a1a1a; color: #3a4a3a; }
+
+/* Bonuses block */
+.bonus-block {
+  margin: 0 8px 8px;
+  border: 1px solid var(--green-dim);
+  padding: 6px 8px;
+}
+
+.bonus-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  padding: 2px 0;
+}
+
+.bonus-label { color: #667766; }
+.bonus-val   { color: var(--green); }
+.bonus-val.hi { color: var(--amber); text-shadow: var(--glow-amber); }
+
+/* Offline accumulation */
+.offline-block {
+  margin: 0 8px 8px;
+  border: 1px solid var(--amber-dim);
+  padding: 6px 8px;
+  background: #0d0800;
+}
+
+.offline-header {
+  font-size: 10px;
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+
+.offline-entry {
+  font-size: 10px;
+  color: #886620;
+  padding: 1px 0;
+}
+
+.offline-entry span {
+  color: var(--amber);
+}
+
+/* =============================================
+   BOTTOM TICKER
+============================================= */
+.ticker-bar {
+  height: 26px;
+  min-height: 26px;
+  background: var(--panel-bg);
+  border-top: 1px solid var(--green-dim);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.ticker-tag {
+  background: var(--green-dim);
+  color: var(--green);
+  font-size: 10px;
+  padding: 0 8px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.1em;
+  flex-shrink: 0;
+  border-right: 1px solid var(--green);
+}
+
+.ticker-scroll-wrap {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  position: relative;
+}
+
+.ticker-text {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--green-mid);
+  top: 50%;
+  transform: translateY(-50%);
+  animation: ticker-scroll 38s linear infinite;
+}
+
+@keyframes ticker-scroll {
+  0%   { left: 100%; }
+  100% { left: -220%; }
+}
+
+/* =============================================
+   HIRE MODAL
+============================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-box {
+  background: var(--panel-bg);
+  border: 1px solid var(--amber);
+  box-shadow: var(--glow-amber), 0 0 40px rgba(0,0,0,0.8);
+  padding: 18px 20px;
+  width: 360px;
+  max-height: 70vh;
+  overflow-y: auto;
+  font-family: var(--font);
+  color: var(--green);
+}
+
+.modal-title {
+  font-size: 13px;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--amber-dim);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.modal-candidate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid #0d2010;
+  font-size: 11px;
+}
+
+.modal-candidate:last-child { border-bottom: none; }
+
+.modal-candidate-name { color: #88cc88; }
+.modal-candidate-role { color: var(--amber); font-size: 10px; }
+.modal-candidate-cost { color: var(--green); font-size: 10px; }
+
+.btn-hire-confirm {
+  margin-top: 4px;
+  padding: 3px 10px;
+  background: var(--bg);
+  border: 1px solid var(--green-dim);
+  color: var(--green);
+  font-family: var(--font);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.btn-hire-confirm:hover {
+  border-color: var(--green);
+  background: #001a08;
+  box-shadow: var(--glow);
+}
+
+.modal-close {
+  display: block;
+  margin-top: 14px;
+  text-align: center;
+  padding: 6px;
+  border: 1px solid var(--green-dim);
+  color: var(--green-dim);
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  font-family: var(--font);
+  background: var(--bg);
+}
+
+.modal-close:hover {
+  color: var(--green);
+  border-color: var(--green);
+}
+
+/* =============================================
+   MISC UTILS
+============================================= */
+.sec-label {
+  font-size: 10px;
+  color: var(--green-dim);
+  letter-spacing: 0.1em;
+  padding: 2px 0 4px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid #0d2010;
+}
 
 </style>
 </head>
 <body>
 
-<div class="crt-scan"></div>
+<div class="app">
 
-<div id="app">
-
-  <!-- ==================== TOP BAR ==================== -->
-  <div id="topbar">
-    <span class="title">MOON IDLE</span>
-    <span class="sep">—</span>
-    <span style="font-size:13px; letter-spacing:1px; color:var(--green); opacity:0.8;">생산 허브</span>
-    <span class="sep" style="margin-left:20px;"></span>
-    <span class="era-label">PHASE: 준궤도 에라</span>
-    <div class="era-bar-wrap">
-      <div class="era-bar-track">
-        <div class="era-bar-fill"></div>
-      </div>
-    </div>
-    <span class="era-pct">34%</span>
-    <div class="datetime" id="datetime-display">2026-02-19 &nbsp; 14:37:52</div>
-    <div class="rep">
-      REP&nbsp;
-      <span>★★★</span><span class="empty">☆☆</span>
+  <!-- ======== TOP BAR ======== -->
+  <div class="topbar">
+    <div class="topbar-title">&#9654; MOON IDLE &mdash; <span>생산 &amp; 자원</span></div>
+    <div class="topbar-center" id="clock">00:00:00</div>
+    <div class="topbar-right">
+      <span class="ok">SYS:NOMINAL</span>
+      <span class="ok">NET:LINK</span>
+      <span class="ok">PWR:100%</span>
     </div>
   </div>
 
-  <!-- ==================== TAB BAR ==================== -->
-  <div id="tabbar">
-    <button class="tab-btn active" data-tab="production" onclick="switchTab('production')">
-      <span class="tab-dot"></span>생산/자원
-    </button>
-    <button class="tab-btn" data-tab="research" onclick="switchTab('research')">
-      <span class="tab-dot"></span>연구/기술
-    </button>
-    <button class="tab-btn" data-tab="assembly" onclick="switchTab('assembly')">
-      <span class="tab-dot"></span>로켓 조립
-    </button>
-    <button class="tab-btn" data-tab="launch" onclick="switchTab('launch')">
-      <span class="tab-dot"></span>발사 관제
-    </button>
+  <!-- ======== MAIN AREA ======== -->
+  <div class="main">
+
+    <!-- ===== LEFT PANEL ===== -->
+    <div class="panel-left">
+
+      <div class="panel-label">&#9632; 자원 현황</div>
+
+      <!-- TIER 1 -->
+      <div class="tier-block t1">
+        <div class="tier-header">&#9724; TIER-1  RAW MATERIALS</div>
+
+        <div class="res-row">
+          <span class="res-name">철광석</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-fe" style="width:72%"></div></div>
+          <span class="res-val" id="val-fe">14,320</span>
+          <span class="res-rate">+320/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">보크사이트</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-bx" style="width:58%"></div></div>
+          <span class="res-val" id="val-bx">8,640</span>
+          <span class="res-rate">+192/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">구리</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-cu" style="width:43%"></div></div>
+          <span class="res-val" id="val-cu">5,120</span>
+          <span class="res-rate">+128/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">알루미늄</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-green" id="bar-al" style="width:65%"></div></div>
+          <span class="res-val" id="val-al">11,280</span>
+          <span class="res-rate">+256/s</span>
+        </div>
+      </div>
+
+      <!-- TIER 2 -->
+      <div class="tier-block t2">
+        <div class="tier-header">&#9724; TIER-2  PROCESSED</div>
+
+        <div class="res-row">
+          <span class="res-name">강철</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-amber" id="bar-st" style="width:54%"></div></div>
+          <span class="res-val" id="val-st">3,210</span>
+          <span class="res-rate">+64/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">Al-7075</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-amber" id="bar-al2" style="width:38%"></div></div>
+          <span class="res-val" id="val-al2">1,840</span>
+          <span class="res-rate">+42/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">Cu 배선</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-amber" id="bar-cuw" style="width:29%"></div></div>
+          <span class="res-val" id="val-cuw">920</span>
+          <span class="res-rate">+28/s</span>
+        </div>
+      </div>
+
+      <!-- TIER 3 -->
+      <div class="tier-block t3">
+        <div class="tier-header">&#9724; TIER-3  ADVANCED</div>
+
+        <div class="res-row">
+          <span class="res-name">CFRP</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-cyan" id="bar-cf" style="width:22%"></div></div>
+          <span class="res-val" id="val-cf">340</span>
+          <span class="res-rate">+8/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">Inconel 718</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-cyan" id="bar-in" style="width:31%"></div></div>
+          <span class="res-val" id="val-in">510</span>
+          <span class="res-rate">+12/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">Ti-6Al-4V</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-cyan" id="bar-ti" style="width:16%"></div></div>
+          <span class="res-val" id="val-ti">190</span>
+          <span class="res-rate">+6/s</span>
+        </div>
+      </div>
+
+      <!-- TIER 4 -->
+      <div class="tier-block t4">
+        <div class="tier-header">&#9724; TIER-4  PROPELLANT</div>
+
+        <div class="res-row">
+          <span class="res-name">LOX</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-red" id="bar-lox" style="width:18%"></div></div>
+          <span class="res-val" id="val-lox">280</span>
+          <span class="res-rate" style="color:var(--red)">+4/s !</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">RP-1</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-red" id="bar-rp1" style="width:47%"></div></div>
+          <span class="res-val" id="val-rp1">720</span>
+          <span class="res-rate">+10/s</span>
+        </div>
+        <div class="res-row">
+          <span class="res-name">GH2</span>
+          <div class="res-bar-bg"><div class="res-bar-fill c-red" id="bar-gh2" style="width:33%"></div></div>
+          <span class="res-val" id="val-gh2">420</span>
+          <span class="res-rate">+7/s</span>
+        </div>
+      </div>
+
+      <!-- EFFICIENCY -->
+      <div class="eff-block">
+        <div class="eff-label">PROD.EFFICIENCY</div>
+        <div class="eff-bar-bg"><div class="eff-bar-fill"></div></div>
+        <div class="eff-pct">73.4%</div>
+      </div>
+
+    </div>
+    <!-- /LEFT PANEL -->
+
+    <!-- ===== CENTER WORLD VIEW ===== -->
+    <div class="panel-center">
+      <div class="world-label">&#9632; BASE COMPLEX &mdash; SIDE VIEW  [6/8 ACTIVE]</div>
+
+      <div class="world-view" id="worldView">
+
+        <!-- Stars -->
+        <div class="stars" id="stars"></div>
+
+        <!-- Ground -->
+        <div class="ground"></div>
+        <div class="ground-fill"></div>
+        <div class="ground-grid"></div>
+
+        <!-- Buildings row -->
+        <div class="buildings">
+
+          <!-- 1. 제련소 (Smelter) -->
+          <div class="building-slot">
+            <div class="building-status">ACTIVE</div>
+            <div class="building-label">&#9632; 제련소</div>
+            <div class="smelter-wrap">
+              <div class="smelter-body">
+                <div class="smelter-chimney"></div>
+                <div class="smoke-container">
+                  <div class="smoke-puff"></div>
+                  <div class="smoke-puff"></div>
+                  <div class="smoke-puff"></div>
+                  <div class="smoke-puff"></div>
+                </div>
+                <div class="smelter-window"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. 합금 제조공장 -->
+          <div class="building-slot">
+            <div class="building-status">ACTIVE</div>
+            <div class="building-label">&#9632; 합금공장</div>
+            <div class="alloy-body">
+              <div class="alloy-window">&#9656;&#9656;&#9656;</div>
+              <div class="alloy-conveyor"></div>
+            </div>
+          </div>
+
+          <!-- 3. CFRP 압출 시설 -->
+          <div class="building-slot">
+            <div class="building-status">ACTIVE</div>
+            <div class="building-label">&#9632; CFRP</div>
+            <div class="cfrp-body">
+              <div class="cfrp-top"></div>
+              <div class="cfrp-light"></div>
+            </div>
+          </div>
+
+          <!-- 4. 추진제 탱크 -->
+          <div class="building-slot">
+            <div class="building-status" style="color:var(--red)">LOX-LOW!</div>
+            <div class="building-label" style="color:var(--amber)">&#9632; 추진제 탱크</div>
+            <div class="tanks-wrap">
+              <div class="tank lox">
+                <div class="tank-top"><div class="tank-fill"></div></div>
+                <div class="tank-body"><div class="tank-fill"></div></div>
+                <div class="tank-pipe"></div>
+                <div class="tank-label">LOX</div>
+              </div>
+              <div class="tank rp1">
+                <div class="tank-top"><div class="tank-fill"></div></div>
+                <div class="tank-body"><div class="tank-fill"></div></div>
+                <div class="tank-pipe"></div>
+                <div class="tank-label">RP-1</div>
+              </div>
+              <div class="tank gh2">
+                <div class="tank-top"><div class="tank-fill"></div></div>
+                <div class="tank-body"><div class="tank-fill"></div></div>
+                <div class="tank-pipe"></div>
+                <div class="tank-label">GH2</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. 조립 공장 — LARGEST, CENTER -->
+          <div class="building-slot" style="flex-shrink:0">
+            <div class="building-status" style="color:var(--green);text-shadow:0 0 6px #00e676">PROD x2.3</div>
+            <div class="building-label" style="color:var(--green);font-size:10px">&#9632; 조립 공장</div>
+            <div class="assembly-wrap">
+              <div class="assembly-body">
+                <div class="assembly-roof"></div>
+                <div class="assembly-windows">
+                  <div class="assembly-win"></div>
+                  <div class="assembly-win"></div>
+                  <div class="assembly-win"></div>
+                </div>
+                <div class="assembly-door">
+                  <div class="assembly-rocket">  /\
+ /  \
+| [] |
+|    |
+ \  /
+  \/</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6. 발사대 -->
+          <div class="building-slot" style="position:relative">
+            <div class="building-status">STANDBY</div>
+            <div class="building-label">&#9632; 발사대</div>
+            <div class="launchpad-wrap">
+              <div style="display:flex;align-items:flex-end;gap:6px;position:relative">
+                <!-- Main gantry tower -->
+                <div class="gantry">
+                  <div class="gantry-arm" style="width:28px;top:20px;"></div>
+                  <div class="gantry-arm" style="width:24px;top:50px;"></div>
+                  <div class="gantry-arm" style="width:20px;top:80px;"></div>
+                  <div class="gantry-arm" style="width:24px;top:108px;"></div>
+                </div>
+                <!-- Launch platform + rocket on pad -->
+                <div style="position:relative">
+                  <div class="pad-rocket">  ^
+ /|\
+/ | \
+  |
+ [=]</div>
+                  <div class="launch-platform"></div>
+                  <div class="launch-vents">
+                    <div class="launch-vent"></div>
+                    <div class="launch-vent"></div>
+                    <div class="launch-vent"></div>
+                  </div>
+                </div>
+                <!-- Secondary gantry -->
+                <div class="gantry2"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SPACER -->
+          <div style="flex:1;min-width:10px"></div>
+
+          <!-- 7. LOCKED — 정제소 -->
+          <div class="building-slot">
+            <div class="building-label locked-text">&#9632; 정제소</div>
+            <div class="refinery-body locked-body" style="position:relative">
+              <div class="locked-overlay">
+                <div class="locked-icon">&#128274;</div>
+                <div>[LOCKED]</div>
+                <div style="font-size:8px;color:#0d3020">Lv.8 필요</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 8. LOCKED — 발사체 조립동 -->
+          <div class="building-slot">
+            <div class="building-label locked-text">&#9632; 발사체조립동</div>
+            <div class="vab-body locked-body" style="position:relative">
+              <div class="locked-overlay">
+                <div class="locked-icon">&#128274;</div>
+                <div>[LOCKED]</div>
+                <div style="font-size:8px;color:#0d3020">Lv.12 필요</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <!-- /buildings -->
+
+        <!-- WORKERS -->
+        <div class="workers-layer">
+          <div class="worker w1">&#9679;</div>
+          <div class="worker w2">&#9679;</div>
+          <div class="worker w3">&#9679;</div>
+          <div class="worker w4">&#9679;</div>
+          <div class="worker w5">&#9679;</div>
+        </div>
+
+      </div>
+      <!-- /world-view -->
+    </div>
+    <!-- /CENTER -->
+
+    <!-- ===== RIGHT PANEL ===== -->
+    <div class="panel-right">
+
+      <div class="panel-label">&#9632; 인원 &amp; 자동화</div>
+
+      <!-- Staff list -->
+      <div class="staff-block">
+        <div class="sec-label">HIRED STAFF (3/6)</div>
+
+        <div class="staff-row">
+          <div class="staff-dot engineer"></div>
+          <div class="staff-name">김엔지니어</div>
+          <div class="staff-badge eng">ENG</div>
+          <div class="staff-assign">조립공장</div>
+        </div>
+        <div class="staff-row">
+          <div class="staff-dot scientist"></div>
+          <div class="staff-name">이박사</div>
+          <div class="staff-badge sci">SCI</div>
+          <div class="staff-assign">CFRP</div>
+        </div>
+        <div class="staff-row">
+          <div class="staff-dot manager"></div>
+          <div class="staff-name">박매니저</div>
+          <div class="staff-badge mgr">MGR</div>
+          <div class="staff-assign">전체</div>
+        </div>
+      </div>
+
+      <button class="btn-hire" id="btnHire">[ 인원 고용 + ]</button>
+
+      <!-- Automation -->
+      <div class="auto-block">
+        <div class="sec-label">AUTO-MANAGER</div>
+
+        <div class="auto-row">
+          <span class="auto-name">제련소</span>
+          <span class="auto-status on">AUTO</span>
+        </div>
+        <div class="auto-row">
+          <span class="auto-name">합금공장</span>
+          <span class="auto-status on">AUTO</span>
+        </div>
+        <div class="auto-row">
+          <span class="auto-name">CFRP</span>
+          <span class="auto-status on">AUTO</span>
+        </div>
+        <div class="auto-row">
+          <span class="auto-name">추진제 탱크</span>
+          <span class="auto-status off">수동</span>
+        </div>
+        <div class="auto-row">
+          <span class="auto-name">조립 공장</span>
+          <span class="auto-status on">AUTO</span>
+        </div>
+        <div class="auto-row">
+          <span class="auto-name">발사대</span>
+          <span class="auto-status off">수동</span>
+        </div>
+      </div>
+
+      <!-- Bonuses -->
+      <div class="bonus-block">
+        <div class="sec-label">PRODUCTION BONUS</div>
+
+        <div class="bonus-row">
+          <span class="bonus-label">제련 효율 업그레이드</span>
+          <span class="bonus-val">Lv.4</span>
+        </div>
+        <div class="bonus-row">
+          <span class="bonus-label">합금 수율</span>
+          <span class="bonus-val hi">+38%</span>
+        </div>
+        <div class="bonus-row">
+          <span class="bonus-label">CFRP 처리속도</span>
+          <span class="bonus-val">x1.6</span>
+        </div>
+        <div class="bonus-row">
+          <span class="bonus-label">박매니저 보너스</span>
+          <span class="bonus-val hi">x2.3</span>
+        </div>
+        <div class="bonus-row">
+          <span class="bonus-label">연구 가속</span>
+          <span class="bonus-val">+12%</span>
+        </div>
+      </div>
+
+      <!-- Offline accumulation -->
+      <div class="offline-block">
+        <div class="offline-header">&#9650; 오프라인 누적</div>
+        <div class="offline-entry">시간: <span>3h 42m</span></div>
+        <div class="offline-entry">철광석: <span>+43,200</span></div>
+        <div class="offline-entry">Al-7075: <span>+8,400</span></div>
+        <div class="offline-entry">강철: <span>+5,640</span></div>
+        <div class="offline-entry">CFRP: <span>+1,080</span></div>
+        <div class="offline-entry" style="margin-top:4px;color:var(--amber)">효율: 60% (매니저 없음)</div>
+      </div>
+
+    </div>
+    <!-- /RIGHT PANEL -->
+
   </div>
-
-  <!-- ==================== CONTENT AREA ==================== -->
-  <div id="content-area">
-
-    <!-- ======== PRODUCTION TAB ======== -->
-    <div id="production-tab" class="active">
-
-      <!-- ===== LEFT: RESOURCE MONITOR ===== -->
-      <div id="col-left">
-        <div class="section-header">자원 현황<span class="count">11개</span></div>
-
-        <!-- T1 Raw -->
-        <div class="tier-header">T1 · 원자재</div>
-
-        <div class="resource-row" id="rr-iron">
-          <div class="r-top">
-            <span class="r-code">ORE</span>
-            <span class="r-name">철광석</span>
-            <span class="r-status ok">OK</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current" id="iron-val">847</span>
-            <span class="r-max"> / 5,000</span>
-            <span class="r-rate pos" id="iron-rate">+10/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill" id="iron-bar" style="width:16.9%"></div>
-          </div>
-        </div>
-
-        <div class="resource-row" id="rr-baux">
-          <div class="r-top">
-            <span class="r-code">BXS</span>
-            <span class="r-name">보크사이트 광석</span>
-            <span class="r-status ok">OK</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current" id="baux-val">312</span>
-            <span class="r-max"> / 3,000</span>
-            <span class="r-rate pos" id="baux-rate">+6/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill" id="baux-bar" style="width:10.4%"></div>
-          </div>
-        </div>
-
-        <div class="resource-row" id="rr-oil">
-          <div class="r-top">
-            <span class="r-code">OIL</span>
-            <span class="r-name">원유</span>
-            <span class="r-status ok">OK</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current" id="oil-val">1,240</span>
-            <span class="r-max"> / 4,000</span>
-            <span class="r-rate pos" id="oil-rate">+8/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill" id="oil-bar" style="width:31.0%"></div>
-          </div>
-        </div>
-
-        <!-- T2 Refined -->
-        <div class="tier-header">T2 · 정제 소재</div>
-
-        <div class="resource-row" id="rr-steel">
-          <div class="r-top">
-            <span class="r-code">STL</span>
-            <span class="r-name">강철</span>
-            <span class="r-status ok">OK</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current" id="steel-val">234</span>
-            <span class="r-max"> / 2,000</span>
-            <span class="r-rate pos" id="steel-rate">+4/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill" id="steel-bar" style="width:11.7%"></div>
-          </div>
-        </div>
-
-        <div class="resource-row" id="rr-al">
-          <div class="r-top">
-            <span class="r-code">AL7</span>
-            <span class="r-name">알루미늄 Al-7075</span>
-            <span class="r-status warn">LOW</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current amber-text" id="al-val">89</span>
-            <span class="r-max"> / 1,500</span>
-            <span class="r-rate warn" id="al-rate">+2/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill warn" id="al-bar" style="width:5.9%"></div>
-          </div>
-        </div>
-
-        <div class="resource-row" id="rr-rp1">
-          <div class="r-top">
-            <span class="r-code">RP1</span>
-            <span class="r-name">RP-1 케로신</span>
-            <span class="r-status ok">OK</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current" id="rp1-val">1,840</span>
-            <span class="r-max"> / 4,000</span>
-            <span class="r-rate pos" id="rp1-rate">+3/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill" id="rp1-bar" style="width:46.0%"></div>
-          </div>
-        </div>
-
-        <!-- T3 Manufactured -->
-        <div class="tier-header">T3 · 제조 소재</div>
-
-        <div class="resource-row" id="rr-cfrp">
-          <div class="r-top">
-            <span class="r-code">CFR</span>
-            <span class="r-name">CFRP 탄소섬유</span>
-            <span class="r-status warn">LOW</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current amber-text" id="cfrp-val">34</span>
-            <span class="r-max"> / 500</span>
-            <span class="r-rate warn" id="cfrp-rate">+0.8/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill warn" id="cfrp-bar" style="width:6.8%"></div>
-          </div>
-        </div>
-
-        <div class="resource-row" id="rr-lox">
-          <div class="r-top">
-            <span class="r-code">LOX</span>
-            <span class="r-name">LOX 액체산소</span>
-            <span class="r-status ok">OK</span>
-          </div>
-          <div class="r-amounts">
-            <span class="r-current" id="lox-val">2,340</span>
-            <span class="r-max"> / 4,800</span>
-            <span class="r-rate pos" id="lox-rate">+12/min</span>
-          </div>
-          <div class="mini-bar">
-            <div class="mini-bar-fill" id="lox-bar" style="width:48.75%"></div>
-          </div>
-        </div>
-
-        <!-- Special -->
-        <div class="tier-header">특수 자산</div>
-
-        <div class="resource-special">
-          <span class="rs-label">연구 포인트</span>
-          <span class="rs-val">847 <span style="font-size:10px;color:var(--green-mid)">RP</span></span>
-        </div>
-
-        <div class="resource-special">
-          <span class="rs-label">발사 데이터</span>
-          <span class="rs-val">12 <span style="font-size:10px;color:var(--amber)">units</span></span>
-        </div>
-
-        <div class="resource-special">
-          <span class="rs-label">자금 ₩</span>
-          <span class="rs-val" style="font-size:13px;">₩2,847,000</span>
-        </div>
-
-      </div><!-- /#col-left -->
-
-      <!-- ===== CENTER: FACILITY GRID ===== -->
-      <div id="col-center">
-
-        <div class="facility-section-header">
-          <span class="fsh-title">시설 현황</span>
-          <span class="fsh-count">총 26개 중 <span style="color:var(--green)">15개</span> 해금</span>
-          <span class="fsh-eff">효율&nbsp;<span style="text-shadow:var(--glow)">73%</span></span>
-        </div>
-
-        <!-- MINING -->
-        <div class="facility-category">
-          <div class="fac-cat-header">
-            <span class="cat-icon">⛏</span>채굴 MINING
-            <span style="margin-left:auto;font-size:10px;color:var(--green)">2/4 활성</span>
-          </div>
-          <div class="fac-grid">
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>철광석 채굴기 Lv.2</h4>
-                <div class="tt-row"><span class="tt-label">상태</span><span class="tt-val" style="color:var(--green)">가동 중</span></div>
-                <div class="tt-row"><span class="tt-label">입력</span><span class="tt-val">전력 5kW</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">철광석 20/min</span></div>
-                <div class="tt-row"><span class="tt-label">다음 업그레이드</span><span class="tt-val">Lv.3</span></div>
-                <div class="tt-row"><span class="tt-label">업그레이드 비용</span><span class="tt-val">₩180,000</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on" title="클릭: ON/OFF 전환"></span>
-                <span class="fac-name">철광석 채굴기</span>
-                <span class="fac-level">Lv.2</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">철광석 20/min</span></div>
-                <div class="io-line"><span class="io-label">POWER:</span><span class="io-val">5 kW</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩180,000</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>보크사이트 채굴기 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">상태</span><span class="tt-val" style="color:var(--green)">가동 중</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">보크사이트 6/min</span></div>
-                <div class="tt-row"><span class="tt-label">업그레이드 비용</span><span class="tt-val">₩120,000</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on" title="클릭: ON/OFF 전환"></span>
-                <span class="fac-name">보크사이트 채굴기</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">보크사이트 6/min</span></div>
-                <div class="io-line"><span class="io-label">POWER:</span><span class="io-val">4 kW</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩120,000</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">티타늄 광산</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 Phase 3 해금</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">구리 채굴소</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 Phase 3 해금</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- REFINING -->
-        <div class="facility-category">
-          <div class="fac-cat-header">
-            <span class="cat-icon">🔥</span>정제 REFINING
-            <span style="margin-left:auto;font-size:10px;color:var(--green)">3/4 활성</span>
-          </div>
-          <div class="fac-grid">
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>용광로 Lv.2</h4>
-                <div class="tt-row"><span class="tt-label">입력</span><span class="tt-val">철광석 4/min</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">강철 8/min</span></div>
-                <div class="tt-row"><span class="tt-label">효율</span><span class="tt-val">87%</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">용광로</span>
-                <span class="fac-level">Lv.2</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">INPUT:</span><span class="io-val">철광석 4/min</span></div>
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">강철 8/min</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩250,000</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>알루미늄 제련소 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">입력</span><span class="tt-val">보크사이트 3/min</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">Al-7075 2/min</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">알루미늄 제련소</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">INPUT:</span><span class="io-val">보크사이트 3/min</span></div>
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">Al-7075 2/min</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩200,000</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">티타늄 정제로</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 Phase 3 해금</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>CFRP 적층 공장 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">입력</span><span class="tt-val">원유 2/min</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">CFRP 0.8/min</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">CFRP 적층 공장</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">INPUT:</span><span class="io-val">원유 2/min</span></div>
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">CFRP 0.8/min</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩300,000</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- MANUFACTURING -->
-        <div class="facility-category">
-          <div class="fac-cat-header">
-            <span class="cat-icon">⚙</span>제조 MANUFACTURING
-            <span style="margin-left:auto;font-size:10px;color:var(--amber)">1/5 활성</span>
-          </div>
-          <div class="fac-grid">
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>탱크 제작소 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">입력</span><span class="tt-val">강철 2/min, Al-7075 1/min</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">탱크 구조물 0.5/min</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">탱크 제작소</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">INPUT:</span><span class="io-val">강철·Al-7075</span></div>
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">탱크 구조물 생산</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩350,000</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">동체 프레스 공장</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 Phase 3 해금</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>엔진 주조소 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">상태</span><span class="tt-val" style="color:var(--amber)">대기 중 (재료 부족)</span></div>
-                <div class="tt-row"><span class="tt-label">필요</span><span class="tt-val">CFRP 최소 50 필요</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot idle"></span>
-                <span class="fac-name">엔진 주조소</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">STATUS:</span><span class="io-val" style="color:var(--amber)">대기 중</span></div>
-                <div class="io-line"><span class="io-label">NEED:</span><span class="io-val" style="color:var(--red)">CFRP 부족</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩400,000</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">정밀 기계 가공소</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 연구 필요</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-            <div class="fac-card locked" style="grid-column: 1 / -1; max-width: 50%;">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">전자 부품 제작소</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 연구 필요</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- PROPELLANT -->
-        <div class="facility-category">
-          <div class="fac-cat-header">
-            <span class="cat-icon">💧</span>추진제 PROPELLANT
-            <span style="margin-left:auto;font-size:10px;color:var(--green)">4/4 활성</span>
-          </div>
-          <div class="fac-grid">
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>LOX 액화 플랜트 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">입력</span><span class="tt-val">전력 15kW</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">LOX 12/min</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">LOX 액화 플랜트</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">POWER:</span><span class="io-val">15 kW</span></div>
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">LOX 12/min</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩220,000</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>RP-1 정제 시설 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">입력</span><span class="tt-val">원유 5/min</span></div>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">RP-1 3/min</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">RP-1 정제 시설</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">INPUT:</span><span class="io-val">원유 5/min</span></div>
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">RP-1 3/min</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩190,000</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">LH2 생산소</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 Phase 3 해금</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>추진제 저장 탱크 팜 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">효과</span><span class="tt-val">저장량 +50%</span></div>
-                <div class="tt-row"><span class="tt-label">용량 보너스</span><span class="tt-val">LOX, RP-1</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">저장 탱크 팜</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">BONUS:</span><span class="io-val">저장량 +50%</span></div>
-                <div class="io-line"><span class="io-label">POWER:</span><span class="io-val">2 kW</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩280,000</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- R&D -->
-        <div class="facility-category">
-          <div class="fac-cat-header">
-            <span class="cat-icon">🔬</span>연구 R&amp;D
-            <span style="margin-left:auto;font-size:10px;color:var(--green)">2/4 활성</span>
-          </div>
-          <div class="fac-grid">
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>기초 연구소 Lv.2</h4>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">RP +5/min</span></div>
-                <div class="tt-row"><span class="tt-label">연구원</span><span class="tt-val">4명</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">기초 연구소</span>
-                <span class="fac-level">Lv.2</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">RP +5/min</span></div>
-                <div class="io-line"><span class="io-label">STAFF:</span><span class="io-val">4명</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩500,000</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>추진 연구소 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">출력</span><span class="tt-val">RP +3/min</span></div>
-                <div class="tt-row"><span class="tt-label">특화</span><span class="tt-val">엔진 연구 +20%</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">추진 연구소</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">OUTPUT:</span><span class="io-val">RP +3/min</span></div>
-                <div class="io-line"><span class="io-label">SPEC:</span><span class="io-val">엔진 +20%</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩380,000</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">소재 연구소</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 연구 필요</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">항법 연구소</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 연구 필요</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- OPERATIONS -->
-        <div class="facility-category">
-          <div class="fac-cat-header">
-            <span class="cat-icon">🚀</span>운용 OPERATIONS
-            <span style="margin-left:auto;font-size:10px;color:var(--green)">3/5 활성</span>
-          </div>
-          <div class="fac-grid">
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>로켓 조립동 Lv.2</h4>
-                <div class="tt-row"><span class="tt-label">상태</span><span class="tt-val" style="color:var(--green)">조립 진행 중</span></div>
-                <div class="tt-row"><span class="tt-label">진행률</span><span class="tt-val">57%</span></div>
-                <div class="tt-row"><span class="tt-label">예상 완료</span><span class="tt-val">약 38분</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">로켓 조립동</span>
-                <span class="fac-level">Lv.2</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">STATUS:</span><span class="io-val">조립 중 (57%)</span></div>
-                <div class="io-line"><span class="io-label">ETA:</span><span class="io-val">~38분</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩600,000</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>발사대 Lv.2</h4>
-                <div class="tt-row"><span class="tt-label">상태</span><span class="tt-val" style="color:#00bcd4">발사 대기 중</span></div>
-                <div class="tt-row"><span class="tt-label">최근 발사</span><span class="tt-val">D+49</span></div>
-                <div class="tt-row"><span class="tt-label">성공률</span><span class="tt-val">75% (3회 실패)</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot ready"></span>
-                <span class="fac-name">발사대</span>
-                <span class="fac-level">Lv.2</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">STATUS:</span><span class="io-val" style="color:#00bcd4">READY</span></div>
-                <div class="io-line"><span class="io-label">HIST:</span><span class="io-val">3실패 포함 총 12회</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩750,000</button>
-            </div>
-
-            <div class="fac-card" onclick="toggleFacility(this)">
-              <div class="fac-tooltip">
-                <h4>추적 안테나 Lv.1</h4>
-                <div class="tt-row"><span class="tt-label">효과</span><span class="tt-val">발사 데이터 수집</span></div>
-                <div class="tt-row"><span class="tt-label">범위</span><span class="tt-val">500km</span></div>
-              </div>
-              <div class="fac-card-top">
-                <span class="status-dot on"></span>
-                <span class="fac-name">추적 안테나</span>
-                <span class="fac-level">Lv.1</span>
-              </div>
-              <div class="fac-io">
-                <div class="io-line"><span class="io-label">EFFECT:</span><span class="io-val">데이터 수집</span></div>
-                <div class="io-line"><span class="io-label">RANGE:</span><span class="io-val">500 km</span></div>
-              </div>
-              <button class="fac-upgrade-btn" onclick="event.stopPropagation()">▲ UPGRADE — ₩160,000</button>
-            </div>
-
-            <div class="fac-card locked">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">기상 관측소</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 연구 필요</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-            <div class="fac-card locked" style="grid-column: 1 / -1; max-width: 50%;">
-              <div class="fac-card-top">
-                <span class="status-dot locked-dot"></span>
-                <span class="fac-name locked">의료 센터</span>
-                <span class="fac-level locked">LOCK</span>
-              </div>
-              <div class="fac-lock-overlay">🔒 연구 필요</div>
-              <button class="fac-upgrade-btn locked-btn" disabled>— LOCKED —</button>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Bottom padding -->
-        <div style="height:16px;"></div>
-
-      </div><!-- /#col-center -->
-
-      <!-- ===== RIGHT: SUMMARY ===== -->
-      <div id="col-right">
-
-        <!-- Auto-Managers -->
-        <div class="right-section">
-          <div class="right-section-title">자동 관리자</div>
-
-          <div class="manager-card">
-            <div class="mc-top">
-              <span class="mc-name">광물 관리자 Kim</span>
-              <span class="mc-badge">ACTIVE</span>
-            </div>
-            <div class="mc-desc">채굴 자동화 담당</div>
-            <div class="mc-lv">Lv.2 — 채굴 효율 +15%</div>
-          </div>
-
-          <div class="manager-card">
-            <div class="mc-top">
-              <span class="mc-name">정제 감독관 Lee</span>
-              <span class="mc-badge">ACTIVE</span>
-            </div>
-            <div class="mc-desc">정제소 자동화 담당</div>
-            <div class="mc-lv">Lv.1 — 정제 효율 +8%</div>
-          </div>
-
-          <div class="manager-card">
-            <div class="mc-top">
-              <span class="mc-name">추진제 기술자 Park</span>
-              <span class="mc-badge inactive">미고용</span>
-            </div>
-            <div class="mc-desc">추진제 생산 자동화</div>
-            <div class="mc-lv">LOX/RP-1 자동 조절</div>
-            <button class="hire-btn" onclick="hireManager(this, 'Park')">▶ HIRE — ₩500,000</button>
-          </div>
-        </div>
-
-        <!-- Production Rates Summary -->
-        <div class="right-section">
-          <div class="right-section-title">총 생산율 현황</div>
-          <table class="prod-table">
-            <tr>
-              <td class="pt-name">철광석</td>
-              <td class="pt-rate">+10/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name">보크사이트</td>
-              <td class="pt-rate">+6/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name">원유</td>
-              <td class="pt-rate">+8/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name">강철</td>
-              <td class="pt-rate">+4/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name">Al-7075</td>
-              <td class="pt-rate warn">+2/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name">RP-1</td>
-              <td class="pt-rate">+3/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name">CFRP</td>
-              <td class="pt-rate warn">+0.8/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name">LOX</td>
-              <td class="pt-rate">+12/min</td>
-            </tr>
-            <tr>
-              <td class="pt-name" style="color:var(--amber)">연구 포인트</td>
-              <td class="pt-rate" style="color:var(--amber)">+8/min</td>
-            </tr>
-          </table>
-        </div>
-
-        <!-- Efficiency Gauge -->
-        <div class="right-section">
-          <div class="right-section-title">생산 효율</div>
-          <div class="eff-wrap">
-            <div class="eff-label">
-              <span class="eff-name">전체 효율</span>
-              <span class="eff-pct">73%</span>
-            </div>
-            <div class="eff-track">
-              <div class="eff-fill"></div>
-            </div>
-            <div style="font-size:10px; color:var(--green-dim); margin-top:6px;">
-              병목: <span style="color:var(--amber)">Al-7075 공급 부족</span>
-            </div>
-            <div style="font-size:10px; color:var(--green-dim); margin-top:2px;">
-              비활성 시설: <span style="color:var(--red)">엔진 주조소 (CFRP 부족)</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Offline Production -->
-        <div class="right-section">
-          <div class="right-section-title">오프라인 보상</div>
-          <div class="offline-box">
-            <div class="ob-title">오프라인 4시간 수익</div>
-            <div class="ob-row">철광석 <span class="ob-val">+2,400</span></div>
-            <div class="ob-row">원유 <span class="ob-val">+1,920</span></div>
-            <div class="ob-row">Al-7075 <span class="ob-val">+480</span></div>
-            <div class="ob-row">LOX <span class="ob-val">+2,880</span></div>
-            <div class="ob-row">연구 포인트 <span class="ob-val">+1,920 RP</span></div>
-            <button class="collect-btn" onclick="collectOffline(this)">▶ 모두 수령</button>
-          </div>
-        </div>
-
-        <!-- Power Status -->
-        <div class="right-section">
-          <div class="right-section-title">전력 현황</div>
-          <div style="padding:8px 10px;">
-            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
-              <span style="color:var(--green-mid)">생산</span>
-              <span>120 kW</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:6px;">
-              <span style="color:var(--green-mid)">소비</span>
-              <span>87 kW</span>
-            </div>
-            <div class="eff-track">
-              <div class="eff-fill" style="width:72.5%; background: linear-gradient(90deg, #00bcd4, #00e5ff);"></div>
-            </div>
-            <div style="font-size:10px; color:var(--green-dim); margin-top:4px;">여유: <span style="color:var(--green)">33 kW</span></div>
-          </div>
-        </div>
-
-        <div style="height:16px;"></div>
-
-      </div><!-- /#col-right -->
-
-    </div><!-- /#production-tab -->
-
-    <!-- ======== RESEARCH TAB (placeholder) ======== -->
-    <div id="research-tab" class="placeholder-tab">
-      <div class="ph-title">연구 / 기술</div>
-      <div class="ph-sub">[ RESEARCH TREE — 준비 중 ]</div>
-      <div style="font-size:11px; color:var(--green-dim); margin-top:10px;">
-        보유 RP: <span style="color:var(--amber); font-size:14px;">847</span>
+  <!-- /MAIN -->
+
+  <!-- ======== TICKER ======== -->
+  <div class="ticker-bar">
+    <div class="ticker-tag">LOG</div>
+    <div class="ticker-scroll-wrap">
+      <div class="ticker-text" id="tickerText">
+        &#9660; [경고] LOX 잔량 18% — 추진제 생산 우선 전환 권고
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9654; [달성] Al-7075 누적 생산 10,000 돌파 — 보너스 +5%
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9660; 발사대: 이그나이터 점검 필요 (D-3)
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9654; 조립 공장: 로켓 1호기 동체 조립 완료 (72%)
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9654; 박매니저 효율 보너스 갱신 — 전체 생산 x2.3 적용 중
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9660; CFRP 재고 부족 예상 — 압출 시설 24시간 가동 돌입
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9654; [인원] 김엔지니어 조립공장 배치 완료 — 조립속도 +15%
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9660; GH2 탱크 압력 정상화 완료
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        &#9654; 제련소 Lv.4 업그레이드 예약됨 — 강철 +20%/s 예상
       </div>
-    </div>
-
-    <!-- ======== ASSEMBLY TAB (placeholder) ======== -->
-    <div id="assembly-tab" class="placeholder-tab">
-      <div class="ph-title">로켓 조립</div>
-      <div class="ph-sub">[ VAB — ASSEMBLY IN PROGRESS ]</div>
-      <div style="font-size:11px; color:var(--green-dim); margin-top:10px;">
-        진행률: <span style="color:var(--green); font-size:14px;">57%</span> &nbsp;
-        <span style="color:var(--green-dim)">예상 완료 ~38분</span>
-      </div>
-    </div>
-
-    <!-- ======== LAUNCH TAB (placeholder) ======== -->
-    <div id="launch-tab" class="placeholder-tab">
-      <div class="ph-title">발사 관제</div>
-      <div class="ph-sub">[ LAUNCH CONTROL — STANDBY ]</div>
-      <div style="font-size:11px; color:var(--green-dim); margin-top:10px;">
-        발사대 상태: <span style="color:#00bcd4; font-size:14px;">READY</span>
-      </div>
-    </div>
-
-  </div><!-- /#content-area -->
-
-  <!-- ==================== BOTTOM BAR ==================== -->
-  <div id="bottombar">
-    <div class="mission-timer">
-      <span class="d-prefix">임무 </span>D+52
-    </div>
-
-    <button class="launch-btn" onclick="startLaunchPrep()">▶ 발사 준비 시작</button>
-
-    <div class="notif-strip" id="notif-strip">
-      <div class="notif-line notif-ok">
-        <span class="notif-time">[14:36:11]</span>
-        <span class="notif-body">LOX 액화 플랜트 Lv.1 — 가동 정상</span>
-      </div>
-      <div class="notif-line notif-warn">
-        <span class="notif-time">[14:35:44]</span>
-        <span class="notif-body">경고: Al-7075 재고 부족 — 알루미늄 제련소 가동 확인 요망</span>
-      </div>
-      <div class="notif-line notif-ok">
-        <span class="notif-time">[14:34:02]</span>
-        <span class="notif-body">연구 포인트 누적 847 RP 도달</span>
-      </div>
-    </div>
-
-    <div class="conn-status">
-      <span class="dot"></span> SYS:OK
     </div>
   </div>
 
-</div><!-- /#app -->
+</div>
+<!-- /APP -->
+
+<!-- HIRE MODAL -->
+<div class="modal-overlay" id="hireModal">
+  <div class="modal-box">
+    <div class="modal-title">[ 인원 고용 — 채용 후보 목록 ]</div>
+
+    <div class="modal-candidate">
+      <div>
+        <div class="modal-candidate-name">최엔지니어</div>
+        <div class="modal-candidate-role">ENGINEER &mdash; 추진제 탱크 전문</div>
+      </div>
+      <div style="text-align:right">
+        <div class="modal-candidate-cost">&#9830; 5,000 Al</div>
+        <button class="btn-hire-confirm">고용</button>
+      </div>
+    </div>
+
+    <div class="modal-candidate">
+      <div>
+        <div class="modal-candidate-name">한박사</div>
+        <div class="modal-candidate-role">SCIENTIST &mdash; 추진제 연구 특화</div>
+      </div>
+      <div style="text-align:right">
+        <div class="modal-candidate-cost">&#9830; 8,200 Al</div>
+        <button class="btn-hire-confirm">고용</button>
+      </div>
+    </div>
+
+    <div class="modal-candidate">
+      <div>
+        <div class="modal-candidate-name">정매니저</div>
+        <div class="modal-candidate-role">MANAGER &mdash; 발사 운영 총괄</div>
+      </div>
+      <div style="text-align:right">
+        <div class="modal-candidate-cost">&#9830; 12,000 강철</div>
+        <button class="btn-hire-confirm">고용</button>
+      </div>
+    </div>
+
+    <div class="modal-candidate">
+      <div>
+        <div class="modal-candidate-name">오기술자</div>
+        <div class="modal-candidate-role">ENGINEER &mdash; 제련소 전담</div>
+      </div>
+      <div style="text-align:right">
+        <div class="modal-candidate-cost">&#9830; 3,800 Al</div>
+        <button class="btn-hire-confirm">고용</button>
+      </div>
+    </div>
+
+    <button class="modal-close" id="modalClose">[ 취소 ]</button>
+  </div>
+</div>
 
 <script>
-// =============================================
-// TAB SWITCHING
-// =============================================
-function switchTab(tabName) {
-  // Update tab buttons
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tab === tabName);
-  });
-
-  // Hide all tab panels (both production-tab and placeholder-tabs)
-  document.getElementById('production-tab').classList.remove('active');
-  document.querySelectorAll('.placeholder-tab').forEach(p => p.classList.remove('active'));
-
-  // Show target
-  const target = document.getElementById(tabName + '-tab');
-  if (target) target.classList.add('active');
+/* =============================================
+   CLOCK
+============================================= */
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = h + ':' + m + ':' + s;
 }
+setInterval(updateClock, 1000);
+updateClock();
 
-// =============================================
-// FACILITY TOGGLE
-// =============================================
-function toggleFacility(card) {
-  if (card.classList.contains('locked')) return;
-  const dot = card.querySelector('.status-dot');
-  if (!dot) return;
-
-  if (dot.classList.contains('on')) {
-    dot.classList.remove('on');
-    dot.classList.add('off');
-    addNotif('시설 OFF: ' + card.querySelector('.fac-name').textContent.trim(), 'warn');
-  } else if (dot.classList.contains('off')) {
-    dot.classList.remove('off');
-    dot.classList.add('on');
-    addNotif('시설 ON: ' + card.querySelector('.fac-name').textContent.trim(), 'ok');
-  } else if (dot.classList.contains('idle')) {
-    addNotif('대기 중: 재료 부족으로 재가동 불가', 'warn');
+/* =============================================
+   STARS
+============================================= */
+(function generateStars() {
+  const container = document.getElementById('stars');
+  const count = 60;
+  for (let i = 0; i < count; i++) {
+    const star = document.createElement('div');
+    star.className = 'star' + (Math.random() < 0.15 ? ' bright' : '');
+    star.style.left = (Math.random() * 100) + '%';
+    star.style.top  = (Math.random() * 70) + '%';
+    const delay = (Math.random() * 6).toFixed(2) + 's';
+    const dur   = (3 + Math.random() * 4).toFixed(2) + 's';
+    star.style.animation = `star-twinkle ${dur} ease-in-out ${delay} infinite`;
+    container.appendChild(star);
   }
-}
+})();
 
-// =============================================
-// HIRE MANAGER
-// =============================================
-function hireManager(btn, name) {
-  const card = btn.closest('.manager-card');
-  const badge = card.querySelector('.mc-badge');
-  badge.textContent = 'ACTIVE';
-  badge.classList.remove('inactive');
-  btn.remove();
-  addNotif(name + ' 관리자 고용 완료 — ₩500,000 차감', 'ok');
-  // Deduct from funding display (visual only)
-}
-
-// =============================================
-// COLLECT OFFLINE
-// =============================================
-function collectOffline(btn) {
-  const box = btn.closest('.offline-box');
-  box.innerHTML = '<div class="ob-title" style="color:var(--green)">수령 완료</div>' +
-    '<div style="font-size:11px; color:var(--green-mid); margin-top:6px;">모든 오프라인 자원을 수령했습니다.</div>';
-  addNotif('오프라인 보상 수령 완료', 'ok');
-}
-
-// =============================================
-// LAUNCH PREP
-// =============================================
-function startLaunchPrep() {
-  addNotif('발사 준비 시퀀스 시작 — 연료 주입 중...', 'ok');
-}
-
-// =============================================
-// NOTIFICATION STRIP
-// =============================================
-function addNotif(msg, type) {
-  const strip = document.getElementById('notif-strip');
-  const now = new Date();
-  const timeStr = now.toTimeString().slice(0, 8);
-  const line = document.createElement('div');
-  line.className = 'notif-line notif-' + (type || 'ok');
-  line.innerHTML = `<span class="notif-time">[${timeStr}]</span><span class="notif-body">${msg}</span>`;
-  strip.insertBefore(line, strip.firstChild);
-  // Keep only 3
-  while (strip.children.length > 3) strip.removeChild(strip.lastChild);
-}
-
-// =============================================
-// LIVE DATETIME
-// =============================================
-function updateDatetime() {
-  const now = new Date();
-  const d = document.getElementById('datetime-display');
-  if (!d) return;
-  const pad = n => String(n).padStart(2, '0');
-  const dateStr = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  d.textContent = dateStr + '\u00A0\u00A0' + timeStr;
-}
-setInterval(updateDatetime, 1000);
-updateDatetime();
-
-// =============================================
-// RESOURCE INCREMENTS (fake tick — per second)
-// =============================================
+/* =============================================
+   RESOURCE TICK
+============================================= */
 const resources = {
-  iron:  { elId: 'iron-val',  barId: 'iron-bar',  rateId: 'iron-rate',  val: 847,  max: 5000,  rate: 10/60  },
-  baux:  { elId: 'baux-val',  barId: 'baux-bar',  rateId: 'baux-rate',  val: 312,  max: 3000,  rate: 6/60   },
-  oil:   { elId: 'oil-val',   barId: 'oil-bar',   rateId: 'oil-rate',   val: 1240, max: 4000,  rate: 8/60   },
-  steel: { elId: 'steel-val', barId: 'steel-bar', rateId: 'steel-rate', val: 234,  max: 2000,  rate: 4/60   },
-  al:    { elId: 'al-val',    barId: 'al-bar',    rateId: 'al-rate',    val: 89,   max: 1500,  rate: 2/60   },
-  rp1:   { elId: 'rp1-val',  barId: 'rp1-bar',   rateId: 'rp1-rate',   val: 1840, max: 4000,  rate: 3/60   },
-  cfrp:  { elId: 'cfrp-val', barId: 'cfrp-bar',  rateId: 'cfrp-rate',  val: 34,   max: 500,   rate: 0.8/60 },
-  lox:   { elId: 'lox-val',  barId: 'lox-bar',   rateId: 'lox-rate',   val: 2340, max: 4800,  rate: 12/60  },
+  fe:  { val: 14320, rate: 320,  max: 50000, barId: 'bar-fe',  valId: 'val-fe' },
+  bx:  { val: 8640,  rate: 192,  max: 30000, barId: 'bar-bx',  valId: 'val-bx' },
+  cu:  { val: 5120,  rate: 128,  max: 20000, barId: 'bar-cu',  valId: 'val-cu' },
+  al:  { val: 11280, rate: 256,  max: 25000, barId: 'bar-al',  valId: 'val-al' },
+  st:  { val: 3210,  rate: 64,   max: 10000, barId: 'bar-st',  valId: 'val-st' },
+  al2: { val: 1840,  rate: 42,   max: 8000,  barId: 'bar-al2', valId: 'val-al2' },
+  cuw: { val: 920,   rate: 28,   max: 5000,  barId: 'bar-cuw', valId: 'val-cuw' },
+  cf:  { val: 340,   rate: 8,    max: 2000,  barId: 'bar-cf',  valId: 'val-cf' },
+  inc: { val: 510,   rate: 12,   max: 2000,  barId: 'bar-in',  valId: 'val-in' },
+  ti:  { val: 190,   rate: 6,    max: 2000,  barId: 'bar-ti',  valId: 'val-ti' },
+  lox: { val: 280,   rate: 4,    max: 2000,  barId: 'bar-lox', valId: 'val-lox' },
+  rp1: { val: 720,   rate: 10,   max: 2000,  barId: 'bar-rp1', valId: 'val-rp1' },
+  gh2: { val: 420,   rate: 7,    max: 2000,  barId: 'bar-gh2', valId: 'val-gh2' },
 };
 
 function formatNum(n) {
-  if (n >= 1000) return n.toLocaleString('ko-KR', {maximumFractionDigits: 0});
-  return n.toFixed(n < 10 ? 1 : 0);
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 10000)   return (n/1000).toFixed(1) + 'k';
+  return Math.floor(n).toLocaleString();
 }
 
 function tickResources() {
   for (const key in resources) {
     const r = resources[key];
     r.val = Math.min(r.val + r.rate, r.max);
-
-    const valEl = document.getElementById(r.elId);
-    const barEl = document.getElementById(r.barId);
+    const pct = Math.round((r.val / r.max) * 100);
+    const bar = document.getElementById(r.barId);
+    const valEl = document.getElementById(r.valId);
+    if (bar) bar.style.width = pct + '%';
     if (valEl) valEl.textContent = formatNum(r.val);
-    if (barEl) {
-      const pct = (r.val / r.max) * 100;
-      barEl.style.width = pct.toFixed(1) + '%';
-    }
   }
 }
 
 setInterval(tickResources, 1000);
 
-// =============================================
-// ASSEMBLY PROGRESS ANIMATION
-// =============================================
-let assemblyPct = 57;
-function tickAssembly() {
-  assemblyPct = Math.min(assemblyPct + 0.05, 100);
-  // Update any assembly display elements if they exist
-  const assemblyEl = document.querySelector('.fac-card .io-val');
-  // Just a visual counter — actual display in facility card is static text
-}
-setInterval(tickAssembly, 3000);
+/* =============================================
+   HIRE MODAL
+============================================= */
+const hireBtn   = document.getElementById('btnHire');
+const modal     = document.getElementById('hireModal');
+const closeBtn  = document.getElementById('modalClose');
 
+hireBtn.addEventListener('click', function() {
+  modal.classList.add('active');
+});
+
+closeBtn.addEventListener('click', function() {
+  modal.classList.remove('active');
+});
+
+modal.addEventListener('click', function(e) {
+  if (e.target === modal) modal.classList.remove('active');
+});
+
+/* Hire confirm buttons (demo) */
+document.querySelectorAll('.btn-hire-confirm').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    const row = btn.closest('.modal-candidate');
+    const name = row.querySelector('.modal-candidate-name').textContent;
+    btn.textContent = '고용됨';
+    btn.disabled = true;
+    btn.style.color = 'var(--green)';
+    btn.style.borderColor = 'var(--green-dim)';
+  });
+});
+
+/* =============================================
+   TICKER — restart on end
+============================================= */
+const tickerEl = document.getElementById('tickerText');
+tickerEl.addEventListener('animationiteration', function() {
+  // Continuously loops via CSS animation — no JS needed
+});
 </script>
+
 </body>
 </html>
