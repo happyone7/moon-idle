@@ -534,6 +534,7 @@ const ROCKET_QUALITIES = [
   { id:'block2', name:'Block-II',  icon:'🛰️', costMult:2.4, timeSec:7200, ispBonus:24, dryMassMult:0.9,  relBonus:10, reuseBonus:14, rewardMult:2.4 },
   { id:'heavy',  name:'Heavy',     icon:'🌌', costMult:4.0, timeSec:14400,ispBonus:38, dryMassMult:0.84, relBonus:16, reuseBonus:22, rewardMult:3.8 },
 ];
+const SAVE_VERSION = 2;
 
 const UPGRADES = [
   { id:'mining1',    name:'채굴 효율 I',   icon:'⛏️', desc:'금속 생산 +50%',        cost:{research:50},  effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.5; } },
@@ -1040,8 +1041,42 @@ function renderAll() {
 }
 
 // ==================== SAVE / LOAD ====================
+function migrateSave(rawSave) {
+  const src = rawSave || {};
+  const version = Number(src.saveVersion || 1);
+  let migrated = { ...src };
+
+  if (version < 2) {
+    const nextGs = migrated.gs || {};
+    const nextBuildings = { ...(nextGs.buildings || {}) };
+    if (typeof nextBuildings.launchPad !== 'number') nextBuildings.launchPad = 0;
+    const nextAssembly = nextGs.assembly && typeof nextGs.assembly === 'object'
+      ? nextGs.assembly
+      : { selectedQuality: 'proto', jobs: [] };
+
+    migrated = {
+      ...migrated,
+      gs: {
+        ...nextGs,
+        buildings: nextBuildings,
+        assembly: {
+          selectedQuality: nextAssembly.selectedQuality || 'proto',
+          jobs: Array.isArray(nextAssembly.jobs) ? nextAssembly.jobs : []
+        }
+      },
+      reliabilityBonus: Number(migrated.reliabilityBonus || 0),
+      slotBonus: Number(migrated.slotBonus || 0),
+      saveVersion: 2
+    };
+  }
+
+  if (!migrated.saveVersion) migrated.saveVersion = SAVE_VERSION;
+  return migrated;
+}
+
 function saveGame() {
   const save = {
+    saveVersion: SAVE_VERSION,
     gs, prodMult, globalMult, partCostMult, fusionBonus, reliabilityBonus, slotBonus,
     lastSave: Date.now()
   };
@@ -1051,7 +1086,7 @@ function loadGame() {
   try {
     const raw = localStorage.getItem('moonIdle_v1');
     if (!raw) return;
-    const save = JSON.parse(raw);
+    const save = migrateSave(JSON.parse(raw));
     Object.assign(gs, save.gs);
     if (!gs.buildings.launchPad) gs.buildings.launchPad = 0;
     if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
