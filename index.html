@@ -259,6 +259,79 @@ header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
   0%,100% { transform: scale(1); box-shadow: var(--glow-gold), 0 4px 20px rgba(255,109,0,0.4); }
   50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255,213,79,0.8), 0 4px 30px rgba(255,109,0,0.6); }
 }
+.science-summary {
+  background: rgba(79,195,247,0.08);
+  border: 1px solid rgba(79,195,247,0.25);
+  border-radius: 10px;
+  padding: 10px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  font-size: 0.73rem;
+  color: var(--text-secondary);
+}
+.science-summary b { color: var(--text-primary); }
+.assembly-toolbar {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.assembly-title {
+  font-size: 0.76rem;
+  color: var(--accent-blue);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.quality-select {
+  width: 100%;
+  background: #0b1328;
+  border: 1px solid rgba(79,195,247,0.3);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  padding: 6px;
+}
+.slot-item {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 9px;
+  margin-bottom: 7px;
+}
+.slot-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 0.74rem;
+}
+.slot-status {
+  font-size: 0.7rem;
+}
+.slot-status.ready { color: var(--accent-green); }
+.slot-status.busy { color: var(--accent-gold); }
+.slot-status.idle { color: var(--text-secondary); }
+.slot-row-note {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.slot-btn {
+  width: 100%;
+  border: 1px solid rgba(79,195,247,0.3);
+  border-radius: 7px;
+  background: linear-gradient(135deg, #0d47a1, #1565c0);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 6px;
+  cursor: pointer;
+}
+.slot-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.slot-btn.launch {
+  background: linear-gradient(135deg, #e65100, #ff6d00);
+  border-color: rgba(255,109,0,0.6);
+}
 /* Upgrades */
 .upgrade-item {
   background: var(--bg-card);
@@ -412,7 +485,9 @@ header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
       <div class="panel-title">🚀 로켓 조립</div>
       <div class="rocket-visual" id="rocket-emoji">🚀</div>
       <div id="parts-list"></div>
-      <button class="launch-btn" id="launch-btn" onclick="launchRocket()">🌙 달로 발사!</button>
+      <div id="science-summary" class="science-summary"></div>
+      <div id="assembly-controls"></div>
+      <div id="assembly-slots"></div>
     </div>
   </div>
 </div>
@@ -442,14 +517,22 @@ const BUILDINGS = [
   { id:'electronicsLab', name:'전자공장', icon:'🏭',  desc:'전자부품 생산',       produces:'electronics', baseRate:0.5, baseCost:{metal:80, fuel:20} },
   { id:'researchLab',    name:'연구소',   icon:'🔭',  desc:'연구 포인트 생산',    produces:'research',    baseRate:0.3, baseCost:{metal:200, electronics:10} },
   { id:'solarArray',     name:'태양광 패널', icon:'☀️', desc:'모든 생산 +10%',    produces:'bonus',       baseRate:0,   baseCost:{metal:500, electronics:50} },
+  { id:'launchPad',      name:'로켓 발사대', icon:'🛰️', desc:'조립 슬롯 +1, 대량 발사 인프라', produces:'slots', baseRate:0, baseCost:{metal:1500, electronics:250, research:250} },
 ];
 
 const PARTS = [
-  { id:'engine',    name:'엔진',       icon:'🔥', cost:{metal:500,  electronics:200}, desc:'로켓 추진 시스템' },
-  { id:'fuelTank',  name:'연료 탱크',  icon:'🛢️', cost:{metal:300,  fuel:1000},       desc:'고압 연료 저장소' },
-  { id:'control',   name:'제어 시스템', icon:'🖥️', cost:{electronics:500, research:200}, desc:'비행 제어 컴퓨터' },
-  { id:'hull',      name:'선체',       icon:'🔩', cost:{metal:1000, fuel:200},         desc:'내열 합금 선체' },
-  { id:'payload',   name:'탑재체',     icon:'📡', cost:{electronics:300, research:500}, desc:'달 탐사 장비' },
+  { id:'engine',    name:'엔진',       icon:'🔥', cost:{metal:900,  electronics:450}, desc:'로켓 추진 시스템' },
+  { id:'fuelTank',  name:'연료 탱크',  icon:'🛢️', cost:{metal:600,  fuel:2200},       desc:'고압 연료 저장소' },
+  { id:'control',   name:'제어 시스템', icon:'🖥️', cost:{electronics:900, research:600}, desc:'비행 제어 컴퓨터' },
+  { id:'hull',      name:'선체',       icon:'🔩', cost:{metal:2200, fuel:450},         desc:'내열 합금 선체' },
+  { id:'payload',   name:'탑재체',     icon:'📡', cost:{electronics:700, research:1400}, desc:'달 탐사 장비' },
+];
+
+const ROCKET_QUALITIES = [
+  { id:'proto',  name:'궤도 시제기', icon:'🧪', costMult:1.0, timeSec:1800, ispBonus:0,  dryMassMult:1.0, relBonus:0,  reuseBonus:0,  rewardMult:1.0 },
+  { id:'block1', name:'Block-I',   icon:'🚀', costMult:1.5, timeSec:3600, ispBonus:12, dryMassMult:0.95, relBonus:6,  reuseBonus:8,  rewardMult:1.6 },
+  { id:'block2', name:'Block-II',  icon:'🛰️', costMult:2.4, timeSec:7200, ispBonus:24, dryMassMult:0.9,  relBonus:10, reuseBonus:14, rewardMult:2.4 },
+  { id:'heavy',  name:'Heavy',     icon:'🌌', costMult:4.0, timeSec:14400,ispBonus:38, dryMassMult:0.84, relBonus:16, reuseBonus:22, rewardMult:3.8 },
 ];
 
 const UPGRADES = [
@@ -461,14 +544,20 @@ const UPGRADES = [
   { id:'auto2',      name:'자동화 II',     icon:'🤖', desc:'모든 생산 +50%',         cost:{research:500}, effect:()=>{ globalMult*=1.5; },                       req:'auto1' },
   { id:'lightweight',name:'경량 소재',     icon:'🪶', desc:'로켓 부품 비용 -25%',   cost:{research:400}, effect:()=>{ partCostMult=0.75; } },
   { id:'fusion',     name:'핵융합 엔진',   icon:'⚛️', desc:'문스톤 획득량 +2',      cost:{research:1000},effect:()=>{ fusionBonus=2; } },
+  { id:'qaRig',      name:'품질 시험대',   icon:'🧰', desc:'신뢰도 +8%',             cost:{research:900}, effect:()=>{ reliabilityBonus += 8; },                 req:'auto1' },
+  { id:'padOps',     name:'발사 운영 AI',  icon:'🧠', desc:'조립 슬롯 +1',           cost:{research:1800},effect:()=>{ slotBonus += 1; },                        req:'qaRig' },
 ];
 
 // ==================== GAME STATE ====================
 let gs = {
   res: { metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0 },
+  buildings: { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0, launchPad:0 },
   parts: { engine:0, fuelTank:0, control:0, hull:0, payload:0 },
   upgrades: {},
+  assembly: {
+    selectedQuality: 'proto',
+    jobs: []
+  },
   moonstone: 0,
   launches: 0,
   settings: { sound: true },
@@ -478,6 +567,8 @@ let prodMult = {};
 let globalMult = 1;
 let partCostMult = 1;
 let fusionBonus = 0;
+let reliabilityBonus = 0;
+let slotBonus = 0;
 let audioCtx = null;
 
 // ==================== HELPERS ====================
@@ -491,6 +582,70 @@ function fmt(n) {
 function fmtDec(n) {
   if (n >= 1000) return fmt(n);
   return n.toFixed(1);
+}
+function fmtTime(sec) {
+  const s = Math.max(0, Math.floor(sec));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${r}s`;
+  return `${r}s`;
+}
+function clamp(v, min, max) {
+  return Math.min(max, Math.max(min, v));
+}
+function getQuality(qid) {
+  return ROCKET_QUALITIES.find(q => q.id === qid) || ROCKET_QUALITIES[0];
+}
+function getAssemblySlots() {
+  return 1 + gs.buildings.launchPad + slotBonus;
+}
+function ensureAssemblyState() {
+  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
+  if (!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs = [];
+  if (!gs.assembly.selectedQuality) gs.assembly.selectedQuality = 'proto';
+  const slots = getAssemblySlots();
+  while (gs.assembly.jobs.length < slots) gs.assembly.jobs.push(null);
+  if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
+}
+function getAssemblyCost(qualityId) {
+  const q = getQuality(qualityId);
+  const total = { metal:0, fuel:0, electronics:0, research:0 };
+  PARTS.forEach(p => {
+    const c = getPartCost(p);
+    Object.entries(c).forEach(([r,v]) => {
+      total[r] = (total[r] || 0) + Math.floor(v * q.costMult * 0.32);
+    });
+  });
+  return total;
+}
+function getRocketScience(qualityId) {
+  const q = getQuality(qualityId);
+  const tech = {
+    mine: gs.buildings.mine,
+    lab: gs.buildings.researchLab,
+    elec: gs.buildings.electronicsLab
+  };
+  const isp = 315 + q.ispBonus + tech.elec * 1.2 + (gs.upgrades.fusion ? 22 : 0);
+  const dryMass = 28 * q.dryMassMult * (gs.upgrades.lightweight ? 0.9 : 1);
+  const propMass = 76 + gs.buildings.refinery * 0.1;
+  const thrust = 1450 + tech.mine * 0.8 + (gs.upgrades.fusion ? 120 : 0);
+  const m0 = dryMass + propMass;
+  const mf = dryMass;
+  const deltaV = (isp * 9.81 * Math.log(m0 / mf)) / 1000;
+  const twr = thrust / (m0 * 9.81);
+  const reliability = clamp(56 + tech.lab * 1.9 + tech.elec * 0.8 + reliabilityBonus + q.relBonus, 35, 99.5);
+  const reusability = clamp(6 + gs.buildings.launchPad * 4 + q.reuseBonus + (gs.upgrades.lightweight ? 8 : 0), 0, 95);
+  const score = deltaV * 11 + twr * 26 + reliability * 0.7 + reusability * 0.3;
+  return { deltaV, twr, reliability, reusability, score };
+}
+function getMoonstoneRewardForQuality(qualityId) {
+  const q = getQuality(qualityId);
+  const sci = getRocketScience(qualityId);
+  const qualityBonus = Math.floor((sci.score / 160) * q.rewardMult);
+  const missionBonus = Math.floor(gs.launches / 4);
+  return Math.max(1, 1 + fusionBonus + qualityBonus + missionBonus);
 }
 function canAfford(cost) {
   return Object.entries(cost).every(([r,v]) => gs.res[r] >= v);
@@ -572,7 +727,7 @@ function getSolarBonus() {
 function getProduction() {
   const prod = { metal:0, fuel:0, electronics:0, research:0 };
   BUILDINGS.forEach(b => {
-    if (b.produces !== 'bonus') {
+    if (b.produces !== 'bonus' && Object.prototype.hasOwnProperty.call(prod, b.produces)) {
       const rate = b.baseRate * gs.buildings[b.id] * (prodMult[b.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus();
       prod[b.produces] = (prod[b.produces]||0) + rate;
     }
@@ -585,6 +740,7 @@ function tick() {
   gs.lastTick = now;
   const prod = getProduction();
   RESOURCES.forEach(r => { gs.res[r.id] += prod[r.id] * dt; });
+  updateAssemblyJobs(now);
 }
 function calcOffline() {
   const now = Date.now();
@@ -594,6 +750,7 @@ function calcOffline() {
   RESOURCES.forEach(r => { gs.res[r.id] += prod[r.id] * elapsed; });
   gs.lastTick = now;
   const mins = Math.floor(elapsed/60);
+  updateAssemblyJobs(now);
   if (mins > 0) {
     const banner = document.getElementById('offline-banner');
     banner.style.display = 'block';
@@ -641,7 +798,6 @@ function craftPart(pid) {
   gs.parts[pid] = 1;
   notify(`${part.icon} ${part.name} 제작 완료!`, 'var(--accent-green)');
   playSfx('square', 520, 0.11, 0.03, 760);
-  checkLaunch();
   renderAll();
 }
 function buyUpgrade(uid) {
@@ -655,32 +811,75 @@ function buyUpgrade(uid) {
   playSfx('sawtooth', 440, 0.1, 0.028, 700);
   renderAll();
 }
-function checkLaunch() {
-  const allDone = PARTS.every(p => gs.parts[p.id]);
-  const btn = document.getElementById('launch-btn');
-  if (allDone) btn.classList.add('ready');
-  else btn.classList.remove('ready');
+function selectQuality(qid) {
+  gs.assembly.selectedQuality = qid;
+  renderAll();
 }
-function launchRocket() {
-  if (!PARTS.every(p => gs.parts[p.id])) return;
-  const earned = 1 + gs.launches + fusionBonus;
+function updateAssemblyJobs(now = Date.now()) {
+  ensureAssemblyState();
+  for (let i = 0; i < gs.assembly.jobs.length; i++) {
+    const job = gs.assembly.jobs[i];
+    if (!job || job.ready) continue;
+    if (now >= job.endAt) {
+      job.ready = true;
+      notify(`🛠️ 슬롯 ${i+1}: ${getQuality(job.qualityId).name} 조립 완료`, 'var(--accent-green)');
+    }
+  }
+}
+function startAssembly(slotIdx) {
+  ensureAssemblyState();
+  if (!PARTS.every(p => gs.parts[p.id])) {
+    notify('먼저 엔진/탱크/제어/선체/탑재체를 모두 완성하세요.', 'var(--accent-red)');
+    return;
+  }
+  if (gs.assembly.jobs[slotIdx]) return;
+  const q = getQuality(gs.assembly.selectedQuality);
+  const cost = getAssemblyCost(q.id);
+  if (!canAfford(cost)) return;
+  spend(cost);
+  const now = Date.now();
+  gs.assembly.jobs[slotIdx] = {
+    qualityId: q.id,
+    startAt: now,
+    endAt: now + q.timeSec * 1000,
+    ready: false
+  };
+  notify(`🚀 슬롯 ${slotIdx+1}: ${q.name} 조립 시작 (${fmtTime(q.timeSec)})`);
+  playSfx('triangle', 310, 0.09, 0.03, 430);
+  renderAll();
+}
+function launchFromSlot(slotIdx) {
+  ensureAssemblyState();
+  const job = gs.assembly.jobs[slotIdx];
+  if (!job || !job.ready) return;
+  const q = getQuality(job.qualityId);
+  const sci = getRocketScience(q.id);
+  const earned = getMoonstoneRewardForQuality(q.id);
+  gs.assembly.jobs[slotIdx] = null;
+  gs.launches += 1;
+  const msg = `${q.icon} ${q.name} 발사 성공 | Δv ${sci.deltaV.toFixed(2)}km/s · TWR ${sci.twr.toFixed(2)} · 신뢰도 ${sci.reliability.toFixed(1)}%`;
+  document.getElementById('launch-msg').innerHTML = `${msg}<br>문스톤을 획득하고 더 강하게 확장하세요.`;
   document.getElementById('moonstone-earned').textContent = `🌙 문스톤 +${earned}개 획득!`;
   document.getElementById('launch-overlay').classList.add('show');
   playLaunchSfx();
-  // store earned for prestige
   window._pendingMoonstone = earned;
 }
 function prestige() {
   gs.moonstone += window._pendingMoonstone || 1;
-  gs.launches++;
   // reset but keep moonstone & launches
   gs.res = { metal:0, fuel:0, electronics:0, research:0 };
-  gs.buildings = { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0 };
+  gs.buildings = { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0, launchPad:0 };
   gs.parts = { engine:0, fuelTank:0, control:0, hull:0, payload:0 };
+  gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};
-  prodMult = {}; globalMult = 1; partCostMult = 1; fusionBonus = 0;
+  prodMult = {};
+  globalMult = 1;
+  partCostMult = 1;
+  fusionBonus = 0;
+  reliabilityBonus = 0;
+  slotBonus = 0;
   document.getElementById('launch-overlay').classList.remove('show');
-  notify(`🌙 ${gs.moonstone}개의 문스톤으로 재시작! 생산 +${gs.moonstone*5}% 보너스`, 'var(--accent-gold)');
+  notify(`🌙 문스톤 ${gs.moonstone}개 보유 | 다음 세대 생산 +${gs.moonstone*5}%`, 'var(--accent-gold)');
   playSfx('triangle', 500, 0.12, 0.04, 760);
   saveGame();
   renderAll();
@@ -708,7 +907,9 @@ function renderBuildings() {
     const cost = getBuildingCost(b);
     const affordable = canAfford(cost);
     const costStr = Object.entries(cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
-    const rateStr = b.produces==='bonus' ? `태양광: 생산 +${(gs.buildings[b.id]*10)}%` : `${RESOURCES.find(x=>x.id===b.produces)?.icon} +${fmtDec(b.baseRate * (prodMult[b.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus())}/s`;
+    let rateStr = `${RESOURCES.find(x=>x.id===b.produces)?.icon} +${fmtDec(b.baseRate * (prodMult[b.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus())}/s`;
+    if (b.produces==='bonus') rateStr = `태양광: 생산 +${(gs.buildings[b.id]*10)}%`;
+    if (b.produces==='slots') rateStr = `조립 슬롯 +${gs.buildings[b.id]} (현재 ${getAssemblySlots()} 슬롯)`;
     return `<div class="building-item">
       <div class="building-header">
         <div class="building-name">${b.icon} ${b.name}</div>
@@ -722,6 +923,7 @@ function renderBuildings() {
   document.getElementById('buildings-list').innerHTML = html;
 }
 function renderParts() {
+  ensureAssemblyState();
   const html = PARTS.map(p => {
     const cost = getPartCost(p);
     const done = gs.parts[p.id];
@@ -740,7 +942,63 @@ function renderParts() {
     </div>`;
   }).join('');
   document.getElementById('parts-list').innerHTML = html;
-  checkLaunch();
+}
+function renderScienceSummary() {
+  ensureAssemblyState();
+  const q = getQuality(gs.assembly.selectedQuality);
+  const sci = getRocketScience(q.id);
+  const reward = getMoonstoneRewardForQuality(q.id);
+  const firstFlowHint = `첫 로켓 목표 흐름: 약 1~2시간 (자원 생산/연구 업그레이드에 따라 단축)`;
+  document.getElementById('science-summary').innerHTML = `
+    <div><b>${q.icon} ${q.name}</b> · 예상 조립 ${fmtTime(q.timeSec)}</div>
+    <div>Δv: <b>${sci.deltaV.toFixed(2)} km/s</b> (Tsiolkovsky 근사)</div>
+    <div>TWR: <b>${sci.twr.toFixed(2)}</b> · 신뢰도: <b>${sci.reliability.toFixed(1)}%</b> · 재사용성: <b>${sci.reusability.toFixed(1)}%</b></div>
+    <div>예상 문스톤 보상: <b>+${reward}</b></div>
+    <div style="margin-top:4px">${firstFlowHint}</div>
+  `;
+}
+function renderAssembly() {
+  ensureAssemblyState();
+  const qualityOptions = ROCKET_QUALITIES.map(q =>
+    `<option value="${q.id}" ${gs.assembly.selectedQuality===q.id?'selected':''}>${q.icon} ${q.name} · ${fmtTime(q.timeSec)} · 비용x${q.costMult.toFixed(1)}</option>`
+  ).join('');
+  document.getElementById('assembly-controls').innerHTML = `
+    <div class="assembly-toolbar">
+      <div class="assembly-title">🔧 조립 품질 설정 (고급 로켓일수록 오래 걸리지만 보상 증가)</div>
+      <select class="quality-select" onchange="selectQuality(this.value)">${qualityOptions}</select>
+    </div>
+  `;
+
+  const slotsHtml = gs.assembly.jobs.map((job, idx) => {
+    if (!job) {
+      const cost = getAssemblyCost(gs.assembly.selectedQuality);
+      const costStr = Object.entries(cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
+      const canStart = PARTS.every(p => gs.parts[p.id]) && canAfford(cost);
+      return `<div class="slot-item">
+        <div class="slot-header"><span>슬롯 ${idx+1}</span><span class="slot-status idle">대기</span></div>
+        <div class="slot-row-note">선택 품질로 조립 시작 가능</div>
+        <div class="slot-row-note">💰 ${costStr}</div>
+        <button class="slot-btn" onclick="startAssembly(${idx})" ${canStart?'':'disabled'}>조립 시작</button>
+      </div>`;
+    }
+    const q = getQuality(job.qualityId);
+    if (job.ready) {
+      const reward = getMoonstoneRewardForQuality(q.id);
+      return `<div class="slot-item">
+        <div class="slot-header"><span>슬롯 ${idx+1} · ${q.icon} ${q.name}</span><span class="slot-status ready">발사 준비 완료</span></div>
+        <div class="slot-row-note">예상 문스톤 보상 +${reward}</div>
+        <button class="slot-btn launch" onclick="launchFromSlot(${idx})">🌙 발사 실행</button>
+      </div>`;
+    }
+    const remain = Math.max(0, Math.floor((job.endAt - Date.now()) / 1000));
+    const total = Math.max(1, Math.floor((job.endAt - job.startAt) / 1000));
+    const p = Math.min(100, ((total - remain) / total) * 100);
+    return `<div class="slot-item">
+      <div class="slot-header"><span>슬롯 ${idx+1} · ${q.icon} ${q.name}</span><span class="slot-status busy">조립 중 ${fmtTime(remain)}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${p}%"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('assembly-slots').innerHTML = slotsHtml;
 }
 function renderUpgrades() {
   const html = UPGRADES.map(u => {
@@ -770,9 +1028,12 @@ function renderMoonstone() {
   }
 }
 function renderAll() {
+  ensureAssemblyState();
   renderResources();
   renderBuildings();
   renderParts();
+  renderScienceSummary();
+  renderAssembly();
   renderUpgrades();
   renderMoonstone();
   renderSoundToggle();
@@ -781,7 +1042,7 @@ function renderAll() {
 // ==================== SAVE / LOAD ====================
 function saveGame() {
   const save = {
-    gs, prodMult, globalMult, partCostMult, fusionBonus,
+    gs, prodMult, globalMult, partCostMult, fusionBonus, reliabilityBonus, slotBonus,
     lastSave: Date.now()
   };
   localStorage.setItem('moonIdle_v1', JSON.stringify(save));
@@ -792,12 +1053,17 @@ function loadGame() {
     if (!raw) return;
     const save = JSON.parse(raw);
     Object.assign(gs, save.gs);
+    if (!gs.buildings.launchPad) gs.buildings.launchPad = 0;
+    if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
     if (!gs.settings) gs.settings = { sound: true };
     if (typeof gs.settings.sound !== 'boolean') gs.settings.sound = true;
     Object.assign(prodMult, save.prodMult||{});
     globalMult = save.globalMult||1;
     partCostMult = save.partCostMult||1;
     fusionBonus = save.fusionBonus||0;
+    reliabilityBonus = save.reliabilityBonus||0;
+    slotBonus = save.slotBonus||0;
+    ensureAssemblyState();
     // re-apply upgrade effects for multipliers (they're stored directly)
     // offline progress
     calcOffline();

@@ -1,0 +1,4 @@
+QA_RESULT=PASS
+branch=dev/programmer
+scope=core loop, save/load, quality-slot flow
+notes=baseline smoke passed
