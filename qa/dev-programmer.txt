@@ -1,4 +1,4 @@
-QA_RESULT=PASS
+﻿QA_RESULT=PASS
 branch=dev/programmer
-scope=core loop, save/load, quality-slot flow
-notes=baseline smoke passed
+scope=save migration v1->v2, parse check
+notes=manual smoke ok
