@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoonIdle - 달 탐사 로켓 제작소</title>
+<meta name="description" content="자원을 모으고 로켓을 조립해 달에 도달하는 방치형 게임">
+<style>
+:root {
+  --bg-dark: #0a0e1a;
+  --bg-panel: #0f1629;
+  --bg-card: #141d35;
+  --accent-blue: #4fc3f7;
+  --accent-purple: #b39ddb;
+  --accent-gold: #ffd54f;
+  --accent-green: #69f0ae;
+  --accent-red: #ef5350;
+  --text-primary: #e8eaf6;
+  --text-secondary: #90a4ae;
+  --glow-blue: 0 0 12px rgba(79,195,247,0.5);
+  --glow-gold: 0 0 12px rgba(255,213,79,0.5);
+  --glow-green: 0 0 12px rgba(105,240,174,0.5);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+#stars {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse at 50% 30%, #1a2a4a 0%, #0a0e1a 70%);
+}
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: white;
+  animation: twinkle var(--dur, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes twinkle {
+  0%,100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+#app {
+  position: relative; z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+}
+header {
+  text-align: center;
+  padding: 20px 0 16px;
+  border-bottom: 1px solid rgba(79,195,247,0.2);
+  margin-bottom: 16px;
+}
+header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #4fc3f7, #b39ddb, #ffd54f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+header p { color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px; }
+.moonstone-bar {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,213,79,0.1);
+  border: 1px solid rgba(255,213,79,0.3);
+  border-radius: 20px;
+  padding: 4px 14px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+  box-shadow: var(--glow-gold);
+}
+.grid {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid rgba(79,195,247,0.15);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.panel-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent-blue);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+/* Resources */
+.resource-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: border-color 0.2s;
+}
+.resource-item:hover { border-color: rgba(79,195,247,0.2); }
+.resource-icon { font-size: 1.2rem; width: 28px; text-align: center; }
+.resource-info { flex: 1; padding: 0 8px; }
+.resource-name { font-size: 0.78rem; color: var(--text-secondary); }
+.resource-amount { font-size: 1rem; font-weight: 700; color: var(--text-primary); }
+.resource-rate { font-size: 0.72rem; color: var(--accent-green); }
+.click-btn {
+  background: linear-gradient(135deg, #1565c0, #4fc3f7);
+  border: none; border-radius: 6px;
+  color: white; cursor: pointer;
+  font-size: 0.75rem; font-weight: 600;
+  padding: 5px 10px;
+  transition: all 0.15s;
+  box-shadow: var(--glow-blue);
+  white-space: nowrap;
+}
+.click-btn:hover { transform: translateY(-1px); filter: brightness(1.2); }
+.click-btn:active { transform: translateY(0); }
+/* Buildings */
+.building-item {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+.building-item:hover { border-color: rgba(79,195,247,0.25); }
+.building-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.building-name { font-size: 0.85rem; font-weight: 600; }
+.building-count {
+  background: rgba(79,195,247,0.15);
+  color: var(--accent-blue);
+  border-radius: 12px;
+  padding: 1px 8px;
+  font-size: 0.75rem; font-weight: 700;
+}
+.building-desc { font-size: 0.72rem; color: var(--text-secondary); margin-bottom: 6px; }
+.building-cost { font-size: 0.72rem; color: var(--accent-gold); margin-bottom: 6px; }
+.buy-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #1a237e, #283593);
+  border: 1px solid rgba(79,195,247,0.3);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 0.78rem; font-weight: 600;
+  padding: 6px;
+  transition: all 0.2s;
+}
+.buy-btn:hover:not(:disabled) { background: linear-gradient(135deg, #283593, #4fc3f7); box-shadow: var(--glow-blue); }
+.buy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Rocket Panel */
+.rocket-visual {
+  text-align: center;
+  font-size: 4rem;
+  padding: 10px 0;
+  animation: rocketFloat 3s ease-in-out infinite;
+}
+@keyframes rocketFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.rocket-part {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+.rocket-part.complete {
+  border-color: rgba(105,240,174,0.4);
+  background: rgba(105,240,174,0.05);
+}
+.part-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.part-name { font-size: 0.82rem; font-weight: 600; }
+.part-status { font-size: 0.75rem; }
+.part-status.done { color: var(--accent-green); }
+.part-status.pending { color: var(--text-secondary); }
+.progress-bar {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px; height: 6px; overflow: hidden; margin-bottom: 4px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4fc3f7, #b39ddb);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  box-shadow: var(--glow-blue);
+}
+.rocket-part.complete .progress-fill { background: linear-gradient(90deg, #69f0ae, #4fc3f7); }
+.craft-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #4a148c, #7b1fa2);
+  border: 1px solid rgba(179,157,219,0.3);
+  border-radius: 6px;
+  color: white; cursor: pointer;
+  font-size: 0.75rem; font-weight: 600;
+  padding: 5px;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.craft-btn:hover:not(:disabled) { background: linear-gradient(135deg, #6a1b9a, #b39ddb); box-shadow: 0 0 10px rgba(179,157,219,0.4); }
+.craft-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.launch-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #e65100, #ff6d00, #ffd54f);
+  border: none; border-radius: 10px;
+  color: white; cursor: pointer;
+  font-size: 1rem; font-weight: 800;
+  padding: 14px;
+  margin-top: 10px;
+  transition: all 0.3s;
+  box-shadow: var(--glow-gold), 0 4px 20px rgba(255,109,0,0.4);
+  letter-spacing: 1px;
+  display: none;
+}
+.launch-btn.ready { display: block; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse {
+  0%,100% { transform: scale(1); box-shadow: var(--glow-gold), 0 4px 20px rgba(255,109,0,0.4); }
+  50% { transform: scale(1.03); box-shadow: 0 0 30px rgba(255,213,79,0.8), 0 4px 30px rgba(255,109,0,0.6); }
+}
+/* Upgrades */
+.upgrade-item {
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+.upgrade-item.purchased { border-color: rgba(105,240,174,0.3); opacity: 0.6; }
+.upgrade-item:hover:not(.purchased) { border-color: rgba(179,157,219,0.3); }
+.upgrade-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.upgrade-name { font-size: 0.82rem; font-weight: 600; }
+.upgrade-desc { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 5px; }
+.upgrade-cost { font-size: 0.7rem; color: var(--accent-purple); margin-bottom: 5px; }
+.upg-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #1b5e20, #2e7d32);
+  border: 1px solid rgba(105,240,174,0.25);
+  border-radius: 6px;
+  color: white; cursor: pointer;
+  font-size: 0.75rem; font-weight: 600;
+  padding: 5px;
+  transition: all 0.2s;
+}
+.upg-btn:hover:not(:disabled) { background: linear-gradient(135deg, #2e7d32, #69f0ae); color: #000; }
+.upg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Notifications */
+#notif {
+  position: fixed; bottom: 20px; right: 20px;
+  z-index: 100; display: flex; flex-direction: column; gap: 8px;
+}
+.notif-item {
+  background: var(--bg-panel);
+  border: 1px solid rgba(79,195,247,0.3);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  box-shadow: var(--glow-blue);
+  animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+  max-width: 280px;
+}
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; transform: translateX(100%); } }
+/* Launch overlay */
+#launch-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 200;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#launch-overlay.show { display: flex; }
+#launch-overlay h2 {
+  font-size: 2.5rem; font-weight: 800;
+  background: linear-gradient(135deg, #ffd54f, #ff6d00);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 16px;
+}
+#launch-overlay p { color: var(--text-secondary); margin-bottom: 24px; font-size: 1rem; }
+.moon-emoji { font-size: 6rem; animation: moonBounce 1s ease-in-out infinite; }
+@keyframes moonBounce { 0%,100% { transform: scale(1) rotate(-5deg); } 50% { transform: scale(1.1) rotate(5deg); } }
+.prestige-btn {
+  background: linear-gradient(135deg, #ffd54f, #ff6d00);
+  border: none; border-radius: 12px;
+  color: #000; cursor: pointer;
+  font-size: 1rem; font-weight: 800;
+  padding: 14px 32px;
+  transition: all 0.2s;
+  box-shadow: var(--glow-gold);
+  margin-top: 16px;
+}
+.prestige-btn:hover { transform: scale(1.05); }
+.offline-banner {
+  background: rgba(255,213,79,0.1);
+  border: 1px solid rgba(255,213,79,0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+  color: var(--accent-gold);
+  display: none;
+}
+.tab-bar {
+  display: flex; gap: 6px; margin-bottom: 10px;
+}
+.tab {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.75rem; font-weight: 600;
+  padding: 7px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.tab.active {
+  background: rgba(79,195,247,0.15);
+  border-color: rgba(79,195,247,0.4);
+  color: var(--accent-blue);
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+<div id="stars"></div>
+<div id="app">
+  <header>
+    <h1>🚀 MOON IDLE</h1>
+    <p>자원을 모으고 로켓을 조립해 달에 도달하라!</p>
+    <div class="moonstone-bar" id="moonstone-display" style="display:none">
+      🌙 문스톤: <span id="moonstone-count">0</span> (+<span id="moonstone-bonus">0</span>% 생산 보너스)
+    </div>
+  </header>
+
+  <div id="offline-banner" class="offline-banner"></div>
+
+  <div class="grid">
+    <!-- LEFT: Resources -->
+    <div class="panel">
+      <div class="panel-title">📦 자원</div>
+      <div id="resources-list"></div>
+    </div>
+
+    <!-- CENTER: Buildings + Upgrades -->
+    <div class="panel">
+      <div class="tab-bar">
+        <button class="tab active" onclick="switchTab('buildings')">🏭 시설</button>
+        <button class="tab" onclick="switchTab('upgrades')">🔬 업그레이드</button>
+      </div>
+      <div id="tab-buildings" class="tab-content active">
+        <div id="buildings-list"></div>
+      </div>
+      <div id="tab-upgrades" class="tab-content">
+        <div id="upgrades-list"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Rocket -->
+    <div class="panel">
+      <div class="panel-title">🚀 로켓 조립</div>
+      <div class="rocket-visual" id="rocket-emoji">🚀</div>
+      <div id="parts-list"></div>
+      <button class="launch-btn" id="launch-btn" onclick="launchRocket()">🌙 달로 발사!</button>
+    </div>
+  </div>
+</div>
+
+<div id="notif"></div>
+
+<div id="launch-overlay">
+  <div class="moon-emoji">🌙</div>
+  <h2>달 탐사 성공!</h2>
+  <p id="launch-msg">로켓이 달에 도착했습니다!<br>문스톤을 획득하고 더 강력하게 재시작하세요.</p>
+  <div style="font-size:0.9rem;color:var(--accent-gold);margin-bottom:8px" id="moonstone-earned"></div>
+  <button class="prestige-btn" onclick="prestige()">🌙 문스톤 획득 후 재시작</button>
+</div>
+
+<script>
+// ==================== GAME DATA ====================
+const RESOURCES = [
+  { id:'metal',       name:'금속',     icon:'🪨', color:'#90a4ae' },
+  { id:'fuel',        name:'연료',     icon:'⛽', color:'#ef9a9a' },
+  { id:'electronics', name:'전자부품', icon:'💡', color:'#fff176' },
+  { id:'research',    name:'연구 포인트', icon:'🔬', color:'#b39ddb' },
+];
+
+const BUILDINGS = [
+  { id:'mine',           name:'광산',     icon:'⛏️',  desc:'금속 자동 채굴',      produces:'metal',       baseRate:1,   baseCost:{metal:10} },
+  { id:'refinery',       name:'정유소',   icon:'🛢️',  desc:'연료 자동 생산',      produces:'fuel',        baseRate:0.8, baseCost:{metal:30, fuel:0} },
+  { id:'electronicsLab', name:'전자공장', icon:'🏭',  desc:'전자부품 생산',       produces:'electronics', baseRate:0.5, baseCost:{metal:80, fuel:20} },
+  { id:'researchLab',    name:'연구소',   icon:'🔭',  desc:'연구 포인트 생산',    produces:'research',    baseRate:0.3, baseCost:{metal:200, electronics:10} },
+  { id:'solarArray',     name:'태양광 패널', icon:'☀️', desc:'모든 생산 +10%',    produces:'bonus',       baseRate:0,   baseCost:{metal:500, electronics:50} },
+];
+
+const PARTS = [
+  { id:'engine',    name:'엔진',       icon:'🔥', cost:{metal:500,  electronics:200}, desc:'로켓 추진 시스템' },
+  { id:'fuelTank',  name:'연료 탱크',  icon:'🛢️', cost:{metal:300,  fuel:1000},       desc:'고압 연료 저장소' },
+  { id:'control',   name:'제어 시스템', icon:'🖥️', cost:{electronics:500, research:200}, desc:'비행 제어 컴퓨터' },
+  { id:'hull',      name:'선체',       icon:'🔩', cost:{metal:1000, fuel:200},         desc:'내열 합금 선체' },
+  { id:'payload',   name:'탑재체',     icon:'📡', cost:{electronics:300, research:500}, desc:'달 탐사 장비' },
+];
+
+const UPGRADES = [
+  { id:'mining1',    name:'채굴 효율 I',   icon:'⛏️', desc:'금속 생산 +50%',        cost:{research:50},  effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.5; } },
+  { id:'mining2',    name:'채굴 효율 II',  icon:'⛏️', desc:'금속 생산 +100%',       cost:{research:200}, effect:()=>{ prodMult.metal=(prodMult.metal||1)*2; },   req:'mining1' },
+  { id:'fuel1',      name:'연료 압축 I',   icon:'⛽', desc:'연료 생산 +50%',         cost:{research:80},  effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.5; } },
+  { id:'fuel2',      name:'연료 압축 II',  icon:'⛽', desc:'연료 생산 +100%',        cost:{research:300}, effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*2; },    req:'fuel1' },
+  { id:'auto1',      name:'자동화 I',      icon:'🤖', desc:'모든 생산 +25%',         cost:{research:150}, effect:()=>{ globalMult*=1.25; } },
+  { id:'auto2',      name:'자동화 II',     icon:'🤖', desc:'모든 생산 +50%',         cost:{research:500}, effect:()=>{ globalMult*=1.5; },                       req:'auto1' },
+  { id:'lightweight',name:'경량 소재',     icon:'🪶', desc:'로켓 부품 비용 -25%',   cost:{research:400}, effect:()=>{ partCostMult=0.75; } },
+  { id:'fusion',     name:'핵융합 엔진',   icon:'⚛️', desc:'문스톤 획득량 +2',      cost:{research:1000},effect:()=>{ fusionBonus=2; } },
+];
+
+// ==================== GAME STATE ====================
+let gs = {
+  res: { metal:0, fuel:0, electronics:0, research:0 },
+  buildings: { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0 },
+  parts: { engine:0, fuelTank:0, control:0, hull:0, payload:0 },
+  upgrades: {},
+  moonstone: 0,
+  launches: 0,
+  lastTick: Date.now(),
+};
+let prodMult = {};
+let globalMult = 1;
+let partCostMult = 1;
+let fusionBonus = 0;
+
+// ==================== HELPERS ====================
+function fmt(n) {
+  if (n >= 1e12) return (n/1e12).toFixed(2)+'T';
+  if (n >= 1e9)  return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6)  return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3)  return (n/1e3).toFixed(2)+'K';
+  return Math.floor(n).toString();
+}
+function fmtDec(n) {
+  if (n >= 1000) return fmt(n);
+  return n.toFixed(1);
+}
+function canAfford(cost) {
+  return Object.entries(cost).every(([r,v]) => gs.res[r] >= v);
+}
+function spend(cost) {
+  Object.entries(cost).forEach(([r,v]) => gs.res[r] -= v);
+}
+function notify(msg, color='var(--accent-blue)') {
+  const el = document.createElement('div');
+  el.className = 'notif-item';
+  el.style.borderColor = color;
+  el.textContent = msg;
+  document.getElementById('notif').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['buildings','upgrades'][i]===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ==================== PRODUCTION ====================
+function getMoonstoneMult() {
+  return 1 + gs.moonstone * 0.05;
+}
+function getBuildingRate(b) {
+  const bld = BUILDINGS.find(x=>x.id===b.id);
+  if (!bld || bld.produces==='bonus') return 0;
+  const mult = (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult();
+  return bld.baseRate * gs.buildings[b.id] * mult;
+}
+function getSolarBonus() {
+  return 1 + gs.buildings.solarArray * 0.1;
+}
+function getProduction() {
+  const prod = { metal:0, fuel:0, electronics:0, research:0 };
+  BUILDINGS.forEach(b => {
+    if (b.produces !== 'bonus') {
+      const rate = b.baseRate * gs.buildings[b.id] * (prodMult[b.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus();
+      prod[b.produces] = (prod[b.produces]||0) + rate;
+    }
+  });
+  return prod;
+}
+function tick() {
+  const now = Date.now();
+  const dt = Math.min((now - gs.lastTick) / 1000, 1);
+  gs.lastTick = now;
+  const prod = getProduction();
+  RESOURCES.forEach(r => { gs.res[r.id] += prod[r.id] * dt; });
+}
+function calcOffline() {
+  const now = Date.now();
+  const elapsed = Math.min((now - gs.lastTick) / 1000, 8*3600);
+  if (elapsed < 5) return;
+  const prod = getProduction();
+  RESOURCES.forEach(r => { gs.res[r.id] += prod[r.id] * elapsed; });
+  gs.lastTick = now;
+  const mins = Math.floor(elapsed/60);
+  if (mins > 0) {
+    const banner = document.getElementById('offline-banner');
+    banner.style.display = 'block';
+    banner.textContent = `⏰ 오프라인 ${mins}분 동안 자원이 생산되었습니다!`;
+    setTimeout(() => banner.style.display='none', 5000);
+  }
+}
+
+// ==================== BUILDING COST ====================
+function getBuildingCost(bld) {
+  const cost = {};
+  Object.entries(bld.baseCost).forEach(([r,v]) => {
+    cost[r] = Math.floor(v * Math.pow(1.15, gs.buildings[bld.id]));
+  });
+  return cost;
+}
+function getPartCost(part) {
+  const cost = {};
+  Object.entries(part.cost).forEach(([r,v]) => { cost[r] = Math.floor(v * partCostMult); });
+  return cost;
+}
+
+// ==================== ACTIONS ====================
+function clickResource(rid) {
+  const mult = getMoonstoneMult() * globalMult;
+  const amt = (prodMult[rid]||1) * mult;
+  gs.res[rid] += amt;
+}
+function buyBuilding(bid) {
+  const bld = BUILDINGS.find(b=>b.id===bid);
+  const cost = getBuildingCost(bld);
+  if (!canAfford(cost)) return;
+  spend(cost);
+  gs.buildings[bid]++;
+  notify(`${bld.icon} ${bld.name} 건설 완료! (${gs.buildings[bid]}개)`);
+  renderAll();
+}
+function craftPart(pid) {
+  const part = PARTS.find(p=>p.id===pid);
+  const cost = getPartCost(part);
+  if (!canAfford(cost) || gs.parts[pid]) return;
+  spend(cost);
+  gs.parts[pid] = 1;
+  notify(`${part.icon} ${part.name} 제작 완료!`, 'var(--accent-green)');
+  checkLaunch();
+  renderAll();
+}
+function buyUpgrade(uid) {
+  const upg = UPGRADES.find(u=>u.id===uid);
+  if (!upg || gs.upgrades[uid] || !canAfford(upg.cost)) return;
+  if (upg.req && !gs.upgrades[upg.req]) return;
+  spend(upg.cost);
+  gs.upgrades[uid] = true;
+  upg.effect();
+  notify(`${upg.icon} ${upg.name} 연구 완료!`, 'var(--accent-purple)');
+  renderAll();
+}
+function checkLaunch() {
+  const allDone = PARTS.every(p => gs.parts[p.id]);
+  const btn = document.getElementById('launch-btn');
+  if (allDone) btn.classList.add('ready');
+  else btn.classList.remove('ready');
+}
+function launchRocket() {
+  if (!PARTS.every(p => gs.parts[p.id])) return;
+  const earned = 1 + gs.launches + fusionBonus;
+  document.getElementById('moonstone-earned').textContent = `🌙 문스톤 +${earned}개 획득!`;
+  document.getElementById('launch-overlay').classList.add('show');
+  // store earned for prestige
+  window._pendingMoonstone = earned;
+}
+function prestige() {
+  gs.moonstone += window._pendingMoonstone || 1;
+  gs.launches++;
+  // reset but keep moonstone & launches
+  gs.res = { metal:0, fuel:0, electronics:0, research:0 };
+  gs.buildings = { mine:0, refinery:0, electronicsLab:0, researchLab:0, solarArray:0 };
+  gs.parts = { engine:0, fuelTank:0, control:0, hull:0, payload:0 };
+  gs.upgrades = {};
+  prodMult = {}; globalMult = 1; partCostMult = 1; fusionBonus = 0;
+  document.getElementById('launch-overlay').classList.remove('show');
+  notify(`🌙 ${gs.moonstone}개의 문스톤으로 재시작! 생산 +${gs.moonstone*5}% 보너스`, 'var(--accent-gold)');
+  saveGame();
+  renderAll();
+}
+
+// ==================== RENDER ====================
+function renderResources() {
+  const prod = getProduction();
+  const html = RESOURCES.map(r => {
+    const rate = prod[r.id];
+    return `<div class="resource-item">
+      <div class="resource-icon">${r.icon}</div>
+      <div class="resource-info">
+        <div class="resource-name">${r.name}</div>
+        <div class="resource-amount" style="color:${r.color}">${fmt(gs.res[r.id])}</div>
+        ${rate>0?`<div class="resource-rate">+${fmtDec(rate)}/s</div>`:''}
+      </div>
+      <button class="click-btn" onclick="clickResource('${r.id}')">+클릭</button>
+    </div>`;
+  }).join('');
+  document.getElementById('resources-list').innerHTML = html;
+}
+function renderBuildings() {
+  const html = BUILDINGS.map(b => {
+    const cost = getBuildingCost(b);
+    const affordable = canAfford(cost);
+    const costStr = Object.entries(cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
+    const rateStr = b.produces==='bonus' ? `태양광: 생산 +${(gs.buildings[b.id]*10)}%` : `${RESOURCES.find(x=>x.id===b.produces)?.icon} +${fmtDec(b.baseRate * (prodMult[b.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus())}/s`;
+    return `<div class="building-item">
+      <div class="building-header">
+        <div class="building-name">${b.icon} ${b.name}</div>
+        <div class="building-count">${gs.buildings[b.id]}</div>
+      </div>
+      <div class="building-desc">${b.desc} · ${rateStr}</div>
+      <div class="building-cost">💰 ${costStr}</div>
+      <button class="buy-btn" onclick="buyBuilding('${b.id}')" ${affordable?'':'disabled'}>구매</button>
+    </div>`;
+  }).join('');
+  document.getElementById('buildings-list').innerHTML = html;
+}
+function renderParts() {
+  const html = PARTS.map(p => {
+    const cost = getPartCost(p);
+    const done = gs.parts[p.id];
+    const affordable = canAfford(cost);
+    const costStr = Object.entries(cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
+    // progress: how close to affording
+    const progress = done ? 100 : Math.min(100, Math.min(...Object.entries(cost).map(([r,v])=>gs.res[r]/v*100)));
+    return `<div class="rocket-part ${done?'complete':''}">
+      <div class="part-header">
+        <div class="part-name">${p.icon} ${p.name}</div>
+        <div class="part-status ${done?'done':'pending'}">${done?'✅ 완료':'⏳ 제작 중'}</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+      ${!done?`<div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:4px">💰 ${costStr}</div>`:''}
+      ${!done?`<button class="craft-btn" onclick="craftPart('${p.id}')" ${affordable?'':'disabled'}>제작</button>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('parts-list').innerHTML = html;
+  checkLaunch();
+}
+function renderUpgrades() {
+  const html = UPGRADES.map(u => {
+    const purchased = gs.upgrades[u.id];
+    const reqMet = !u.req || gs.upgrades[u.req];
+    const affordable = canAfford(u.cost);
+    const costStr = Object.entries(u.cost).map(([r,v])=>`${RESOURCES.find(x=>x.id===r)?.icon||''}${fmt(v)}`).join(' ');
+    if (!reqMet && !purchased) return '';
+    return `<div class="upgrade-item ${purchased?'purchased':''}">
+      <div class="upgrade-header">
+        <div class="upgrade-name">${u.icon} ${u.name}</div>
+        ${purchased?'<span style="color:var(--accent-green);font-size:0.75rem">✅</span>':''}
+      </div>
+      <div class="upgrade-desc">${u.desc}</div>
+      ${!purchased?`<div class="upgrade-cost">🔬 ${costStr}</div>`:''}
+      ${!purchased?`<button class="upg-btn" onclick="buyUpgrade('${u.id}')" ${affordable?'':'disabled'}>연구</button>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('upgrades-list').innerHTML = html;
+}
+function renderMoonstone() {
+  const disp = document.getElementById('moonstone-display');
+  if (gs.moonstone > 0 || gs.launches > 0) {
+    disp.style.display = 'inline-flex';
+    document.getElementById('moonstone-count').textContent = gs.moonstone;
+    document.getElementById('moonstone-bonus').textContent = (gs.moonstone*5).toFixed(0);
+  }
+}
+function renderAll() {
+  renderResources();
+  renderBuildings();
+  renderParts();
+  renderUpgrades();
+  renderMoonstone();
+}
+
+// ==================== SAVE / LOAD ====================
+function saveGame() {
+  const save = {
+    gs, prodMult, globalMult, partCostMult, fusionBonus,
+    lastSave: Date.now()
+  };
+  localStorage.setItem('moonIdle_v1', JSON.stringify(save));
+}
+function loadGame() {
+  try {
+    const raw = localStorage.getItem('moonIdle_v1');
+    if (!raw) return;
+    const save = JSON.parse(raw);
+    Object.assign(gs, save.gs);
+    Object.assign(prodMult, save.prodMult||{});
+    globalMult = save.globalMult||1;
+    partCostMult = save.partCostMult||1;
+    fusionBonus = save.fusionBonus||0;
+    // re-apply upgrade effects for multipliers (they're stored directly)
+    // offline progress
+    calcOffline();
+  } catch(e) { console.warn('Save load failed', e); }
+}
+
+// ==================== STARS ====================
+function createStars() {
+  const container = document.getElementById('stars');
+  for (let i=0; i<150; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random()*2.5+0.5;
+    s.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --dur:${2+Math.random()*4}s;
+      --delay:${Math.random()*4}s;
+      opacity:${0.2+Math.random()*0.8};
+    `;
+    container.appendChild(s);
+  }
+}
+
+// ==================== INIT ====================
+createStars();
+loadGame();
+renderAll();
+
+// Game loop
+setInterval(() => { tick(); }, 200);
+// UI update loop
+setInterval(() => { renderAll(); }, 500);
+// Auto save
+setInterval(() => { saveGame(); }, 30000);
+
+// Page visibility - pause tick when hidden
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    calcOffline();
+  }
+});
+</script>
+</body>
+</html>
