@@ -926,6 +926,7 @@
   #research-layout {
     display: flex;
     height: calc(100vh - 200px);
+    min-height: 500px;
     gap: 0;
   }
   #panel-left-research {
@@ -1194,6 +1195,10 @@
     font-size: 13px;
     white-space: pre;
     line-height: 1.3;
+    color: var(--green-dim);
+    text-shadow: none;
+  }
+  #rocket-art-display .done {
     color: var(--green);
     text-shadow: var(--glow);
   }
@@ -1536,11 +1541,11 @@
 
     <!-- 3b. Nav Tabs -->
     <div id="nav-tabs">
-      <button class="nav-tab active" data-tab="production">생산 허브</button>
-      <button class="nav-tab" data-tab="research">연구소</button>
-      <button class="nav-tab" data-tab="assembly" style="display:none">조립동</button>
-      <button class="nav-tab" data-tab="launch" style="display:none">발사 통제</button>
-      <button class="nav-tab" data-tab="mission" style="display:none">미션 현황</button>
+      <button class="nav-tab active" id="nav-tab-production" data-tab="production">생산 허브</button>
+      <button class="nav-tab" id="nav-tab-research" data-tab="research">연구소</button>
+      <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" style="display:none">조립동</button>
+      <button class="nav-tab" id="nav-tab-launch" data-tab="launch" style="display:none">발사 통제</button>
+      <button class="nav-tab" id="nav-tab-mission" data-tab="mission" style="display:none">미션 현황</button>
     </div>
 
     <!-- Offline Banner -->
@@ -2556,15 +2561,20 @@ function renderResearchTab() {
     headerHtml += `<div style="position:absolute;left:${tier.x}px;width:130px;text-align:center;font-size:10px;color:var(--green-dim);letter-spacing:2px;text-transform:uppercase;">${BRANCH_LABELS[i] || ''}</div>`;
   });
 
-  const svgHtml = `
-<div id="branch-headers" style="position:relative;height:18px;min-width:${svgWidth}px;margin-bottom:4px;">${headerHtml}</div>
-<svg id="tree-svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" style="display:block;min-width:${svgWidth}px;">
-  ${linesHtml}
-  ${nodesHtml}
-</svg>`;
+  const branchHeaders = document.getElementById('branch-headers');
+  if (branchHeaders) {
+    branchHeaders.style.cssText = `position:relative;height:18px;min-width:${svgWidth}px;margin-bottom:4px;`;
+    branchHeaders.innerHTML = headerHtml;
+  }
 
-  const centerPanel = document.getElementById('research-center-content');
-  if (centerPanel) centerPanel.innerHTML = svgHtml;
+  const treeSvg = document.getElementById('tree-svg');
+  if (treeSvg) {
+    treeSvg.setAttribute('width', svgWidth);
+    treeSvg.setAttribute('height', svgHeight);
+    treeSvg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+    treeSvg.style.cssText = `display:block;min-width:${svgWidth}px;`;
+    treeSvg.innerHTML = linesHtml + nodesHtml;
+  }
 
   // --- RIGHT PANEL: tech detail ---
   renderTechDetail();
@@ -2662,7 +2672,7 @@ function renderAssemblyTab() {
   const engClass    = 'r-engine'  + (pd.engine   ? ' done' : '');
   const exhClass    = 'r-exhaust' + ((pd.fueltank && pd.engine) ? ' done' : '');
 
-  const rocketHtml = `<pre class="rocket-art"><span class="${noseClass}">           *
+  const rocketInner = `<span class="${noseClass}">           *
           /|\\
          / | \\
         /  |  \\
@@ -2692,10 +2702,10 @@ function renderAssemblyTab() {
  /___________________\\
        |   |   |
       /|   |   |\\
-     /_|___|___|_\\</span></pre>`;
+     /_|___|___|_\\</span>`;
 
   const artDisplay = document.getElementById('rocket-art-display');
-  if (artDisplay) artDisplay.innerHTML = rocketHtml;
+  if (artDisplay) artDisplay.innerHTML = rocketInner;
 
   // Parts checklist
   let partsHtml = '';
@@ -2720,7 +2730,7 @@ function renderAssemblyTab() {
   let qualHtml = '';
   QUALITIES.forEach(q => {
     const active = gs.assembly.selectedQuality === q.id;
-    qualHtml += `<button class="qual-btn${active ? ' active' : ''}" onclick="selectQuality('${q.id}')">${q.icon} ${q.name}</button>`;
+    qualHtml += `<button class="btn q-btn${active ? ' selected' : ''}" onclick="selectQuality('${q.id}')">${q.icon} ${q.name}</button>`;
   });
   const qualSel = document.getElementById('quality-selector');
   if (qualSel) qualSel.innerHTML = qualHtml;
@@ -2949,7 +2959,7 @@ function updateWorldBuildings() {
 
 let worldOffset = 0;
 function animateWorld() {
-  worldOffset = (worldOffset + 0.3) % 1200;
+  worldOffset = (worldOffset + 0.3) % 1500;
   const scene = document.getElementById('world-scene');
   if (scene) scene.style.transform = `translateX(-${worldOffset}px)`;
   requestAnimationFrame(animateWorld);
