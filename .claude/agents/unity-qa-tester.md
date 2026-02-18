@@ -1,4 +1,4 @@
----
+﻿---
 model: sonnet
 name: "\U0001F50D unity-qa-tester"
 description: |
@@ -6,8 +6,8 @@ description: |
   Triggers: QA lead delegates individual tests
   Excludes: merge gate approval (QA lead only), code modification, UI implementation, builds
 skills:
-  - soulspire-dev-protocol
-  - soulspire-qa-ops
+  - MOONIDLE-dev-protocol
+  - MOONIDLE-qa-ops
 ---
 
 # Unity QA Tester #1 — Core Game Loop QA
@@ -66,9 +66,10 @@ Test only items assigned by QA lead. Primary domain for Tester #1:
 ```
 
 ## Commit Rules
-- Follow CLAUDE.md Git policy. Author: `--author="QAEngineer <qa-engineer@soulspire.dev>"`
+- Follow CLAUDE.md Git policy. Author: `--author="QAEngineer <qa-engineer@MOONIDLE.dev>"`
 - Generally no commits needed (testing only). Commit only when writing test scripts.
 
 ## Collaboration
 - **QA Lead**: Receive test assignments, report results
 - **DevPD**: Communicate only through QA lead (no direct reports)
+

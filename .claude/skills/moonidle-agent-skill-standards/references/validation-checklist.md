@@ -1,4 +1,4 @@
-# Validation Checklist
+﻿# Validation Checklist
 
 Run these 6 checks **automatically** after creating/modifying any agent or skill (without waiting for LeadPD to ask).
 
@@ -8,7 +8,7 @@ Run these 6 checks **automatically** after creating/modifying any agent or skill
 - `.claude/skills/[skill-name]/SKILL.md` file must exist
 
 ### 2. YAML Frontmatter Valid
-- `name` field exists (must have `soulspire-` prefix)
+- `name` field exists (must have `MOONIDLE-` prefix)
 - `description` field exists
 
 ### 3. Description Length
@@ -46,3 +46,4 @@ Run these 6 checks **automatically** after creating/modifying any agent or skill
 1. **Commit**: Commit agent/skill file changes immediately (project management file auto-commit rule)
 2. **Notion sync**: Update Notion "Agent-Skill Mapping" page when agents are added/removed, skills are created/modified/deleted, or mappings change
    - Page ID: `30894296-0f5e-818a-86dc-e5dd3c7f8df8`
+

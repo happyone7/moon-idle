@@ -1,13 +1,13 @@
----
-name: soulspire-dev-protocol
+﻿---
+name: MOONIDLE-dev-protocol
 description: |
-  Soulspire development rules: Git collaboration, prefab/scene management, folder structure.
+  MOONIDLE development rules: Git collaboration, prefab/scene management, folder structure.
   All agents must read before code/asset work.
   Triggers: commit, prefab, scene edit, folder structure, file ownership
   Excludes: game design, balancing, sound production
 ---
 
-# Soulspire Development Protocol
+# MOONIDLE Development Protocol
 
 Read the references below before starting any code/asset work.
 
@@ -21,3 +21,4 @@ Read the references below before starting any code/asset work.
 1. Commit immediately after work. Use team-specific `--author` tag (see CLAUDE.md).
 2. Minimize direct scene file edits. Prefer prefabs. Only one person edits a scene at a time.
 3. Check file ownership before editing. Do not modify another team's folders.
+

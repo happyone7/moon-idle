@@ -1,12 +1,12 @@
----
-name: soulspire-pm-sync
+﻿---
+name: MOONIDLE-pm-sync
 description: |
   Sprint progress tracking, Sprint*_Progress.md updates, cross-team status reporting.
   Triggers: "update progress", "sprint status", "PM report"
   Excludes: code/UI/build/asset work
 ---
 
-# Soulspire Sprint Sync
+# MOONIDLE Sprint Sync
 
 ## Purpose
 Keep sprint progress documents up-to-date and aggregate cross-team status reports.
@@ -47,3 +47,4 @@ Report format:
 - PM must never do code/UI/build/asset work
 - Use PM author tag (see CLAUDE.md Git policy)
 - Report bottlenecks to DevPD immediately
+

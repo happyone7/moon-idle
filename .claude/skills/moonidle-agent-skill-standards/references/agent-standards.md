@@ -1,4 +1,4 @@
-# Agent Writing Standards
+﻿# Agent Writing Standards
 
 ## Frontmatter (requires Lead PD approval to change)
 
@@ -10,8 +10,8 @@ description: |
   Triggers: "keyword1", "keyword2"
   Excludes: areas not covered
 skills:
-  - soulspire-dev-protocol
-  - soulspire-qa-ops
+  - MOONIDLE-dev-protocol
+  - MOONIDLE-qa-ops
 ---
 ```
 
@@ -50,3 +50,4 @@ skills:
 - frontmatter description: ~100 words
 - body: **50~80 lines** recommended (>100 lines → split to skill references)
 - code blocks: project-specific examples only (≤5 lines)
+

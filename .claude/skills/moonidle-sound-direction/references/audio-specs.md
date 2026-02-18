@@ -1,4 +1,4 @@
-# Audio Specs & Quality Standards
+﻿# Audio Specs & Quality Standards
 
 ## Format
 - Sample rate: 44100Hz / 16bit
@@ -55,8 +55,9 @@ Assets/Audio/
 | ACE-Step | ace_step | BGM generation (musical structure) |
 | Stable Audio | stable_audio | SFX generation (effects, ambient) |
 
-## Sound Direction (Soulspire)
+## Sound Direction (MOONIDLE)
 - Genre: Dark fantasy tower defense
 - Tone: Dark and tense, gothic atmosphere
 - BGM keywords: dark orchestral, gothic, tension, epic
 - SFX keywords: magical, dark fantasy, arcane, visceral
+

@@ -1,12 +1,12 @@
----
-name: soulspire-qa-ops
+﻿---
+name: MOONIDLE-qa-ops
 description: |
   Editor play-mode QA, screenshot visual verification, console error checks, dev-to-sprint merge gate.
   Triggers: "run QA", "verify", "merge check", "integration QA"
   Excludes: code modification, UI implementation, builds, asset creation
 ---
 
-# Soulspire QA Operations
+# MOONIDLE QA Operations
 
 ## Purpose
 Verify game behavior in editor play-mode. Only work that passes QA gets merged to sprint branch.
@@ -107,3 +107,4 @@ After QA, update the task card status:
 - Use QA author tag (see CLAUDE.md Git policy)
 - Save screenshots to `Assets/Screenshots/`
 - Report format: `## QA Result: [Pass/Fail]` with target branch, checklist N/N, visual/BAT status, failed items with symptoms, console errors, merge eligibility
+

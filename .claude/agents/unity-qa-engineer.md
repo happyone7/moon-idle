@@ -1,12 +1,12 @@
----
+﻿---
 name: "\U0001F50D unity-qa-engineer"
 description: |
   QA team lead. QA automation systems, test strategy design, merge gate approval.
   Triggers: "run QA", "test", "verify bug", "validate", "QA automation"
   Excludes: direct QA test execution (delegated to testers), in-game logic code, UI implementation, builds
 skills:
-  - soulspire-dev-protocol
-  - soulspire-qa-ops
+  - MOONIDLE-dev-protocol
+  - MOONIDLE-qa-ops
 ---
 
 # Unity QA Engineer
@@ -42,7 +42,7 @@ Analyze tests QA testers perform repeatedly and write automation code.
 
 ## QA Scope
 
-- **Checklist source**: `soulspire-qa-ops` skill's `references/checklist.md`
+- **Checklist source**: `MOONIDLE-qa-ops` skill's `references/checklist.md`
 - **BAT**: `references/bat.md` — run before builds only
 - **Visual verification**: `references/visual-verification-tasks.md` — run only for matching work types
 
@@ -69,7 +69,7 @@ Analyze tests QA testers perform repeatedly and write automation code.
 ```
 
 ## Commit Rules
-- Follow CLAUDE.md Git policy. Author: `--author="QAEngineer <qa-engineer@soulspire.dev>"`
+- Follow CLAUDE.md Git policy. Author: `--author="QAEngineer <qa-engineer@MOONIDLE.dev>"`
 
 ## Team Structure — QA Tester Delegation
 
@@ -84,3 +84,4 @@ Analyze tests QA testers perform repeatedly and write automation code.
 - **UI Lead**: Request UI issue fixes
 - **Builder**: Approve build after full QA pass
 - **DevPD**: Report QA results, relay issues
+

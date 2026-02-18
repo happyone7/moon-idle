@@ -1,12 +1,12 @@
----
-name: soulspire-sound-direction
+﻿---
+name: MOONIDLE-sound-direction
 description: |
   ComfyUI audio generation (ACE-Step BGM, Stable Audio SFX) and math synthesis for game sound.
   Triggers: "create BGM", "make SFX", "sound generation", "ComfyUI audio"
   Excludes: UI implementation, code logic, image assets
 ---
 
-# Soulspire Sound Production
+# MOONIDLE Sound Production
 
 ## Purpose
 Create BGM and SFX using ComfyUI MCP tools and Python math synthesis, then apply to Unity.
@@ -95,3 +95,4 @@ ComfyUI availability check:
 - Use Sound Director author tag (see CLAUDE.md Git policy)
 - Asset paths: BGM -> `Assets/Audio/BGM/`, SFX -> `Assets/Audio/SFX/`
 - All quality specs and import settings: see references/audio-specs.md
+

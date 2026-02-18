@@ -1,4 +1,4 @@
-# Skill Writing Standards
+﻿# Skill Writing Standards
 
 ## 3-Level Information Architecture (Progressive Disclosure)
 
@@ -12,7 +12,7 @@ references/ (unlimited)    →  detailed data referenced from body
 
 ```yaml
 ---
-name: soulspire-[feature-name]
+name: MOONIDLE-[feature-name]
 description: |
   One-line description. (~100 words max)
   Triggers: keyword1, keyword2
@@ -20,7 +20,7 @@ description: |
 ---
 ```
 
-- name: `soulspire-` prefix required
+- name: `MOONIDLE-` prefix required
 - description: ≤100 words, include triggers/exclusions
 
 ## Body
@@ -38,3 +38,4 @@ description: |
 ## Skill vs Agent Responsibility
 
 See CLAUDE.md section "Team Structure and Roles" for the full distinction. In short: skills define **procedures** ("how"), agents define **roles** ("who does what").
+

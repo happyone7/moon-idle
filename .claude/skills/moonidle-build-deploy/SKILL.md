@@ -1,12 +1,12 @@
----
-name: soulspire-build-deploy
+﻿---
+name: MOONIDLE-build-deploy
 description: |
   Full pipeline for Unity Windows build → SteamCMD upload → branch live configuration.
   Triggers: "build", "Steam upload", "dev_test deploy", "release build"
   Excludes: game logic, UI, asset creation
 ---
 
-# Soulspire Build & Deploy
+# MOONIDLE Build & Deploy
 
 ## Purpose
 Generate Unity Windows builds and upload via SteamCMD. Three paths: dev/QA/release.
@@ -33,14 +33,14 @@ Generate Unity Windows builds and upload via SteamCMD. Three paths: dev/QA/relea
 ```
 4. execute_menu_item → Tools/Build Windows
 5. sleep 20 (wait for build)
-6. Verify: SteamBuild/content/Soulspire.exe exists
+6. Verify: SteamBuild/content/MOONIDLE.exe exists
 7. On failure:
    a. read_console — check errors
    b. Forward errors to Programmer for fix
    c. After fix → restart from Step 1
    d. 2 failures → escalate to DevPD
 ```
-→ Gate 2: Soulspire.exe must exist before Step 2.5.
+→ Gate 2: MOONIDLE.exe must exist before Step 2.5.
 
 ### Step 2.5: Local Copy Test (required before Steam CDN)
 ```
@@ -48,7 +48,7 @@ Generate Unity Windows builds and upload via SteamCMD. Three paths: dev/QA/relea
    source .env
    cp -r "SteamBuild/content/"* "$STEAM_INSTALL_PATH/"
 2. Launch game, verify core functionality (UI display, game loop)
-3. Check Player.log: AppData/LocalLow/SBGames/Soulspire/Player.log
+3. Check Player.log: AppData/LocalLow/SBGames/MOONIDLE/Player.log
 → Gate 2.5: Local test pass required. Fail → fix and rebuild.
 ```
 
@@ -93,3 +93,4 @@ On failure → verify buildid is correct.
 - DB ID: from `.env` `$NOTION_DB_ID`
 - Set `QA Status` → "Build Complete" or "Build Failed"
 - Set `Related Commit` → target commit hash
+

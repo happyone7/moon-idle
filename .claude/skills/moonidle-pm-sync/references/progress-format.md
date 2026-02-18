@@ -1,4 +1,4 @@
-# Sprint Progress Document Format
+﻿# Sprint Progress Document Format
 
 ## Document Path
 - `Docs/Sprint{N}_Progress.md` (increment N per sprint)
@@ -8,7 +8,7 @@
 ```markdown
 # Sprint N Progress
 
-**Project**: Soulspire
+**Project**: MOONIDLE
 **Branch**: <current working branch>
 **Reference Doc**: <design doc reference>
 **Last Updated**: YYYY-MM-DD
@@ -47,3 +47,4 @@ For effort estimation rules → see CLAUDE.md "Sprint Operations" section.
 - DevPD Guidelines: `Docs/DevPD_Guidelines.md`
 - GDD: `Docs/Design/GDD.md`
 - Art Direction: `Docs/Design/ArtDirection_v0.1.md`
+

@@ -1,11 +1,11 @@
-# Steam Deployment Configuration
+﻿# Steam Deployment Configuration
 
 ## App Info
 - App ID: 4426340
 - Depot ID: 4426341
 - Steam Account: shatterbone7
 - Partner ID: 377547
-- Launch Option: Soulspire.exe (Windows, Launch Default)
+- Launch Option: MOONIDLE.exe (Windows, Launch Default)
 
 ## Paths
 - SteamCMD: see `.env` `$STEAMCMD_PATH`
@@ -40,3 +40,4 @@
 
 ## Steam Install Path
 - see `.env` `$STEAM_INSTALL_PATH`
+

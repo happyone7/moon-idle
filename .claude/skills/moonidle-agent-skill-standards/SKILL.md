@@ -1,5 +1,5 @@
----
-name: soulspire-agent-skill-standards
+﻿---
+name: MOONIDLE-agent-skill-standards
 description: |
   Quality standards for creating/modifying agents and skills. No general knowledge; project-specific only.
   Triggers: agent creation, skill creation, agent modification, skill modification
@@ -23,3 +23,4 @@ Follow these standards when creating or modifying agents (`.claude/agents/`) or 
 3. **Skills = procedures, Agents = roles**: Skills define "how" (procedures/rules), agents define "who does what" (roles/context)
 4. **Validate after changes**: Run all 6 items in references/validation-checklist.md
 5. **Notion sync**: Update Notion "Agent-Skill Mapping" page when agents/skills change
+
