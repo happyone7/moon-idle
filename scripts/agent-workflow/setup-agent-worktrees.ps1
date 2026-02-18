@@ -36,6 +36,7 @@ Write-Host "RepoRoot: $RepoRoot"
 git -C $RepoRoot rev-parse --is-inside-work-tree | Out-Null
 git -C $RepoRoot fetch --all --prune
 $baseBranch = Resolve-BaseBranch
+$Agents = @($Agents | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 
 git -C $RepoRoot show-ref --verify --quiet ("refs/heads/" + $SprintBranch)
 if ($LASTEXITCODE -ne 0) {
