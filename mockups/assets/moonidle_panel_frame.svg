@@ -1,0 +1,18 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" preserveAspectRatio="none">
+  <defs>
+    <radialGradient id="frameGlow" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#2df4ff22"/>
+      <stop offset="100%" stop-color="#2df4ff00"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="640" height="360" fill="#0d1730"/>
+  <rect x="0" y="0" width="640" height="360" fill="url(#frameGlow)"/>
+  <rect x="1.5" y="1.5" width="637" height="357" rx="11" fill="none" stroke="#7ef2ff70" stroke-width="2"/>
+  <rect x="16" y="16" width="608" height="328" rx="8" fill="none" stroke="#7ff5ff3f" stroke-width="1"/>
+  <g fill="#7ef2ff22">
+    <circle cx="32" cy="32" r="2"/><circle cx="608" cy="32" r="2"/>
+    <circle cx="32" cy="328" r="2"/><circle cx="608" cy="328" r="2"/>
+  </g>
+  <path d="M16 44 H624" stroke="#7ef2ff44" stroke-width="1"/>
+  <path d="M16 316 H624" stroke="#7ef2ff44" stroke-width="1"/>
+</svg>

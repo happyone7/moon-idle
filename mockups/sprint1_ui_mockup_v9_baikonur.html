@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>★ ЛУННАЯ ПРОГРАММА ★ MOON PROGRAM — MoonIdle v9 Baikonur</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════
+     BASE & RESET
+  ═══════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep:       #12100a;
+    --bg-panel:      #1c1a10;
+    --bg-paper:      #2a2518;
+    --bg-paper-lt:   #322d1e;
+    --khaki:         #c8b96e;
+    --khaki-dim:     #857a52;
+    --red-soviet:    #e0391e;
+    --red-dark:      #9e1f0e;
+    --orange:        #d4831a;
+    --orange-dim:    #8a5210;
+    --green:         #5a8a3c;
+    --green-dim:     #3a5a26;
+    --border-khaki:  #6b5f3a;
+    --border-dark:   #3a3220;
+    --text-bright:   #ddd3a8;
+    --text-dim:      #857a52;
+    --text-red:      #e0391e;
+  }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--khaki);
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* subtle noise texture */
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(30,25,10,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(10,8,3,0.6) 0%, transparent 50%);
+  }
+
+  /* ═══════════════════════════════════════
+     LAUNCH OVERLAY (hides normally)
+  ═══════════════════════════════════════ */
+  #launch-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: #000;
+    overflow: hidden;
+  }
+  #launch-overlay.active { display: flex; flex-direction: column; }
+
+  /* alarm flash */
+  @keyframes alarmFlash {
+    0%, 100% { background: rgba(224, 57, 30, 0); }
+    50%       { background: rgba(224, 57, 30, 0.85); }
+  }
+  #alarm-flash {
+    position: absolute; inset: 0; pointer-events: none;
+    animation: alarmFlash 0.4s ease-in-out 3;
+  }
+
+  /* split panels */
+  #split-top, #split-bottom {
+    position: absolute; left: 0; right: 0;
+    background: var(--bg-panel);
+    transition: transform 0.9s cubic-bezier(0.77, 0, 0.18, 1);
+    z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  #split-top    { top: 0; height: 50%; transform: translateY(0); }
+  #split-bottom { bottom: 0; height: 50%; transform: translateY(0); }
+  #split-top .split-inner    { font-size: 60px; color: var(--red-soviet); font-family: 'Special Elite', serif; letter-spacing: 6px; text-shadow: 0 0 30px rgba(224,57,30,0.8); }
+  #split-bottom .split-inner { font-size: 24px; color: var(--khaki-dim); font-family: 'Courier Prime', monospace; }
+
+  .split-open #split-top    { transform: translateY(-100%); }
+  .split-open #split-bottom { transform: translateY(100%); }
+
+  /* launch core */
+  #launch-core {
+    position: absolute; inset: 0; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.5s ease 0.7s;
+  }
+  .split-open #launch-core { opacity: 1; }
+
+  #countdown-display {
+    font-family: 'Special Elite', serif;
+    font-size: 180px;
+    color: var(--red-soviet);
+    text-shadow: 0 0 60px rgba(224,57,30,0.9), 0 0 120px rgba(224,57,30,0.4);
+    line-height: 1;
+    min-width: 280px;
+    text-align: center;
+  }
+  #countdown-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 18px;
+    color: var(--khaki-dim);
+    letter-spacing: 8px;
+    margin-top: 16px;
+  }
+
+  /* exhaust glow */
+  @keyframes exhaustRise {
+    0%   { opacity: 0; transform: translateY(100%); }
+    20%  { opacity: 1; }
+    100% { opacity: 0.7; transform: translateY(-20%); }
+  }
+  #exhaust-glow {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 60%;
+    background: linear-gradient(to top, #f5a500, #d4831a, #e0391e 40%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .exhaust-active #exhaust-glow {
+    animation: exhaustRise 3s ease-out forwards;
+  }
+
+  /* ASCII rocket rise */
+  @keyframes rocketRise {
+    0%   { bottom: -120px; opacity: 0; }
+    10%  { opacity: 1; }
+    100% { bottom: 110%; opacity: 0.8; }
+  }
+  #ascii-rocket {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: -120px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    color: var(--text-bright);
+    text-align: center;
+    white-space: pre;
+    z-index: 4;
+    opacity: 0;
+    text-shadow: 0 0 10px rgba(212,131,26,0.8);
+  }
+  .exhaust-active #ascii-rocket {
+    animation: rocketRise 3.5s ease-in forwards;
+  }
+
+  /* telemetry feed */
+  #telemetry-feed {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+    width: 480px; font-family: 'Courier Prime', monospace; font-size: 12px;
+    color: var(--khaki); z-index: 5;
+    border: 1px solid var(--border-khaki); background: rgba(28,26,16,0.9);
+    padding: 12px; opacity: 0; transition: opacity 0.5s;
+  }
+  .exhaust-active #telemetry-feed { opacity: 1; }
+  #telemetry-feed .tline { margin: 2px 0; }
+  #telemetry-feed .tline.ok   { color: var(--green); }
+  #telemetry-feed .tline.warn { color: var(--orange); }
+  #telemetry-feed .tline.err  { color: var(--red-soviet); }
+
+  /* result stamp */
+  #result-screen {
+    position: absolute; inset: 0; z-index: 10;
+    background: rgba(0,0,0,0.92);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    font-family: 'Special Elite', serif;
+  }
+  #result-screen.visible { display: flex; }
+  #result-title {
+    font-size: 28px; color: var(--text-bright); letter-spacing: 4px;
+    margin-bottom: 12px; text-align: center;
+  }
+  #result-subtitle {
+    font-size: 15px; color: var(--khaki-dim); font-family: 'Courier Prime', monospace;
+    margin-bottom: 40px; text-align: center; line-height: 1.8;
+  }
+  @keyframes stampDrop {
+    0%   { transform: scale(4) rotate(-20deg); opacity: 0; }
+    60%  { transform: scale(0.9) rotate(6deg); opacity: 1; }
+    80%  { transform: scale(1.05) rotate(-2deg); }
+    100% { transform: scale(1) rotate(4deg); opacity: 1; }
+  }
+  #avaria-stamp {
+    width: 200px; height: 200px;
+    border: 6px solid var(--red-soviet);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    transform: rotate(4deg);
+    opacity: 0;
+    box-shadow: 0 0 0 3px rgba(224,57,30,0.3), inset 0 0 0 3px rgba(224,57,30,0.2);
+    margin-bottom: 32px;
+  }
+  #avaria-stamp.stamp-animate {
+    animation: stampDrop 0.6s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+  #avaria-stamp .stamp-text-main {
+    font-size: 36px; color: var(--red-soviet); font-family: 'Special Elite', serif;
+    letter-spacing: 3px; line-height: 1;
+  }
+  #avaria-stamp .stamp-text-sub {
+    font-size: 13px; color: var(--red-soviet); font-family: 'Courier Prime', monospace;
+    letter-spacing: 2px; margin-top: 4px;
+  }
+  #btn-close-result {
+    padding: 10px 36px;
+    background: var(--bg-paper);
+    border: 2px solid var(--border-khaki);
+    color: var(--khaki);
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    cursor: pointer;
+    letter-spacing: 2px;
+  }
+  #btn-close-result:hover { background: var(--bg-paper-lt); border-color: var(--khaki); }
+
+  /* ═══════════════════════════════════════
+     MAIN LAYOUT
+  ═══════════════════════════════════════ */
+  #app {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 0 24px;
+  }
+
+  /* ═══════════════════════════════════════
+     HEADER
+  ═══════════════════════════════════════ */
+  #top-header {
+    position: relative;
+    background: var(--bg-panel);
+    border-bottom: 3px solid var(--red-soviet);
+    padding: 18px 32px 14px;
+    text-align: center;
+  }
+
+  .header-star-row {
+    font-family: 'Special Elite', serif;
+    font-size: 30px;
+    color: var(--red-soviet);
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px rgba(224,57,30,0.5);
+    line-height: 1;
+  }
+  .header-sub {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px;
+    color: var(--khaki-dim);
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+  .header-mission {
+    font-family: 'Special Elite', serif;
+    font-size: 14px;
+    color: var(--khaki);
+    letter-spacing: 4px;
+    margin-top: 6px;
+  }
+  .header-rule {
+    height: 2px;
+    background: linear-gradient(to right, transparent, var(--red-soviet) 20%, var(--red-soviet) 80%, transparent);
+    margin-top: 14px;
+  }
+
+  .classified-stamp {
+    position: absolute;
+    top: 16px; right: 28px;
+    border: 3px solid var(--red-soviet);
+    color: var(--red-soviet);
+    font-family: 'Special Elite', serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    transform: rotate(6deg);
+    text-align: center;
+    line-height: 1.5;
+    box-shadow: inset 0 0 0 1px rgba(224,57,30,0.3);
+    opacity: 0.9;
+  }
+  .classified-stamp::before {
+    content: '';
+    position: absolute; inset: 2px;
+    border: 1px solid rgba(224,57,30,0.35);
+  }
+
+  /* date/session info (top left) */
+  .header-meta {
+    position: absolute;
+    top: 18px; left: 28px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px;
+    color: var(--khaki-dim);
+    line-height: 1.8;
+    text-align: left;
+  }
+
+  /* ═══════════════════════════════════════
+     RED DIAGONAL STRIPE DECORATOR
+  ═══════════════════════════════════════ */
+  .red-stripe-bar {
+    height: 8px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--red-soviet) 0px,
+      var(--red-soviet) 6px,
+      transparent 6px,
+      transparent 14px
+    );
+    opacity: 0.6;
+  }
+
+  /* ═══════════════════════════════════════
+     3-COLUMN MAIN
+  ═══════════════════════════════════════ */
+  #main-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr 320px;
+    gap: 2px;
+    background: #0a0906;
+    margin-top: 2px;
+  }
+
+  .col {
+    background: var(--bg-panel);
+    padding: 18px;
+    min-height: 700px;
+  }
+
+  /* ═══════════════════════════════════════
+     SECTION HEADERS
+  ═══════════════════════════════════════ */
+  .sec-header {
+    font-family: 'Special Elite', serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--text-bright);
+    background: var(--bg-paper);
+    border: 2px solid var(--border-khaki);
+    border-left: 4px solid var(--red-soviet);
+    padding: 6px 10px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+  }
+  .sec-header .star { color: var(--red-soviet); font-size: 14px; }
+  .sec-header .sub  { font-family: 'Courier Prime', monospace; font-size: 10px; color: var(--khaki-dim); letter-spacing: 1px; margin-left: auto; }
+
+  /* ═══════════════════════════════════════
+     LEFT COLUMN — PRODUCTION QUOTAS
+  ═══════════════════════════════════════ */
+
+  /* Quota table */
+  .quota-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px;
+    margin-bottom: 16px;
+  }
+  .quota-table thead th {
+    background: var(--bg-paper);
+    color: var(--khaki-dim);
+    padding: 4px 6px;
+    text-align: center;
+    border: 1px solid var(--border-dark);
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .quota-table thead th:first-child { text-align: left; }
+  .quota-table tbody tr {
+    border-bottom: 1px solid var(--border-dark);
+  }
+  .quota-table tbody tr:hover { background: rgba(200,185,110,0.04); }
+  .quota-table tbody td {
+    padding: 5px 6px;
+    border-left: 1px solid var(--border-dark);
+    border-right: 1px solid var(--border-dark);
+    color: var(--khaki);
+    vertical-align: middle;
+  }
+  .quota-table tbody td:first-child {
+    font-size: 10px;
+    line-height: 1.3;
+    color: var(--text-bright);
+  }
+  .quota-table .mat-name { display: block; font-weight: 700; }
+  .quota-table .mat-id   { display: block; color: var(--khaki-dim); font-size: 9px; letter-spacing: 1px; }
+  .quota-table .num { text-align: right; color: var(--khaki-dim); }
+  .quota-table .pct { text-align: center; }
+  .quota-table .status { text-align: center; font-size: 11px; white-space: nowrap; }
+
+  .status-bad     { color: var(--red-soviet); }
+  .status-ok      { color: var(--green); }
+  .status-over    { color: var(--orange); }
+  .status-neutral { color: var(--khaki-dim); }
+
+  .pct-bad   { color: var(--red-soviet); }
+  .pct-warn  { color: var(--orange); }
+  .pct-ok    { color: var(--green); }
+  .pct-over  { color: var(--orange); font-weight: 700; }
+
+  /* Facilities */
+  .facility-list { list-style: none; font-size: 11px; }
+  .facility-list li {
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--border-dark);
+    display: flex; align-items: flex-start; gap: 7px;
+    color: var(--text-bright);
+    font-family: 'Courier Prime', monospace;
+    line-height: 1.3;
+  }
+  .facility-list li .fac-dot {
+    flex-shrink: 0;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .fac-dot.on  { color: var(--green); text-shadow: 0 0 6px var(--green); }
+  .fac-dot.off { color: var(--khaki-dim); }
+  .fac-name    { display: block; font-weight: 700; color: var(--text-bright); }
+  .fac-status  { display: block; font-size: 10px; color: var(--khaki-dim); margin-top: 1px; }
+
+  /* ═══════════════════════════════════════
+     CENTER COLUMN — VEHICLE STATUS
+  ═══════════════════════════════════════ */
+
+  .rocket-diagram {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px;
+    color: var(--khaki);
+    line-height: 1.5;
+    background: var(--bg-paper);
+    border: 2px solid var(--border-khaki);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    white-space: pre;
+    overflow: hidden;
+  }
+  .rd-dim   { color: var(--khaki-dim); }
+  .rd-red   { color: var(--red-soviet); }
+  .rd-green { color: var(--green); }
+  .rd-orange{ color: var(--orange); }
+  .rd-bright{ color: var(--text-bright); }
+
+  /* Progress bar inline (in the diagram) */
+  .tank-fill-good   { color: var(--green); }
+  .tank-fill-mid    { color: var(--orange); }
+  .tank-fill-low    { color: var(--red-soviet); }
+  .tank-fill-over   { color: var(--orange); font-weight:700; }
+
+  /* Manufacturing pipeline */
+  .pipeline { list-style: none; font-family: 'Courier Prime', monospace; font-size: 12px; }
+  .pipeline li {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-dark);
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 6px;
+    align-items: start;
+  }
+  .pipe-check { font-size: 14px; line-height: 1.2; }
+  .pipe-done   .pipe-check { color: var(--green); }
+  .pipe-active .pipe-check { color: var(--orange); }
+  .pipe-wait   .pipe-check { color: var(--border-khaki); }
+
+  .pipe-title   { color: var(--text-bright); font-weight: 700; display: block; }
+  .pipe-sub     { color: var(--khaki-dim); font-size: 10px; display: block; letter-spacing: 1px; }
+  .pipe-bar     { display: block; margin-top: 4px; font-size: 11px; }
+  .pipe-bar .bar-fill   { color: var(--orange); }
+  .pipe-bar .bar-empty  { color: var(--border-dark); }
+  .pipe-bar .bar-pct    { color: var(--orange); margin-left: 4px; }
+  .pipe-done .pipe-title { color: var(--green); }
+  .pipe-wait .pipe-title { color: var(--khaki-dim); }
+
+  /* ═══════════════════════════════════════
+     RIGHT COLUMN — LAUNCH DOSSIER
+  ═══════════════════════════════════════ */
+
+  .dossier-card {
+    background: var(--bg-paper);
+    border: 2px solid var(--border-khaki);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dossier-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--border-khaki);
+  }
+  .dossier-card.active-mission::before { background: var(--orange); }
+  .dossier-card.result-avaria  { border-color: var(--red-dark); }
+  .dossier-card.result-partial { border-color: var(--orange-dim); }
+  .dossier-card.result-active  { border-color: var(--orange); }
+
+  .dc-header {
+    font-family: 'Special Elite', serif;
+    font-size: 12px;
+    color: var(--text-bright);
+    letter-spacing: 2px;
+    margin-bottom: 7px;
+    border-bottom: 1px solid var(--border-dark);
+    padding-bottom: 5px;
+  }
+  .dc-row {
+    display: flex; justify-content: space-between; margin-bottom: 2px;
+  }
+  .dc-label { color: var(--khaki-dim); }
+  .dc-value { color: var(--text-bright); text-align: right; }
+  .dc-result-bad { color: var(--red-soviet); font-weight: 700; }
+  .dc-result-partial { color: var(--orange); font-weight: 700; }
+  .dc-result-active  { color: var(--orange); }
+  .dc-note {
+    margin-top: 6px;
+    color: var(--khaki-dim);
+    font-size: 10px;
+    border-top: 1px dashed var(--border-dark);
+    padding-top: 5px;
+    line-height: 1.4;
+  }
+
+  /* Corner stamp on dossier */
+  .dossier-stamp {
+    position: absolute; top: 8px; right: 10px;
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    color: var(--red-soviet);
+    border: 2px solid var(--red-soviet);
+    border-radius: 50%;
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    line-height: 1.1;
+    transform: rotate(12deg);
+    opacity: 0.85;
+    letter-spacing: 0;
+  }
+  .dossier-stamp.partial { color: var(--orange); border-color: var(--orange); }
+  .dossier-stamp.active  { color: var(--orange); border-color: var(--orange); transform: rotate(-6deg); animation: activePulse 2s ease-in-out infinite; }
+  @keyframes activePulse {
+    0%,100% { opacity: 0.85; box-shadow: 0 0 4px rgba(212,131,26,0.3); }
+    50%      { opacity: 1;    box-shadow: 0 0 12px rgba(212,131,26,0.7); }
+  }
+
+  /* Cumulative stats table */
+  .stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px;
+    border: 2px solid var(--border-khaki);
+  }
+  .stats-table caption {
+    font-family: 'Special Elite', serif;
+    font-size: 11px;
+    color: var(--khaki-dim);
+    letter-spacing: 3px;
+    padding: 5px;
+    background: var(--bg-paper);
+    border: 2px solid var(--border-khaki);
+    border-bottom: none;
+    text-align: left;
+    caption-side: top;
+  }
+  .stats-table tr { border-bottom: 1px solid var(--border-dark); }
+  .stats-table td {
+    padding: 5px 8px;
+    background: var(--bg-paper);
+  }
+  .stats-table td:first-child { color: var(--khaki-dim); }
+  .stats-table td:last-child  { color: var(--text-bright); text-align: right; font-weight: 700; }
+  .stats-table .stat-bad  td:last-child { color: var(--red-soviet); }
+  .stats-table .stat-ok   td:last-child { color: var(--green); }
+  .stats-table .stat-warn td:last-child { color: var(--orange); }
+
+  /* ═══════════════════════════════════════
+     BOTTOM WARNING BAR + LAUNCH BUTTON
+  ═══════════════════════════════════════ */
+  #bottom-bar {
+    background: var(--bg-panel);
+    border-top: 3px solid var(--red-soviet);
+    padding: 0;
+  }
+  .warning-strip {
+    background: var(--red-dark);
+    color: var(--text-bright);
+    font-family: 'Special Elite', serif;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-align: center;
+    padding: 7px 20px;
+    border-bottom: 2px solid var(--red-soviet);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    /* diagonal stripe overlay */
+    background-image:
+      repeating-linear-gradient(
+        -45deg,
+        rgba(0,0,0,0.15) 0px, rgba(0,0,0,0.15) 4px,
+        transparent 4px, transparent 12px
+      );
+    background-color: var(--red-dark);
+  }
+  .warning-strip .warn-icon { font-size: 18px; animation: warnBlink 1.5s ease-in-out infinite; }
+  @keyframes warnBlink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+
+  .launch-control-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 14px 32px;
+  }
+
+  .launch-status-indicators {
+    display: flex; gap: 12px; font-family: 'Courier Prime', monospace; font-size: 11px;
+  }
+  .ind-item {
+    display: flex; align-items: center; gap: 5px;
+  }
+  .ind-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .ind-dot.red    { background: var(--red-soviet); box-shadow: 0 0 6px var(--red-soviet); }
+  .ind-dot.green  { background: var(--green);       box-shadow: 0 0 6px var(--green);      }
+  .ind-dot.yellow { background: var(--orange);      box-shadow: 0 0 6px var(--orange);     animation: activePulse 1s ease-in-out infinite; }
+
+  #btn-launch {
+    font-family: 'Special Elite', serif;
+    font-size: 16px;
+    letter-spacing: 4px;
+    color: #fff;
+    background: var(--red-dark);
+    border: 3px solid var(--red-soviet);
+    padding: 14px 40px;
+    cursor: pointer;
+    position: relative;
+    text-transform: uppercase;
+    box-shadow: 0 0 0 1px rgba(224,57,30,0.3), inset 0 -2px 0 rgba(0,0,0,0.3);
+    transition: background 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  #btn-launch::before {
+    content: '⚡ АВАРИЙНЫЙ ';
+    font-size: 10px;
+    display: block;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 3px;
+  }
+  #btn-launch:hover {
+    background: var(--red-soviet);
+    box-shadow: 0 0 20px rgba(224,57,30,0.6), 0 0 40px rgba(224,57,30,0.2);
+  }
+  #btn-launch:active { transform: scale(0.98); }
+
+  /* ═══════════════════════════════════════
+     UTILITY
+  ═══════════════════════════════════════ */
+  .mb-8  { margin-bottom: 8px; }
+  .mb-14 { margin-bottom: 14px; }
+  .mb-20 { margin-bottom: 20px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-deep); }
+  ::-webkit-scrollbar-thumb { background: var(--border-khaki); border-radius: 0; }
+
+  /* worn paper effect via pseudo */
+  .col::after {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+  .col { position: relative; }
+
+  /* ═══════════════════════════════════════
+     ACTIVE MISSION PROGRESS (center, below pipeline)
+  ═══════════════════════════════════════ */
+  .mission-active-box {
+    background: var(--bg-paper);
+    border: 2px solid var(--orange);
+    border-left: 4px solid var(--orange);
+    padding: 10px 12px;
+    margin-top: 14px;
+    font-family: 'Courier Prime', monospace;
+    font-size: 11px;
+  }
+  .mission-active-box .mab-header {
+    font-family: 'Special Elite', serif;
+    font-size: 12px;
+    color: var(--orange);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    animation: activePulse 2s ease-in-out infinite;
+  }
+  .mab-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+  .mab-label { color: var(--khaki-dim); }
+  .mab-value { color: var(--text-bright); }
+
+  /* ═══════════════════════════════════════
+     TECH NOTES / FOOTNOTE PANEL
+  ═══════════════════════════════════════ */
+  .tech-note {
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px;
+    color: var(--khaki-dim);
+    border-top: 1px solid var(--border-dark);
+    padding-top: 8px;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+  .tech-note strong { color: var(--khaki); }
+
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LAUNCH OVERLAY
+═══════════════════════════════════════════════════════════ -->
+<div id="launch-overlay">
+  <div id="alarm-flash"></div>
+
+  <!-- split panels -->
+  <div id="split-top">
+    <div class="split-inner">ВНИМАНИЕ! / WARNING!</div>
+  </div>
+  <div id="split-bottom">
+    <div class="split-inner">ЗАПУСК ИНИЦИИРОВАН — LAUNCH SEQUENCE INITIATED</div>
+  </div>
+
+  <!-- center countdown + telemetry -->
+  <div id="launch-core">
+    <div id="countdown-display">10</div>
+    <div id="countdown-label">ОБРАТНЫЙ ОТСЧЁТ / COUNTDOWN</div>
+  </div>
+
+  <!-- exhaust glow (activates at T=0) -->
+  <div id="exhaust-glow"></div>
+
+  <!-- ascii rocket -->
+  <pre id="ascii-rocket">     /\
+    /  \
+   / ML \
+  / 004  \
+ /________\
+|  [LOX]  |
+|  TANK   |
+|_________|
+|  [RP1]  |
+|  TANK   |
+|_________|
+|==ENGINE=|
+ \  156kN/
+  \______/
+   |    |
+   |    |
+  ═══════
+ ═══════════
+█████████████</pre>
+
+  <!-- telemetry feed -->
+  <div id="telemetry-feed">
+    <div id="telemetry-lines"></div>
+  </div>
+
+  <!-- result screen -->
+  <div id="result-screen">
+    <div id="result-title">ПУСК № ML-004 ЗАВЕРШЁН</div>
+    <div id="result-subtitle">
+      Макс. высота: 71.2 км / 71,200 м<br>
+      Двигатель отказал на Т+94с<br>
+      Общее время полёта: 147 сек
+    </div>
+    <div id="avaria-stamp">
+      <span class="stamp-text-main">АВАРИЯ</span>
+      <span class="stamp-text-sub">FAILURE</span>
+    </div>
+    <button id="btn-close-result" onclick="closeLaunch()">[ ЗАКРЫТЬ / CLOSE ]</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN APP
+═══════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- TOP HEADER -->
+  <header id="top-header">
+    <div class="header-meta">
+      ОБЪЕКТ № БЛ-39Б<br>
+      Д+014  /  2026.02.19<br>
+      СМЕНА: Б-3 / SHIFT B-3
+    </div>
+
+    <div class="header-star-row">★ ЛУННАЯ ПРОГРАММА ★ MOON PROGRAM ★</div>
+    <div class="header-sub">МИНИСТЕРСТВО ОБЩЕГО МАШИНОСТРОЕНИЯ СССР</div>
+    <div class="header-mission">ОБЪЕКТ: РАКЕТНЫЙ КОМПЛЕКС / LAUNCH FACILITY — MISSION ML-004</div>
+    <div class="header-rule"></div>
+
+    <div class="classified-stamp">
+      ГРИФ:<br>
+      СЕКРЕТНО<br>
+      <span style="font-size:9px;letter-spacing:1px;">CLASSIFIED</span>
+    </div>
+  </header>
+
+  <div class="red-stripe-bar"></div>
+
+  <!-- MAIN 3-COLUMN GRID -->
+  <div id="main-grid">
+
+    <!-- ════════════════════════════════════
+         LEFT COLUMN — PRODUCTION QUOTAS
+    ════════════════════════════════════ -->
+    <div class="col">
+
+      <div class="sec-header">
+        <span class="star">★</span>
+        ПРОИЗВОДСТВО
+        <span class="sub">PRODUCTION QUOTAS</span>
+      </div>
+
+      <!-- Quota Table -->
+      <table class="quota-table mb-14">
+        <thead>
+          <tr>
+            <th>МАТЕРИАЛ</th>
+            <th>ПЛАН</th>
+            <th>ФАКТ</th>
+            <th>%</th>
+            <th>СТАТУС</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <span class="mat-name">알루미늄</span>
+              <span class="mat-id">Al-7075</span>
+            </td>
+            <td class="num">4,800<br><span style="font-size:9px;color:var(--khaki-dim)">kg</span></td>
+            <td class="num">2,340</td>
+            <td class="pct pct-bad">49%</td>
+            <td class="status status-bad">▼ 미달</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="mat-name">탄소섬유</span>
+              <span class="mat-id">CFRP</span>
+            </td>
+            <td class="num">640</td>
+            <td class="num">187</td>
+            <td class="pct pct-bad">29%</td>
+            <td class="status status-bad">▼ 미달</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="mat-name">티타늄</span>
+              <span class="mat-id">Ti-6Al-4V</span>
+            </td>
+            <td class="num">210</td>
+            <td class="num">89</td>
+            <td class="pct pct-bad">42%</td>
+            <td class="status status-bad">▼ 미달</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="mat-name">인코넬</span>
+              <span class="mat-id">Ni-718</span>
+            </td>
+            <td class="num">88</td>
+            <td class="num">34</td>
+            <td class="pct pct-bad">39%</td>
+            <td class="status status-bad">▼ 미달</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="mat-name">산화제</span>
+              <span class="mat-id">LOX</span>
+            </td>
+            <td class="num">4,800<br><span style="font-size:9px;color:var(--khaki-dim)">L</span></td>
+            <td class="num">3,200</td>
+            <td class="pct pct-warn">67%</td>
+            <td class="status status-bad">▼ 미달</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="mat-name">연료</span>
+              <span class="mat-id">RP-1</span>
+            </td>
+            <td class="num">3,200</td>
+            <td class="num">2,860</td>
+            <td class="pct pct-ok">89%</td>
+            <td class="status status-ok">✓ 양호</td>
+          </tr>
+          <tr>
+            <td>
+              <span class="mat-name">수소</span>
+              <span class="mat-id">GH2</span>
+            </td>
+            <td class="num">180</td>
+            <td class="num">450</td>
+            <td class="pct pct-over">250%</td>
+            <td class="status status-over">↑ 초과</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sec-header" style="margin-top:6px;">
+        <span class="star">★</span>
+        МОЩНОСТИ
+        <span class="sub">PRODUCTION FACILITIES</span>
+      </div>
+
+      <ul class="facility-list">
+        <li>
+          <span class="fac-dot on">●</span>
+          <span>
+            <span class="fac-name">제련소 Smelter Mk.II</span>
+            <span class="fac-status">알루미늄 정제 가동중 / Al purification ACTIVE</span>
+          </span>
+        </li>
+        <li>
+          <span class="fac-dot on">●</span>
+          <span>
+            <span class="fac-name">복합재 공장 CFRP Layup</span>
+            <span class="fac-status">레이어 47/64 경화중 / Layer 47/64 curing</span>
+          </span>
+        </li>
+        <li>
+          <span class="fac-dot off">○</span>
+          <span>
+            <span class="fac-name" style="color:var(--khaki-dim)">티타늄 선반 Ti Lathe</span>
+            <span class="fac-status">가동 대기 / STANDBY</span>
+          </span>
+        </li>
+        <li>
+          <span class="fac-dot on">●</span>
+          <span>
+            <span class="fac-name">LOX 액화기 Liquefier</span>
+            <span class="fac-status">연속 운전 중 / Continuous operation</span>
+          </span>
+        </li>
+        <li>
+          <span class="fac-dot off">○</span>
+          <span>
+            <span class="fac-name" style="color:var(--khaki-dim)">인코넬 주조로 Incl. Furnace</span>
+            <span class="fac-status" style="color:var(--red-soviet)">예열 필요 / Preheat req. (+4h)</span>
+          </span>
+        </li>
+      </ul>
+
+      <div class="tech-note">
+        <strong>Примечание:</strong> Производственный план на Д+014.<br>
+        Дефицит CFRP критичен — срочно увеличить смену.<br>
+        <strong>Note:</strong> Production plan for D+014. CFRP deficit critical — shift increase required.
+      </div>
+
+    </div><!-- /LEFT COL -->
+
+
+    <!-- ════════════════════════════════════
+         CENTER COLUMN — VEHICLE STATUS
+    ════════════════════════════════════ -->
+    <div class="col">
+
+      <div class="sec-header">
+        <span class="star">★</span>
+        ТЕХН. СОСТОЯНИЕ
+        <span class="sub">VEHICLE STATUS</span>
+      </div>
+
+      <!-- ASCII Rocket Cross-Section -->
+      <div class="rocket-diagram"><span class="rd-dim">   ┌───────────────────────────────────────┐</span>
+<span class="rd-dim">   │</span> VEHICLE: <span class="rd-bright">ЛУННЫЙ НОСИТЕЛЬ ML-004</span>           <span class="rd-dim">│</span>
+<span class="rd-dim">   │</span> Stage: 1 of 2  │  Mass: <span class="rd-bright">18,420 kg</span>         <span class="rd-dim">│</span>
+<span class="rd-dim">   └───────────────────────────────────────┘</span>
+
+<span class="rd-dim">         ╔══════════════════╗</span>
+<span class="rd-dim">        /║</span>  <span class="rd-bright">NOSECONE</span>          <span class="rd-dim">║</span>
+<span class="rd-dim">       / ║</span>  Al-7075 Fairing  <span class="rd-dim">║</span>
+<span class="rd-dim">      /  ╠══════════════════╣</span>
+<span class="rd-dim">         ║</span>  <span class="rd-bright">PAYLOAD BAY</span>       <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  320 kg / 0.8 m³  <span class="rd-dim">║</span>
+<span class="rd-dim">         ╠══════════════════╣</span>
+<span class="rd-dim">         ║</span>  <span class="rd-bright">LOX TANK</span>          <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  <span class="tank-fill-mid">████████░░░░░░</span> <span class="tank-fill-mid">67%</span>  <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  4,800 L capacity <span class="rd-dim">║</span>
+<span class="rd-dim">         ╠══════════════════╣</span>
+<span class="rd-dim">         ║</span>  <span class="rd-bright">INTERTANK</span>         <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  CFRP structure   <span class="rd-dim">║</span>
+<span class="rd-dim">         ╠══════════════════╣</span>
+<span class="rd-dim">         ║</span>  <span class="rd-bright">RP-1 TANK</span>         <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  <span class="tank-fill-ok">████████████░░</span> <span class="rd-green">89%</span>  <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  3,200 L capacity <span class="rd-dim">║</span>
+<span class="rd-dim">         ╠══════════════════╣</span>
+<span class="rd-dim">         ║</span>  <span class="rd-bright">ENGINE BLOCK</span>      <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  Inconel Ni-718   <span class="rd-dim">║</span>
+<span class="rd-dim">         ║</span>  <span class="rd-orange">156 kN thrust</span>     <span class="rd-dim">║</span>
+<span class="rd-dim">         ╚══════════════════╝</span>
+<span class="rd-dim">              ╠════╣</span>
+<span class="rd-dim">             ╠══════╣</span></div>
+
+      <div class="sec-header" style="margin-top:4px;">
+        <span class="star">★</span>
+        ЭТАПЫ
+        <span class="sub">MANUFACTURING PIPELINE</span>
+      </div>
+
+      <ul class="pipeline">
+        <li class="pipe-done">
+          <span class="pipe-check">✓</span>
+          <span>
+            <span class="pipe-title">ЭТАП 1: Заготовки</span>
+            <span class="pipe-sub">원자재 정제 / Raw material refining — ЗАВЕРШЕНО / COMPLETE</span>
+          </span>
+        </li>
+        <li class="pipe-done">
+          <span class="pipe-check">✓</span>
+          <span>
+            <span class="pipe-title">ЭТАП 2: Изготовление корпуса</span>
+            <span class="pipe-sub">구조물 제작 / Structural fabrication — ЗАВЕРШЕНО / COMPLETE</span>
+          </span>
+        </li>
+        <li class="pipe-active">
+          <span class="pipe-check">▶</span>
+          <span>
+            <span class="pipe-title">ЭТАП 3: Сборка двигателя</span>
+            <span class="pipe-sub">추진계통 / Propulsion assembly — В РАБОТЕ / IN PROGRESS</span>
+            <span class="pipe-bar">
+              <span class="bar-fill">▓▓▓▓▓▓▓▓▓</span><span class="bar-empty">░░░░░░░</span>
+              <span class="bar-pct">57%</span>
+            </span>
+          </span>
+        </li>
+        <li class="pipe-wait">
+          <span class="pipe-check">□</span>
+          <span>
+            <span class="pipe-title">ЭТАП 4: Авионика</span>
+            <span class="pipe-sub">항전 / Avionics integration — ОЖИДАНИЕ / WAITING</span>
+          </span>
+        </li>
+        <li class="pipe-wait">
+          <span class="pipe-check">□</span>
+          <span>
+            <span class="pipe-title">ЭТАП 5: Огневые испытания</span>
+            <span class="pipe-sub">연소시험 / Static fire test — ОЖИДАНИЕ / WAITING</span>
+          </span>
+        </li>
+        <li class="pipe-wait">
+          <span class="pipe-check">□</span>
+          <span>
+            <span class="pipe-title">ЭТАП 6: Интеграция</span>
+            <span class="pipe-sub">단 통합 / Stage integration — ОЖИДАНИЕ / WAITING</span>
+          </span>
+        </li>
+        <li class="pipe-wait">
+          <span class="pipe-check">□</span>
+          <span>
+            <span class="pipe-title">ЭТАП 7: Подготовка к пуску</span>
+            <span class="pipe-sub">발사준비 / Launch preparation — ОЖИДАНИЕ / WAITING</span>
+          </span>
+        </li>
+      </ul>
+
+      <!-- Active build note -->
+      <div class="mission-active-box">
+        <div class="mab-header">▶ ТЕКУЩИЕ РАБОТЫ / CURRENT OPERATIONS</div>
+        <div class="mab-row">
+          <span class="mab-label">Операция:</span>
+          <span class="mab-value">Монтаж камеры сгорания</span>
+        </div>
+        <div class="mab-row">
+          <span class="mab-label">Бригада / Team:</span>
+          <span class="mab-value">ОТК-7 / ГК-Механика</span>
+        </div>
+        <div class="mab-row">
+          <span class="mab-label">Прогресс / Progress:</span>
+          <span class="mab-value" style="color:var(--orange)">57% — Est. +6h</span>
+        </div>
+        <div class="mab-row">
+          <span class="mab-label">Крит. путь / Crit. path:</span>
+          <span class="mab-value" style="color:var(--red-soviet)">Ni-718 нехватка ▼</span>
+        </div>
+      </div>
+
+    </div><!-- /CENTER COL -->
+
+
+    <!-- ════════════════════════════════════
+         RIGHT COLUMN — LAUNCH DOSSIER
+    ════════════════════════════════════ -->
+    <div class="col">
+
+      <div class="sec-header">
+        <span class="star">★</span>
+        ЖУРНАЛ ПУСКОВ
+        <span class="sub">LAUNCH DOSSIER</span>
+      </div>
+
+      <!-- Dossier Card 1 -->
+      <div class="dossier-card result-avaria">
+        <div class="dossier-stamp">АВА<br>РИЯ</div>
+        <div class="dc-header">ПУСК № ML-001</div>
+        <div class="dc-row"><span class="dc-label">Дата / Date:</span><span class="dc-value">D+07</span></div>
+        <div class="dc-row"><span class="dc-label">Носитель / Vehicle:</span><span class="dc-value">Alpha mk.1</span></div>
+        <div class="dc-row"><span class="dc-label">Цель / Target alt.:</span><span class="dc-value">10,000 м</span></div>
+        <div class="dc-row"><span class="dc-label">Факт / Achieved:</span><span class="dc-value dc-result-bad">2,300 м</span></div>
+        <div class="dc-row"><span class="dc-label">ΔV доставлено:</span><span class="dc-value">842 м/с</span></div>
+        <div class="dc-row"><span class="dc-label">Время полёта:</span><span class="dc-value">87 сек</span></div>
+        <div class="dc-row"><span class="dc-label">Результат:</span><span class="dc-value dc-result-bad">✗ АВАРИЯ</span></div>
+        <div class="dc-note">Причина: Усталость конструкции корпуса.<br>Превышение макс. динамического давления на Т+43с.</div>
+      </div>
+
+      <!-- Dossier Card 2 -->
+      <div class="dossier-card result-avaria">
+        <div class="dossier-stamp">АВА<br>РИЯ</div>
+        <div class="dc-header">ПУСК № ML-002</div>
+        <div class="dc-row"><span class="dc-label">Дата / Date:</span><span class="dc-value">D+09</span></div>
+        <div class="dc-row"><span class="dc-label">Носитель / Vehicle:</span><span class="dc-value">Alpha mk.2</span></div>
+        <div class="dc-row"><span class="dc-label">Цель / Target alt.:</span><span class="dc-value">50,000 м</span></div>
+        <div class="dc-row"><span class="dc-label">Факт / Achieved:</span><span class="dc-value dc-result-bad">18,900 м</span></div>
+        <div class="dc-row"><span class="dc-label">ΔV доставлено:</span><span class="dc-value">1,840 м/с</span></div>
+        <div class="dc-row"><span class="dc-label">Время полёта:</span><span class="dc-value">213 сек</span></div>
+        <div class="dc-row"><span class="dc-label">Результат:</span><span class="dc-value dc-result-bad">✗ АВАРИЯ</span></div>
+        <div class="dc-note">Причина: Отказ ТНА на Т+127с.<br>Разрушение RP-1 насоса.</div>
+      </div>
+
+      <!-- Dossier Card 3 -->
+      <div class="dossier-card result-partial">
+        <div class="dossier-stamp partial">ЧАС<br>ТИЧ</div>
+        <div class="dc-header">ПУСК № ML-003</div>
+        <div class="dc-row"><span class="dc-label">Дата / Date:</span><span class="dc-value">D+12</span></div>
+        <div class="dc-row"><span class="dc-label">Носитель / Vehicle:</span><span class="dc-value">Beta mk.1</span></div>
+        <div class="dc-row"><span class="dc-label">Цель / Target alt.:</span><span class="dc-value">100,000 м</span></div>
+        <div class="dc-row"><span class="dc-label">Факт / Achieved:</span><span class="dc-value dc-result-partial">89,400 м</span></div>
+        <div class="dc-row"><span class="dc-label">ΔV доставлено:</span><span class="dc-value">2,910 м/с</span></div>
+        <div class="dc-row"><span class="dc-label">Время полёта:</span><span class="dc-value">547 сек</span></div>
+        <div class="dc-row"><span class="dc-label">Результат:</span><span class="dc-value dc-result-partial">△ ЧАСТИЧНО</span></div>
+        <div class="dc-note">Достигнут Карман —10.6 км.<br>Авионика отказала на Т+489с, потеря связи.</div>
+      </div>
+
+      <!-- Dossier Card 4 — IN PROGRESS -->
+      <div class="dossier-card result-active active-mission">
+        <div class="dossier-stamp active">В<br>СБОРКЕ</div>
+        <div class="dc-header">ПУСК № ML-004</div>
+        <div class="dc-row"><span class="dc-label">Дата / Target:</span><span class="dc-value dc-result-active">D+021 (plan)</span></div>
+        <div class="dc-row"><span class="dc-label">Носитель / Vehicle:</span><span class="dc-value">Beta mk.2</span></div>
+        <div class="dc-row"><span class="dc-label">Цель / Target alt.:</span><span class="dc-value">200,000 м</span></div>
+        <div class="dc-row"><span class="dc-label">Этап сборки:</span><span class="dc-value dc-result-active">3 / 7 — 57%</span></div>
+        <div class="dc-row"><span class="dc-label">Готовность:</span><span class="dc-value" style="color:var(--red-soviet)">НЕ ГОТОВ</span></div>
+        <div class="dc-note" style="color:var(--orange)">Сборка двигателя незавершена.<br>Блокировано нехваткой Ni-718.</div>
+      </div>
+
+      <!-- Cumulative Statistics -->
+      <table class="stats-table">
+        <caption>СВОДНАЯ СТАТИСТИКА / CUMULATIVE STATS</caption>
+        <tbody>
+          <tr><td>Всего пусков</td><td>3</td></tr>
+          <tr class="stat-bad"><td>Успешных / Successful</td><td>0 (0%)</td></tr>
+          <tr class="stat-warn"><td>Частично / Partial</td><td>1 (33%)</td></tr>
+          <tr class="stat-bad"><td>Аварий / Failed</td><td>2 (67%)</td></tr>
+          <tr class="stat-warn"><td>Макс. высота</td><td>89.4 km</td></tr>
+          <tr class="stat-bad"><td>Карман линия / Kármán</td><td>–10.6 km</td></tr>
+          <tr><td>Суммарное время</td><td>847 с</td></tr>
+        </tbody>
+      </table>
+
+    </div><!-- /RIGHT COL -->
+
+  </div><!-- /MAIN GRID -->
+
+  <!-- BOTTOM BAR -->
+  <div id="bottom-bar">
+    <div class="warning-strip">
+      <span class="warn-icon">⚠</span>
+      ВНИМАНИЕ: ПУСК ЗАПРЕЩЁН ДО ЗАВЕРШЕНИЯ ЭТАПА 3
+      <span class="warn-icon">⚠</span>
+      &nbsp;|&nbsp;
+      WARNING: LAUNCH PROHIBITED UNTIL PHASE 3 COMPLETE
+      <span class="warn-icon">⚠</span>
+    </div>
+
+    <div class="launch-control-row">
+      <div class="launch-status-indicators">
+        <div class="ind-item"><div class="ind-dot red"></div><span>ЭТ.3 미완료</span></div>
+        <div class="ind-item"><div class="ind-dot red"></div><span>Ni-718 부족</span></div>
+        <div class="ind-item"><div class="ind-dot yellow"></div><span>LOX 충전중</span></div>
+        <div class="ind-item"><div class="ind-dot green"></div><span>RP-1 준비</span></div>
+        <div class="ind-item"><div class="ind-dot red"></div><span>아비오닉스 미설치</span></div>
+      </div>
+
+      <button id="btn-launch" onclick="startLaunchSequence()">
+        ЗАПУСТИТЬ СЕЙЧАС / LAUNCH NOW
+      </button>
+
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--red-soviet);text-align:right;line-height:1.8;">
+        ПРЕДУПРЕЖДЕНИЕ:<br>
+        Запуск до готовности<br>
+        является нарушением<br>
+        приказа № 7741-Б
+      </div>
+    </div>
+  </div>
+
+</div><!-- /APP -->
+
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   LAUNCH SEQUENCE
+═══════════════════════════════════════════════════════ */
+
+const telemetryLines = [
+  { t: 'Т+00', msg: 'Зажигание — НОРМАЛЬНО / Ignition — NOMINAL', cls: 'ok' },
+  { t: 'Т+03', msg: 'Отрыв от стола / Liftoff confirmed', cls: 'ok' },
+  { t: 'Т+10', msg: 'Тяга 156 кН — НОРМАЛЬНО / Thrust 156 kN — NOMINAL', cls: 'ok' },
+  { t: 'Т+22', msg: 'Программный разворот — НОРМАЛЬНО', cls: 'ok' },
+  { t: 'Т+30', msg: 'Max-Q зона / Max dynamic pressure — НОРМАЛЬНО', cls: 'ok' },
+  { t: 'Т+43', msg: 'Высота: 18,200 м — НОРМАЛЬНО', cls: 'ok' },
+  { t: 'Т+65', msg: 'ОТКЛОНЕНИЕ: давление топлива ↓3.2% / Fuel pressure deviation', cls: 'warn' },
+  { t: 'Т+78', msg: 'Высота: 54,000 м — ТНА вибрация повышена', cls: 'warn' },
+  { t: 'Т+90', msg: 'КРИТИЧНО: насос RP-1 T° = 847°C (лимит 620°C)', cls: 'err' },
+  { t: 'Т+94', msg: '*** ОТКАЗ ДВИГАТЕЛЯ / ENGINE FAILURE ***', cls: 'err' },
+  { t: 'Т+97', msg: 'Баллистическая траектория / Ballistic trajectory', cls: 'warn' },
+  { t: 'Т+147', msg: 'Приводнение — Макс. высота 71.2 км / Splashdown', cls: 'ok' },
+];
+
+let launchActive = false;
+let countdownTimer = null;
+let telemetryTimer = null;
+
+function startLaunchSequence() {
+  if (launchActive) return;
+  launchActive = true;
+
+  const overlay = document.getElementById('launch-overlay');
+  const alarmFlash = document.getElementById('alarm-flash');
+
+  // Show overlay
+  overlay.style.display = 'flex';
+  overlay.classList.remove('split-open', 'exhaust-active');
+  document.getElementById('result-screen').classList.remove('visible');
+  document.getElementById('avaria-stamp').classList.remove('stamp-animate');
+  document.getElementById('countdown-display').textContent = '10';
+
+  // Clear telemetry
+  document.getElementById('telemetry-lines').innerHTML = '';
+
+  // Phase 1: alarm flash (panels stay closed, show warning text)
+  // The alarm animation plays 3 times (defined in CSS)
+  // After ~1.2s open the split
+  setTimeout(() => {
+    overlay.classList.add('split-open');
+  }, 1200);
+
+  // Phase 2: countdown (starts after panels slide)
+  let count = 10;
+  countdownTimer = setInterval(() => {
+    count--;
+    document.getElementById('countdown-display').textContent = count > 0 ? count : '0';
+
+    if (count <= 0) {
+      clearInterval(countdownTimer);
+      // Phase 3: LAUNCH
+      triggerLaunch();
+    }
+  }, 800);
+}
+
+function triggerLaunch() {
+  const overlay = document.getElementById('launch-overlay');
+  overlay.classList.add('exhaust-active');
+  document.getElementById('countdown-display').textContent = 'ПУСК';
+
+  // Feed telemetry lines
+  let idx = 0;
+  const feed = () => {
+    if (idx >= telemetryLines.length) {
+      // Show results after last line
+      setTimeout(showResult, 1200);
+      return;
+    }
+    const line = telemetryLines[idx++];
+    const el = document.createElement('div');
+    el.className = 'tline ' + line.cls;
+    el.textContent = line.t + ':  ' + line.msg;
+    document.getElementById('telemetry-lines').appendChild(el);
+    // scroll to bottom
+    const feed_el = document.getElementById('telemetry-feed');
+    feed_el.scrollTop = feed_el.scrollHeight;
+
+    telemetryTimer = setTimeout(feed, 600 + Math.random() * 400);
+  };
+  setTimeout(feed, 800);
+}
+
+function showResult() {
+  const rs = document.getElementById('result-screen');
+  rs.classList.add('visible');
+  // Stamp drops after brief delay
+  setTimeout(() => {
+    document.getElementById('avaria-stamp').classList.add('stamp-animate');
+  }, 500);
+}
+
+function closeLaunch() {
+  const overlay = document.getElementById('launch-overlay');
+  overlay.style.display = 'none';
+  overlay.classList.remove('split-open', 'exhaust-active');
+  document.getElementById('result-screen').classList.remove('visible');
+  clearInterval(countdownTimer);
+  clearTimeout(telemetryTimer);
+  launchActive = false;
+}
+</script>
+
+</body>
+</html>

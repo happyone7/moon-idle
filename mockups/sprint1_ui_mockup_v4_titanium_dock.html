@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle Mockup V4 - Titanium Dock</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#111318;
+      --bg2:#1c232e;
+      --panel:#1a202add;
+      --line:#9fb6d35b;
+      --txt:#eef4ff;
+      --muted:#bac6d8;
+      --btn:url("./assets/moonidle_btn_titanium.svg");
+      --btn2:url("./assets/moonidle_btn_warn.svg");
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--txt);
+      font-family: Sora, "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 88% -15%, #617ca34a 0, transparent 38%),
+        radial-gradient(circle at -8% 110%, #ff976339 0, transparent 30%),
+        linear-gradient(170deg, var(--bg), var(--bg2));
+    }
+    .shell {
+      max-width: 1540px;
+      margin: 0 auto;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1.4fr 360px;
+      gap: 10px;
+    }
+    .left {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: 0 12px 24px #0009, inset 0 1px 0 #ffffff24;
+      overflow: hidden;
+    }
+    .hd {
+      padding: 11px;
+      border-bottom: 1px solid #ffffff1f;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: "Chakra Petch", sans-serif;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #d9e8ff;
+      font-size: .8rem;
+    }
+    .hero {
+      position: relative;
+      height: 250px;
+      border-bottom: 1px solid #ffffff1a;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, #171d276b 0, #121b2dd6 65%, #111926ef 100%),
+        url("./assets/moonidle_hangar_bg_lab_xenon.svg") center/cover no-repeat;
+      filter: saturate(.78) brightness(.56);
+      transform: scale(1.03);
+    }
+    .tag {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      border: 1px solid #d8e8ff47;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: .72rem;
+      color: #dcecff;
+      background: #ffffff12;
+      z-index: 2;
+    }
+    .hero .txt {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 2;
+      padding: 10px;
+      border-left: 3px solid #f4b18a;
+      background: #0f1624dc;
+    }
+    .hero h1 { margin: 0 0 4px; font-size: 1.12rem; }
+    .hero p { margin: 0; font-size: .78rem; color: #d0dbed; line-height: 1.45; }
+    .blocks {
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .mini {
+      border: 1px solid #d9e9ff30;
+      border-radius: 9px;
+      background: #ffffff08;
+      padding: 8px;
+      min-height: 134px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .mini h3 { margin: 0 0 4px; font-size: .8rem; }
+    .mini p { margin: 0; color: var(--muted); font-size: .7rem; line-height: 1.36; }
+    .btn {
+      margin-top: 8px;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px;
+      width: 100%;
+      text-align: left;
+      font-family: "Chakra Petch", sans-serif;
+      letter-spacing: .03em;
+      color: #fff;
+      background: var(--btn) center/100% 100% no-repeat;
+      cursor: pointer;
+      font-size: .73rem;
+    }
+    .btn.hot { background-image: var(--btn2); }
+    .metrics {
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 7px;
+    }
+    .m {
+      border: 1px solid #d7e8ff30;
+      border-radius: 9px;
+      background: #ffffff08;
+      padding: 8px;
+    }
+    .m b { font-family: "Chakra Petch", sans-serif; font-size: .98rem; }
+    .m div { margin-top: 3px; color: var(--muted); font-size: .66rem; }
+    .rightCol { display: grid; gap: 10px; align-content: start; }
+    .q { padding: 10px; display: grid; gap: 8px; }
+    .slot {
+      border: 1px solid #d4e4f92f;
+      border-radius: 9px;
+      background: #ffffff08;
+      padding: 8px;
+    }
+    .line { display: flex; justify-content: space-between; gap: 8px; font-size: .8rem; }
+    .bar { margin-top: 6px; height: 6px; border-radius: 99px; background: #ffffff1b; overflow: hidden; }
+    .fill { height: 100%; width: 54%; background: linear-gradient(90deg, #8ed0ff, #ffc088); animation: load 2.8s ease-in-out infinite; }
+    .cam {
+      margin: 0 10px 10px;
+      height: 150px;
+      border: 1px solid #d8e8ff2d;
+      border-radius: 10px;
+      background: url("./assets/moonidle_cam_feed_lab_xenon.svg") center/cover no-repeat;
+      filter: brightness(.56) contrast(1.07) saturate(.75);
+      position: relative;
+    }
+    .cam::after {
+      content: "DOCK CAM // SLOT OVERVIEW";
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      font-size: .67rem;
+      color: #d5e6ff;
+      font-family: "Chakra Petch", sans-serif;
+    }
+    @media (max-width: 1220px) {
+      .shell { grid-template-columns: 1fr; }
+      .blocks { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 760px) {
+      .blocks { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+    }
+    @keyframes load {
+      0% { width: 42%; }
+      50% { width: 70%; }
+      100% { width: 54%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="left">
+      <article class="panel">
+        <div class="hd">Titanium Dock Command <span>moonidle launch grid</span></div>
+        <div class="hero">
+          <div class="tag">ORBITAL CONSTRUCTION PHASE</div>
+          <div class="txt">
+            <h1>로켓 품질을 끌어올릴수록 제작 시간은 길어지고, 슬롯 수가 성장률을 폭발시킵니다</h1>
+            <p>Revolution Idle식 누적 루프를 우주선 제작 파이프라인으로 변환한 시안입니다. 제작소 확장과 신뢰도 연구가 핵심 병목입니다.</p>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="m"><b>9.48 km/s</b><div>Delta-v</div></div>
+          <div class="m"><b>1.61</b><div>TWR</div></div>
+          <div class="m"><b>93.1%</b><div>신뢰도</div></div>
+          <div class="m"><b>4h 00m</b><div>다음 발사</div></div>
+        </div>
+        <div class="blocks">
+          <article class="mini"><div><h3>고압 산소 펌프</h3><p>점화 손실을 줄여 초반 제작 회전율을 높입니다.</p></div><button class="btn">구매 · Moonstone 1.6M</button></article>
+          <article class="mini"><div><h3>AI 고장 예측</h3><p>센서 이상 패턴 조기 탐지로 실패 시도 횟수 감소.</p></div><button class="btn">구매 · Moonstone 180K</button></article>
+          <article class="mini"><div><h3>복합 차폐재</h3><p>열 편차 감소로 장기 미션 안정성과 품질 상승.</p></div><button class="btn hot">구매 · Moonstone 520K</button></article>
+        </div>
+      </article>
+    </section>
+    <aside class="rightCol">
+      <section class="panel">
+        <div class="hd">Launch Queue <span>slots</span></div>
+        <div class="q">
+          <div class="slot"><div class="line"><span>슬롯 1 · Block-I</span><span>진행 14m 08s</span></div><div class="bar"><div class="fill"></div></div></div>
+          <div class="slot"><div class="line"><span>슬롯 2 · Heavy</span><span>대기</span></div><button class="btn">발사 대기열 등록</button></div>
+          <div class="slot"><div class="line"><span>슬롯 3</span><span>잠금</span></div><button class="btn hot">설비 확장</button></div>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="hd">Visual Feed <span>dock cam</span></div>
+        <div class="cam"></div>
+        <button class="btn hot" style="margin:0 10px 10px; width:calc(100% - 20px);">브리핑 완료 후 자동 업그레이드</button>
+      </section>
+    </aside>
+  </main>
+</body>
+</html>

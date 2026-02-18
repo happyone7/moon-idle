@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOON IDLE — Blueprint Cosmos Title Screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bp-paper:    #071428;
+    --bp-primary:  #4db8ff;
+    --bp-bright:   #00e4ff;
+    --bp-dim:      #3a8fd4;
+    --bp-text:     #cce8ff;
+    --bp-white:    #ffffff;
+    --bp-moon:     #a8c4d8;
+    --bp-earth:    #1a3a5c;
+  }
+
+  html, body {
+    width: 1920px; height: 1080px;
+    overflow: hidden;
+    background: #020a14;
+    font-family: 'Share Tech Mono', 'Courier Prime', monospace;
+    color: var(--bp-text);
+    user-select: none;
+  }
+
+  /* ── SVG scene fills the whole viewport ── */
+  #scene {
+    position: absolute; inset: 0;
+    width: 1920px; height: 1080px;
+  }
+
+  /* ── Title overlay ── */
+  #title-block {
+    position: absolute;
+    top: 58px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 30;
+    pointer-events: none;
+  }
+  #title-main {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 88px;
+    letter-spacing: 0.28em;
+    color: var(--bp-white);
+    text-shadow:
+      0 0 18px #00e4ff,
+      0 0 40px #00e4ff,
+      0 0 80px rgba(0,228,255,0.45),
+      0 0 140px rgba(0,228,255,0.2);
+    line-height: 1;
+    animation: titleGlow 4s ease-in-out infinite alternate;
+  }
+  #title-sub {
+    font-family: 'Roboto Condensed', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.22em;
+    color: var(--bp-primary);
+    margin-top: 10px;
+    opacity: 0.85;
+    text-shadow: 0 0 12px rgba(77,184,255,0.6);
+    animation: annotationFadeIn 1.5s 0.8s ease both;
+  }
+  #title-rule {
+    display: block;
+    width: 520px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--bp-primary), var(--bp-bright), var(--bp-primary), transparent);
+    margin: 14px auto 0;
+    box-shadow: 0 0 8px rgba(0,228,255,0.5);
+    animation: annotationFadeIn 1.5s 1.2s ease both;
+    opacity: 0;
+  }
+
+  /* ── Engineering title block (top-right) ── */
+  #eng-title-block {
+    position: absolute;
+    top: 32px; right: 44px;
+    border: 1px solid var(--bp-dim);
+    width: 340px;
+    font-size: 11.5px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--bp-text);
+    z-index: 30;
+    animation: annotationFadeIn 1.5s 1.8s ease both;
+    opacity: 0;
+    box-shadow: inset 0 0 18px rgba(77,184,255,0.05);
+  }
+  #eng-title-block .etb-row {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--bp-dim);
+    line-height: 1.5;
+  }
+  #eng-title-block .etb-row:last-child { border-bottom: none; }
+  #eng-title-block .etb-split {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--bp-dim);
+  }
+  #eng-title-block .etb-split > div {
+    flex: 1;
+    padding: 5px 10px;
+    border-right: 1px solid var(--bp-dim);
+    line-height: 1.5;
+  }
+  #eng-title-block .etb-split > div:last-child { border-right: none; }
+  #eng-title-block .etb-label { color: var(--bp-dim); font-size: 10px; }
+
+  /* ── Menu buttons ── */
+  #menu {
+    position: absolute;
+    bottom: 110px;
+    left: 132px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 40;
+    animation: annotationFadeIn 1.5s 2.4s ease both;
+    opacity: 0;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0;
+    cursor: pointer;
+    position: relative;
+    background: transparent;
+    border: none;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .btn-part {
+    font-size: 10px;
+    color: var(--bp-dim);
+    min-width: 70px;
+    text-align: right;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+  }
+  .btn-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--bp-dim);
+    padding: 10px 28px 10px 18px;
+    min-width: 230px;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    background: rgba(7,20,40,0.7);
+  }
+  .btn-arrow {
+    font-size: 13px;
+    color: var(--bp-bright);
+    transition: color 0.2s, transform 0.2s;
+  }
+  .btn-text {
+    font-size: 15px;
+    color: var(--bp-text);
+    letter-spacing: 0.08em;
+    transition: color 0.2s;
+  }
+  /* corner accents */
+  .btn-inner::before, .btn-inner::after {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    border-color: var(--bp-bright);
+    border-style: solid;
+    transition: border-color 0.2s;
+  }
+  .btn-inner::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+  .btn-inner::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+  /* dim line extending right */
+  .btn-line {
+    width: 40px; height: 1px;
+    background: var(--bp-dim);
+    opacity: 0.5;
+    transition: width 0.2s, opacity 0.2s;
+  }
+
+  .btn:hover .btn-inner {
+    background: rgba(0,164,220,0.14);
+    border-color: var(--bp-bright);
+    box-shadow: 0 0 16px rgba(0,228,255,0.25), inset 0 0 12px rgba(0,228,255,0.06);
+  }
+  .btn:hover .btn-text { color: #fff; }
+  .btn:hover .btn-arrow { color: #fff; transform: translateX(3px); }
+  .btn:hover .btn-inner::before,
+  .btn:hover .btn-inner::after { border-color: #fff; }
+  .btn:hover .btn-line { width: 60px; opacity: 1; }
+  .btn:hover .btn-part { color: var(--bp-primary); }
+
+  /* cursor blink on first btn */
+  .btn-cursor {
+    display: inline-block;
+    width: 2px; height: 14px;
+    background: var(--bp-bright);
+    margin-left: 4px;
+    vertical-align: middle;
+    animation: cursorBlink 1.1s step-end infinite;
+  }
+
+  /* ── Scale bar ── */
+  #scale-bar {
+    position: absolute;
+    bottom: 52px; left: 132px;
+    z-index: 30;
+    font-size: 11px;
+    color: var(--bp-dim);
+    animation: annotationFadeIn 1.5s 2.8s ease both;
+    opacity: 0;
+  }
+  #scale-bar .sb-label { margin-bottom: 5px; letter-spacing: 0.05em; }
+  #scale-bar .sb-line {
+    display: flex; align-items: center; gap: 0;
+    height: 14px;
+  }
+  #scale-bar .sb-tick {
+    width: 1px; height: 10px; background: var(--bp-dim);
+  }
+  #scale-bar .sb-fill {
+    height: 3px; background: var(--bp-dim);
+  }
+  #scale-bar .sb-seg { width: 60px; }
+  #scale-bar .sb-nums {
+    display: flex; justify-content: space-between;
+    width: 300px;
+    margin-top: 4px;
+    font-size: 10px;
+    color: var(--bp-dim);
+  }
+
+  /* ── Notes block ── */
+  #notes {
+    position: absolute;
+    bottom: 44px; right: 44px;
+    font-size: 11px;
+    color: var(--bp-dim);
+    text-align: right;
+    line-height: 1.8;
+    z-index: 30;
+    animation: annotationFadeIn 1.5s 3.0s ease both;
+    opacity: 0;
+  }
+
+  /* ── Vignette ── */
+  #vignette {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(2,10,20,0.72) 100%);
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  /* ═══════ Keyframe Animations ═══════ */
+  @keyframes titleGlow {
+    0%   { text-shadow: 0 0 18px #00e4ff, 0 0 40px #00e4ff, 0 0 80px rgba(0,228,255,0.4); }
+    100% { text-shadow: 0 0 28px #00e4ff, 0 0 64px #00e4ff, 0 0 120px rgba(0,228,255,0.6), 0 0 200px rgba(0,228,255,0.2); }
+  }
+  @keyframes annotationFadeIn {
+    0%   { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes cursorBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+  @keyframes trajectoryDraw {
+    0%   { stroke-dashoffset: 2600; }
+    100% { stroke-dashoffset: 0; }
+  }
+  @keyframes earthRotate {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes moonGlow {
+    0%, 100% { opacity: 0.30; r: 42; }
+    50%       { opacity: 0.55; r: 48; }
+  }
+  @keyframes moonGlowOuter {
+    0%, 100% { opacity: 0.10; }
+    50%       { opacity: 0.22; }
+  }
+  @keyframes blueprintPulse {
+    0%, 100% { opacity: 0.15; }
+    50%       { opacity: 0.26; }
+  }
+  @keyframes starTwinkle0 { 0%,100%{opacity:.18} 47%{opacity:.82} }
+  @keyframes starTwinkle1 { 0%,100%{opacity:.22} 31%{opacity:.90} }
+  @keyframes starTwinkle2 { 0%,100%{opacity:.12} 60%{opacity:.70} }
+  @keyframes starTwinkle3 { 0%,100%{opacity:.30} 44%{opacity:.95} }
+  @keyframes starTwinkle4 { 0%,100%{opacity:.08} 55%{opacity:.65} }
+  @keyframes starTwinkle5 { 0%,100%{opacity:.20} 38%{opacity:.88} }
+
+  .traj-path {
+    stroke-dasharray: 2600;
+    stroke-dashoffset: 2600;
+    animation: trajectoryDraw 3.8s 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+  .bp-grid { animation: blueprintPulse 8s ease-in-out infinite; }
+
+  /* annotation fade stagger via JS class addition */
+  .ann { opacity: 0; }
+  .ann.show { animation: annotationFadeIn 0.8s ease forwards; }
+</style>
+</head>
+<body>
+
+<!-- SVG SCENE -->
+<svg id="scene" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Blueprint paper grain -->
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix type="saturate" values="0" result="grayNoise"/>
+      <feBlend in="SourceGraphic" in2="grayNoise" mode="overlay" result="blended"/>
+      <feComposite in="blended" in2="SourceGraphic" operator="in"/>
+    </filter>
+
+    <!-- Fine blueprint grid pattern (10px) -->
+    <pattern id="grid-fine" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1a4a7a" stroke-width="0.4"/>
+    </pattern>
+    <!-- Coarse blueprint grid (100px) -->
+    <pattern id="grid-coarse" x="0" y="0" width="200" height="200" patternUnits="userSpaceOnUse">
+      <path d="M 200 0 L 0 0 0 200" fill="none" stroke="#1e5080" stroke-width="0.9"/>
+    </pattern>
+
+    <!-- Earth continent pattern (suggestion only) -->
+    <pattern id="earth-continents" x="0" y="0" width="1" height="1" patternUnits="objectBoundingBox">
+      <rect width="1" height="1" fill="#0e2d50"/>
+      <!-- simple continent blobs suggesting Asia/Pacific -->
+      <ellipse cx="0.58" cy="0.34" rx="0.18" ry="0.14" fill="#113860" opacity="0.7"/>
+      <ellipse cx="0.72" cy="0.42" rx="0.08" ry="0.06" fill="#113860" opacity="0.6"/>
+      <ellipse cx="0.30" cy="0.38" rx="0.12" ry="0.10" fill="#113860" opacity="0.55"/>
+      <ellipse cx="0.35" cy="0.55" rx="0.08" ry="0.12" fill="#113860" opacity="0.5"/>
+      <ellipse cx="0.55" cy="0.62" rx="0.14" ry="0.06" fill="#113860" opacity="0.45"/>
+    </pattern>
+
+    <!-- Moon surface pattern -->
+    <pattern id="moon-surface" x="0" y="0" width="1" height="1" patternUnits="objectBoundingBox">
+      <rect width="1" height="1" fill="#1c3248"/>
+      <circle cx="0.30" cy="0.35" r="0.08" fill="none" stroke="#2a4a64" stroke-width="0.01"/>
+      <circle cx="0.65" cy="0.55" r="0.12" fill="none" stroke="#2a4a64" stroke-width="0.008"/>
+      <circle cx="0.20" cy="0.65" r="0.06" fill="none" stroke="#2a4a64" stroke-width="0.009"/>
+      <circle cx="0.75" cy="0.28" r="0.05" fill="none" stroke="#2a4a64" stroke-width="0.008"/>
+      <ellipse cx="0.50" cy="0.48" rx="0.20" ry="0.08" fill="none" stroke="#244060" stroke-width="0.009" opacity="0.7"/>
+    </pattern>
+
+    <!-- Radial glow for moon aura -->
+    <radialGradient id="moonAura" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4db8ff" stop-opacity="0.0"/>
+      <stop offset="60%" stop-color="#4db8ff" stop-opacity="0.0"/>
+      <stop offset="100%" stop-color="#00e4ff" stop-opacity="0.35"/>
+    </radialGradient>
+    <radialGradient id="moonAuraOuter" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00e4ff" stop-opacity="0.0"/>
+      <stop offset="70%" stop-color="#00e4ff" stop-opacity="0.0"/>
+      <stop offset="100%" stop-color="#00e4ff" stop-opacity="0.12"/>
+    </radialGradient>
+
+    <!-- Earth glow -->
+    <radialGradient id="earthGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#1a5080" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#2a80c0" stop-opacity="0.22"/>
+    </radialGradient>
+
+    <!-- Arrowhead marker -->
+    <marker id="arrowTraj" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,1 L8,4 L0,7 Z" fill="#00e4ff" opacity="0.9"/>
+    </marker>
+    <marker id="arrowTrajSmall" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0.8 L6,3 L0,5.2 Z" fill="#00e4ff" opacity="0.7"/>
+    </marker>
+    <!-- Dimension line arrow -->
+    <marker id="dimArrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <path d="M0,0.5 L5,3 L0,5.5 Z" fill="#3a8fd4"/>
+    </marker>
+    <marker id="dimArrowRev" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto-start-reverse">
+      <path d="M0,0.5 L5,3 L0,5.5 Z" fill="#3a8fd4"/>
+    </marker>
+
+    <!-- Glow filter for trajectory -->
+    <filter id="trajGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="trajGlowStrong" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur1"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Title text glow -->
+    <filter id="titleGlowFilter" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Vignette gradient -->
+    <radialGradient id="vigGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="40%" stop-color="transparent"/>
+      <stop offset="100%" stop-color="#020a14" stop-opacity="0.78"/>
+    </radialGradient>
+
+    <!-- Clip for Earth internal grid -->
+    <clipPath id="earthClip"><circle cx="340" cy="720" r="155"/></clipPath>
+    <!-- Clip for Moon internal grid -->
+    <clipPath id="moonClip"><circle cx="1590" cy="200" r="80"/></clipPath>
+  </defs>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 1: Deep space background
+  ══════════════════════════════════════════ -->
+  <rect width="1920" height="1080" fill="#020a14"/>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 2: Blueprint paper
+  ══════════════════════════════════════════ -->
+  <rect width="1920" height="1080" fill="#071428" filter="url(#grain)"/>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 3: Blueprint grid
+  ══════════════════════════════════════════ -->
+  <rect class="bp-grid" width="1920" height="1080" fill="url(#grid-fine)" opacity="0.20"/>
+  <rect class="bp-grid" width="1920" height="1080" fill="url(#grid-coarse)" opacity="0.22"
+        style="animation-delay: 4s"/>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 4: Star field
+  ══════════════════════════════════════════ -->
+  <!-- Stars as small + crosses and dots, astronomical style -->
+  <g id="starfield" fill="none" stroke="#cce8ff">
+    <!-- Scattered small crosses -->
+    <g style="animation: starTwinkle0 3.7s ease-in-out infinite">
+      <line x1="120" y1="92" x2="120" y2="102" stroke-width="0.8"/>
+      <line x1="115" y1="97" x2="125" y2="97" stroke-width="0.8"/>
+    </g>
+    <g style="animation: starTwinkle1 4.2s 0.5s ease-in-out infinite">
+      <line x1="820" y1="55" x2="820" y2="63" stroke-width="0.8"/>
+      <line x1="816" y1="59" x2="824" y2="59" stroke-width="0.8"/>
+    </g>
+    <g style="animation: starTwinkle2 5.1s 1.3s ease-in-out infinite">
+      <line x1="1100" y1="140" x2="1100" y2="150" stroke-width="0.7"/>
+      <line x1="1095" y1="145" x2="1105" y2="145" stroke-width="0.7"/>
+    </g>
+    <g style="animation: starTwinkle3 3.3s 0.8s ease-in-out infinite">
+      <line x1="1380" y1="80" x2="1380" y2="88" stroke-width="1"/>
+      <line x1="1376" y1="84" x2="1384" y2="84" stroke-width="1"/>
+    </g>
+    <g style="animation: starTwinkle4 6.0s 2.1s ease-in-out infinite">
+      <line x1="670" y1="180" x2="670" y2="190" stroke-width="0.7"/>
+      <line x1="665" y1="185" x2="675" y2="185" stroke-width="0.7"/>
+    </g>
+    <g style="animation: starTwinkle5 4.5s 1.6s ease-in-out infinite">
+      <line x1="1720" y1="320" x2="1720" y2="330" stroke-width="0.9"/>
+      <line x1="1715" y1="325" x2="1725" y2="325" stroke-width="0.9"/>
+    </g>
+    <g style="animation: starTwinkle0 5.5s 0.3s ease-in-out infinite">
+      <line x1="980" y1="900" x2="980" y2="908" stroke-width="0.7"/>
+      <line x1="976" y1="904" x2="984" y2="904" stroke-width="0.7"/>
+    </g>
+    <g style="animation: starTwinkle2 4.8s 2.5s ease-in-out infinite">
+      <line x1="1550" y1="680" x2="1550" y2="688" stroke-width="0.8"/>
+      <line x1="1546" y1="684" x2="1554" y2="684" stroke-width="0.8"/>
+    </g>
+    <g style="animation: starTwinkle1 3.9s 1.0s ease-in-out infinite">
+      <line x1="440" y1="550" x2="440" y2="558" stroke-width="0.6"/>
+      <line x1="436" y1="554" x2="444" y2="554" stroke-width="0.6"/>
+    </g>
+    <!-- Brighter stars near Moon zone -->
+    <g style="animation: starTwinkle3 4.0s 0.2s ease-in-out infinite">
+      <line x1="1480" y1="130" x2="1480" y2="142" stroke-width="1.1"/>
+      <line x1="1474" y1="136" x2="1486" y2="136" stroke-width="1.1"/>
+      <circle cx="1480" cy="136" r="1.5" fill="#cce8ff" stroke="none" opacity="0.7"/>
+    </g>
+    <g style="animation: starTwinkle5 5.2s 0.9s ease-in-out infinite">
+      <line x1="1700" y1="100" x2="1700" y2="110" stroke-width="1"/>
+      <line x1="1695" y1="105" x2="1705" y2="105" stroke-width="1"/>
+      <circle cx="1700" cy="105" r="1.2" fill="#cce8ff" stroke="none" opacity="0.6"/>
+    </g>
+    <g style="animation: starTwinkle0 4.7s 1.8s ease-in-out infinite">
+      <line x1="1440" y1="290" x2="1440" y2="300" stroke-width="0.9"/>
+      <line x1="1435" y1="295" x2="1445" y2="295" stroke-width="0.9"/>
+    </g>
+    <!-- Simple dot stars -->
+    <circle cx="230" cy="200" r="1"   fill="#cce8ff" stroke="none" style="animation: starTwinkle2 6.3s 1.1s ease-in-out infinite"/>
+    <circle cx="760" cy="320" r="1.2" fill="#cce8ff" stroke="none" style="animation: starTwinkle4 5.0s 0.4s ease-in-out infinite"/>
+    <circle cx="1160" cy="70" r="0.9" fill="#cce8ff" stroke="none" style="animation: starTwinkle1 4.3s 2.2s ease-in-out infinite"/>
+    <circle cx="1800" cy="450" r="1"  fill="#cce8ff" stroke="none" style="animation: starTwinkle5 5.8s 0.7s ease-in-out infinite"/>
+    <circle cx="580" cy="800" r="0.8" fill="#cce8ff" stroke="none" style="animation: starTwinkle3 3.5s 1.5s ease-in-out infinite"/>
+    <circle cx="1260" cy="940" r="1"  fill="#cce8ff" stroke="none" style="animation: starTwinkle0 4.9s 2.8s ease-in-out infinite"/>
+    <!-- Star distance callout (one prominent one) -->
+    <line x1="820" y1="63" x2="855" y2="90" stroke="#3a8fd4" stroke-width="0.5"/>
+    <text x="858" y="96" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="9">α Cen — 4.37 ly</text>
+    <line x1="1380" y1="88" x2="1410" y2="112" stroke="#3a8fd4" stroke-width="0.5"/>
+    <text x="1413" y="118" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="9">Vega — 25.04 ly</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 5: EARTH
+  ══════════════════════════════════════════ -->
+  <!-- Earth glow halo -->
+  <circle cx="340" cy="720" r="195" fill="url(#earthGlow)" opacity="0.8"/>
+
+  <!-- Earth body with continent fill -->
+  <circle cx="340" cy="720" r="155" fill="url(#earth-continents)"/>
+
+  <!-- Earth lat/lon grid lines (inside clip) -->
+  <g clip-path="url(#earthClip)" opacity="0.5">
+    <!-- Latitude lines -->
+    <g fill="none" stroke="#4db8ff" stroke-width="0.7" opacity="0.6">
+      <ellipse cx="340" cy="720" rx="155" ry="30" transform="translate(0,-93)"/>
+      <ellipse cx="340" cy="720" rx="155" ry="62" transform="translate(0,-46)"/>
+      <ellipse cx="340" cy="720" rx="155" ry="155"/>
+      <ellipse cx="340" cy="720" rx="155" ry="62" transform="translate(0,46)"/>
+      <ellipse cx="340" cy="720" rx="155" ry="30" transform="translate(0,93)"/>
+    </g>
+    <!-- Longitude lines -->
+    <g fill="none" stroke="#4db8ff" stroke-width="0.7" opacity="0.5"
+       style="transform-origin: 340px 720px; animation: earthRotate 60s linear infinite;">
+      <line x1="340" y1="565" x2="340" y2="875"/>
+      <line x1="340" y1="565" x2="340" y2="875" transform="rotate(30,340,720)"/>
+      <line x1="340" y1="565" x2="340" y2="875" transform="rotate(60,340,720)"/>
+      <line x1="340" y1="565" x2="340" y2="875" transform="rotate(90,340,720)"/>
+      <line x1="340" y1="565" x2="340" y2="875" transform="rotate(120,340,720)"/>
+      <line x1="340" y1="565" x2="340" y2="875" transform="rotate(150,340,720)"/>
+    </g>
+  </g>
+
+  <!-- Earth border -->
+  <circle cx="340" cy="720" r="155" fill="none" stroke="#4db8ff" stroke-width="1.2"/>
+
+  <!-- LEO orbit dashed ellipse -->
+  <ellipse cx="340" cy="720" rx="195" ry="55" fill="none"
+           stroke="#4db8ff" stroke-width="0.9" stroke-dasharray="8 5" opacity="0.55"/>
+
+  <!-- LEO label -->
+  <text x="540" y="692" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="11"
+        class="ann">LEO: 400 km</text>
+  <line x1="538" y1="695" x2="505" y2="702" stroke="#3a8fd4" stroke-width="0.7" class="ann"/>
+
+  <!-- Launch site marker -->
+  <polygon points="340,564  334,580  346,580" fill="none" stroke="#00e4ff" stroke-width="1.5" opacity="0.9"/>
+  <line x1="340" y1="560" x2="340" y2="550" stroke="#00e4ff" stroke-width="1" opacity="0.7"/>
+
+  <!-- Launch site label -->
+  <line x1="346" y1="572" x2="430" y2="545" stroke="#3a8fd4" stroke-width="0.7" class="ann"/>
+  <text x="432" y="542" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="11" class="ann">LAUNCH SITE</text>
+  <text x="432" y="555" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="10" class="ann">35.4°N, 128.3°E</text>
+
+  <!-- Earth dimension callout -->
+  <!-- Horizontal dim line above Earth -->
+  <line x1="186" y1="685" x2="494" y2="685" stroke="#3a8fd4" stroke-width="0.8"
+        marker-start="url(#dimArrowRev)" marker-end="url(#dimArrow)" class="ann"/>
+  <line x1="186" y1="680" x2="186" y2="716" stroke="#3a8fd4" stroke-width="0.6" class="ann"/>
+  <line x1="494" y1="680" x2="494" y2="716" stroke="#3a8fd4" stroke-width="0.6" class="ann"/>
+  <text x="340" y="678" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="12"
+        text-anchor="middle" class="ann">EARTH — Ø 12,742 km</text>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 6: MOON
+  ══════════════════════════════════════════ -->
+  <!-- Moon outer aura (pulsing) -->
+  <circle cx="1590" cy="200" r="120" fill="url(#moonAuraOuter)"
+          style="animation: moonGlowOuter 3.8s ease-in-out infinite"/>
+  <circle cx="1590" cy="200" r="90" fill="url(#moonAura)"
+          style="animation: moonGlow 3.8s ease-in-out infinite"/>
+
+  <!-- Moon body -->
+  <circle cx="1590" cy="200" r="80" fill="url(#moon-surface)"/>
+
+  <!-- Moon grid lines (internal) -->
+  <g clip-path="url(#moonClip)" opacity="0.45">
+    <g fill="none" stroke="#4db8ff" stroke-width="0.6">
+      <ellipse cx="1590" cy="200" rx="80" ry="16"/>
+      <ellipse cx="1590" cy="200" rx="80" ry="40"/>
+      <ellipse cx="1590" cy="200" rx="80" ry="70"/>
+      <line x1="1590" y1="120" x2="1590" y2="280"/>
+      <line x1="1590" y1="120" x2="1590" y2="280" transform="rotate(45,1590,200)"/>
+      <line x1="1590" y1="120" x2="1590" y2="280" transform="rotate(90,1590,200)"/>
+      <line x1="1590" y1="120" x2="1590" y2="280" transform="rotate(135,1590,200)"/>
+    </g>
+  </g>
+
+  <!-- Moon border -->
+  <circle cx="1590" cy="200" r="80" fill="none" stroke="#a8c4d8" stroke-width="1.1"/>
+
+  <!-- Landing zone marker (cross on Moon) -->
+  <g stroke="#00e4ff" stroke-width="1.4" opacity="0.85">
+    <line x1="1585" y1="198" x2="1595" y2="198"/>
+    <line x1="1590" y1="193" x2="1590" y2="203"/>
+    <circle cx="1590" cy="198" r="6" fill="none" stroke-dasharray="3 2"/>
+  </g>
+
+  <!-- Moon dimension callout -->
+  <line x1="1512" y1="162" x2="1668" y2="162" stroke="#3a8fd4" stroke-width="0.8"
+        marker-start="url(#dimArrowRev)" marker-end="url(#dimArrow)" class="ann"/>
+  <line x1="1512" y1="157" x2="1512" y2="176" stroke="#3a8fd4" stroke-width="0.6" class="ann"/>
+  <line x1="1668" y1="157" x2="1668" y2="176" stroke="#3a8fd4" stroke-width="0.6" class="ann"/>
+  <text x="1590" y="155" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="12"
+        text-anchor="middle" class="ann">MOON — Ø 3,474 km</text>
+
+  <!-- Moon side callouts -->
+  <line x1="1670" y1="200" x2="1742" y2="195" stroke="#3a8fd4" stroke-width="0.7" class="ann"/>
+  <text x="1745" y="192" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="11" class="ann">DISTANCE: 384,400 km</text>
+  <line x1="1670" y1="210" x2="1742" y2="220" stroke="#3a8fd4" stroke-width="0.7" class="ann"/>
+  <text x="1745" y="223" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="10" class="ann">FROM EARTH CENTER</text>
+
+  <!-- Landing zone label -->
+  <line x1="1585" y1="192" x2="1490" y2="250" stroke="#3a8fd4" stroke-width="0.7" class="ann"/>
+  <text x="1390" y="247" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="11" class="ann">MARE TRANQUILLITATIS</text>
+  <text x="1408" y="260" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="10" class="ann">TARGET LZ ▼</text>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 7: TRAJECTORY ARC (Hero element)
+  ══════════════════════════════════════════ -->
+  <!-- Glow layer (wider, dimmer) -->
+  <path d="M 340 565 C 380 200, 1000 -80, 1510 200"
+        fill="none" stroke="#00e4ff" stroke-width="8" opacity="0.12" filter="url(#trajGlow)"
+        class="traj-path" style="animation-delay: 0.3s"/>
+
+  <!-- Core trajectory line -->
+  <path id="traj-main" d="M 340 565 C 380 200, 1000 -80, 1510 200"
+        fill="none" stroke="#00e4ff" stroke-width="2"
+        stroke-linecap="round"
+        marker-end="url(#arrowTraj)"
+        filter="url(#trajGlowStrong)"
+        class="traj-path"/>
+
+  <!-- Secondary glow trace -->
+  <path d="M 340 565 C 380 200, 1000 -80, 1510 200"
+        fill="none" stroke="#4db8ff" stroke-width="1" opacity="0.5"
+        class="traj-path" style="animation-delay: 0.15s"/>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 8: Trajectory callout points
+  ══════════════════════════════════════════ -->
+  <!-- T+0h departure node -->
+  <circle cx="340" cy="565" r="5" fill="#071428" stroke="#00e4ff" stroke-width="1.5" class="ann"/>
+  <line x1="345" y1="560" x2="400" y2="510" stroke="#3a8fd4" stroke-width="0.8" class="ann"/>
+  <text x="403" y="508" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="12" class="ann">T+0h: EARTH DEPARTURE</text>
+  <text x="403" y="521" fill="#00e4ff" font-family="'Share Tech Mono',monospace" font-size="11" class="ann">TLI: 3,120 m/s Δv</text>
+
+  <!-- T+24h mid-course — approx point along the cubic bezier -->
+  <circle cx="860" cy="242" r="5" fill="#071428" stroke="#4db8ff" stroke-width="1.2" class="ann"/>
+  <line x1="860" y1="247" x2="860" y2="320" stroke="#3a8fd4" stroke-width="0.8" class="ann"/>
+  <text x="870" y="335" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="11" class="ann">T+24h: MID-COURSE CORRECTION</text>
+  <text x="870" y="348" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="10" class="ann">TRANSIT TIME: 72h TOTAL</text>
+
+  <!-- T+72h lunar orbit insertion -->
+  <circle cx="1510" cy="200" r="5" fill="#071428" stroke="#00e4ff" stroke-width="1.5" class="ann"/>
+  <line x1="1505" y1="200" x2="1445" y2="310" stroke="#3a8fd4" stroke-width="0.8" class="ann"/>
+  <text x="1340" y="320" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="11" class="ann">T+72h: LUNAR ORBIT INSERTION</text>
+
+  <!-- Trajectory label on arc -->
+  <text x="1000" y="156" fill="#00e4ff" font-family="'Share Tech Mono',monospace" font-size="13"
+        text-anchor="middle" opacity="0.85" class="ann">— TRANS-LUNAR INJECTION TRAJECTORY —</text>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 9: ROCKET (technical drawing at departure)
+  ══════════════════════════════════════════ -->
+  <!-- Rocket is positioned at Earth departure point, angled ~45° upward -->
+  <g transform="translate(320,510) rotate(-40)" class="ann">
+    <!-- Rocket body -->
+    <rect x="-8" y="-30" width="16" height="50" rx="2" fill="#0e2d50" stroke="#4db8ff" stroke-width="1"/>
+    <!-- Nose cone -->
+    <polygon points="0,-42 -8,-30 8,-30" fill="#0e2d50" stroke="#4db8ff" stroke-width="1"/>
+    <!-- Engine bell -->
+    <polygon points="-10,20 10,20 14,32 -14,32" fill="#0a2040" stroke="#4db8ff" stroke-width="1"/>
+    <!-- Stage separation line -->
+    <line x1="-8" y1="5" x2="8" y2="5" stroke="#4db8ff" stroke-width="0.8" stroke-dasharray="2 1"/>
+    <!-- Fins -->
+    <polygon points="-8,18 -18,34 -8,28" fill="#0a2040" stroke="#4db8ff" stroke-width="0.8"/>
+    <polygon points="8,18 18,34 8,28"  fill="#0a2040" stroke="#4db8ff" stroke-width="0.8"/>
+    <!-- Window -->
+    <circle cx="0" cy="-12" r="4" fill="#071428" stroke="#00e4ff" stroke-width="0.8"/>
+    <!-- Exhaust plume -->
+    <path d="M -6,32 C -10,46 -4,54 0,58 C 4,54 10,46 6,32"
+          fill="none" stroke="#00e4ff" stroke-width="0.8" opacity="0.6" stroke-dasharray="3 2"/>
+    <!-- Rocket label -->
+    <text x="20" y="-30" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="9"
+          transform="rotate(40)">MI-v1 PROTO</text>
+    <line x1="8" y1="-24" x2="18" y2="-28" stroke="#3a8fd4" stroke-width="0.5" transform="rotate(40)"/>
+  </g>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 10: Annotation text & dimension lines
+  ══════════════════════════════════════════ -->
+  <!-- REV HISTORY block — lower left quadrant -->
+  <g class="ann">
+    <rect x="132" y="860" width="340" height="78" fill="none" stroke="#3a8fd4" stroke-width="0.6" opacity="0.4"/>
+    <text x="142" y="876" fill="#3a8fd4" font-family="'Share Tech Mono',monospace" font-size="10" opacity="0.8">REV. HISTORY</text>
+    <line x1="132" y1="880" x2="472" y2="880" stroke="#3a8fd4" stroke-width="0.5" opacity="0.4"/>
+    <text x="142" y="893" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="10">v0.1 — PROTOTYPE ROCKET</text>
+    <text x="142" y="907" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="10">v0.2 — SUBORBITAL TEST</text>
+    <text x="142" y="921" fill="#cce8ff" font-family="'Share Tech Mono',monospace" font-size="10">v1.0 — LUNAR ARRIVAL (TBD)</text>
+  </g>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 11: Scale bar + notes
+  ══════════════════════════════════════════ -->
+  <!-- (These are HTML elements, see below) -->
+
+  <!-- ══════════════════════════════════════════
+       LAYER 12: Engineering title block (top-right) — HTML overlay
+  ══════════════════════════════════════════ -->
+
+  <!-- ══════════════════════════════════════════
+       LAYER 13: Vignette
+  ══════════════════════════════════════════ -->
+  <rect width="1920" height="1080" fill="url(#vigGrad)"/>
+
+  <!-- Additional corner darkness -->
+  <rect width="1920" height="1080"
+        fill="none"
+        filter="none"
+        stroke="none"/>
+  <!-- Top-left corner shadow -->
+  <radialGradient id="cornerTL" cx="0%" cy="0%" r="60%">
+    <stop offset="0%" stop-color="#020a14" stop-opacity="0.55"/>
+    <stop offset="100%" stop-color="transparent"/>
+  </radialGradient>
+  <radialGradient id="cornerBR" cx="100%" cy="100%" r="60%">
+    <stop offset="0%" stop-color="#020a14" stop-opacity="0.5"/>
+    <stop offset="100%" stop-color="transparent"/>
+  </radialGradient>
+  <rect width="1920" height="1080" fill="url(#cornerTL)"/>
+  <rect width="1920" height="1080" fill="url(#cornerBR)"/>
+
+  <!-- ══════════════════════════════════════════
+       LAYER 15: Menu button background area subtle glow
+  ══════════════════════════════════════════ -->
+  <radialGradient id="menuAreaGlow" cx="10%" cy="88%" r="25%">
+    <stop offset="0%" stop-color="#0a2844" stop-opacity="0.6"/>
+    <stop offset="100%" stop-color="transparent"/>
+  </radialGradient>
+  <rect width="1920" height="1080" fill="url(#menuAreaGlow)"/>
+
+</svg>
+<!-- END SVG SCENE -->
+
+<!-- ── HTML Overlay layers ── -->
+
+<!-- LAYER 14: Title MOON IDLE -->
+<div id="title-block">
+  <div id="title-main">MOON IDLE</div>
+  <div id="title-sub">달 탐사 로켓 제작소</div>
+  <span id="title-rule"></span>
+</div>
+
+<!-- Engineering title block (top-right) -->
+<div id="eng-title-block">
+  <div class="etb-row">
+    <div style="color:#4db8ff;font-size:13px;font-weight:700;letter-spacing:0.08em">MOON IDLE MISSION DESIGN</div>
+    <div class="etb-label" style="margin-top:2px">EARTH-MOON TRAJECTORY OVERVIEW</div>
+  </div>
+  <div class="etb-split">
+    <div><div class="etb-label">DWG NO.</div>MI-000</div>
+    <div><div class="etb-label">SCALE</div>NTS</div>
+  </div>
+  <div class="etb-split">
+    <div><div class="etb-label">PHASE</div>1 / 5</div>
+    <div><div class="etb-label">REV</div>PROTOTYPE</div>
+  </div>
+</div>
+
+<!-- Scale bar (bottom-left) -->
+<div id="scale-bar">
+  <div class="sb-label">SCALE 1 : 50,000,000,000</div>
+  <div class="sb-line">
+    <div class="sb-tick"></div>
+    <div class="sb-fill sb-seg"></div>
+    <div class="sb-tick"></div>
+    <div class="sb-fill sb-seg"></div>
+    <div class="sb-tick"></div>
+    <div class="sb-fill sb-seg"></div>
+    <div class="sb-tick"></div>
+    <div class="sb-fill sb-seg"></div>
+    <div class="sb-tick"></div>
+    <div class="sb-fill sb-seg"></div>
+    <div class="sb-tick"></div>
+  </div>
+  <div class="sb-nums">
+    <span>0</span>
+    <span>100,000 km</span>
+    <span>200,000 km</span>
+    <span>300,000 km</span>
+    <span>400,000 km</span>
+  </div>
+</div>
+
+<!-- Notes (bottom-right) -->
+<div id="notes">
+  NOTE 1: ALL DISTANCES IN KILOMETERS<br>
+  NOTE 2: TRAJECTORY SHOWN NOT TO SCALE<br>
+  NOTE 3: LAUNCH WINDOW SUBJECT TO DELTA-V BUDGET
+</div>
+
+<!-- Menu buttons -->
+<div id="menu">
+  <button class="btn" onclick="handleBtn('start')">
+    <span class="btn-part">BTN-001</span>
+    <div class="btn-inner">
+      <span class="btn-arrow">▶</span>
+      <span class="btn-text">게임 시작<span class="btn-cursor"></span></span>
+    </div>
+    <div class="btn-line"></div>
+  </button>
+  <button class="btn" onclick="handleBtn('continue')">
+    <span class="btn-part">BTN-002</span>
+    <div class="btn-inner">
+      <span class="btn-arrow">▶</span>
+      <span class="btn-text">이어하기</span>
+    </div>
+    <div class="btn-line"></div>
+  </button>
+  <button class="btn" onclick="handleBtn('settings')">
+    <span class="btn-part">BTN-003</span>
+    <div class="btn-inner">
+      <span class="btn-arrow">◯</span>
+      <span class="btn-text">설 정</span>
+    </div>
+    <div class="btn-line"></div>
+  </button>
+</div>
+
+<!-- Vignette overlay -->
+<div id="vignette"></div>
+
+<script>
+  // Staggered fade-in for SVG annotation elements
+  const anns = document.querySelectorAll('.ann');
+  anns.forEach((el, i) => {
+    setTimeout(() => {
+      el.classList.add('show');
+      // Set a specific animation delay via style for stagger
+      el.style.animationDelay = '0s';
+    }, 2000 + i * 80);
+  });
+
+  // Make title-rule visible after animation
+  const rule = document.getElementById('title-rule');
+  rule.style.opacity = '0';
+  setTimeout(() => {
+    rule.style.transition = 'opacity 1s ease';
+    rule.style.opacity = '1';
+  }, 1200);
+
+  function handleBtn(action) {
+    console.log('[MoonIdle] Button:', action);
+    // stub — real game would call into game logic
+  }
+</script>
+</body>
+</html>

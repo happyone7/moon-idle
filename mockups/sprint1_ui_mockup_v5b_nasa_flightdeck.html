@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle v5B - NASA Flightdeck Dark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#0f1627;--panel:#18233bd8;--line:#6f87b350;--txt:#e6efff;--mut:#9db0cf;--btn:url("./assets/moonidle_btn_titanium.svg");--warn:url("./assets/moonidle_btn_warn.svg");}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -10%,#4e68973f,transparent 35%),var(--bg);color:var(--txt);font-family:Rajdhani,"Malgun Gothic",sans-serif}
+    .app{max-width:1520px;margin:0 auto;padding:14px}.top{border:1px solid var(--line);border-radius:12px;background:#1d2d4ccc;padding:11px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .top b{font-size:1.06rem;letter-spacing:.08em}.pill{font-family:"Space Mono",monospace;font-size:.68rem;border:1px solid #8ba3cc6d;border-radius:999px;padding:4px 9px}
+    .row{margin-top:10px;display:grid;grid-template-columns:1.1fr 340px;gap:10px}.panel{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+    .hd{padding:10px;border-bottom:1px solid #ffffff1d;font-family:"Space Mono",monospace;font-size:.72rem;letter-spacing:.08em;color:#b9caf0;text-transform:uppercase}
+    .deck{padding:10px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+    .card{border:1px solid #8ea5cb3b;border-radius:8px;background:#ffffff08;padding:8px}.card b{font-size:.84rem}.card p{margin:4px 0 0;font-size:.68rem;color:var(--mut)}
+    .btn{margin-top:8px;width:100%;border:0;border-radius:8px;padding:8px;background:var(--btn) center/100% 100% no-repeat;color:#fff;font-family:"Space Mono",monospace;font-size:.66rem;text-align:left;cursor:pointer}
+    .btn.warn{background-image:var(--warn)}
+    .hero{height:230px;border-bottom:1px solid #ffffff1a;position:relative;overflow:hidden}
+    .hero::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,#0f1a30d0 65%,#101b30f1),url("./assets/moonidle_hangar_bg_lab_xenon.svg") center/cover no-repeat;filter:saturate(.7) brightness(.63)}
+    .hero .txt{position:absolute;left:12px;right:12px;bottom:12px;background:#0f1d36d8;border-left:3px solid #8ab8ff;padding:8px}
+    .stats{padding:10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.s{border:1px solid #8aa3ca39;border-radius:8px;background:#ffffff09;padding:7px}
+    .side{padding:10px;display:grid;gap:8px}.slot{border:1px solid #90a6cb33;border-radius:8px;background:#ffffff09;padding:8px}.line{display:flex;justify-content:space-between;font-size:.78rem}
+    .bar{height:6px;border-radius:99px;background:#ffffff18;margin-top:6px;overflow:hidden}.bar>div{height:100%;width:57%;background:linear-gradient(90deg,#85b7ff,#ffc38a)}
+    .cam{height:130px;border:1px solid #8ea5ca33;border-radius:8px;background:url("./assets/moonidle_cam_feed_lab_xenon.svg") center/cover no-repeat;filter:brightness(.58)}
+    @media(max-width:1180px){.row{grid-template-columns:1fr}.deck{grid-template-columns:1fr 1fr}}@media(max-width:760px){.deck,.stats{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="top"><b>MoonIdle // NASA Flightdeck Dark</b><div style="display:flex;gap:7px;flex-wrap:wrap"><span class="pill">Moonstone 126</span><span class="pill">DAY 03:18</span><span class="pill">Launches 4</span></div></header>
+    <section class="row">
+      <section class="panel"><div class="hd">Mission Deck</div><div class="hero"><div class="txt"><b>실험실 -> 발사장 전환율을 최우선으로 설계한 플라이트덱 시안</b></div></div><div class="stats"><div class="s"><b>9.48 km/s</b><div>Delta-v</div></div><div class="s"><b>1.61</b><div>TWR</div></div><div class="s"><b>93.1%</b><div>신뢰도</div></div><div class="s"><b>51%</b><div>품질</div></div></div><div class="deck"><article class="card"><b>열보정 링</b><p>품질 편차 감소</p><button class="btn">구매 1.6M</button></article><article class="card"><b>AI 점검 체인</b><p>실패율 저감</p><button class="btn">구매 180K</button></article><article class="card"><b>도크 확장</b><p>동시 생산 증가</p><button class="btn warn">확장 실행</button></article></div></section>
+      <aside class="panel"><div class="hd">Launch Queue</div><div class="side"><div class="slot"><div class="line"><span>Slot 1</span><span>14m 08s</span></div><div class="bar"><div></div></div></div><div class="slot"><div class="line"><span>Slot 2</span><span>대기</span></div><button class="btn">대기열 등록</button></div><div class="slot"><div class="line"><span>Slot 3</span><span>잠금</span></div><button class="btn warn">잠금 해제</button></div><div class="cam"></div><button class="btn warn">브리핑 후 자동 업그레이드</button></div></aside>
+    </section>
+  </main>
+</body>
+</html>

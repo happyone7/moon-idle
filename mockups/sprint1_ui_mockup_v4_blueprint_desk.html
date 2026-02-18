@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle Mockup V4 - Blueprint Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#f3efe6;
+      --ink:#1e3254;
+      --muted:#566e91;
+      --panel:#ffffffbf;
+      --line:#2f5ea855;
+      --btn:url("./assets/moonidle_btn_blueprint.svg");
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: Barlow, "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 80% 120%, #d0e0ff80 0, transparent 34%),
+        radial-gradient(circle at -15% -10%, #d8c8a15c 0, transparent 45%),
+        linear-gradient(165deg, #ece7db, var(--bg));
+      overflow-x: hidden;
+    }
+    .top {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 16px 14px 6px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .title h1 { margin: 0; font-size: 1.45rem; letter-spacing: .04em; }
+    .title p { margin: 4px 0 0; color: var(--muted); }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .chips span {
+      border: 1px dashed #3a6aba66;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: .74rem;
+      color: #224575;
+      background: #fff;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .layout {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 8px 14px 14px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 10px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      backdrop-filter: blur(3px);
+      box-shadow: 0 10px 18px #9fb3cf2b, inset 0 1px 0 #fff;
+      overflow: hidden;
+    }
+    .hd {
+      padding: 10px 11px;
+      border-bottom: 1px solid #294f8f26;
+      font-family: "JetBrains Mono", monospace;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: #2f5a98;
+      font-size: .76rem;
+      display: flex;
+      justify-content: space-between;
+    }
+    .board {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 10px;
+    }
+    .sketch {
+      border: 1px dashed #4a77bf70;
+      border-radius: 10px;
+      min-height: 280px;
+      background:
+        linear-gradient(transparent 35px, #2f5ea81f 36px),
+        linear-gradient(90deg, transparent 35px, #2f5ea81f 36px),
+        #e8f0ff;
+      background-size: 36px 36px;
+      position: relative;
+      overflow: hidden;
+    }
+    .sketch::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("./assets/moonidle_hangar_bg_lab_quantum.svg") center/cover no-repeat;
+      opacity: .34;
+      mix-blend-mode: multiply;
+    }
+    .sketch .note {
+      position: absolute;
+      left: 12px;
+      bottom: 12px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: .72rem;
+      color: #295083;
+      background: #ffffffd9;
+      border: 1px dashed #3f6db262;
+      border-radius: 8px;
+      padding: 6px 7px;
+    }
+    .table { display: grid; gap: 8px; }
+    .r {
+      border: 1px solid #355f9f38;
+      border-radius: 9px;
+      background: #fff;
+      padding: 8px;
+    }
+    .r .line { display: flex; justify-content: space-between; gap: 8px; }
+    .r small { color: var(--muted); }
+    .timeline {
+      margin: 0 12px 12px;
+      border: 1px solid #335e9f3b;
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+    .step {
+      border-left: 3px solid #5d84c8;
+      background: #f4f8ff;
+      border-radius: 6px;
+      padding: 7px 8px;
+      font-size: .79rem;
+    }
+    .btn {
+      margin-top: 8px;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 9px;
+      width: 100%;
+      background: var(--btn) center/100% 100% no-repeat;
+      color: #fff;
+      text-align: left;
+      font-family: "JetBrains Mono", monospace;
+      font-size: .7rem;
+      cursor: pointer;
+    }
+    .sideCol { display: grid; gap: 10px; align-content: start; }
+    .kpis { padding: 10px; display: grid; gap: 7px; }
+    .k {
+      border: 1px solid #355f9f38;
+      border-radius: 9px;
+      background: #fff;
+      padding: 8px;
+    }
+    .k b { font-size: 1.02rem; font-family: "JetBrains Mono", monospace; }
+    .cam {
+      margin: 10px;
+      border: 1px dashed #3a69af6c;
+      border-radius: 10px;
+      height: 170px;
+      background: url("./assets/moonidle_hub_cam_lab_quantum.svg") center/cover no-repeat;
+      filter: saturate(.7) brightness(.86);
+      position: relative;
+    }
+    .cam::after {
+      content: "TEST STAND A CAM";
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: .68rem;
+      color: #1f4677;
+      background: #ffffffc9;
+      padding: 2px 6px;
+      border-radius: 999px;
+    }
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: 1fr; }
+      .board { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="title">
+      <h1>MoonIdle // Blueprint Desk Concept</h1>
+      <p>연구소 엔지니어의 설계책상 느낌으로, 어두운 HUD 대신 도면 중심 인터페이스</p>
+    </div>
+    <div class="chips">
+      <span>DAY 03:18</span>
+      <span>Moonstone 126</span>
+      <span>LAB YIELD +8.8%</span>
+    </div>
+  </header>
+  <main class="layout">
+    <section class="panel">
+      <div class="hd">Design Board <span>prototype -> production</span></div>
+      <div class="board">
+        <article class="sketch">
+          <div class="note">DRAWING ID: M-ROCKET-001 / REV C</div>
+        </article>
+        <aside class="table">
+          <div class="r"><div class="line"><span>델타-v</span><strong>9.48 km/s</strong></div><small>목표 궤도 진입 조건 충족</small></div>
+          <div class="r"><div class="line"><span>TWR</span><strong>1.61</strong></div><small>안전 이륙 임계치 상회</small></div>
+          <div class="r"><div class="line"><span>회수 신뢰도</span><strong>93.1%</strong></div><small>착륙 하우징 연구 영향</small></div>
+          <div class="r"><div class="line"><span>품질 계수</span><strong>51%</strong></div><small>초기 생산군 평균</small></div>
+        </aside>
+      </div>
+      <div class="timeline">
+        <div class="step">1. Block-I 조립 완료 후 지상 점화 시뮬레이션</div>
+        <div class="step">2. 회수 실험 성공 시 슬롯 2 개방</div>
+        <div class="step">3. 고추력 노즐 연구 완료 시 생산주기 단축</div>
+        <button class="btn">설계 승인 후 생산 라인 반영</button>
+      </div>
+    </section>
+    <aside class="sideCol">
+      <section class="panel">
+        <div class="hd">Resource Cards <span>live</span></div>
+        <div class="kpis">
+          <div class="k"><div>Moonstone</div><b>2.41M</b></div>
+          <div class="k"><div>액체 산소</div><b>802K</b></div>
+          <div class="k"><div>촉매제</div><b>193K</b></div>
+          <div class="k"><div>연산 파워</div><b>101K</b></div>
+          <button class="btn">업그레이드 패키지 발주</button>
+        </div>
+      </section>
+      <section class="panel">
+        <div class="hd">Lab Feed <span>camera</span></div>
+        <div class="cam"></div>
+        <button class="btn" style="margin:0 10px 10px; width:calc(100% - 20px);">브리핑 후 발사 큐 전송</button>
+      </section>
+    </aside>
+  </main>
+</body>
+</html>

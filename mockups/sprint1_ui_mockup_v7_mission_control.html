@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOON IDLE — MISSION CONTROL</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  /* =============================================
+     RESET & BASE
+  ============================================= */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg:          #010800;
+    --panel-bg:    #020d04;
+    --green:       #00e676;
+    --green-dim:   #1a5c34;
+    --green-mid:   #00994d;
+    --amber:       #ffab00;
+    --red:         #ff1744;
+    --font:        'Share Tech Mono', monospace;
+    --border:      1px solid #1a5c34;
+    --glow:        0 0 6px #00e67680;
+    --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* =============================================
+     CRT SCANLINES OVERLAY
+  ============================================= */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.18) 2px,
+      rgba(0, 0, 0, 0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* CRT flicker animation */
+  @keyframes crt-flicker {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.85; }
+    94%  { opacity: 1; }
+    96%  { opacity: 0.9; }
+    97%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes pulse-amber {
+    0%, 100% { color: var(--amber); text-shadow: 0 0 8px var(--amber); }
+    50%       { color: #7a5100; text-shadow: none; }
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+
+  @keyframes slide-top {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-50%); }
+  }
+
+  @keyframes slide-bottom {
+    from { transform: translateY(0); }
+    to   { transform: translateY(50%); }
+  }
+
+  @keyframes rocket-rise {
+    from { transform: translateY(120px); opacity: 0; }
+    to   { transform: translateY(-200px); opacity: 1; }
+  }
+
+  @keyframes exhaust-pulse {
+    0%, 100% { opacity: 1; transform: scaleY(1); }
+    50%       { opacity: 0.7; transform: scaleY(1.15); }
+  }
+
+  @keyframes warning-flash {
+    0%, 100% { background: #010800; }
+    50%       { background: #1a0800; }
+  }
+
+  @keyframes scan-flicker {
+    0%   { opacity: 1; }
+    10%  { opacity: 0.6; }
+    11%  { opacity: 1; }
+    40%  { opacity: 1; }
+    41%  { opacity: 0.75; }
+    42%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  /* =============================================
+     MAIN LAYOUT WRAPPER
+  ============================================= */
+  #main-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    animation: crt-flicker 8s infinite;
+  }
+
+  /* =============================================
+     TOP BAR
+  ============================================= */
+  #top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 6px 16px;
+    flex-shrink: 0;
+    box-shadow: var(--glow-strong);
+    z-index: 100;
+  }
+
+  #top-bar .title {
+    font-size: 15px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: var(--glow-strong);
+    color: var(--green);
+  }
+
+  #top-bar .clock {
+    font-size: 20px;
+    letter-spacing: 4px;
+    text-shadow: 0 0 10px var(--green);
+    color: var(--green);
+  }
+
+  #top-bar .status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  #top-bar .status .indicator {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 9px;
+    height: 15px;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    box-shadow: var(--glow);
+  }
+
+  /* =============================================
+     COLUMN LAYOUT
+  ============================================= */
+  #columns {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  .panel {
+    background: var(--panel-bg);
+    border-right: var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel:last-child {
+    border-right: none;
+  }
+
+  .panel-left  { width: 30%; }
+  .panel-center { width: 40%; border-left: var(--border); }
+  .panel-right { width: 30%; border-left: var(--border); }
+
+  .panel-header {
+    background: #021508;
+    border-bottom: 2px solid var(--green-dim);
+    padding: 5px 12px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-header::before {
+    content: '//';
+    color: var(--green-mid);
+  }
+
+  .panel-section {
+    padding: 8px 12px;
+    border-bottom: var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .panel-section:last-child {
+    border-bottom: none;
+    flex: 1;
+  }
+
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green-mid);
+    margin-bottom: 8px;
+    border-bottom: 1px solid #0a2e14;
+    padding-bottom: 3px;
+  }
+
+  /* =============================================
+     MATERIAL GAUGES
+  ============================================= */
+  .material-item {
+    margin-bottom: 8px;
+  }
+
+  .material-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+
+  .material-name {
+    color: var(--green);
+    max-width: 60%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .material-amount {
+    color: var(--green-mid);
+    font-size: 10px;
+  }
+
+  .material-sub {
+    font-size: 9px;
+    color: #2a7a4a;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .gauge-bar {
+    width: 100%;
+    height: 8px;
+    background: #040f06;
+    border: 1px solid var(--green-dim);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gauge-fill {
+    height: 100%;
+    background: var(--green);
+    box-shadow: 0 0 5px var(--green);
+    position: relative;
+    transition: width 0.3s ease;
+  }
+
+  .gauge-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: #fff;
+    opacity: 0.6;
+  }
+
+  .gauge-fill.low {
+    background: var(--amber);
+    box-shadow: 0 0 5px var(--amber);
+  }
+
+  .gauge-fill.critical {
+    background: var(--red);
+    box-shadow: 0 0 5px var(--red);
+    animation: pulse-green 0.8s infinite;
+  }
+
+  /* =============================================
+     PIPELINE STAGES
+  ============================================= */
+  .pipeline-stage {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #0a2010;
+    font-size: 11px;
+  }
+
+  .pipeline-stage:last-child { border-bottom: none; }
+
+  .stage-num {
+    color: var(--green-dim);
+    width: 16px;
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+
+  .stage-name {
+    flex: 1;
+    color: var(--green);
+  }
+
+  .stage-status {
+    font-size: 10px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  .stage-status.complete { color: var(--green); text-shadow: var(--glow); }
+  .stage-status.active   { color: var(--amber); }
+  .stage-status.locked   { color: #1a5c34; }
+
+  .stage-progress {
+    font-size: 10px;
+    color: var(--amber);
+    font-family: var(--font);
+    letter-spacing: 0;
+  }
+
+  /* =============================================
+     ASCII ROCKET
+  ============================================= */
+  #rocket-art {
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--green);
+    text-shadow: 0 0 8px var(--green);
+    text-align: center;
+    padding: 10px 0;
+    display: block;
+    white-space: pre;
+  }
+
+  /* =============================================
+     VEHICLE SPECS TABLE
+  ============================================= */
+  .specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .specs-table td {
+    padding: 3px 6px;
+    border-bottom: 1px solid #0a2010;
+  }
+
+  .specs-table td:first-child {
+    color: var(--green-mid);
+    width: 45%;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+  }
+
+  .specs-table td:last-child {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  /* =============================================
+     TERMINAL LOG
+  ============================================= */
+  #system-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  #system-log::-webkit-scrollbar { width: 4px; }
+  #system-log::-webkit-scrollbar-track { background: #010800; }
+  #system-log::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  .log-line {
+    color: var(--green);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .log-line.warn {
+    color: var(--amber);
+    text-shadow: 0 0 6px var(--amber);
+  }
+
+  .log-line.error {
+    color: var(--red);
+    text-shadow: 0 0 6px var(--red);
+  }
+
+  .log-line.sys {
+    color: var(--green-mid);
+  }
+
+  /* =============================================
+     LAUNCH HISTORY TABLE
+  ============================================= */
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .history-table th {
+    background: #021508;
+    color: var(--green-mid);
+    padding: 4px 5px;
+    border: 1px solid var(--green-dim);
+    text-align: left;
+    letter-spacing: 0.5px;
+    font-size: 9px;
+  }
+
+  .history-table td {
+    padding: 4px 5px;
+    border: 1px solid #0a2010;
+    vertical-align: top;
+  }
+
+  .history-table tr.fail   td { color: var(--red); }
+  .history-table tr.partial td { color: var(--green); }
+  .history-table tr.amber  td { color: var(--amber); }
+  .history-table tr.active td { color: var(--green-mid); }
+
+  .history-table .result-cell {
+    font-weight: bold;
+    white-space: nowrap;
+  }
+
+  .history-table .note-cell {
+    font-size: 9px;
+    color: #4a8a5a;
+  }
+  .history-table tr.fail   .note-cell { color: #a01030; }
+  .history-table tr.amber  .note-cell { color: #7a5100; }
+
+  /* =============================================
+     STATISTICS
+  ============================================= */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    border-bottom: 1px solid #050f06;
+    font-size: 11px;
+  }
+
+  .stat-label { color: var(--green-mid); }
+  .stat-value { color: var(--green); text-shadow: var(--glow); }
+  .stat-value.amber { color: var(--amber); }
+  .stat-value.red   { color: var(--red); }
+
+  /* =============================================
+     BOTTOM BAR
+  ============================================= */
+  #bottom-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-bg);
+    border-top: 2px solid var(--green-dim);
+    padding: 6px 16px;
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  #mission-timer {
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--green-mid);
+  }
+
+  #mission-timer span {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  #launch-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  #launch-warning {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--amber);
+    text-align: center;
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+
+  #btn-launch {
+    background: none;
+    border: 2px solid var(--amber);
+    color: var(--amber);
+    font-family: var(--font);
+    font-size: 14px;
+    letter-spacing: 4px;
+    padding: 6px 32px;
+    cursor: pointer;
+    text-shadow: 0 0 8px var(--amber);
+    box-shadow: 0 0 12px var(--amber)60, inset 0 0 12px #1a070080;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  #btn-launch:hover {
+    background: #1a070080;
+    box-shadow: 0 0 20px var(--amber), inset 0 0 20px #1a070080;
+  }
+
+  #btn-launch:active {
+    background: #2a1000;
+  }
+
+  #btn-abort {
+    background: none;
+    border: 2px solid var(--red);
+    color: var(--red);
+    font-family: var(--font);
+    font-size: 12px;
+    letter-spacing: 3px;
+    padding: 6px 20px;
+    cursor: pointer;
+    text-shadow: 0 0 8px var(--red);
+    box-shadow: 0 0 8px var(--red)60;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  #btn-abort:hover {
+    background: #1a000880;
+    box-shadow: 0 0 16px var(--red);
+  }
+
+  /* =============================================
+     LAUNCH SEQUENCE OVERLAY
+  ============================================= */
+  #launch-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #010800;
+  }
+
+  #launch-overlay.active {
+    display: flex;
+  }
+
+  /* Split panels */
+  #split-top {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    overflow: hidden;
+    z-index: 4000;
+    transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
+  }
+
+  #split-top.visible { display: block; }
+  #split-top.slide { transform: translateY(-100%); }
+
+  #split-top-inner {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 200%; /* shows top half of duplicated UI */
+    pointer-events: none;
+  }
+
+  #split-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    overflow: hidden;
+    z-index: 4000;
+    transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+    display: none;
+  }
+
+  #split-bottom.visible { display: block; }
+  #split-bottom.slide { transform: translateY(100%); }
+
+  #split-bottom-inner {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 200%;
+    pointer-events: none;
+    /* shows bottom half of duplicated UI */
+  }
+
+  /* WARNING flash before split */
+  #warning-flash {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 6000;
+    background: #010800;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    animation: warning-flash 0.5s ease-in-out infinite;
+  }
+
+  #warning-flash.active {
+    display: flex;
+  }
+
+  #warning-text {
+    font-size: 36px;
+    letter-spacing: 8px;
+    color: var(--amber);
+    text-shadow: 0 0 20px var(--amber);
+    animation: pulse-amber 0.3s ease-in-out infinite;
+  }
+
+  #warning-sub {
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--amber);
+    opacity: 0.7;
+  }
+
+  /* Launch animation area (between split panels) */
+  #launch-stage {
+    position: fixed;
+    left: 0;
+    width: 100%;
+    z-index: 4500;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: none;
+  }
+
+  #launch-stage.active {
+    display: flex;
+  }
+
+  #ascii-rocket-launch {
+    font-family: var(--font);
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--green);
+    text-shadow: 0 0 12px var(--green), 0 0 24px var(--green)80;
+    text-align: center;
+    white-space: pre;
+    animation: rocket-rise 6s ease-in forwards;
+    display: block;
+  }
+
+  #exhaust {
+    font-family: var(--font);
+    font-size: 12px;
+    color: var(--amber);
+    text-shadow: 0 0 10px var(--amber), 0 0 20px #ff440080;
+    text-align: center;
+    white-space: pre;
+    animation: exhaust-pulse 0.3s ease-in-out infinite, rocket-rise 6s ease-in forwards;
+  }
+
+  /* Countdown */
+  #countdown-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 7000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #countdown-overlay.active {
+    display: flex;
+  }
+
+  #countdown-number {
+    font-size: 80px;
+    color: var(--amber);
+    text-shadow: 0 0 30px var(--amber), 0 0 60px var(--amber)80;
+    letter-spacing: 8px;
+    line-height: 1;
+  }
+
+  #countdown-label {
+    font-size: 14px;
+    letter-spacing: 6px;
+    color: var(--green-mid);
+  }
+
+  /* Telemetry scroll */
+  #telemetry-box {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 500px;
+    background: #020d04ee;
+    border: 2px solid var(--green-dim);
+    padding: 10px 14px;
+    z-index: 7500;
+    display: none;
+    max-height: 180px;
+    overflow: hidden;
+  }
+
+  #telemetry-box.active {
+    display: block;
+  }
+
+  #telemetry-header {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green-mid);
+    border-bottom: 1px solid var(--green-dim);
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+  }
+
+  #telemetry-lines {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--green);
+  }
+
+  /* Failure message */
+  #failure-msg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 8000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+    padding: 30px 40px;
+    background: #010800f0;
+    border: 2px solid var(--red);
+    box-shadow: 0 0 30px var(--red)80, inset 0 0 20px #0a000480;
+  }
+
+  #failure-msg.active {
+    display: flex;
+  }
+
+  #failure-code {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--red);
+  }
+
+  #failure-title {
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--red);
+    text-shadow: 0 0 15px var(--red);
+  }
+
+  #failure-detail {
+    font-size: 12px;
+    color: var(--amber);
+    letter-spacing: 1px;
+    line-height: 1.7;
+  }
+
+  #failure-stats {
+    font-size: 11px;
+    color: var(--green-mid);
+    border-top: 1px solid var(--green-dim);
+    padding-top: 12px;
+    width: 100%;
+    text-align: left;
+    line-height: 2;
+  }
+
+  #btn-reset {
+    background: none;
+    border: 2px solid var(--green);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 12px;
+    letter-spacing: 4px;
+    padding: 8px 28px;
+    cursor: pointer;
+    text-shadow: var(--glow);
+    box-shadow: var(--glow);
+    transition: all 0.15s;
+  }
+
+  #btn-reset:hover {
+    background: #00e67620;
+    box-shadow: var(--glow-strong);
+  }
+
+  /* =============================================
+     SCROLLBARS
+  ============================================= */
+  .panel-section::-webkit-scrollbar { width: 4px; }
+  .panel-section::-webkit-scrollbar-track { background: #010800; }
+  .panel-section::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  /* =============================================
+     CENTER PANEL SECTIONS
+  ============================================= */
+  #center-rocket-section {
+    flex-shrink: 0;
+    border-bottom: var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 0 8px;
+  }
+
+  #center-specs-section {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border-bottom: var(--border);
+  }
+
+  #center-log-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  #center-log-header {
+    background: #021508;
+    border-bottom: var(--border);
+    padding: 5px 12px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green-mid);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #center-log-header::before {
+    content: '//';
+    color: #1a5c34;
+  }
+
+  /* =============================================
+     RIGHT PANEL
+  ============================================= */
+  #right-history-section {
+    flex-shrink: 0;
+    padding: 8px 10px;
+    border-bottom: var(--border);
+    overflow-x: auto;
+  }
+
+  #right-stats-section {
+    flex: 1;
+    padding: 8px 12px;
+    overflow-y: auto;
+  }
+
+  /* =============================================
+     UTILITY
+  ============================================= */
+  .green { color: var(--green); }
+  .amber { color: var(--amber); }
+  .red   { color: var(--red); }
+  .dim   { color: var(--green-dim); }
+  .mid   { color: var(--green-mid); }
+  .glow  { text-shadow: var(--glow); }
+
+  .label-box {
+    display: inline-block;
+    border: 1px solid currentColor;
+    padding: 0 4px;
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== MAIN WRAPPER ===== -->
+<div id="main-wrapper">
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <div class="title">&#x25B6; MISSION CONTROL &mdash; MOON IDLE LAUNCH FACILITY</div>
+    <div class="clock" id="digital-clock">00:00:00</div>
+    <div class="status">
+      <span class="indicator">SYS:<span style="color:var(--green);text-shadow:var(--glow);">NOMINAL</span></span>
+      <span class="indicator">NET:<span style="color:var(--green);text-shadow:var(--glow);">LINK</span></span>
+      <span class="indicator">PWR:<span style="color:var(--green);text-shadow:var(--glow);">100%</span></span>
+      <span class="cursor-blink"></span>
+    </div>
+  </div>
+
+  <!-- COLUMNS -->
+  <div id="columns">
+
+    <!-- ===== LEFT PANEL ===== -->
+    <div class="panel panel-left">
+      <div class="panel-header">MATERIAL STOCKPILE</div>
+
+      <div class="panel-section" style="flex:0 0 auto; overflow-y:auto; max-height:55%;">
+        <!-- Material items -->
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">Al-7075 합금 (알루미늄)</span>
+            <span class="material-amount">4,820 kg</span>
+          </div>
+          <div class="material-sub">알루미늄-아연 구조재 &middot; 기체 프레임</div>
+          <div class="gauge-bar"><div class="gauge-fill" style="width:76%"></div></div>
+        </div>
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">CFRP 탄소섬유강화</span>
+            <span class="material-amount">1,240 kg</span>
+          </div>
+          <div class="material-sub">페어링·인터스테이지 외피</div>
+          <div class="gauge-bar"><div class="gauge-fill" style="width:62%"></div></div>
+        </div>
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">Ti-6Al-4V 티타늄</span>
+            <span class="material-amount amber">340 kg !</span>
+          </div>
+          <div class="material-sub">엔진 마운트·열차폐 구조재</div>
+          <div class="gauge-bar"><div class="gauge-fill low" style="width:34%"></div></div>
+        </div>
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">인코넬 718 (Ni 초합금)</span>
+            <span class="material-amount">890 kg</span>
+          </div>
+          <div class="material-sub">연소실·터빈 블레이드</div>
+          <div class="gauge-bar"><div class="gauge-fill" style="width:89%"></div></div>
+        </div>
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">LOX 액체산소 (-183°C)</span>
+            <span class="material-amount">6,200 L</span>
+          </div>
+          <div class="material-sub">산화제 &middot; 극저온 저장</div>
+          <div class="gauge-bar"><div class="gauge-fill" style="width:55%"></div></div>
+        </div>
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">RP-1 케로신</span>
+            <span class="material-amount amber">1,800 L !</span>
+          </div>
+          <div class="material-sub">연료 &middot; 터보펌프 공급</div>
+          <div class="gauge-bar"><div class="gauge-fill low" style="width:28%"></div></div>
+        </div>
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">GH2 기체수소</span>
+            <span class="material-amount red">120 kg !!</span>
+          </div>
+          <div class="material-sub">가압 시스템 &middot; 극고압</div>
+          <div class="gauge-bar"><div class="gauge-fill critical" style="width:12%"></div></div>
+        </div>
+
+        <div class="material-item">
+          <div class="material-label">
+            <span class="material-name">에폭시 수지</span>
+            <span class="material-amount">560 kg</span>
+          </div>
+          <div class="material-sub">복합재 결합제 &middot; 고온 경화형</div>
+          <div class="gauge-bar"><div class="gauge-fill" style="width:70%"></div></div>
+        </div>
+
+      </div>
+
+      <!-- PIPELINE -->
+      <div class="panel-header" style="border-top: var(--border);">MANUFACTURING PIPELINE</div>
+      <div class="panel-section" style="flex:1; overflow-y:auto;">
+
+        <div class="pipeline-stage">
+          <span class="stage-num">01</span>
+          <span class="stage-name">원자재 정제</span>
+          <span class="stage-status complete">[COMPLETE]</span>
+        </div>
+        <div class="pipeline-stage">
+          <span class="stage-num">02</span>
+          <span class="stage-name">구조물 제작</span>
+          <span class="stage-status complete">[COMPLETE]</span>
+        </div>
+        <div class="pipeline-stage" style="flex-wrap:wrap; gap:4px;">
+          <span class="stage-num">03</span>
+          <span class="stage-name">추진 계통 조립</span>
+          <span class="stage-status active">[ACTIVE]</span>
+          <div style="width:100%; padding-left:24px;">
+            <div class="stage-progress">&#x2593;&#x2593;&#x2593;&#x2592;&#x2592;&#x2592; 57%</div>
+            <div class="gauge-bar" style="height:6px; margin-top:3px;"><div class="gauge-fill" style="width:57%; background:var(--amber); box-shadow:0 0 4px var(--amber);"></div></div>
+          </div>
+        </div>
+        <div class="pipeline-stage">
+          <span class="stage-num">04</span>
+          <span class="stage-name">항전 탑재</span>
+          <span class="stage-status locked">[LOCKED]</span>
+        </div>
+        <div class="pipeline-stage">
+          <span class="stage-num">05</span>
+          <span class="stage-name">정적 연소 시험</span>
+          <span class="stage-status locked">[LOCKED]</span>
+        </div>
+        <div class="pipeline-stage">
+          <span class="stage-num">06</span>
+          <span class="stage-name">단 통합</span>
+          <span class="stage-status locked">[LOCKED]</span>
+        </div>
+        <div class="pipeline-stage">
+          <span class="stage-num">07</span>
+          <span class="stage-name">발사 준비</span>
+          <span class="stage-status locked">[LOCKED]</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== CENTER PANEL ===== -->
+    <div class="panel panel-center">
+
+      <div class="panel-header">CURRENT VEHICLE STATUS</div>
+
+      <!-- ASCII ROCKET -->
+      <div id="center-rocket-section">
+<pre id="rocket-art">
+           *
+          /|\
+         / | \
+        /  |  \
+       /   |   \
+      / BETA mk.2\
+     /____________\
+    |  [PAYLOAD]   |
+    |   _______    |
+    |  |       |   |
+    |  |  NAV  |   |
+    |  |  SYS  |   |
+    |  |_______|   |
+    |               |
+    |   [AVIONICS]  |
+    |   _________   |
+    |  | O     O |  |
+    |  |  GYRO  |   |
+    |  |_________|  |
+    |               |
+    |  [PROPULSION] |
+    |   _________   |
+    |  |         |  |
+    |  | ENGINE  |  |
+    |  | 156 kN  |  |
+    |  |_________|  |
+    |               |
+    |_______________|
+   /                 \
+  / [LOX]   [RP-1]   \
+ /_____________________ \
+        |   |   |
+        |   |   |
+       /|   |   |\
+      / |   |   | \
+     /__|___|___|__\
+</pre>
+      </div>
+
+      <!-- VEHICLE SPECS -->
+      <div id="center-specs-section">
+        <div class="section-title">VEHICLE SPECIFICATIONS // BETA mk.2</div>
+        <table class="specs-table">
+          <tr><td>기체명</td><td>BETA mk.2</td></tr>
+          <tr><td>총 중량</td><td>12,450 kg</td></tr>
+          <tr><td>구조 완성도</td><td><span class="amber">57% &nbsp;&#x2593;&#x2593;&#x2593;&#x2592;&#x2592;&#x2592;</span></td></tr>
+          <tr><td>페이로드 용량</td><td>320 kg</td></tr>
+          <tr><td>목표 고도</td><td>100.4 km <span class="mid">(K&aacute;rm&aacute;n 선)</span></td></tr>
+          <tr><td>추정 &Delta;V</td><td>3,240 m/s</td></tr>
+          <tr><td>엔진 추력</td><td>156 kN</td></tr>
+        </table>
+      </div>
+
+      <!-- SYSTEM LOG -->
+      <div id="center-log-section">
+        <div id="center-log-header">ACTIVE SYSTEMS LOG &mdash; REAL TIME</div>
+        <div id="system-log">
+          <div class="log-line sys">&gt; [SYS] 시스템 초기화 완료. 미션 D+52</div>
+          <div class="log-line">&gt; 14:31:44 기체 전원 공급 확인됨. 버스 전압 28.4V</div>
+          <div class="log-line">&gt; 14:32:07 RP-1 공급 라인 가압 완료 — 42.3 bar</div>
+          <div class="log-line">&gt; 14:32:15 터빈 블레이드 내열 코팅 검사 중...</div>
+          <div class="log-line">&gt; 14:32:28 인코넬 718 연소실 온도 사이클 테스트 통과</div>
+          <div class="log-line">&gt; 14:33:02 CFRP 적층 7번 레이어 경화 완료 (T=140°C)</div>
+          <div class="log-line">&gt; 14:33:18 Al-7075 프레임 리벳 토크 검증 — 320개 포인트</div>
+          <div class="log-line warn">&gt; WARNING: Ti-6Al-4V 재고 부족 (현재 34% / 필요 80%)</div>
+          <div class="log-line">&gt; 14:34:05 자이로스코프 캘리브레이션 루틴 시작</div>
+          <div class="log-line warn">&gt; WARNING: GH2 가압 시스템 압력 저하 감지 (12% 잔량)</div>
+          <div class="log-line">&gt; 14:34:31 LOX 극저온 보온재 점검 — 누설 없음</div>
+          <div class="log-line">&gt; 14:34:55 추진 계통 3단계 조립 진행률 57% 달성</div>
+          <div class="log-line">&gt; 14:35:12 엔진 노즐 냉각 채널 수압 테스트 준비 중</div>
+          <div class="log-line sys">&gt; [SYS] 다음 마일스톤: 추진 계통 조립 완료 예정 D+58</div>
+          <div class="log-line">&gt; 14:35:44 에폭시 경화 오븐 온도 안정화 (145°C ±0.5)</div>
+          <div class="log-line warn">&gt; CAUTION: RP-1 공급 일정 지연 예상 — 조달 ETA D+56</div>
+          <div class="log-line">&gt; 14:36:20 항전 탑재 대기 중. 추진 계통 완료 후 착수</div>
+          <div class="log-line sys">&gt; [SYS] 시스템 정상 작동 중. 발사 대기 D+65 예상 <span class="cursor-blink" style="width:7px;height:11px;"></span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ===== RIGHT PANEL ===== -->
+    <div class="panel panel-right">
+
+      <div class="panel-header">LAUNCH HISTORY</div>
+
+      <div id="right-history-section">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>날짜</th>
+              <th>기체</th>
+              <th>목표</th>
+              <th>최대고도</th>
+              <th>결과</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="fail">
+              <td>ML-001</td>
+              <td>D+07</td>
+              <td>Alpha mk.1</td>
+              <td>10km</td>
+              <td>2.3km</td>
+              <td class="result-cell">실패</td>
+            </tr>
+            <tr class="fail">
+              <td colspan="6" class="note-cell" style="padding-left:12px;">&#x21B3; 구조 피로 파손 — 최대동압 초과. 동압 Q=47.2 kPa @ T+38s</td>
+            </tr>
+            <tr class="amber">
+              <td>ML-002</td>
+              <td>D+18</td>
+              <td>Alpha mk.2</td>
+              <td>50km</td>
+              <td>12.7km</td>
+              <td class="result-cell">실패</td>
+            </tr>
+            <tr class="amber">
+              <td colspan="6" class="note-cell" style="padding-left:12px;">&#x21B3; 엔진 정지 (터보펌프 공동현상) T+62s. RP-1 라인 공기 유입</td>
+            </tr>
+            <tr class="partial">
+              <td>ML-003</td>
+              <td>D+35</td>
+              <td>Beta mk.1</td>
+              <td>100km</td>
+              <td>89.4km</td>
+              <td class="result-cell amber">준성공</td>
+            </tr>
+            <tr class="partial">
+              <td colspan="6" class="note-cell" style="padding-left:12px; color:#2a7a4a;">&#x21B3; 제어 손실 (자이로 오작동) T+187s. 카르만선 10.6km 미달</td>
+            </tr>
+            <tr class="active">
+              <td>ML-004</td>
+              <td>D+52</td>
+              <td>Beta mk.2</td>
+              <td>100km</td>
+              <td>---</td>
+              <td class="result-cell" style="color:var(--amber);">준비중</td>
+            </tr>
+            <tr class="active">
+              <td colspan="6" class="note-cell" style="padding-left:12px;">&#x21B3; 현재 조립 57%. 추진 계통 조립 진행 중</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="panel-header" style="border-top: var(--border);">MISSION STATISTICS</div>
+
+      <div id="right-stats-section">
+        <div class="stat-row">
+          <span class="stat-label">총 발사 시도</span>
+          <span class="stat-value">3 회</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">완전 성공률</span>
+          <span class="stat-value red">0%</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">준성공 (부분)</span>
+          <span class="stat-value amber">1 회 (33%)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">최대 도달 고도</span>
+          <span class="stat-value amber">89.4 km</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">최고 달성 &Delta;V</span>
+          <span class="stat-value">2,970 m/s</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">누적 비행시간</span>
+          <span class="stat-value">847 초</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">최고 속도</span>
+          <span class="stat-value">2,340 m/s</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">K&aacute;rm&aacute;n선 돌파</span>
+          <span class="stat-value red">미달성</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">최근 실패 원인</span>
+          <span class="stat-value amber" style="font-size:9px;">자이로 오작동</span>
+        </div>
+
+        <div style="margin-top:14px; border-top: var(--border); padding-top:10px;">
+          <div class="section-title">NEXT MISSION TARGET</div>
+          <div style="font-size:11px; line-height:2; color:var(--green-mid);">
+            <div>기체 &nbsp;&nbsp;&nbsp;&nbsp;: <span class="green">BETA mk.2</span></div>
+            <div>목표 &nbsp;&nbsp;&nbsp;&nbsp;: <span class="green">100.4 km (K&aacute;rm&aacute;n 선)</span></div>
+            <div>예상 &Delta;V&nbsp;: <span class="green">3,240 m/s</span></div>
+            <div>예상 날짜: <span class="amber">D+65 (조립 완료 후)</span></div>
+            <div>준비도 &nbsp;&nbsp;: <span class="amber">57% &#x2593;&#x2593;&#x2593;&#x2592;&#x2592;&#x2592;</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px; border-top: var(--border); padding-top:10px;">
+          <div class="section-title">RISK MATRIX</div>
+          <div style="font-size:10px; line-height:1.9; color:var(--green-mid);">
+            <div>&#x25B6; 터보펌프 공동현상 &nbsp;<span class="amber">[중]</span></div>
+            <div>&#x25B6; 자이로 오작동 재발 &nbsp;<span class="red">[고]</span></div>
+            <div>&#x25B6; Ti 재고 부족 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="amber">[중]</span></div>
+            <div>&#x25B6; GH2 압력 저하 &nbsp;&nbsp;&nbsp;<span class="red">[고]</span></div>
+            <div>&#x25B6; 최대동압 구조하중 &nbsp;<span class="green">[저]</span></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottom-bar">
+    <div id="mission-timer">
+      MISSION ELAPSED: <span id="elapsed-time">D+52 &nbsp;14:36:22</span>
+    </div>
+    <div id="launch-zone">
+      <div id="launch-warning">&#x26A0; 경고: 현재 구조 완성도 57% &mdash; 발사 가능 최소치 85% 미달 &#x26A0;</div>
+      <button id="btn-launch" onclick="startLaunchSequence()">[ INITIATE LAUNCH SEQUENCE ]</button>
+    </div>
+    <button id="btn-abort" onclick="abortSequence()">[ ABORT ]</button>
+  </div>
+
+</div>
+<!-- END MAIN WRAPPER -->
+
+
+<!-- ===== LAUNCH SEQUENCE ELEMENTS ===== -->
+
+<!-- WARNING FLASH -->
+<div id="warning-flash">
+  <div id="warning-text">&#x26A0; WARNING &#x26A0;</div>
+  <div id="warning-sub">LAUNCH SEQUENCE INITIATED &mdash; ALL SYSTEMS GO FOR T-10</div>
+</div>
+
+<!-- SPLIT TOP HALF (cloned UI, top half visible) -->
+<div id="split-top">
+  <div id="split-top-inner"></div>
+</div>
+
+<!-- SPLIT BOTTOM HALF (cloned UI, bottom half visible) -->
+<div id="split-bottom">
+  <div id="split-bottom-inner"></div>
+</div>
+
+<!-- LAUNCH STAGE (rocket + exhaust in gap) -->
+<div id="launch-stage">
+<pre id="ascii-rocket-launch">
+        *
+       /|\
+      / | \
+     /  |  \
+    / BETA  \
+   /___mk.2__\
+  |           |
+  |  ENGINE   |
+  |___________|
+</pre>
+<pre id="exhaust">  |   |   |
+ /|\ /|\ /|\
+/ | X | X | \
+   |||||||
+  |||||||||
+ |||||||||||
+  |||||||||
+   |||||||
+    |||||
+     |||
+      |
+</pre>
+</div>
+
+<!-- COUNTDOWN OVERLAY -->
+<div id="countdown-overlay">
+  <div id="countdown-number">10</div>
+  <div id="countdown-label">SECONDS TO LAUNCH &mdash; T-MINUS</div>
+</div>
+
+<!-- TELEMETRY BOX -->
+<div id="telemetry-box">
+  <div id="telemetry-header">// ML-004 TELEMETRY FEED &mdash; REAL TIME</div>
+  <div id="telemetry-lines"></div>
+</div>
+
+<!-- FAILURE MESSAGE -->
+<div id="failure-msg">
+  <div id="failure-code">ML-004 &mdash; 임무 종료 보고서 &mdash; CLASSIFIED</div>
+  <div id="failure-title">&#x2716; MISSION FAILURE &#x2716;</div>
+  <div id="failure-detail">
+    고도 67.2 km 도달 후 제어 상실<br>
+    자이로스코프 Yaw 축 오류 &mdash; 3.7&deg;/s 편류 감지<br>
+    T+143s @ 추력 벡터 제어 한계 초과<br>
+    자폭 명령 전송 &mdash; 잔해 회수 불가
+  </div>
+  <div id="failure-stats">
+    최대 고도 &nbsp;&nbsp;: 67.2 km<br>
+    최고 속도 &nbsp;&nbsp;: 1,840 m/s<br>
+    비행 시간 &nbsp;&nbsp;: 143 초<br>
+    실패 원인 &nbsp;&nbsp;: 자이로 오작동 (ML-003 동일 패턴)<br>
+    K&aacute;rm&aacute;n선 &nbsp;: 미달 (32.8 km 부족)
+  </div>
+  <button id="btn-reset" onclick="resetSequence()">[ RESET &mdash; RETURN TO OPERATIONS ]</button>
+</div>
+
+<!-- =============================================
+     JAVASCRIPT
+============================================= -->
+<script>
+  // ==========================================
+  // DIGITAL CLOCK
+  // ==========================================
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('digital-clock').textContent = h + ':' + m + ':' + s;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ==========================================
+  // MISSION ELAPSED TIMER
+  // ==========================================
+  let missionSeconds = 52 * 86400 + 14 * 3600 + 36 * 60 + 22;
+  function updateMissionTimer() {
+    missionSeconds++;
+    const days = Math.floor(missionSeconds / 86400);
+    const h = Math.floor((missionSeconds % 86400) / 3600);
+    const m = Math.floor((missionSeconds % 3600) / 60);
+    const s = missionSeconds % 60;
+    const hh = String(h).padStart(2, '0');
+    const mm = String(m).padStart(2, '0');
+    const ss = String(s).padStart(2, '0');
+    document.getElementById('elapsed-time').innerHTML =
+      'D+' + days + ' &nbsp;' + hh + ':' + mm + ':' + ss;
+  }
+  setInterval(updateMissionTimer, 1000);
+
+  // ==========================================
+  // AUTO-SCROLL LOG
+  // ==========================================
+  const logEl = document.getElementById('system-log');
+  logEl.scrollTop = logEl.scrollHeight;
+
+  // Add live log entries
+  const liveLogEntries = [
+    { cls: '',     text: () => `> ${getTime()} 추진 계통 조립 자동 진행률 업데이트` },
+    { cls: 'sys',  text: () => `> [SYS] 실시간 텔레메트리 연결 상태: NOMINAL` },
+    { cls: '',     text: () => `> ${getTime()} LOX 보온재 온도 -181.2°C 유지 중` },
+    { cls: 'warn', text: () => `> CAUTION: GH2 압력 ${(Math.random()*2+11).toFixed(1)}% — 임계값 접근` },
+    { cls: '',     text: () => `> ${getTime()} 에폭시 수지 경화 진행 중 (${Math.floor(Math.random()*20+60)}%)` },
+    { cls: '',     text: () => `> ${getTime()} 인코넬 718 용접부 비파괴검사 통과` },
+    { cls: 'sys',  text: () => `> [AUTO] 구조 완성도 57.${Math.floor(Math.random()*9)}% — 자동 계측` },
+  ];
+
+  function getTime() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    return h + ':' + m + ':' + s;
+  }
+
+  let liveLogIdx = 0;
+  setInterval(() => {
+    const entry = liveLogEntries[liveLogIdx % liveLogEntries.length];
+    liveLogIdx++;
+    const div = document.createElement('div');
+    div.className = 'log-line ' + entry.cls;
+    div.textContent = entry.text();
+    logEl.appendChild(div);
+    // Keep only last 40 lines
+    while (logEl.children.length > 40) {
+      logEl.removeChild(logEl.firstChild);
+    }
+    logEl.scrollTop = logEl.scrollHeight;
+  }, 4500);
+
+  // ==========================================
+  // LAUNCH SEQUENCE
+  // ==========================================
+  let launchInProgress = false;
+
+  function startLaunchSequence() {
+    if (launchInProgress) return;
+    launchInProgress = true;
+
+    const mainWrapper = document.getElementById('main-wrapper');
+    const warningFlash = document.getElementById('warning-flash');
+    const splitTop = document.getElementById('split-top');
+    const splitBottom = document.getElementById('split-bottom');
+    const launchStage = document.getElementById('launch-stage');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNum = document.getElementById('countdown-number');
+    const telemetryBox = document.getElementById('telemetry-box');
+
+    // --- PHASE 1: WARNING FLASH (0 - 500ms) ---
+    warningFlash.classList.add('active');
+
+    setTimeout(() => {
+      warningFlash.classList.remove('active');
+
+      // --- PHASE 2: Clone main UI into split panels ---
+      const mainHTML = mainWrapper.outerHTML;
+
+      // Top inner: shows top half
+      document.getElementById('split-top-inner').innerHTML = mainHTML;
+
+      // Bottom inner: shows bottom half — shift content up so bottom half is visible
+      const bottomInner = document.getElementById('split-bottom-inner');
+      bottomInner.innerHTML = mainHTML;
+      // Position: we want to show the bottom half, so shift inner up by 50vh
+      bottomInner.style.marginTop = '-50vh';
+
+      // Show split panels
+      splitTop.classList.add('visible');
+      splitBottom.classList.add('visible');
+
+      // Hide main wrapper
+      mainWrapper.style.visibility = 'hidden';
+
+      // --- PHASE 3: Slide panels apart (500ms after phase 2) ---
+      setTimeout(() => {
+        splitTop.classList.add('slide');
+        splitBottom.classList.add('slide');
+
+        // Show launch stage in gap
+        setTimeout(() => {
+          launchStage.classList.add('active');
+        }, 400);
+
+        // --- PHASE 4: Countdown T-10 to T-0 ---
+        setTimeout(() => {
+          countdownOverlay.classList.add('active');
+          let count = 10;
+          countdownNum.textContent = count;
+
+          const countInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+              countdownNum.textContent = count;
+            } else if (count === 0) {
+              countdownNum.textContent = '0';
+              countdownNum.style.color = 'var(--red)';
+              countdownNum.style.textShadow = '0 0 30px var(--red), 0 0 60px var(--red)';
+              countdownNum.style.fontSize = '100px';
+              document.getElementById('countdown-label').textContent = 'IGNITION — LIFTOFF';
+            } else {
+              clearInterval(countInterval);
+            }
+          }, 1000);
+
+          // --- PHASE 5: Telemetry (after T-0, ~10s from start of countdown) ---
+          setTimeout(() => {
+            countdownOverlay.classList.remove('active');
+            telemetryBox.classList.add('active');
+
+            const telemetryLines = [
+              { t: 0,    cls: '',     msg: '> [T+0.0s]  IGNITION CONFIRMED. 엔진 점화 완료' },
+              { t: 500,  cls: '',     msg: '> [T+0.5s]  추력 156 kN — LOX 공급 안정화' },
+              { t: 1000, cls: '',     msg: '> [T+1.2s]  이륙 확인. 고도: 12m' },
+              { t: 1600, cls: '',     msg: '> [T+3.4s]  고도: 500m. 속도: 142 m/s' },
+              { t: 2100, cls: '',     msg: '> [T+7.1s]  고도: 2.0 km. 속도: 380 m/s' },
+              { t: 2600, cls: '',     msg: '> [T+12.8s] 고도: 5.4 km. 속도: 640 m/s' },
+              { t: 3100, cls: '',     msg: '> [T+20.3s] 고도: 12.1 km. 속도: 920 m/s' },
+              { t: 3600, cls: 'warn', msg: '> [T+28.7s] MaxQ 진입. 동압 38.4 kPa — 구조 모니터링' },
+              { t: 4000, cls: '',     msg: '> [T+45.2s] MaxQ 통과. 고도: 28.3 km. 속도: 1,420 m/s' },
+              { t: 4400, cls: '',     msg: '> [T+68.9s] 고도: 47.6 km. 속도: 1,680 m/s' },
+              { t: 4700, cls: 'warn', msg: '> [T+98.4s] CAUTION: 자이로 Yaw 편류 +1.2°/s 감지' },
+              { t: 5000, cls: 'warn', msg: '> [T+112.1s] 자이로 편류 증가: +2.9°/s — 보정 시도 중' },
+              { t: 5200, cls: '',     msg: '> [T+125.7s] 고도: 62.4 km. 속도: 1,810 m/s' },
+              { t: 5500, cls: 'warn', msg: '> [T+138.3s] 자이로 한계 초과: +3.7°/s — TVC 보정 불가' },
+              { t: 5800, cls: 'error',msg: '> [T+143.0s] 고도: 67.2 km — 제어 상실. 자폭 명령 전송' },
+            ];
+
+            const telLinesEl = document.getElementById('telemetry-lines');
+            telemetryLines.forEach(line => {
+              setTimeout(() => {
+                const div = document.createElement('div');
+                div.className = 'log-line ' + line.cls;
+                div.textContent = line.msg;
+                telLinesEl.appendChild(div);
+                telemetryBox.scrollTop = telemetryBox.scrollHeight;
+              }, line.t);
+            });
+
+            // --- PHASE 6: FAILURE MESSAGE ---
+            setTimeout(() => {
+              telemetryBox.classList.remove('active');
+              document.getElementById('failure-msg').classList.add('active');
+            }, 6200);
+
+          }, 11500); // after countdown ends
+
+        }, 1500); // countdown starts 1.5s after split
+
+      }, 150); // slide starts almost immediately
+
+    }, 600); // warning flash duration
+  }
+
+  // ==========================================
+  // ABORT
+  // ==========================================
+  function abortSequence() {
+    if (launchInProgress) {
+      resetSequence();
+      return;
+    }
+    // Flash red briefly
+    const abortFlash = document.createElement('div');
+    abortFlash.style.cssText = `
+      position:fixed; inset:0; z-index:9000;
+      background:#ff174420; pointer-events:none;
+      display:flex; align-items:center; justify-content:center;
+    `;
+    abortFlash.innerHTML = '<div style="font-size:28px;letter-spacing:8px;color:var(--red);text-shadow:0 0 20px var(--red);">ABORT COMMAND — NO ACTIVE LAUNCH</div>';
+    document.body.appendChild(abortFlash);
+    setTimeout(() => abortFlash.remove(), 1200);
+  }
+
+  // ==========================================
+  // RESET
+  // ==========================================
+  function resetSequence() {
+    launchInProgress = false;
+
+    // Hide all launch elements
+    document.getElementById('warning-flash').classList.remove('active');
+    document.getElementById('split-top').classList.remove('visible', 'slide');
+    document.getElementById('split-bottom').classList.remove('visible', 'slide');
+    document.getElementById('launch-stage').classList.remove('active');
+    document.getElementById('countdown-overlay').classList.remove('active');
+    document.getElementById('telemetry-box').classList.remove('active');
+    document.getElementById('failure-msg').classList.remove('active');
+    document.getElementById('telemetry-lines').innerHTML = '';
+
+    // Reset countdown display
+    const countdownNum = document.getElementById('countdown-number');
+    countdownNum.textContent = '10';
+    countdownNum.style.color = '';
+    countdownNum.style.textShadow = '';
+    countdownNum.style.fontSize = '';
+    document.getElementById('countdown-label').textContent = 'SECONDS TO LAUNCH — T-MINUS';
+
+    // Clear split inners
+    document.getElementById('split-top-inner').innerHTML = '';
+    document.getElementById('split-bottom-inner').innerHTML = '';
+    document.getElementById('split-bottom-inner').style.marginTop = '';
+
+    // Restore main wrapper
+    document.getElementById('main-wrapper').style.visibility = 'visible';
+
+    // CRT flicker on resume
+    const mw = document.getElementById('main-wrapper');
+    mw.style.animation = 'none';
+    setTimeout(() => {
+      mw.style.animation = 'crt-flicker 8s infinite';
+    }, 50);
+  }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+﻿{
+  "client_id": "moonidle-batch-50e738c5e88d4ecbb1e4079f1f68f990",
+  "prompt": {
+    "1": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "sd_xl_base_1.0.safetensors"
+      }
+    },
+    "2": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": "watermark, logo, text, subtitles, UI text, people, characters, fantasy, anime, deformed, blurry, low quality",
+        "clip": [
+          1,
+          0
+        ]
+      }
+    },
+    "3": {
+      "class_type": "CLIPTextEncode",
+      "inputs": {
+        "text": "Data-heavy mission planning interface wall, orbital trajectories, telemetry graphs, ?v and TWR readouts, engineering diagrams, brushed steel overlays, monitor reflection, technical utility style, ui_texture, MoonIdle concept art",
+        "clip": [
+          1,
+          0
+        ]
+      }
+    },
+    "4": {
+      "class_type": "EmptyLatentImage",
+      "inputs": {
+        "batch_size": 1,
+        "height": "768",
+        "width": "1408"
+      }
+    },
+    "5": {
+      "class_type": "KSampler",
+      "inputs": {
+        "cfg": "6.8",
+        "denoise": 1,
+        "model": [
+          1,
+          0
+        ],
+        "negative": [
+          2,
+          0
+        ],
+        "positive": [
+          3,
+          0
+        ],
+        "sampler_name": "euler",
+        "scheduler": "normal",
+        "seed": "220008",
+        "steps": "28",
+        "latent_image": [
+          4,
+          0
+        ]
+      }
+    },
+    "6": {
+      "class_type": "VAEDecode",
+      "inputs": {
+        "samples": [
+          5,
+          0
+        ],
+        "vae": [
+          1,
+          2
+        ]
+      }
+    },
+    "7": {
+      "class_type": "SaveImage",
+      "inputs": {
+        "filename_prefix": "moonidle_science_01_v1_220008",
+        "images": [
+          6,
+          0
+        ]
+      }
+    }
+  },
+  "extra_data": {
+    "workflow": "MoonIdle Concept Pack Template"
+  }
+}
+
