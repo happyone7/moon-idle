@@ -37,8 +37,18 @@ function renderResources() {
         <div class="rl-bar"><div class="rl-bar-fill${isAmber ? ' amber' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
       </div>`;
     });
+    // Worker status
+    const avail = getAvailableWorkers();
+    const totalW = gs.workers || 1;
+    const assignedW = totalW - avail;
+    html += `<div class="rl-item" style="border-top:1px solid var(--green-dim);margin-top:4px;padding-top:5px;">
+      <div class="rl-label">&#128100; 인원</div>
+      <div class="rl-val" style="color:var(--white)">${assignedW} / ${totalW}명</div>
+      <div class="rl-rate">여유 ${avail}명</div>
+    </div>`;
     rlInner.innerHTML = html;
   }
+
   const rlMs = document.getElementById('rl-ms-box');
   if (rlMs) {
     if (gs.moonstone > 0) {
@@ -104,8 +114,10 @@ function startTitleSequence() {
 }
 
 function startNewGame() {
-  gs.res = { money:500, metal:0, fuel:0, electronics:0, research:0 };
-  gs.buildings = { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:1, r_and_d:0, solar_array:0, launch_pad:0 };
+  gs.res = { money:0, metal:0, fuel:0, electronics:0, research:0 };
+  gs.buildings = { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
+  gs.workers = 1;
+  gs.assignments = {};
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};
@@ -115,9 +127,9 @@ function startNewGame() {
   gs.lastTick = Date.now();
   gs.settings = { sound: true };
   gs.unlocks = {
-    tab_production: true, tab_research: true, tab_assembly: false,
+    tab_production: true, tab_research: false, tab_assembly: false,
     tab_launch: false, tab_mission: false,
-    bld_ops_center: false, bld_supply_depot: false, bld_mine: false,
+    bld_ops_center: true, bld_supply_depot: false, bld_mine: false,
     bld_extractor: false, bld_refinery: false, bld_cryo_plant: false,
     bld_elec_lab: false, bld_fab_plant: false, bld_research_lab: true,
     bld_r_and_d: false, bld_solar_array: false, bld_launch_pad: false,
@@ -152,7 +164,6 @@ function enterGame() {
     setInterval(tick, 200);
     setInterval(renderAll, 500);
     setInterval(saveGame, 10000);
-    animateWorld();
   }, 800);
 }
 

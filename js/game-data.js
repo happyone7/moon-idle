@@ -18,7 +18,7 @@ const BUILDINGS = [
   { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:2.0, baseCost:{money:1000,metal:400,electronics:100}, desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
   { id:'elec_lab',     name:'전자공학 연구소',  icon:'[PCB]', produces:'electronics', baseRate:0.5, baseCost:{money:400,metal:150},                  desc:'회로 부품 생산',    wbClass:'wb-eleclab' },
   { id:'fab_plant',    name:'반도체 공장',      icon:'[FAB]', produces:'electronics', baseRate:1.8, baseCost:{money:2000,metal:800,electronics:200},  desc:'고급 반도체',       wbClass:'wb-eleclab' },
-  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:0.4, baseCost:{money:500,electronics:100},             desc:'기술 연구 포인트',  wbClass:'wb-research' },
+  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:0.4, baseCost:{money:300},                             desc:'기술 연구 포인트',  wbClass:'wb-research' },
   { id:'r_and_d',      name:'R&D 센터',         icon:'[RND]', produces:'research',    baseRate:1.2, baseCost:{money:3000,electronics:500},            desc:'고급 연구 가속',    wbClass:'wb-research' },
   { id:'solar_array',  name:'태양광 어레이',    icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:800,electronics:200},             desc:'전체 생산 +10%/개', wbClass:'wb-solar' },
   { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:5000,metal:2000,electronics:500}, desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },
@@ -41,7 +41,8 @@ const QUALITIES = [
 
 // Each upgrade has optional 'unlocks' array: strings matching keys in gs.unlocks
 const UPGRADES = [
-  { id:'basic_prod',         name:'기초 생산 기술',   icon:'[BAS]', cost:{research:10},                    req:null,                 desc:'생산 시설 잠금 해제',          effect:()=>{},                                                                       unlocks:['bld_mine','bld_ops_center'] },
+  { id:'hire_worker_1',      name:'기초 인원 채용',   icon:'[HR1]', cost:{research:20},                    req:null,                 desc:'추가 인원 +1명 (최대 5명)',     effect:()=>{ if((gs.workers||1)<5) gs.workers=(gs.workers||1)+1; },                  unlocks:[] },
+  { id:'basic_prod',         name:'기초 생산 기술',   icon:'[BAS]', cost:{research:10},                    req:null,                 desc:'광산·생산 시설 잠금 해제',     effect:()=>{},                                                                       unlocks:['bld_mine'] },
   { id:'drill',              name:'정밀 드릴',         icon:'[DRL]', cost:{research:50},                    req:'basic_prod',         desc:'금속 생산 +25%',               effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.25; },                             unlocks:['bld_extractor'] },
   { id:'fuel_chem',          name:'연료 화학',         icon:'[FUL]', cost:{research:60,metal:50},           req:'basic_prod',         desc:'연료 정제 시설 해금',           effect:()=>{},                                                                       unlocks:['bld_refinery'] },
   { id:'electronics_basics', name:'전자공학 기초',     icon:'[ELB]', cost:{research:80},                    req:'basic_prod',         desc:'전자 시설 해금',               effect:()=>{},                                                                       unlocks:['bld_elec_lab','bld_supply_depot'] },

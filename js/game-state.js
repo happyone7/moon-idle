@@ -2,8 +2,10 @@
 //  GAME STATE
 // ============================================================
 let gs = {
-  res: { money:500, metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:1, r_and_d:0, solar_array:0, launch_pad:0 },
+  res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
+  buildings: { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
+  workers: 1,          // 총 인원
+  assignments: {},     // { buildingId: workerCount }
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
   assembly: { selectedQuality:'proto', jobs:[] },
   upgrades: {},
@@ -15,11 +17,11 @@ let gs = {
   saveVersion: 2,
   unlocks: {
     tab_production: true,
-    tab_research: true,
+    tab_research: false,   // 연구소 구매 후 자동 해금
     tab_assembly: false,
     tab_launch: false,
     tab_mission: false,
-    bld_ops_center: false,
+    bld_ops_center: true,  // 처음부터 표시
     bld_supply_depot: false,
     bld_mine: false,
     bld_extractor: false,
@@ -27,7 +29,7 @@ let gs = {
     bld_cryo_plant: false,
     bld_elec_lab: false,
     bld_fab_plant: false,
-    bld_research_lab: true,
+    bld_research_lab: true, // 연구소 구매 가능 (처음부터 표시)
     bld_r_and_d: false,
     bld_solar_array: false,
     bld_launch_pad: false,
@@ -123,16 +125,28 @@ function getProduction() {
   const prod = { money:0, metal:0, fuel:0, electronics:0, research:0 };
   BUILDINGS.forEach(b => {
     if (b.produces === 'bonus' || !(b.produces in prod)) return;
-    const cnt = gs.buildings[b.id] || 0;
-    if (cnt === 0) return;
-    const rate = b.baseRate * cnt * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    // 생산량은 배치된 인원(assignments) 기반
+    const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
+    if (assigned === 0) return;
+    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
     prod[b.produces] += rate;
   });
   return prod;
 }
 
+// 여유 인원 수
+function getAvailableWorkers() {
+  const total = gs.workers || 1;
+  const assigned = Object.values(gs.assignments || {}).reduce((a, b) => a + b, 0);
+  return total - assigned;
+}
+
 function getTotalWorkers() {
-  return Object.values(gs.buildings).reduce((a, b) => a + b, 0);
+  return gs.workers || 1;
+}
+
+function getTotalAssigned() {
+  return Object.values(gs.assignments || {}).reduce((a, b) => a + b, 0);
 }
 
 function getRocketScience(qualityId) {
@@ -242,6 +256,10 @@ function loadGame() {
     // Merge parts
     if (saved.parts) Object.assign(gs.parts, saved.parts);
 
+    // Worker system
+    gs.workers = saved.workers || 1;
+    gs.assignments = saved.assignments || {};
+
     // Scalars
     gs.launches = saved.launches || 0;
     gs.moonstone = saved.moonstone || 0;
@@ -324,5 +342,6 @@ function tick() {
   const prod = getProduction();
   RESOURCES.forEach(r => { gs.res[r.id] = (gs.res[r.id] || 0) + prod[r.id] * dt; });
   updateAssemblyJobs(now);
+  if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
 }
 
