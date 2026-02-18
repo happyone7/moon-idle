@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>Moon Idle — Mission Control Key Visual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: #010800;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+  }
+
+  svg {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  /* Scanline overlay */
+  .scanlines {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 4px
+    );
+    z-index: 10;
+  }
+
+  /* Vignette overlay */
+  .vignette {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse 80% 70% at 50% 50%,
+      transparent 40%,
+      rgba(0,0,0,0.55) 80%,
+      rgba(0,0,0,0.92) 100%
+    );
+    z-index: 11;
+  }
+
+  /* Branding label */
+  .branding {
+    position: absolute;
+    bottom: 48px;
+    left: 64px;
+    font-family: 'Share Tech Mono', monospace;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .branding .title {
+    font-size: 42px;
+    color: #00e676;
+    opacity: 0.22;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+  }
+  .branding .subtitle {
+    font-size: 13px;
+    color: #00e676;
+    opacity: 0.13;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* ── ANIMATIONS ── */
+
+  @keyframes searchlight-sweep {
+    0%   { transform: rotate(-22deg) translateX(-180px); opacity: 0; }
+    10%  { opacity: 1; }
+    85%  { opacity: 0.7; }
+    100% { transform: rotate(-22deg) translateX(280px); opacity: 0; }
+  }
+  @keyframes searchlight-sweep-2 {
+    0%   { transform: rotate(-15deg) translateX(-140px); opacity: 0; }
+    8%   { opacity: 0.8; }
+    90%  { opacity: 0.5; }
+    100% { transform: rotate(-15deg) translateX(320px); opacity: 0; }
+  }
+
+  @keyframes steam-rise {
+    0%   { transform: translateY(0px) scaleX(1);   opacity: 0.55; }
+    50%  { transform: translateY(-28px) scaleX(1.15); opacity: 0.35; }
+    100% { transform: translateY(-54px) scaleX(1.3);  opacity: 0; }
+  }
+  @keyframes steam-rise-2 {
+    0%   { transform: translateY(0px) scaleX(1);   opacity: 0.45; }
+    50%  { transform: translateY(-32px) scaleX(1.1); opacity: 0.25; }
+    100% { transform: translateY(-60px) scaleX(1.25); opacity: 0; }
+  }
+  @keyframes steam-rise-3 {
+    0%   { transform: translateY(0px) scaleX(1);   opacity: 0.6; }
+    50%  { transform: translateY(-20px) scaleX(1.2); opacity: 0.4; }
+    100% { transform: translateY(-48px) scaleX(1.35); opacity: 0; }
+  }
+
+  @keyframes countdown-pulse {
+    0%, 100% { opacity: 1; filter: brightness(1); }
+    48%       { opacity: 0.88; filter: brightness(0.92); }
+    50%       { opacity: 1; filter: brightness(1.12); }
+    52%       { opacity: 0.92; filter: brightness(0.96); }
+  }
+
+  @keyframes ceiling-light-a {
+    0%, 100% { opacity: 0.9; }
+    50%       { opacity: 0.3; }
+  }
+  @keyframes ceiling-light-b {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 1; }
+  }
+
+  @keyframes monitor-flicker {
+    0%, 89%, 91%, 93%, 95%, 100% { opacity: 1; }
+    90%  { opacity: 0.7; }
+    92%  { opacity: 0.95; }
+    94%  { opacity: 0.65; }
+  }
+  @keyframes monitor-flicker-b {
+    0%, 76%, 78%, 97%, 99%, 100% { opacity: 1; }
+    77%  { opacity: 0.6; }
+    98%  { opacity: 0.75; }
+  }
+  @keyframes monitor-flicker-c {
+    0%, 43%, 45%, 100% { opacity: 1; }
+    44%  { opacity: 0.5; }
+  }
+
+  @keyframes ambient-haze {
+    0%, 100% { opacity: 0.04; }
+    50%       { opacity: 0.07; }
+  }
+
+  .searchlight-1 { animation: searchlight-sweep 10s ease-in-out infinite; }
+  .searchlight-2 { animation: searchlight-sweep-2 13s ease-in-out 3s infinite; }
+  .steam-cloud-1 { animation: steam-rise   4.5s ease-out infinite; }
+  .steam-cloud-2 { animation: steam-rise-2 5.8s ease-out 1.2s infinite; }
+  .steam-cloud-3 { animation: steam-rise-3 3.9s ease-out 2.7s infinite; }
+  .countdown     { animation: countdown-pulse 1s ease-in-out infinite; }
+  .ceil-light-a  { animation: ceiling-light-a 2.1s ease-in-out infinite; }
+  .ceil-light-b  { animation: ceiling-light-b 2.1s ease-in-out infinite; }
+  .ceil-light-c  { animation: ceiling-light-a 1.7s ease-in-out 0.6s infinite; }
+  .mon-flicker-a { animation: monitor-flicker   7s ease-in-out infinite; }
+  .mon-flicker-b { animation: monitor-flicker-b 11s ease-in-out infinite; }
+  .mon-flicker-c { animation: monitor-flicker-c 9s ease-in-out infinite; }
+  .ambient-haze  { animation: ambient-haze 6s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<div class="canvas-wrapper">
+
+<!-- ===== MAIN SVG CANVAS ===== -->
+<svg viewBox="0 0 1920 1080" width="1920" height="1080" xmlns="http://www.w3.org/2000/svg">
+<defs>
+
+  <!-- ── GLOW FILTERS ── -->
+
+  <!-- Bright phosphor green glow -->
+  <filter id="glow-green-strong" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur1"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="4"  result="blur2"/>
+    <feMerge><feMergeNode in="blur1"/><feMergeNode in="blur2"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Medium glow -->
+  <filter id="glow-green-med" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Soft ambient glow -->
+  <filter id="glow-green-soft" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="14"/>
+  </filter>
+
+  <!-- Huge spread glow for main screen -->
+  <filter id="glow-screen-main" x="-80%" y="-80%" width="360%" height="360%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="30" result="b1"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b2"/>
+    <feMerge><feMergeNode in="b1"/><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Amber glow -->
+  <filter id="glow-amber" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+  </filter>
+
+  <!-- Film grain -->
+  <filter id="film-grain" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch" result="noise"/>
+    <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise"/>
+    <feBlend in="SourceGraphic" in2="grayNoise" mode="soft-light" result="blend"/>
+    <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+  </filter>
+
+  <!-- Glow for silhouette edges -->
+  <filter id="edge-glow" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- Steam blur -->
+  <filter id="steam-blur" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="7"/>
+  </filter>
+
+  <!-- Soft searchlight -->
+  <filter id="searchlight-blur" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="5"/>
+  </filter>
+
+  <!-- White glow for window exterior -->
+  <filter id="glow-white" x="-40%" y="-40%" width="180%" height="180%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8"/>
+  </filter>
+
+  <!-- ── GRADIENTS ── -->
+
+  <!-- Room floor gradient -->
+  <linearGradient id="floor-grad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#010800"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </linearGradient>
+
+  <!-- Ceiling gradient -->
+  <linearGradient id="ceiling-grad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#000000"/>
+    <stop offset="100%" stop-color="#010a01"/>
+  </linearGradient>
+
+  <!-- Window exterior sky gradient -->
+  <linearGradient id="night-sky-grad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#000308"/>
+    <stop offset="60%"  stop-color="#000502"/>
+    <stop offset="100%" stop-color="#0a0c00"/>
+  </linearGradient>
+
+  <!-- Main screen radial glow spread -->
+  <radialGradient id="screen-glow-spread" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"   stop-color="#00e676" stop-opacity="0.18"/>
+    <stop offset="60%"  stop-color="#00e676" stop-opacity="0.06"/>
+    <stop offset="100%" stop-color="#00e676" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Floor reflection gradient -->
+  <radialGradient id="floor-reflect-1" cx="50%" cy="20%" r="50%">
+    <stop offset="0%"   stop-color="#00e676" stop-opacity="0.12"/>
+    <stop offset="100%" stop-color="#00e676" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="floor-reflect-2" cx="50%" cy="20%" r="50%">
+    <stop offset="0%"   stop-color="#00e676" stop-opacity="0.08"/>
+    <stop offset="100%" stop-color="#00e676" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Green ambient room glow from screens -->
+  <radialGradient id="room-ambient" cx="50%" cy="45%" r="55%">
+    <stop offset="0%"   stop-color="#00e676" stop-opacity="0.06"/>
+    <stop offset="100%" stop-color="#00e676" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Amber ceiling ambient -->
+  <radialGradient id="amber-ambient" cx="50%" cy="0%" r="40%">
+    <stop offset="0%"   stop-color="#ffab00" stop-opacity="0.04"/>
+    <stop offset="100%" stop-color="#ffab00" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Console surface gradient -->
+  <linearGradient id="console-surf" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="#1a2a1a"/>
+    <stop offset="100%" stop-color="#0a120a"/>
+  </linearGradient>
+
+  <!-- Searchlight beam gradient -->
+  <linearGradient id="beam-grad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%"   stop-color="rgba(255,255,240,0.0)"/>
+    <stop offset="40%"  stop-color="rgba(255,255,240,0.3)"/>
+    <stop offset="100%" stop-color="rgba(255,255,240,0.0)"/>
+  </linearGradient>
+
+  <!-- Window warm searchlight glow on ground -->
+  <radialGradient id="launchpad-glow" cx="50%" cy="80%" r="50%">
+    <stop offset="0%"   stop-color="#ffe082" stop-opacity="0.7"/>
+    <stop offset="40%"  stop-color="#ff8f00" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- ── CLIP PATHS ── -->
+  <clipPath id="window-clip">
+    <rect x="760" y="78" width="400" height="295" rx="3"/>
+  </clipPath>
+
+  <clipPath id="main-screen-clip">
+    <rect x="560" y="60" width="800" height="380" rx="4"/>
+  </clipPath>
+
+  <!-- ── PATTERNS ── -->
+  <!-- Subtle concrete floor texture -->
+  <pattern id="floor-texture" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+    <rect width="80" height="80" fill="none"/>
+    <line x1="0" y1="0" x2="80" y2="80" stroke="#030d03" stroke-width="0.3" opacity="0.4"/>
+    <line x1="0" y1="40" x2="80" y2="40" stroke="#030d03" stroke-width="0.2" opacity="0.2"/>
+  </pattern>
+
+  <!-- CRT phosphor dot pattern -->
+  <pattern id="crt-dots" x="0" y="0" width="3" height="3" patternUnits="userSpaceOnUse">
+    <rect width="3" height="3" fill="none"/>
+    <circle cx="1" cy="1" r="0.7" fill="rgba(0,0,0,0.25)"/>
+  </pattern>
+
+  <!-- ── REUSABLE ELEMENTS ── -->
+
+  <!-- A single CRT monitor face -->
+  <!-- We'll draw them inline for flexibility -->
+
+</defs>
+
+<!-- ================================================================
+     LAYER 0 — VOID BACKGROUND
+     ================================================================ -->
+<rect width="1920" height="1080" fill="#010800"/>
+
+<!-- Overall green ambient from screens -->
+<rect width="1920" height="1080" fill="url(#room-ambient)"/>
+<rect width="1920" height="1080" fill="url(#amber-ambient)"/>
+
+<!-- ================================================================
+     LAYER 1 — CEILING (top 0–220px in scene space)
+     ================================================================ -->
+<g id="layer-ceiling">
+
+  <!-- Ceiling base -->
+  <rect x="0" y="0" width="1920" height="220" fill="url(#ceiling-grad)"/>
+
+  <!-- Main horizontal ceiling beams (structural) -->
+  <rect x="0"   y="24"  width="1920" height="10" fill="#080f08" opacity="0.9"/>
+  <rect x="0"   y="58"  width="1920" height="7"  fill="#060d06" opacity="0.8"/>
+  <rect x="0"   y="92"  width="1920" height="9"  fill="#070e07" opacity="0.85"/>
+  <rect x="0"   y="128" width="1920" height="6"  fill="#060c06" opacity="0.75"/>
+  <rect x="0"   y="164" width="1920" height="8"  fill="#070d07" opacity="0.8"/>
+  <rect x="0"   y="200" width="1920" height="20" fill="#050c05" opacity="0.9"/>
+
+  <!-- Vertical structural columns (ceiling attachment) -->
+  <rect x="120"  y="0" width="12" height="220" fill="#050d05" opacity="0.7"/>
+  <rect x="380"  y="0" width="10" height="220" fill="#050d05" opacity="0.6"/>
+  <rect x="640"  y="0" width="12" height="220" fill="#060e06" opacity="0.65"/>
+  <rect x="900"  y="0" width="14" height="220" fill="#060d06" opacity="0.7"/>
+  <rect x="1160" y="0" width="12" height="220" fill="#060e06" opacity="0.65"/>
+  <rect x="1420" y="0" width="10" height="220" fill="#050d05" opacity="0.6"/>
+  <rect x="1680" y="0" width="12" height="220" fill="#050d05" opacity="0.7"/>
+
+  <!-- Cable runs: groups of thin parallel horizontal wires -->
+  <g opacity="0.6">
+    <!-- Left cable bundle -->
+    <line x1="0" y1="38"  x2="700" y2="38"  stroke="#0a130a" stroke-width="1.5"/>
+    <line x1="0" y1="41"  x2="700" y2="41"  stroke="#0d160d" stroke-width="1"/>
+    <line x1="0" y1="44"  x2="700" y2="44"  stroke="#0a130a" stroke-width="1.5"/>
+    <line x1="0" y1="47"  x2="700" y2="47"  stroke="#090f09" stroke-width="1"/>
+    <!-- Right cable bundle -->
+    <line x1="1220" y1="38"  x2="1920" y2="38"  stroke="#0a130a" stroke-width="1.5"/>
+    <line x1="1220" y1="41"  x2="1920" y2="41"  stroke="#0d160d" stroke-width="1"/>
+    <line x1="1220" y1="44"  x2="1920" y2="44"  stroke="#0a130a" stroke-width="1.5"/>
+    <line x1="1220" y1="47"  x2="1920" y2="47"  stroke="#090f09" stroke-width="1"/>
+    <!-- Conduit down-runs on left -->
+    <line x1="220" y1="0"  x2="220" y2="100" stroke="#0d180d" stroke-width="3"/>
+    <line x1="225" y1="0"  x2="225" y2="100" stroke="#0b150b" stroke-width="2"/>
+    <line x1="230" y1="0"  x2="230" y2="100" stroke="#0d180d" stroke-width="3"/>
+    <!-- Conduit down-runs on right -->
+    <line x1="1690" y1="0" x2="1690" y2="100" stroke="#0d180d" stroke-width="3"/>
+    <line x1="1695" y1="0" x2="1695" y2="100" stroke="#0b150b" stroke-width="2"/>
+    <line x1="1700" y1="0" x2="1700" y2="100" stroke="#0d180d" stroke-width="3"/>
+  </g>
+
+  <!-- Ventilation ducts -->
+  <rect x="60"   y="68" width="280" height="34" rx="3" fill="#080f08" stroke="#0f1a0f" stroke-width="1.5"/>
+  <rect x="1580" y="68" width="280" height="34" rx="3" fill="#080f08" stroke="#0f1a0f" stroke-width="1.5"/>
+  <!-- Duct ribs -->
+  <g stroke="#0d180d" stroke-width="1.5" opacity="0.8">
+    <line x1="100" y1="68" x2="100" y2="102"/>
+    <line x1="140" y1="68" x2="140" y2="102"/>
+    <line x1="180" y1="68" x2="180" y2="102"/>
+    <line x1="220" y1="68" x2="220" y2="102"/>
+    <line x1="260" y1="68" x2="260" y2="102"/>
+    <line x1="300" y1="68" x2="300" y2="102"/>
+    <line x1="1620" y1="68" x2="1620" y2="102"/>
+    <line x1="1660" y1="68" x2="1660" y2="102"/>
+    <line x1="1700" y1="68" x2="1700" y2="102"/>
+    <line x1="1740" y1="68" x2="1740" y2="102"/>
+    <line x1="1780" y1="68" x2="1780" y2="102"/>
+    <line x1="1820" y1="68" x2="1820" y2="102"/>
+  </g>
+
+  <!-- Conduit junction boxes -->
+  <rect x="350" y="32" width="28" height="18" rx="2" fill="#0c160c" stroke="#111f11" stroke-width="1"/>
+  <rect x="420" y="32" width="28" height="18" rx="2" fill="#0c160c" stroke="#111f11" stroke-width="1"/>
+  <rect x="1470" y="32" width="28" height="18" rx="2" fill="#0c160c" stroke="#111f11" stroke-width="1"/>
+  <rect x="1540" y="32" width="28" height="18" rx="2" fill="#0c160c" stroke="#111f11" stroke-width="1"/>
+
+  <!-- Faint green ambient ceiling glow from below (screens illuminating ceiling) -->
+  <rect x="0" y="140" width="1920" height="80" fill="#00e676" opacity="0.015"/>
+  <ellipse cx="960" cy="200" rx="600" ry="50" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.04"/>
+
+  <!-- CEILING STATUS LIGHTS -->
+  <!-- Red warning lights (pulsing) -->
+  <g class="ceil-light-a">
+    <circle cx="310" cy="112" r="7" fill="#ff1744" filter="url(#glow-amber)" opacity="0.9"/>
+    <circle cx="310" cy="112" r="3" fill="#ff6b6b"/>
+  </g>
+  <g class="ceil-light-b">
+    <circle cx="360" cy="112" r="7" fill="#ffab00" filter="url(#glow-amber)" opacity="0.9"/>
+    <circle cx="360" cy="112" r="3" fill="#ffe082"/>
+  </g>
+  <g class="ceil-light-c">
+    <circle cx="1560" cy="112" r="7" fill="#ff1744" filter="url(#glow-amber)" opacity="0.9"/>
+    <circle cx="1560" cy="112" r="3" fill="#ff6b6b"/>
+  </g>
+  <g class="ceil-light-b">
+    <circle cx="1610" cy="112" r="7" fill="#ffab00" filter="url(#glow-amber)" opacity="0.85"/>
+    <circle cx="1610" cy="112" r="3" fill="#ffe082"/>
+  </g>
+
+  <!-- OVERHEAD PA SPEAKERS (small rectangles) -->
+  <rect x="460" y="144" width="40" height="14" rx="2" fill="#0a120a" stroke="#131d13" stroke-width="1"/>
+  <rect x="1420" y="144" width="40" height="14" rx="2" fill="#0a120a" stroke="#131d13" stroke-width="1"/>
+  <!-- Speaker grille lines -->
+  <g stroke="#0f180f" stroke-width="0.8" opacity="0.7">
+    <line x1="466" y1="145" x2="466" y2="157"/>
+    <line x1="472" y1="145" x2="472" y2="157"/>
+    <line x1="478" y1="145" x2="478" y2="157"/>
+    <line x1="484" y1="145" x2="484" y2="157"/>
+    <line x1="490" y1="145" x2="490" y2="157"/>
+    <line x1="1426" y1="145" x2="1426" y2="157"/>
+    <line x1="1432" y1="145" x2="1432" y2="157"/>
+    <line x1="1438" y1="145" x2="1438" y2="157"/>
+    <line x1="1444" y1="145" x2="1444" y2="157"/>
+    <line x1="1450" y1="145" x2="1450" y2="157"/>
+  </g>
+
+</g><!-- /layer-ceiling -->
+
+
+<!-- ================================================================
+     LAYER 2 — BACK WALL & WINDOW
+     ================================================================ -->
+<g id="layer-backwall">
+
+  <!-- Back wall — dark with subtle panel breaks -->
+  <rect x="0" y="220" width="1920" height="580" fill="#020902"/>
+
+  <!-- Left wall instrument panels -->
+  <rect x="0"   y="220" width="190" height="580" fill="#030b03"/>
+  <rect x="0"   y="240" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+  <rect x="0"   y="340" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+  <rect x="0"   y="440" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+  <rect x="0"   y="540" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+
+  <!-- Left wall instrument indicators (green dots) -->
+  <g filter="url(#glow-green-med)">
+    <circle cx="30" cy="265" r="3.5" fill="#00e676" opacity="0.8"/>
+    <circle cx="52" cy="265" r="3.5" fill="#00e676" opacity="0.6"/>
+    <circle cx="74" cy="265" r="3.5" fill="#00c853" opacity="0.7"/>
+    <circle cx="96" cy="265" r="3.5" fill="#00e676" opacity="0.9"/>
+    <circle cx="30" cy="290" r="3.5" fill="#00c853" opacity="0.5"/>
+    <circle cx="52" cy="290" r="3.5" fill="#00e676" opacity="0.8"/>
+  </g>
+  <!-- Left wall status bars -->
+  <rect x="18" y="304" width="80" height="6" rx="1" fill="#002200"/>
+  <rect x="18" y="304" width="52" height="6" rx="1" fill="#00c853" opacity="0.7"/>
+  <rect x="18" y="316" width="80" height="6" rx="1" fill="#002200"/>
+  <rect x="18" y="316" width="68" height="6" rx="1" fill="#00e676" opacity="0.8"/>
+
+  <!-- Right wall instrument panels -->
+  <rect x="1730" y="220" width="190" height="580" fill="#030b03"/>
+  <rect x="1735" y="240" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+  <rect x="1735" y="340" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+  <rect x="1735" y="440" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+  <rect x="1735" y="540" width="185" height="80"  rx="2" fill="#040d04" stroke="#0c1a0c" stroke-width="1"/>
+
+  <!-- Right wall instrument indicators -->
+  <g filter="url(#glow-green-med)">
+    <circle cx="1760" cy="265" r="3.5" fill="#00e676" opacity="0.9"/>
+    <circle cx="1782" cy="265" r="3.5" fill="#00c853" opacity="0.7"/>
+    <circle cx="1804" cy="265" r="3.5" fill="#00e676" opacity="0.8"/>
+    <circle cx="1826" cy="265" r="3.5" fill="#ffab00" opacity="0.7"/>
+    <circle cx="1848" cy="265" r="3.5" fill="#00e676" opacity="0.6"/>
+    <circle cx="1870" cy="265" r="3.5" fill="#00e676" opacity="0.9"/>
+  </g>
+  <rect x="1744" y="304" width="80" height="6" rx="1" fill="#002200"/>
+  <rect x="1744" y="304" width="58" height="6" rx="1" fill="#00c853" opacity="0.7"/>
+  <rect x="1744" y="316" width="80" height="6" rx="1" fill="#002200"/>
+  <rect x="1744" y="316" width="72" height="6" rx="1" fill="#00e676" opacity="0.8"/>
+
+  <!-- ──── MAIN CENTRAL DISPLAY SCREEN ──── -->
+  <!-- Screen body (before window, extends behind it conceptually) -->
+  <rect x="560" y="60" width="800" height="380" rx="4" fill="#000800" stroke="#003300" stroke-width="2"/>
+
+  <!-- Screen glow radiating outward (atmosphere) -->
+  <ellipse cx="960" cy="250" rx="500" ry="260" fill="url(#screen-glow-spread)" filter="url(#glow-green-soft)" opacity="0.6"/>
+
+  <!-- Screen surface glow fill -->
+  <rect x="564" y="64" width="792" height="372" rx="2" fill="#001200"/>
+
+  <!-- Screen CRT phosphor overlay -->
+  <rect x="564" y="64" width="792" height="372" rx="2" fill="url(#crt-dots)" opacity="0.5"/>
+
+  <!-- Decorative data readouts on screen — left panel -->
+  <g font-family="'Share Tech Mono', monospace" fill="#00c853" font-size="11" opacity="0.7">
+    <text x="578" y="98">SYS STATUS</text>
+    <text x="578" y="116">MAIN ENG..... [OK]</text>
+    <text x="578" y="130">GNC SYSTEM... [OK]</text>
+    <text x="578" y="144">PROPELLANT.. [98%]</text>
+    <text x="578" y="158">FUEL CELL.... [OK]</text>
+    <text x="578" y="172">TELEMETRY... [OK]</text>
+    <text x="578" y="188">COMM UPLINK.. [OK]</text>
+    <text x="578" y="204">RANGE SFTY... [OK]</text>
+    <text x="578" y="218">FLIGHT CTRL.. [OK]</text>
+    <text x="578" y="234">ABORT SYS.... [ARM]</text>
+  </g>
+  <!-- Left panel divider -->
+  <line x1="720" y1="74" x2="720" y2="424" stroke="#003800" stroke-width="1" opacity="0.5"/>
+
+  <!-- Decorative data readouts on screen — right panel -->
+  <g font-family="'Share Tech Mono', monospace" fill="#00c853" font-size="11" opacity="0.7">
+    <text x="1200" y="98">WEATHER</text>
+    <text x="1200" y="116">WIND......... 3kn</text>
+    <text x="1200" y="130">VISIBILITY.. CLR</text>
+    <text x="1200" y="144">HUMIDITY..... 42%</text>
+    <text x="1200" y="158">PRESSURE.. 1013mb</text>
+    <text x="1200" y="172">TEMP......... 12C</text>
+    <text x="1200" y="188"> </text>
+    <text x="1200" y="204">RANGE CTRL</text>
+    <text x="1200" y="218">GO FOR LAUNCH</text>
+  </g>
+  <!-- Right panel divider -->
+  <line x1="1190" y1="74" x2="1190" y2="424" stroke="#003800" stroke-width="1" opacity="0.5"/>
+
+  <!-- CENTER COUNTDOWN - the main focal element -->
+  <g class="countdown">
+    <!-- T-MINUS label -->
+    <text x="960" y="148" font-family="'Share Tech Mono', monospace" font-size="24" fill="#00a843" text-anchor="middle" letter-spacing="6" opacity="0.9">T-MINUS</text>
+    <!-- Main countdown digits -->
+    <text x="960" y="248" font-family="'Share Tech Mono', monospace" font-size="110" fill="#00e676" text-anchor="middle" letter-spacing="4" filter="url(#glow-green-strong)">00:00:47</text>
+    <!-- Glow halo behind digits -->
+    <text x="960" y="248" font-family="'Share Tech Mono', monospace" font-size="110" fill="#00e676" text-anchor="middle" letter-spacing="4" opacity="0.15" filter="url(#glow-screen-main)">00:00:47</text>
+    <!-- Rocket icon (simple triangle) -->
+    <polygon points="960,270 950,310 970,310" fill="#00e676" filter="url(#glow-green-med)" opacity="0.8"/>
+    <rect x="952" y="310" width="4" height="10" fill="#00e676" opacity="0.6"/>
+    <rect x="964" y="310" width="4" height="10" fill="#00e676" opacity="0.6"/>
+    <!-- Flame emanating from rocket bottom -->
+    <ellipse cx="960" cy="325" rx="8" ry="5" fill="#ffab00" filter="url(#glow-amber)" opacity="0.7"/>
+    <ellipse cx="960" cy="330" rx="5" ry="3" fill="#fff176" opacity="0.9"/>
+  </g>
+
+  <!-- Facility name below countdown -->
+  <g font-family="'Share Tech Mono', monospace" fill="#00e676" text-anchor="middle">
+    <text x="960" y="368" font-size="18" letter-spacing="10" opacity="0.85" filter="url(#glow-green-med)">MOON IDLE LAUNCH FACILITY</text>
+    <text x="960" y="400" font-size="13" letter-spacing="6" fill="#00c853" opacity="0.7">ALL SYSTEMS NOMINAL</text>
+    <text x="960" y="420" font-size="11" letter-spacing="4" fill="#00a843" opacity="0.5">LAUNCH COMMIT CRITERIA MET — HOLD RELEASE IN PROGRESS</text>
+  </g>
+
+  <!-- Screen horizontal scan bands (CRT feel) -->
+  <rect x="564" y="64" width="792" height="372" rx="2" fill="none" stroke="#00e676" stroke-width="1" opacity="0.08"/>
+
+  <!-- ──── WINDOW TO EXTERIOR ──── -->
+  <!-- Window frame outer border (industrial thick steel) -->
+  <rect x="752" y="70" width="416" height="311" rx="5" fill="#0d1a0d" stroke="#1a2e1a" stroke-width="3"/>
+
+  <!-- Window frame rivets -->
+  <g fill="#1c2e1c">
+    <circle cx="758" cy="76"  r="4"/>  <circle cx="772" cy="76"  r="4"/>
+    <circle cx="786" cy="76"  r="4"/>
+    <circle cx="758" cy="375" r="4"/>  <circle cx="772" cy="375" r="4"/>
+    <circle cx="786" cy="375" r="4"/>
+    <circle cx="1162" cy="76"  r="4"/> <circle cx="1148" cy="76"  r="4"/>
+    <circle cx="1134" cy="76"  r="4"/>
+    <circle cx="1162" cy="375" r="4"/> <circle cx="1148" cy="375" r="4"/>
+    <circle cx="1134" cy="375" r="4"/>
+  </g>
+
+  <!-- Window glass — night exterior -->
+  <rect x="760" y="78" width="400" height="295" rx="3" fill="url(#night-sky-grad)"/>
+  <rect x="760" y="78" width="400" height="295" rx="3" clip-path="url(#window-clip)">
+    <!-- Night sky -->
+    <rect x="760" y="78" width="400" height="295" fill="#000308"/>
+
+    <!-- Stars -->
+    <g fill="white" opacity="0.6">
+      <circle cx="780"  cy="95"  r="0.8"/>
+      <circle cx="810"  cy="88"  r="1"/>
+      <circle cx="835"  cy="110" r="0.7"/>
+      <circle cx="870"  cy="92"  r="0.9"/>
+      <circle cx="905"  cy="104" r="0.7"/>
+      <circle cx="940"  cy="86"  r="1.1"/>
+      <circle cx="970"  cy="100" r="0.8"/>
+      <circle cx="1000" cy="90"  r="0.7"/>
+      <circle cx="1040" cy="108" r="0.9"/>
+      <circle cx="1070" cy="88"  r="0.8"/>
+      <circle cx="1100" cy="97"  r="0.7"/>
+      <circle cx="1130" cy="84"  r="1"/>
+      <circle cx="1145" cy="112" r="0.6"/>
+      <circle cx="800"  cy="130" r="0.7"/>
+      <circle cx="845"  cy="118" r="0.8"/>
+      <circle cx="920"  cy="122" r="0.6"/>
+      <circle cx="1080" cy="116" r="0.7"/>
+    </g>
+
+    <!-- Launch pad ground / base (distant, warm) -->
+    <rect x="760" y="310" width="400" height="63" fill="#0a0800"/>
+    <!-- Ground glow from searchlights -->
+    <ellipse cx="960" cy="350" rx="160" ry="30" fill="url(#launchpad-glow)" opacity="0.8"/>
+
+    <!-- Distant horizon haze -->
+    <rect x="760" y="290" width="400" height="40" fill="#1a1200" opacity="0.4"/>
+
+    <!-- Support tower/gantry structure -->
+    <!-- Left gantry arm -->
+    <rect x="876" y="140" width="6" height="180" fill="#1a1000" opacity="0.9"/>
+    <rect x="852" y="148" width="30" height="4"  fill="#1a1000" opacity="0.9"/>
+    <rect x="852" y="170" width="30" height="4"  fill="#1a1000" opacity="0.8"/>
+    <rect x="852" y="192" width="30" height="4"  fill="#1a1000" opacity="0.8"/>
+    <rect x="852" y="214" width="30" height="4"  fill="#1a1000" opacity="0.7"/>
+    <rect x="852" y="240" width="30" height="3"  fill="#1a1000" opacity="0.7"/>
+    <rect x="852" y="264" width="30" height="3"  fill="#1a1000" opacity="0.6"/>
+    <!-- Right gantry arm -->
+    <rect x="1038" y="140" width="6" height="180" fill="#1a1000" opacity="0.9"/>
+    <rect x="1038" y="148" width="30" height="4"  fill="#1a1000" opacity="0.9"/>
+    <rect x="1038" y="170" width="30" height="4"  fill="#1a1000" opacity="0.8"/>
+    <rect x="1038" y="192" width="30" height="4"  fill="#1a1000" opacity="0.8"/>
+    <rect x="1038" y="214" width="30" height="4"  fill="#1a1000" opacity="0.7"/>
+    <rect x="1038" y="240" width="30" height="3"  fill="#1a1000" opacity="0.7"/>
+    <rect x="1038" y="264" width="30" height="3"  fill="#1a1000" opacity="0.6"/>
+
+    <!-- THE ROCKET — warm lit, main silhouette -->
+    <!-- Rocket body -->
+    <rect x="947" y="130" width="26" height="200" rx="3" fill="#2a1e08"/>
+    <!-- Rocket nose cone -->
+    <polygon points="960,100 947,145 973,145" fill="#2a2010"/>
+    <!-- Rocket body highlight (searchlight illumination on left side) -->
+    <rect x="947" y="130" width="8" height="200" rx="2" fill="#4a3010" opacity="0.6"/>
+    <!-- Engine bell -->
+    <rect x="942" y="326" width="36" height="14" rx="2" fill="#1a1206"/>
+    <!-- Engine glow / flame (ignition!) -->
+    <ellipse cx="960" cy="346" rx="20" ry="12" fill="#ff8f00" filter="url(#glow-amber)" opacity="0.9"/>
+    <ellipse cx="960" cy="348" rx="14" ry="8"  fill="#ffca28" opacity="0.95"/>
+    <ellipse cx="960" cy="350" rx="8"  ry="5"  fill="#fff9c4" opacity="1"/>
+    <!-- Engine glow lighting the pad base -->
+    <ellipse cx="960" cy="370" rx="40" ry="12" fill="#ff8f00" opacity="0.2" filter="url(#glow-amber)"/>
+
+    <!-- Searchlight beams sweeping -->
+    <g class="searchlight-1" filter="url(#searchlight-blur)">
+      <rect x="760" y="78" width="12" height="295" fill="url(#beam-grad)" opacity="0.5"/>
+    </g>
+    <g class="searchlight-2" filter="url(#searchlight-blur)">
+      <rect x="760" y="78" width="8" height="295" fill="url(#beam-grad)" opacity="0.35"/>
+    </g>
+
+    <!-- Steam/vapor clouds at base of rocket -->
+    <g class="steam-cloud-1" filter="url(#steam-blur)">
+      <ellipse cx="940" cy="340" rx="35" ry="14" fill="rgba(255,255,255,0.35)"/>
+    </g>
+    <g class="steam-cloud-2" filter="url(#steam-blur)">
+      <ellipse cx="975" cy="345" rx="28" ry="11" fill="rgba(255,255,255,0.28)"/>
+    </g>
+    <g class="steam-cloud-3" filter="url(#steam-blur)">
+      <ellipse cx="955" cy="350" rx="22" ry="10" fill="rgba(255,255,255,0.4)"/>
+    </g>
+    <!-- Static base steam cloud -->
+    <ellipse cx="960" cy="358" rx="55" ry="18" fill="rgba(200,200,200,0.18)" filter="url(#steam-blur)"/>
+
+  </rect>
+
+  <!-- Window inner frame details (structural crossbars) -->
+  <line x1="760" y1="225" x2="1160" y2="225" stroke="#1a2a1a" stroke-width="3" opacity="0.5"/>
+  <line x1="960" y1="78"  x2="960" y2="373" stroke="#1a2a1a" stroke-width="2" opacity="0.4"/>
+
+  <!-- Window glass sheen (top-left reflection) -->
+  <rect x="762" y="80" width="120" height="60" rx="2" fill="rgba(100,200,100,0.03)"/>
+
+</g><!-- /layer-backwall -->
+
+
+<!-- ================================================================
+     LAYER 3 — CONSOLE ROWS (perspective, back to front)
+     ================================================================ -->
+<g id="layer-consoles">
+
+  <!-- ── ROW 1 — Farthest back (smallest, near vanishing point) ── -->
+  <g id="row-1" opacity="0.75">
+    <!-- Perspective transformation approximation: scale down, shift up -->
+    <g transform="translate(420, 440) scale(1, 0.55)">
+      <!-- Console surface left section -->
+      <rect x="0"   y="0"   width="250" height="38" rx="2" fill="#111a11" stroke="#1a2a1a" stroke-width="1"/>
+      <!-- Console surface right section -->
+      <rect x="1070" y="0"  width="250" height="38" rx="2" fill="#111a11" stroke="#1a2a1a" stroke-width="1"/>
+    </g>
+    <!-- Left row of monitors (row 1 back) -->
+    <!-- Monitor 1 -->
+    <g class="mon-flicker-a">
+      <rect x="432" y="398" width="52" height="40" rx="1" fill="#001800" stroke="#003300" stroke-width="1"/>
+      <rect x="434" y="400" width="48" height="36" fill="#002800"/>
+      <!-- Oscilloscope wave on screen -->
+      <polyline points="436,420 442,414 448,424 454,412 460,422 466,416 472,420 478,416 480,418" fill="none" stroke="#00e676" stroke-width="1.5" opacity="0.9"/>
+      <rect x="434" y="400" width="48" height="36" fill="#00e676" opacity="0.03"/>
+    </g>
+    <rect x="432" y="398" width="52" height="40" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.06"/>
+    <!-- Monitor 2 -->
+    <g class="mon-flicker-b">
+      <rect x="494" y="398" width="52" height="40" rx="1" fill="#001800" stroke="#003300" stroke-width="1"/>
+      <rect x="496" y="400" width="48" height="36" fill="#002800"/>
+      <g font-family="'Share Tech Mono', monospace" font-size="5" fill="#00e676">
+        <text x="498" y="408">MFD OMEGA</text>
+        <text x="498" y="414">ALT: 0000</text>
+        <text x="498" y="420">SPD: 0000</text>
+        <text x="498" y="426">HDG: 090</text>
+        <text x="498" y="432">GRD: LOCK</text>
+      </g>
+    </g>
+    <rect x="494" y="398" width="52" height="40" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.05"/>
+
+    <!-- Right row (row 1 back) -->
+    <g class="mon-flicker-c">
+      <rect x="1374" y="398" width="52" height="40" rx="1" fill="#001800" stroke="#003300" stroke-width="1"/>
+      <rect x="1376" y="400" width="48" height="36" fill="#002800"/>
+      <polyline points="1378,418 1384,412 1390,422 1396,410 1402,420 1408,414 1414,418 1420,412 1422,416" fill="none" stroke="#00e676" stroke-width="1.5" opacity="0.9"/>
+    </g>
+    <rect x="1374" y="398" width="52" height="40" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.06"/>
+    <g>
+      <rect x="1436" y="398" width="52" height="40" rx="1" fill="#001800" stroke="#003300" stroke-width="1"/>
+      <rect x="1438" y="400" width="48" height="36" fill="#002800"/>
+      <g font-family="'Share Tech Mono', monospace" font-size="5" fill="#00e676">
+        <text x="1440" y="408">RADAR SYS</text>
+        <text x="1440" y="414">RNG: 82nmi</text>
+        <text x="1440" y="420">BRG: 180</text>
+        <text x="1440" y="426">LOCK:&gt; OK</text>
+      </g>
+    </g>
+    <rect x="1436" y="398" width="52" height="40" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.05"/>
+  </g>
+
+  <!-- ── ROW 2 — Second row back ── -->
+  <g id="row-2" opacity="0.85">
+    <!-- Console surface -->
+    <rect x="200" y="560" width="370" height="55" rx="2" fill="#0e1a0e" stroke="#182818" stroke-width="1.5"/>
+    <rect x="1350" y="560" width="370" height="55" rx="2" fill="#0e1a0e" stroke="#182818" stroke-width="1.5"/>
+    <!-- Under-lip slight highlight -->
+    <rect x="200" y="613" width="370" height="4" rx="1" fill="#001a00" opacity="0.5"/>
+    <rect x="1350" y="613" width="370" height="4" rx="1" fill="#001a00" opacity="0.5"/>
+
+    <!-- LEFT CONSOLES ROW 2 monitors -->
+    <!-- Mon A -->
+    <g class="mon-flicker-b">
+      <rect x="215" y="506" width="78" height="57" rx="1" fill="#001600" stroke="#003300" stroke-width="1.5"/>
+      <rect x="217" y="508" width="74" height="53" fill="#002000"/>
+      <!-- Bar graph display -->
+      <g fill="#00e676" opacity="0.8">
+        <rect x="220" y="545" width="6" height="12"/>
+        <rect x="229" y="538" width="6" height="19"/>
+        <rect x="238" y="530" width="6" height="27"/>
+        <rect x="247" y="542" width="6" height="15"/>
+        <rect x="256" y="526" width="6" height="31"/>
+        <rect x="265" y="535" width="6" height="22"/>
+        <rect x="274" y="548" width="6" height="9"/>
+        <rect x="283" y="534" width="6" height="23"/>
+      </g>
+      <line x1="219" y1="556" x2="289" y2="556" stroke="#004400" stroke-width="0.8" opacity="0.6"/>
+    </g>
+    <rect x="215" y="506" width="78" height="57" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.08"/>
+
+    <!-- Mon B -->
+    <g class="mon-flicker-c">
+      <rect x="305" y="506" width="78" height="57" rx="1" fill="#001600" stroke="#003300" stroke-width="1.5"/>
+      <rect x="307" y="508" width="74" height="53" fill="#002000"/>
+      <!-- Text terminal display -->
+      <g font-family="'Share Tech Mono', monospace" font-size="6" fill="#00e676" opacity="0.85">
+        <text x="310" y="518">FLIGHTCOMP v2.4</text>
+        <text x="310" y="527">GNC: NOMINAL</text>
+        <text x="310" y="536">PITCH:  +0.01</text>
+        <text x="310" y="545">ROLL:   -0.02</text>
+        <text x="310" y="554">YAW:    +0.00</text>
+        <text x="310" y="558" fill="#ffab00">LAUNCH PENDING</text>
+      </g>
+    </g>
+    <rect x="305" y="506" width="78" height="57" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.07"/>
+
+    <!-- Mon C -->
+    <g class="mon-flicker-a">
+      <rect x="395" y="506" width="78" height="57" rx="1" fill="#001600" stroke="#003300" stroke-width="1.5"/>
+      <rect x="397" y="508" width="74" height="53" fill="#002000"/>
+      <!-- Radar circle display -->
+      <circle cx="434" cy="534" r="20" fill="none" stroke="#00c853" stroke-width="1" opacity="0.5"/>
+      <circle cx="434" cy="534" r="14" fill="none" stroke="#009933" stroke-width="0.8" opacity="0.4"/>
+      <circle cx="434" cy="534" r="8"  fill="none" stroke="#007722" stroke-width="0.8" opacity="0.3"/>
+      <line x1="434" y1="514" x2="434" y2="554" stroke="#004400" stroke-width="0.8" opacity="0.3"/>
+      <line x1="414" y1="534" x2="454" y2="534" stroke="#004400" stroke-width="0.8" opacity="0.3"/>
+      <!-- Sweep line -->
+      <line x1="434" y1="534" x2="454" y2="520" stroke="#00e676" stroke-width="1.5" opacity="0.7"/>
+      <!-- Blip -->
+      <circle cx="446" cy="521" r="2" fill="#00e676" opacity="0.9"/>
+    </g>
+    <rect x="395" y="506" width="78" height="57" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.08"/>
+
+    <!-- Mon D (amber warning) -->
+    <g>
+      <rect x="485" y="506" width="78" height="57" rx="1" fill="#140800" stroke="#332200" stroke-width="1.5"/>
+      <rect x="487" y="508" width="74" height="53" fill="#200d00"/>
+      <g font-family="'Share Tech Mono', monospace" font-size="6.5" fill="#ffab00" opacity="0.9" text-anchor="middle">
+        <text x="526" y="527">!! ATTENTION !!</text>
+        <text x="526" y="538" font-size="5.5" fill="#ff8f00">HOLD STATUS ACTIVE</text>
+        <text x="526" y="548" font-size="5" fill="#ffca28">AWAITING</text>
+        <text x="526" y="556" font-size="5" fill="#ffca28">GO COMMAND</text>
+      </g>
+    </g>
+    <rect x="485" y="506" width="78" height="57" fill="#ffab00" filter="url(#glow-amber)" opacity="0.06"/>
+
+    <!-- RIGHT CONSOLES ROW 2 monitors -->
+    <!-- Mon E -->
+    <g class="mon-flicker-c">
+      <rect x="1365" y="506" width="78" height="57" rx="1" fill="#001600" stroke="#003300" stroke-width="1.5"/>
+      <rect x="1367" y="508" width="74" height="53" fill="#002000"/>
+      <g font-family="'Share Tech Mono', monospace" font-size="6" fill="#00e676" opacity="0.85">
+        <text x="1370" y="518">PROP SYS</text>
+        <text x="1370" y="527">LOX: 100%  |||</text>
+        <text x="1370" y="536">LH2:  98%  ||.</text>
+        <text x="1370" y="545">HEL:  95%  ||.</text>
+        <text x="1370" y="554">N2:  100%  |||</text>
+      </g>
+    </g>
+    <rect x="1365" y="506" width="78" height="57" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.07"/>
+
+    <!-- Mon F -->
+    <g class="mon-flicker-a">
+      <rect x="1455" y="506" width="78" height="57" rx="1" fill="#001600" stroke="#003300" stroke-width="1.5"/>
+      <rect x="1457" y="508" width="74" height="53" fill="#002000"/>
+      <!-- Waveform / EKG style -->
+      <polyline points="1459,535 1465,535 1468,524 1471,545 1474,535 1480,535 1483,520 1486,550 1489,535 1495,535 1498,528 1501,542 1504,535 1510,535 1513,522 1516,548 1519,535 1525,535" fill="none" stroke="#00e676" stroke-width="1.5" opacity="0.9"/>
+    </g>
+    <rect x="1455" y="506" width="78" height="57" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.08"/>
+
+    <!-- Mon G -->
+    <g class="mon-flicker-b">
+      <rect x="1545" y="506" width="78" height="57" rx="1" fill="#001600" stroke="#003300" stroke-width="1.5"/>
+      <rect x="1547" y="508" width="74" height="53" fill="#002000"/>
+      <g fill="#00e676" opacity="0.8">
+        <rect x="1550" y="545" width="6" height="15"/>
+        <rect x="1559" y="535" width="6" height="25"/>
+        <rect x="1568" y="528" width="6" height="32"/>
+        <rect x="1577" y="538" width="6" height="22"/>
+        <rect x="1586" y="524" width="6" height="36"/>
+        <rect x="1595" y="532" width="6" height="28"/>
+        <rect x="1604" y="545" width="6" height="15"/>
+      </g>
+    </g>
+    <rect x="1545" y="506" width="78" height="57" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.08"/>
+
+    <!-- Mon H (amber) -->
+    <g>
+      <rect x="1635" y="506" width="78" height="57" rx="1" fill="#140800" stroke="#332200" stroke-width="1.5"/>
+      <rect x="1637" y="508" width="74" height="53" fill="#200d00"/>
+      <g font-family="'Share Tech Mono', monospace" font-size="6" fill="#ffab00" opacity="0.9">
+        <text x="1640" y="518">COMM STATUS</text>
+        <text x="1640" y="528">TDRS-E: LOCK</text>
+        <text x="1640" y="537">GDS:    LOCK</text>
+        <text x="1640" y="546">HAM BND: ON</text>
+        <text x="1640" y="555" fill="#ff8f00">UHF: ACTIVE</text>
+      </g>
+    </g>
+    <rect x="1635" y="506" width="78" height="57" fill="#ffab00" filter="url(#glow-amber)" opacity="0.05"/>
+  </g>
+
+
+  <!-- ── ROW 3 — Third row (larger, closer) ── -->
+  <g id="row-3">
+    <!-- Console desk surfaces -->
+    <rect x="60"  y="710" width="580" height="75" rx="2" fill="#0f1c0f" stroke="#1c2e1c" stroke-width="2"/>
+    <rect x="1280" y="710" width="580" height="75" rx="2" fill="#0f1c0f" stroke="#1c2e1c" stroke-width="2"/>
+    <!-- console under-rim light seam -->
+    <rect x="60"  y="783" width="580" height="3" fill="#003300" opacity="0.4"/>
+    <rect x="1280" y="783" width="580" height="3" fill="#003300" opacity="0.4"/>
+    <!-- Console knee space -->
+    <rect x="60"  y="786" width="580" height="30" fill="#060e06"/>
+    <rect x="1280" y="786" width="580" height="30" fill="#060e06"/>
+
+    <!-- LEFT ROW 3 MONITORS -->
+    <!-- Large monitor 1 -->
+    <g class="mon-flicker-c">
+      <rect x="75"  y="640" width="110" height="76" rx="2" fill="#001800" stroke="#004400" stroke-width="2"/>
+      <rect x="77"  y="642" width="106" height="72" fill="#002200"/>
+      <!-- Multi-line telemetry display -->
+      <g font-family="'Share Tech Mono', monospace" font-size="7.5" fill="#00e676" opacity="0.9">
+        <text x="80" y="655">TRAJECTORY</text>
+        <text x="80" y="666">ALT:   0.00km</text>
+        <text x="80" y="676">DWNRNG: 0.0km</text>
+        <text x="80" y="686">VEL:   0.0 m/s</text>
+        <text x="80" y="696">MACH:  0.00</text>
+        <text x="80" y="706">Q:     0.0 Pa</text>
+        <text x="80" y="710" fill="#00c853" font-size="6.5">LAUNCH COMMIT</text>
+      </g>
+    </g>
+    <rect x="75" y="640" width="110" height="76" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.09"/>
+
+    <!-- Large monitor 2 -->
+    <g class="mon-flicker-a">
+      <rect x="200" y="640" width="110" height="76" rx="2" fill="#001800" stroke="#004400" stroke-width="2"/>
+      <rect x="202" y="642" width="106" height="72" fill="#002200"/>
+      <!-- Large waveform -->
+      <polyline points="204,690 212,678 220,695 228,672 236,688 244,680 252,694 260,676 268,690 276,682 284,696 292,674 300,688 308,692" fill="none" stroke="#00e676" stroke-width="2" opacity="0.9"/>
+      <line x1="204" y1="690" x2="308" y2="690" stroke="#004400" stroke-width="0.8" opacity="0.4"/>
+      <text x="204" y="652" font-family="'Share Tech Mono', monospace" font-size="7" fill="#00a843">ENG CHAMBER P</text>
+    </g>
+    <rect x="200" y="640" width="110" height="76" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.09"/>
+
+    <!-- Large monitor 3 -->
+    <g class="mon-flicker-b">
+      <rect x="325" y="640" width="110" height="76" rx="2" fill="#001800" stroke="#004400" stroke-width="2"/>
+      <rect x="327" y="642" width="106" height="72" fill="#002200"/>
+      <!-- Schematic/diagram style -->
+      <g stroke="#00c853" stroke-width="1.2" fill="none" opacity="0.8">
+        <!-- Simple rocket schematic -->
+        <polygon points="380,652 372,668 388,668" stroke="#00e676" fill="none"/>
+        <rect x="372" y="668" width="16" height="26"/>
+        <rect x="368" y="690" width="24" height="8"/>
+        <!-- Flow lines -->
+        <line x1="380" y1="694" x2="380" y2="706"/>
+        <circle cx="380" cy="708" r="3"/>
+      </g>
+      <text x="327" y="714" font-family="'Share Tech Mono', monospace" font-size="6" fill="#00a843">STAGE-1 SCHM</text>
+    </g>
+    <rect x="325" y="640" width="110" height="76" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.08"/>
+
+    <!-- Large monitor 4 — amber warning board -->
+    <g>
+      <rect x="450" y="640" width="110" height="76" rx="2" fill="#140800" stroke="#553300" stroke-width="2"/>
+      <rect x="452" y="642" width="106" height="72" fill="#1a0c00"/>
+      <g font-family="'Share Tech Mono', monospace" fill="#ffab00">
+        <text x="455" y="657" font-size="8">EVENT LOG</text>
+        <text x="455" y="669" font-size="7" opacity="0.9">T-10:00 GO POLL</text>
+        <text x="455" y="679" font-size="7" opacity="0.9">T-09:00 TANKS ARM</text>
+        <text x="455" y="689" font-size="7" opacity="0.9">T-05:00 PRESSRZ</text>
+        <text x="455" y="699" font-size="7" opacity="0.9">T-01:00 TERMINAL</text>
+        <text x="455" y="709" font-size="7" fill="#ff8f00">T-00:47 HOLD REL</text>
+      </g>
+    </g>
+    <rect x="450" y="640" width="110" height="76" fill="#ffab00" filter="url(#glow-amber)" opacity="0.07"/>
+
+    <!-- RIGHT ROW 3 MONITORS -->
+    <!-- Large monitor 5 -->
+    <g class="mon-flicker-a">
+      <rect x="1295" y="640" width="110" height="76" rx="2" fill="#001800" stroke="#004400" stroke-width="2"/>
+      <rect x="1297" y="642" width="106" height="72" fill="#002200"/>
+      <g font-family="'Share Tech Mono', monospace" font-size="7.5" fill="#00e676" opacity="0.9">
+        <text x="1300" y="655">ENVIRONMENTAL</text>
+        <text x="1300" y="666">TEMP:  -183C</text>
+        <text x="1300" y="676">PRES: 14.7psi</text>
+        <text x="1300" y="686">HUMID:    42%</text>
+        <text x="1300" y="696">WIND:    3knt</text>
+        <text x="1300" y="706">SHEAR:    OK</text>
+        <text x="1300" y="713" fill="#00c853" font-size="6">ALL GO</text>
+      </g>
+    </g>
+    <rect x="1295" y="640" width="110" height="76" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.09"/>
+
+    <!-- Large monitor 6 -->
+    <g class="mon-flicker-c">
+      <rect x="1420" y="640" width="110" height="76" rx="2" fill="#001800" stroke="#004400" stroke-width="2"/>
+      <rect x="1422" y="642" width="106" height="72" fill="#002200"/>
+      <!-- Bar chart -->
+      <g fill="#00e676" opacity="0.8">
+        <rect x="1425" y="696" width="9" height="18"/>
+        <rect x="1437" y="684" width="9" height="30"/>
+        <rect x="1449" y="672" width="9" height="42"/>
+        <rect x="1461" y="679" width="9" height="35"/>
+        <rect x="1473" y="668" width="9" height="46"/>
+        <rect x="1485" y="676" width="9" height="38"/>
+        <rect x="1497" y="688" width="9" height="26"/>
+        <rect x="1509" y="694" width="9" height="20"/>
+      </g>
+      <line x1="1424" y1="714" x2="1520" y2="714" stroke="#004400" stroke-width="0.8" opacity="0.5"/>
+      <text x="1424" y="652" font-family="'Share Tech Mono', monospace" font-size="7" fill="#00a843">COMM TRAFFIC</text>
+    </g>
+    <rect x="1420" y="640" width="110" height="76" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.08"/>
+
+    <!-- Large monitor 7 -->
+    <g class="mon-flicker-b">
+      <rect x="1545" y="640" width="110" height="76" rx="2" fill="#001800" stroke="#004400" stroke-width="2"/>
+      <rect x="1547" y="642" width="106" height="72" fill="#002200"/>
+      <!-- Waveform -->
+      <polyline points="1549,688 1557,676 1565,694 1573,670 1581,686 1589,678 1597,692 1605,672 1613,686 1621,680 1629,692 1637,668 1645,684 1651,690" fill="none" stroke="#00e676" stroke-width="2" opacity="0.9"/>
+      <text x="1549" y="652" font-family="'Share Tech Mono', monospace" font-size="7" fill="#00a843">TELEMETRY SIG</text>
+    </g>
+    <rect x="1545" y="640" width="110" height="76" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.09"/>
+
+    <!-- Large monitor 8 (amber) -->
+    <g>
+      <rect x="1670" y="640" width="110" height="76" rx="2" fill="#140800" stroke="#553300" stroke-width="2"/>
+      <rect x="1672" y="642" width="106" height="72" fill="#1a0c00"/>
+      <g font-family="'Share Tech Mono', monospace" fill="#ffab00">
+        <text x="1675" y="657" font-size="8">SAFETY SYS</text>
+        <text x="1675" y="669" font-size="7" opacity="0.9">FLIGHT TERM: ARM</text>
+        <text x="1675" y="679" font-size="7" opacity="0.9">SAFE: OFF</text>
+        <text x="1675" y="689" font-size="7" opacity="0.9">C-BAND: LOCK</text>
+        <text x="1675" y="699" font-size="7" opacity="0.9">GPS:    TRACK</text>
+        <text x="1675" y="709" font-size="7" fill="#00e676">RSO: GO</text>
+      </g>
+    </g>
+    <rect x="1670" y="640" width="110" height="76" fill="#ffab00" filter="url(#glow-amber)" opacity="0.06"/>
+  </g>
+
+  <!-- ── ROW 4 — FOREGROUND ROW (largest, closest) ── -->
+  <g id="row-4">
+    <!-- Console desk surface (very large, bottom area) -->
+    <rect x="0"   y="870" width="680" height="100" rx="2" fill="#111f11" stroke="#202e20" stroke-width="2"/>
+    <rect x="1240" y="870" width="680" height="100" rx="2" fill="#111f11" stroke="#202e20" stroke-width="2"/>
+    <!-- Desk under-rim illumination strip -->
+    <rect x="0"   y="968" width="680" height="4" fill="#003300" opacity="0.6"/>
+    <rect x="1240" y="968" width="680" height="4" fill="#003300" opacity="0.6"/>
+
+    <!-- LEFT ROW 4 MONITORS (large, close, tall) -->
+    <!-- Monitor A -->
+    <g class="mon-flicker-b">
+      <rect x="18"  y="760" width="148" height="115" rx="2" fill="#001a00" stroke="#005500" stroke-width="2"/>
+      <rect x="20"  y="762" width="144" height="111" fill="#002800"/>
+      <!-- Complex display -->
+      <g font-family="'Share Tech Mono', monospace" fill="#00e676">
+        <text x="24" y="778" font-size="9">FLIGHT DIRECTOR</text>
+        <text x="24" y="792" font-size="8">STATUS: GO</text>
+        <text x="24" y="804" font-size="8">POLL RESULT:</text>
+        <text x="24" y="816" font-size="7">GUIDO......... GO</text>
+        <text x="24" y="827" font-size="7">FIDO.......... GO</text>
+        <text x="24" y="838" font-size="7">EECOM......... GO</text>
+        <text x="24" y="849" font-size="7">GNC........... GO</text>
+        <text x="24" y="860" font-size="7">RETRO......... GO</text>
+        <text x="24" y="869" font-size="8.5" fill="#00ff8c">LAUNCH GO!</text>
+      </g>
+    </g>
+    <rect x="18" y="760" width="148" height="115" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.12"/>
+
+    <!-- Monitor B -->
+    <g class="mon-flicker-a">
+      <rect x="182" y="760" width="148" height="115" rx="2" fill="#001a00" stroke="#005500" stroke-width="2"/>
+      <rect x="184" y="762" width="144" height="111" fill="#002800"/>
+      <!-- Large waveform / sine wave -->
+      <polyline points="186,830 196,810 206,848 216,806 226,840 236,818 246,844 256,808 266,836 276,820 286,846 296,810 306,838 316,824" fill="none" stroke="#00e676" stroke-width="2.5" opacity="0.95"/>
+      <line x1="186" y1="830" x2="328" y2="830" stroke="#004400" stroke-width="1" opacity="0.4"/>
+      <text x="186" y="778" font-family="'Share Tech Mono', monospace" font-size="9" fill="#00a843">MAIN ENG PERF</text>
+      <text x="186" y="862" font-family="'Share Tech Mono', monospace" font-size="7" fill="#00c853">3 × ENGINES NOMINAL</text>
+    </g>
+    <rect x="182" y="760" width="148" height="115" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.11"/>
+
+    <!-- Monitor C (amber/warning) -->
+    <g>
+      <rect x="346" y="760" width="148" height="115" rx="2" fill="#180a00" stroke="#664400" stroke-width="2"/>
+      <rect x="348" y="762" width="144" height="111" fill="#220e00"/>
+      <g font-family="'Share Tech Mono', monospace" fill="#ffab00">
+        <text x="352" y="778" font-size="9">RANGE SAFETY</text>
+        <text x="352" y="794" font-size="8">CORRIDOR:</text>
+        <!-- Corridor visualization -->
+        <text x="352" y="810" font-size="7">NOMINAL FLIGHT</text>
+        <text x="352" y="822" font-size="7">PATH CONFIRMED</text>
+        <text x="352" y="836" font-size="7">DESTRUCT ARM:</text>
+        <text x="352" y="848" font-size="9" fill="#ff8f00">ARMED</text>
+        <text x="352" y="860" font-size="7">AUTO DESTRUCT:</text>
+        <text x="352" y="869" font-size="8" fill="#ff5722">SAFED</text>
+      </g>
+    </g>
+    <rect x="346" y="760" width="148" height="115" fill="#ffab00" filter="url(#glow-amber)" opacity="0.08"/>
+
+    <!-- Monitor D (green) -->
+    <g class="mon-flicker-c">
+      <rect x="510" y="760" width="148" height="115" rx="2" fill="#001a00" stroke="#005500" stroke-width="2"/>
+      <rect x="512" y="762" width="144" height="111" fill="#002800"/>
+      <g font-family="'Share Tech Mono', monospace" fill="#00e676">
+        <text x="516" y="778" font-size="9">POWER SYSTEMS</text>
+        <text x="516" y="794" font-size="8">FUEL CELLS: OK</text>
+        <text x="516" y="808" font-size="7">CELL A: 32.4V</text>
+        <text x="516" y="820" font-size="7">CELL B: 32.1V</text>
+        <text x="516" y="832" font-size="7">BATT 1: 100%</text>
+        <text x="516" y="844" font-size="7">BATT 2:  99%</text>
+        <text x="516" y="856" font-size="7">PYROS: ARMED</text>
+        <text x="516" y="869" font-size="8" fill="#00ff8c">PWR: NOMINAL</text>
+      </g>
+    </g>
+    <rect x="510" y="760" width="148" height="115" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.12"/>
+
+    <!-- RIGHT ROW 4 MONITORS -->
+    <!-- Monitor E -->
+    <g class="mon-flicker-a">
+      <rect x="1258" y="760" width="148" height="115" rx="2" fill="#001a00" stroke="#005500" stroke-width="2"/>
+      <rect x="1260" y="762" width="144" height="111" fill="#002800"/>
+      <g font-family="'Share Tech Mono', monospace" fill="#00e676">
+        <text x="1264" y="778" font-size="9">GUIDANCE NAV</text>
+        <text x="1264" y="794" font-size="8">MODE: AUTO</text>
+        <text x="1264" y="808" font-size="7">PITCH: +90.0</text>
+        <text x="1264" y="820" font-size="7">AZM:  089.4</text>
+        <text x="1264" y="832" font-size="7">TGT INS: OK</text>
+        <text x="1264" y="844" font-size="7">DOPPLER: LOCK</text>
+        <text x="1264" y="856" font-size="7">STAR TRCK: ON</text>
+        <text x="1264" y="869" font-size="8" fill="#00ff8c">GNC: GO</text>
+      </g>
+    </g>
+    <rect x="1258" y="760" width="148" height="115" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.12"/>
+
+    <!-- Monitor F -->
+    <g class="mon-flicker-b">
+      <rect x="1422" y="760" width="148" height="115" rx="2" fill="#001a00" stroke="#005500" stroke-width="2"/>
+      <rect x="1424" y="762" width="144" height="111" fill="#002800"/>
+      <!-- Radar / scope style -->
+      <circle cx="1496" cy="822" r="44" fill="none" stroke="#00c853" stroke-width="1.5" opacity="0.5"/>
+      <circle cx="1496" cy="822" r="32" fill="none" stroke="#009933" stroke-width="1" opacity="0.35"/>
+      <circle cx="1496" cy="822" r="18" fill="none" stroke="#007722" stroke-width="1" opacity="0.25"/>
+      <line x1="1496" y1="778" x2="1496" y2="866" stroke="#004400" stroke-width="1" opacity="0.3"/>
+      <line x1="1452" y1="822" x2="1540" y2="822" stroke="#004400" stroke-width="1" opacity="0.3"/>
+      <!-- Sweep -->
+      <line x1="1496" y1="822" x2="1534" y2="794" stroke="#00e676" stroke-width="2" opacity="0.8"/>
+      <!-- Blips -->
+      <circle cx="1520" cy="800" r="3" fill="#00e676" filter="url(#glow-green-med)" opacity="0.9"/>
+      <circle cx="1480" cy="840" r="2" fill="#00e676" opacity="0.7"/>
+      <text x="1424" y="778" font-family="'Share Tech Mono', monospace" font-size="8" fill="#00a843">PHASED ARRAY</text>
+    </g>
+    <rect x="1422" y="760" width="148" height="115" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.11"/>
+
+    <!-- Monitor G (amber) -->
+    <g>
+      <rect x="1586" y="760" width="148" height="115" rx="2" fill="#180a00" stroke="#664400" stroke-width="2"/>
+      <rect x="1588" y="762" width="144" height="111" fill="#220e00"/>
+      <g font-family="'Share Tech Mono', monospace" fill="#ffab00">
+        <text x="1592" y="778" font-size="9">PAD STATUS</text>
+        <text x="1592" y="794" font-size="8">UMBILICAL:</text>
+        <text x="1592" y="806" font-size="8" fill="#ff8f00">ARMED RETRACT</text>
+        <text x="1592" y="820" font-size="8">HOLD DOWN:</text>
+        <text x="1592" y="832" font-size="8" fill="#ff5722">RELEASE SEQ</text>
+        <text x="1592" y="846" font-size="8">T-5s IGNIT</text>
+        <text x="1592" y="858" font-size="8" fill="#ffca28">LIFTOFF IMMNNT</text>
+        <text x="1592" y="869" font-size="7.5" fill="#ff8f00">ALL CLEAR PAD</text>
+      </g>
+    </g>
+    <rect x="1586" y="760" width="148" height="115" fill="#ffab00" filter="url(#glow-amber)" opacity="0.08"/>
+
+    <!-- Monitor H -->
+    <g class="mon-flicker-c">
+      <rect x="1750" y="760" width="148" height="115" rx="2" fill="#001a00" stroke="#005500" stroke-width="2"/>
+      <rect x="1752" y="762" width="144" height="111" fill="#002800"/>
+      <g font-family="'Share Tech Mono', monospace" fill="#00e676">
+        <text x="1756" y="778" font-size="9">TRACKING</text>
+        <text x="1756" y="794" font-size="8">DOWNRANGE TRK</text>
+        <text x="1756" y="808" font-size="7">KSC MAIN: LCK</text>
+        <text x="1756" y="820" font-size="7">ANTIGUA:  LCK</text>
+        <text x="1756" y="832" font-size="7">ASCENSION: ST</text>
+        <text x="1756" y="844" font-size="7">INDIAN OC: ST</text>
+        <text x="1756" y="856" font-size="7">USNS RANGE: R</text>
+        <text x="1756" y="869" font-size="8" fill="#00ff8c">TRK: NOMINAL</text>
+      </g>
+    </g>
+    <rect x="1750" y="760" width="148" height="115" fill="#00e676" filter="url(#glow-green-soft)" opacity="0.12"/>
+  </g>
+
+</g><!-- /layer-consoles -->
+
+
+<!-- ================================================================
+     LAYER 4 — SILHOUETTED ENGINEERS
+     ================================================================ -->
+<g id="layer-silhouettes">
+
+  <!-- ROW 1 silhouettes (very small, far back) -->
+  <!-- Silhouette A — back left, hunched -->
+  <g transform="translate(456, 392)">
+    <ellipse cx="12" cy="3"  rx="9"  ry="8"  fill="black" opacity="0.95"/>
+    <rect    x="5"  y="9"   width="14" height="22" rx="3" fill="black" opacity="0.95"/>
+    <rect    x="15" y="16"  width="12" height="4"  rx="2" fill="black" opacity="0.9"/>
+    <!-- Edge light (thin green line on left) -->
+    <line x1="5" y1="3" x2="5" y2="31" stroke="#00e676" stroke-width="1" opacity="0.35"/>
+  </g>
+
+  <!-- Silhouette B — back left, leaning -->
+  <g transform="translate(514, 390)">
+    <ellipse cx="12" cy="2"  rx="9"  ry="8"  fill="black" opacity="0.95"/>
+    <rect    x="6"  y="8"   width="14" height="24" rx="3" fill="black" opacity="0.95"/>
+    <rect    x="-2" y="14"  width="12" height="3"  rx="2" fill="black" opacity="0.9"/>
+    <line x1="20" y1="2" x2="20" y2="32" stroke="#00e676" stroke-width="1" opacity="0.3"/>
+  </g>
+
+  <!-- Silhouette C — back right -->
+  <g transform="translate(1390, 392)">
+    <ellipse cx="12" cy="3"  rx="9"  ry="8"  fill="black" opacity="0.95"/>
+    <rect    x="5"  y="9"   width="14" height="22" rx="3" fill="black" opacity="0.95"/>
+    <rect    x="16" y="15"  width="12" height="4"  rx="2" fill="black" opacity="0.9"/>
+    <line x1="5" y1="3" x2="5" y2="31" stroke="#00e676" stroke-width="1" opacity="0.3"/>
+  </g>
+
+  <!-- ROW 2 silhouettes (medium size) -->
+  <!-- Silhouette D — leaning hard left -->
+  <g transform="translate(224, 515)">
+    <ellipse cx="16" cy="4"  rx="13"  ry="11"  fill="black" opacity="0.97"/>
+    <rect    x="6"  y="13"  width="20" height="34" rx="4" fill="black" opacity="0.97"/>
+    <rect    x="23" y="24"  width="18" height="5"  rx="2" fill="black" opacity="0.92"/>
+    <!-- Typing hands -->
+    <rect    x="38" y="28"  width="10" height="3"  rx="1" fill="black" opacity="0.9"/>
+    <line x1="6" y1="4" x2="6" y2="47" stroke="#00e676" stroke-width="1.5" opacity="0.35"/>
+  </g>
+
+  <!-- Silhouette E — looking up toward screen -->
+  <g transform="translate(320, 508)">
+    <!-- Head slightly tilted up -->
+    <ellipse cx="16" cy="5"  rx="13"  ry="11"  fill="black" opacity="0.97" transform="rotate(-8, 16, 5)"/>
+    <rect    x="7"  y="13"  width="18" height="34" rx="4" fill="black" opacity="0.97"/>
+    <line x1="25" y1="4" x2="25" y2="47" stroke="#00e676" stroke-width="1.5" opacity="0.3"/>
+  </g>
+
+  <!-- Silhouette F — right side, hunched -->
+  <g transform="translate(1398, 512)">
+    <ellipse cx="14" cy="5"  rx="12"  ry="10"  fill="black" opacity="0.97"/>
+    <rect    x="5"  y="13"  width="18" height="33" rx="4" fill="black" opacity="0.97"/>
+    <rect    x="-10" y="22" width="18" height="4"  rx="2" fill="black" opacity="0.9"/>
+    <line x1="5" y1="5" x2="5" y2="46" stroke="#00e676" stroke-width="1.5" opacity="0.35"/>
+  </g>
+
+  <!-- Silhouette G — right side, upright -->
+  <g transform="translate(1488, 506)">
+    <ellipse cx="14" cy="5"  rx="12"  ry="10"  fill="black" opacity="0.97"/>
+    <rect    x="5"  y="13"  width="18" height="34" rx="4" fill="black" opacity="0.97"/>
+    <rect    x="20" y="20"  width="16" height="4"  rx="2" fill="black" opacity="0.9"/>
+    <line x1="23" y1="5" x2="23" y2="47" stroke="#00e676" stroke-width="1.5" opacity="0.28"/>
+  </g>
+
+  <!-- ROW 3 silhouettes (larger) -->
+  <!-- Silhouette H — left, seated, leaning very forward -->
+  <g transform="translate(96, 638)">
+    <ellipse cx="18" cy="5"  rx="16"  ry="14"  fill="black" opacity="0.98"/>
+    <rect    x="6"  y="16"  width="24" height="46" rx="5" fill="black" opacity="0.98"/>
+    <rect    x="27" y="30"  width="24" height="6"  rx="3" fill="black" opacity="0.93"/>
+    <rect    x="48" y="33"  width="14" height="5"  rx="2" fill="black" opacity="0.9"/>
+    <line x1="6" y1="5" x2="6" y2="62" stroke="#00e676" stroke-width="2" opacity="0.4"/>
+  </g>
+
+  <!-- Silhouette I — center-left, relaxed lean back -->
+  <g transform="translate(234, 630)">
+    <ellipse cx="18" cy="4"  rx="15"  ry="13"  fill="black" opacity="0.98" transform="rotate(6, 18, 4)"/>
+    <rect    x="7"  y="15"  width="22" height="46" rx="5" fill="black" opacity="0.98"/>
+    <line x1="29" y1="4" x2="29" y2="61" stroke="#00e676" stroke-width="2" opacity="0.32"/>
+  </g>
+
+  <!-- Silhouette J — far right, seated standard -->
+  <g transform="translate(1404, 638)">
+    <ellipse cx="18" cy="5"  rx="16"  ry="14"  fill="black" opacity="0.98"/>
+    <rect    x="6"  y="16"  width="24" height="46" rx="5" fill="black" opacity="0.98"/>
+    <rect    x="28" y="28"  width="22" height="6"  rx="3" fill="black" opacity="0.93"/>
+    <line x1="6" y1="5" x2="6" y2="62" stroke="#00e676" stroke-width="2" opacity="0.38"/>
+  </g>
+
+  <!-- Silhouette K — far right, hunched very close to screen -->
+  <g transform="translate(1506, 630)">
+    <ellipse cx="16" cy="5"  rx="14"  ry="12"  fill="black" opacity="0.98" transform="rotate(-5, 16, 5)"/>
+    <rect    x="6"  y="15"  width="20" height="46" rx="5" fill="black" opacity="0.98"/>
+    <line x1="26" y1="5" x2="26" y2="61" stroke="#00e676" stroke-width="2" opacity="0.28"/>
+  </g>
+
+  <!-- ROW 4 silhouettes — FOREGROUND (largest) -->
+  <!-- Silhouette L — hard left, big presence -->
+  <g transform="translate(36, 755)">
+    <ellipse cx="24" cy="6"  rx="21"  ry="18"  fill="black" opacity="0.99"/>
+    <rect    x="8"  y="20"  width="32" height="68" rx="7" fill="black" opacity="0.99"/>
+    <!-- Shoulders wider (jacket shape) -->
+    <polygon points="0,28 8,22 8,42 0,42" fill="black" opacity="0.99"/>
+    <polygon points="40,22 48,28 48,42 40,42" fill="black" opacity="0.99"/>
+    <rect    x="37" y="40"  width="28" height="7"  rx="3" fill="black" opacity="0.95"/>
+    <!-- Edge rim light -->
+    <line x1="8" y1="6" x2="8" y2="88" stroke="#00e676" stroke-width="2.5" opacity="0.45"/>
+    <!-- Very slight green-lit cheek/neck -->
+    <ellipse cx="9" cy="12" rx="3" ry="6" fill="#003310" opacity="0.3"/>
+  </g>
+
+  <!-- Silhouette M — second from left, standard seated -->
+  <g transform="translate(200, 748)">
+    <ellipse cx="22" cy="6"  rx="19"  ry="16"  fill="black" opacity="0.99"/>
+    <rect    x="7"  y="19"  width="30" height="68" rx="6" fill="black" opacity="0.99"/>
+    <rect    x="35" y="38"  width="26" height="7"  rx="3" fill="black" opacity="0.95"/>
+    <line x1="37" y1="6" x2="37" y2="87" stroke="#00e676" stroke-width="2" opacity="0.35"/>
+  </g>
+
+  <!-- Silhouette N — right side, similarly seated -->
+  <g transform="translate(1280, 755)">
+    <ellipse cx="22" cy="6"  rx="19"  ry="16"  fill="black" opacity="0.99"/>
+    <rect    x="7"  y="19"  width="30" height="68" rx="6" fill="black" opacity="0.99"/>
+    <rect    x="-12" y="38" width="22" height="7"  rx="3" fill="black" opacity="0.95"/>
+    <line x1="7" y1="6" x2="7" y2="87" stroke="#00e676" stroke-width="2.5" opacity="0.42"/>
+    <ellipse cx="37" cy="14" rx="3" ry="6" fill="#003310" opacity="0.25"/>
+  </g>
+
+  <!-- Silhouette O — far right second -->
+  <g transform="translate(1440, 748)">
+    <ellipse cx="20" cy="6"  rx="18"  ry="15"  fill="black" opacity="0.99"/>
+    <rect    x="6"  y="19"  width="28" height="68" rx="6" fill="black" opacity="0.99"/>
+    <rect    x="32" y="36"  width="24" height="7"  rx="3" fill="black" opacity="0.95"/>
+    <line x1="6" y1="6" x2="6" y2="87" stroke="#00e676" stroke-width="2" opacity="0.35"/>
+  </g>
+
+  <!-- ═══ THE STANDING ENGINEER — foreground center-left focal figure ═══ -->
+  <!-- This person is standing, looking toward the main screen, holding a clipboard -->
+  <g id="standing-engineer" transform="translate(660, 570)">
+    <!-- Body cast with green edge light from the console to their right -->
+    <!-- Legs -->
+    <rect x="12" y="200" width="18" height="80" rx="4" fill="black" opacity="0.99"/>
+    <rect x="32" y="200" width="18" height="80" rx="4" fill="black" opacity="0.99"/>
+    <!-- Torso -->
+    <rect x="6"  y="90"  width="52" height="116" rx="8" fill="black" opacity="0.99"/>
+    <!-- Shoulders (jacket) -->
+    <polygon points="-4,100 6,92 6,120 -4,118" fill="black" opacity="0.99"/>
+    <polygon points="58,92 68,100 68,118 58,120" fill="black" opacity="0.99"/>
+    <!-- Head -->
+    <ellipse cx="32" cy="74" rx="26" ry="28" fill="black" opacity="0.99"/>
+    <!-- Neck -->
+    <rect x="24" y="96"  width="16" height="12" rx="2" fill="black" opacity="0.99"/>
+
+    <!-- Arm holding clipboard — extended to side/front -->
+    <rect x="58" y="110" width="12" height="60" rx="5" fill="black" opacity="0.99"
+          transform="rotate(25, 64, 115)"/>
+    <!-- Clipboard shape -->
+    <rect x="72" y="128" width="32" height="42" rx="3" fill="black" opacity="0.99"/>
+    <!-- Clipboard clip at top -->
+    <rect x="82" y="126" width="12" height="5"  rx="2" fill="black" opacity="0.99"/>
+    <!-- Clipboard subtle paper lines (lit from side, very faint) -->
+    <g opacity="0.18" fill="none" stroke="#00e676" stroke-width="0.8">
+      <line x1="76" y1="136" x2="100" y2="136"/>
+      <line x1="76" y1="142" x2="100" y2="142"/>
+      <line x1="76" y1="148" x2="100" y2="148"/>
+      <line x1="76" y1="154" x2="100" y2="154"/>
+      <line x1="76" y1="160" x2="100" y2="160"/>
+    </g>
+
+    <!-- Edge lighting — green from the monitor bank to their left -->
+    <line x1="6" y1="74" x2="6" y2="275" stroke="#00e676" stroke-width="3" opacity="0.5"/>
+    <!-- Very soft green-lit side of head/neck -->
+    <ellipse cx="8" cy="70" rx="5" ry="16" fill="#002a10" opacity="0.4"/>
+    <ellipse cx="7" cy="110" rx="4" ry="30" fill="#002010" opacity="0.3"/>
+  </g>
+
+</g><!-- /layer-silhouettes -->
+
+
+<!-- ================================================================
+     LAYER 5 — FLOOR REFLECTIONS
+     ================================================================ -->
+<g id="layer-floor">
+
+  <!-- Floor base (dark concrete) -->
+  <rect x="0" y="900" width="1920" height="180" fill="url(#floor-grad)"/>
+  <rect x="0" y="900" width="1920" height="180" fill="url(#floor-texture)" opacity="0.3"/>
+
+  <!-- Main floor reflection from row 4 monitors (long streaks) -->
+  <!-- Left side reflection streak -->
+  <ellipse cx="320" cy="980" rx="260" ry="18" fill="#00e676" opacity="0.06" filter="url(#glow-green-soft)"/>
+  <!-- Right side reflection streak -->
+  <ellipse cx="1600" cy="980" rx="260" ry="18" fill="#00e676" opacity="0.06" filter="url(#glow-green-soft)"/>
+  <!-- Center very faint (from main screen glow) -->
+  <ellipse cx="960" cy="1020" rx="200" ry="12" fill="#00e676" opacity="0.03" filter="url(#glow-green-soft)"/>
+
+  <!-- Floor light puddles under consoles (row 3) -->
+  <ellipse cx="250" cy="840"  rx="180" ry="14" fill="#00e676" opacity="0.05"/>
+  <ellipse cx="1670" cy="840" rx="180" ry="14" fill="#00e676" opacity="0.05"/>
+
+  <!-- Floor light puddles under consoles (row 2) -->
+  <ellipse cx="380" cy="690"  rx="130" ry="10" fill="#00e676" opacity="0.04"/>
+  <ellipse cx="1540" cy="690" rx="130" ry="10" fill="#00e676" opacity="0.04"/>
+
+  <!-- Amber puddle under warning monitor -->
+  <ellipse cx="485" cy="840"  rx="80" ry="8" fill="#ffab00" opacity="0.03"/>
+  <ellipse cx="1636" cy="840" rx="80" ry="8" fill="#ffab00" opacity="0.03"/>
+
+</g><!-- /layer-floor -->
+
+
+<!-- ================================================================
+     LAYER 6 — ATMOSPHERIC OVERLAY
+     ================================================================ -->
+<g id="layer-atmosphere">
+
+  <!-- Film grain filter applied to a full-rect overlay -->
+  <rect width="1920" height="1080" fill="rgba(0,12,0,0.0)" filter="url(#film-grain)" opacity="0.08" class="ambient-haze"/>
+
+  <!-- Global green tint haze (very faint) -->
+  <rect width="1920" height="1080" fill="#001800" opacity="0.08" class="ambient-haze"/>
+
+  <!-- Deep corner darkening -->
+  <radialGradient id="corner-dark" cx="0%" cy="0%" r="70%">
+    <stop offset="40%" stop-color="transparent"/>
+    <stop offset="100%" stop-color="rgba(0,0,0,0.7)"/>
+  </radialGradient>
+
+  <!-- Extra mid-scene atmospheric haze (adds depth to rows) -->
+  <!-- Distance haze between row 1 and 2 -->
+  <rect x="0" y="420" width="1920" height="60" fill="#010800" opacity="0.25"/>
+  <!-- Distance haze between row 2 and 3 -->
+  <rect x="0" y="600" width="1920" height="50" fill="#010800" opacity="0.18"/>
+  <!-- Distance haze between row 3 and 4 (perspective fog) -->
+  <rect x="0" y="780" width="1920" height="40" fill="#010800" opacity="0.12"/>
+
+</g><!-- /layer-atmosphere -->
+
+</svg>
+<!-- END SVG -->
+
+<!-- Scanline overlay (CSS) -->
+<div class="scanlines"></div>
+
+<!-- Vignette overlay (CSS) -->
+<div class="vignette"></div>
+
+<!-- Branding label -->
+<div class="branding">
+  <div class="title">MOON IDLE</div>
+  <div class="subtitle">Mission Control &mdash; Concept Art v1</div>
+</div>
+
+</div><!-- /canvas-wrapper -->
+</body>
+</html>

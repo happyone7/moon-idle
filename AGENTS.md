@@ -23,6 +23,7 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 - comfyui-art-batch: ComfyUI batch concept-art generation workflow (queue, seeds, curation). (file: .agent/skills/comfyui-art-batch/SKILL.md)
 - comfyui-prompt-library: Prompt consistency and token governance for space-industrial concept art. (file: .agent/skills/comfyui-prompt-library/SKILL.md)
 - moonidle-concept-art-direction: MoonIdle-specific visual direction for concept art and mockup asset packs. (file: .agent/skills/moonidle-concept-art-direction/SKILL.md)
+- svg-keyvisual-illustration: Web-native key visual (원화) and concept art illustration using SVG + CSS. Use for game splash screens, atmospheric environment art, hero key visuals, and promotional illustrations. (file: .agent/skills/svg-keyvisual-illustration/SKILL.md)
 - moonidle-agent-skill-standards: Quality standards for creating/modifying agents and skills. (file: .claude/skills/moonidle-agent-skill-standards/SKILL.md)
 - moonidle-build-deploy: Build/deploy workflow for Unity + SteamCMD pipelines. (file: .claude/skills/moonidle-build-deploy/SKILL.md)
 - moonidle-dev-protocol: Team development protocol (git rules, prefab/scene ownership). (file: .claude/skills/moonidle-dev-protocol/SKILL.md)
