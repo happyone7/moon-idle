@@ -1,5 +1,9 @@
-.git/
+﻿.git/
 node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Git worktrees (managed via git worktree, not regular files)
+.worktrees/
+.tmp-worktrees/

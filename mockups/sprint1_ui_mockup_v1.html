@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoonIdle UI Mockup v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg-0:#05080f;
+  --bg-1:#0b1120;
+  --bg-2:#141d33;
+  --panel:#0f1629cc;
+  --line:#4cc9f033;
+  --cyan:#4cc9f0;
+  --teal:#49dcb1;
+  --gold:#f5c451;
+  --hot:#ff7b54;
+  --text:#e9f0ff;
+  --muted:#9bb0d0;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  color:var(--text);
+  font-family:"Space Grotesk",sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #1f385f66, transparent 60%),
+    radial-gradient(700px 500px at -10% 20%, #193f4a66, transparent 60%),
+    linear-gradient(180deg,var(--bg-0),var(--bg-1) 40%,#091324);
+  min-height:100vh;
+}
+.noise::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.08;
+  background-image:radial-gradient(#ffffff 1px, transparent 1px);
+  background-size:3px 3px;
+}
+.shell{
+  max-width:1320px;
+  margin:0 auto;
+  padding:20px 16px 40px;
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  margin-bottom:16px;
+}
+.brand{
+  font-family:"Orbitron",sans-serif;
+  letter-spacing:1.2px;
+  font-size:1.35rem;
+}
+.badge{
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:7px 14px;
+  color:var(--gold);
+  background:#f5c45115;
+  font-size:.84rem;
+}
+.layout{
+  display:grid;
+  grid-template-columns:280px 1fr 340px;
+  gap:12px;
+}
+.panel{
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:linear-gradient(180deg,#0f1629dd,#0b1324dd);
+  box-shadow:0 10px 30px #00000080,inset 0 1px 0 #ffffff10;
+}
+.panel h3{
+  margin:0;
+  font-size:.8rem;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:var(--cyan);
+  padding:14px 14px 8px;
+}
+.resources{padding:0 12px 12px}
+.res{
+  border:1px solid #ffffff12;
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:8px;
+  background:#ffffff05;
+}
+.res .r1{display:flex;justify-content:space-between;font-size:.84rem}
+.res .r2{display:flex;justify-content:space-between;margin-top:3px;color:var(--muted);font-size:.74rem}
+.res .amt{font-weight:700;color:var(--text)}
+.middle{
+  display:grid;
+  grid-template-rows:auto auto 1fr;
+  gap:12px;
+}
+.hero{
+  padding:14px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::after{
+  content:"";
+  position:absolute;
+  width:260px;height:260px;
+  right:-80px;top:-110px;
+  border-radius:50%;
+  background:radial-gradient(circle,#4cc9f044,transparent 70%);
+}
+.title{
+  font-family:"Orbitron",sans-serif;
+  font-size:1.3rem;
+  margin:0 0 4px;
+}
+.subtitle{margin:0;color:var(--muted);font-size:.88rem}
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:8px;
+  margin-top:11px;
+}
+.kpi{
+  border:1px solid #ffffff1d;
+  border-radius:10px;
+  padding:8px;
+  background:#ffffff05;
+}
+.kpi .k{font-size:.67rem;color:var(--muted)}
+.kpi .v{font-weight:700;margin-top:2px}
+.tabs{display:flex;padding:10px;gap:8px}
+.tab{
+  flex:1;
+  text-align:center;
+  border:1px solid #ffffff20;
+  border-radius:10px;
+  padding:8px;
+  font-size:.78rem;
+  color:var(--muted);
+  background:#ffffff06;
+}
+.tab.active{border-color:#49dcb177;color:#49dcb1;background:#49dcb117}
+.cards{padding:0 10px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.card{
+  border:1px solid #ffffff17;border-radius:12px;padding:10px;background:#ffffff06;
+}
+.card .n{font-size:.82rem}
+.card .m{font-size:.72rem;color:var(--muted);margin:3px 0 7px}
+.btn{
+  display:inline-block;width:100%;text-align:center;
+  border:1px solid #49dcb166;border-radius:8px;padding:7px 10px;
+  background:linear-gradient(135deg,#0f8f74,#2ac199);
+  color:white;font-size:.72rem;font-weight:700;
+}
+.right{padding-bottom:8px}
+.quality{
+  margin:0 12px 10px;
+  border:1px solid #ffffff1f;border-radius:12px;background:#ffffff06;padding:10px;
+}
+.quality .row{display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:6px}
+.slots{padding:0 12px}
+.slot{
+  border:1px solid #ffffff1a;border-radius:12px;padding:10px;background:#ffffff06;margin-bottom:8px;
+}
+.progress{height:6px;border-radius:999px;background:#ffffff1b;overflow:hidden;margin-top:7px}
+.fill{height:100%;background:linear-gradient(90deg,var(--hot),var(--gold));width:62%;animation:move 2.4s ease-in-out infinite}
+@keyframes move{0%{width:45%}50%{width:74%}100%{width:52%}}
+.cta{
+  margin:10px 12px 0;
+  border:0;border-radius:12px;padding:12px;
+  width:calc(100% - 24px);
+  font-family:"Orbitron",sans-serif;
+  font-size:.92rem;
+  background:linear-gradient(135deg,#ff6d00,#ff9e00,#ffd166);
+}
+@media (max-width:1080px){
+  .layout{grid-template-columns:1fr}
+  .cards{grid-template-columns:1fr}
+  .kpis{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body class="noise">
+  <div class="shell">
+    <div class="top">
+      <div class="brand">MOONIDLE // STARSHIP FOUNDRY</div>
+      <div class="badge">🌙 문스톤 124 · +620%</div>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <h3>Resource Grid</h3>
+        <div class="resources">
+          <div class="res"><div class="r1"><span>🪨 금속</span><span class="amt">2.31M</span></div><div class="r2"><span>+15.3K/s</span><span>채굴 자동화 III</span></div></div>
+          <div class="res"><div class="r1"><span>⛽ 연료</span><span class="amt">740K</span></div><div class="r2"><span>+8.2K/s</span><span>정제 효율 II</span></div></div>
+          <div class="res"><div class="r1"><span>💡 전자부품</span><span class="amt">182K</span></div><div class="r2"><span>+2.4K/s</span><span>반도체 라인</span></div></div>
+          <div class="res"><div class="r1"><span>🔬 연구 포인트</span><span class="amt">96K</span></div><div class="r2"><span>+1.1K/s</span><span>시뮬레이션 팜</span></div></div>
+        </div>
+      </section>
+
+      <section class="middle">
+        <div class="panel hero">
+          <p class="title">SpaceX Style Rocket Program</p>
+          <p class="subtitle">시제기에서 Heavy까지, 과학 지표 기반 설계로 발사 파이프라인을 확장</p>
+          <div class="kpis">
+            <div class="kpi"><div class="k">Δv</div><div class="v">9.42 km/s</div></div>
+            <div class="kpi"><div class="k">TWR</div><div class="v">1.58</div></div>
+            <div class="kpi"><div class="k">신뢰도</div><div class="v">92.3%</div></div>
+            <div class="kpi"><div class="k">재사용성</div><div class="v">47%</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="tabs">
+            <div class="tab active">시설</div>
+            <div class="tab">연구</div>
+            <div class="tab">임무</div>
+          </div>
+          <div class="cards">
+            <div class="card"><div class="n">🛰️ 로켓 발사대</div><div class="m">조립 슬롯 +1 · 대량 발사 기반</div><div class="btn">구매 · 1.4M 🪨 / 210K 💡</div></div>
+            <div class="card"><div class="n">🧠 발사 운영 AI</div><div class="m">스케줄 최적화 · 지연 감소</div><div class="btn">연구 · 180K 🔬</div></div>
+            <div class="card"><div class="n">🧰 품질 시험대</div><div class="m">신뢰도 +8%</div><div class="btn">연구 · 90K 🔬</div></div>
+            <div class="card"><div class="n">☀️ 태양광 어레이</div><div class="m">전 시스템 생산 +10%</div><div class="btn">구매 · 450K 🪨 / 65K 💡</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <h3>Assembly Bay</h3>
+        <div class="quality">
+          <div class="row"><span>선택 품질</span><b>🌌 Heavy</b></div>
+          <div class="row"><span>예상 조립 시간</span><b>4h 00m</b></div>
+          <div class="row"><span>예상 문스톤 보상</span><b>+37</b></div>
+        </div>
+        <div class="slots">
+          <div class="slot">
+            <div class="row"><span>슬롯 1 · 🚀 Block-I</span><span style="color:var(--gold)">조립중 18m 22s</span></div>
+            <div class="progress"><div class="fill"></div></div>
+          </div>
+          <div class="slot">
+            <div class="row"><span>슬롯 2 · 🌌 Heavy</span><span style="color:var(--teal)">발사 준비 완료</span></div>
+            <div class="btn" style="margin-top:6px">🌙 Launch Window Execute</div>
+          </div>
+          <div class="slot">
+            <div class="row"><span>슬롯 3</span><span style="color:var(--muted)">대기</span></div>
+            <div class="btn" style="margin-top:6px;background:linear-gradient(135deg,#3a3f57,#556089);border-color:#ffffff33">조립 시작</div>
+          </div>
+        </div>
+        <button class="cta">ORBITAL PROGRAM OVERVIEW</button>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

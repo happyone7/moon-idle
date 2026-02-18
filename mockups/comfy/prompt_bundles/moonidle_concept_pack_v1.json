@@ -1,0 +1,87 @@
+{
+  "version": "1.0",
+  "project": "MoonIdle",
+  "negative_default": "watermark, logo, text, subtitles, UI text, people, characters, fantasy, anime, deformed, blurry, low quality",
+  "default_size": {
+    "width": 1408,
+    "height": 768
+  },
+  "default_cfg": 6.8,
+  "default_steps": 28,
+  "default_sampler": "euler",
+  "default_seed_base": 220000,
+  "jobs": [
+    {
+      "id": "hub_01",
+      "category": "hero_background",
+      "scene": "Starship research hub control room",
+      "prompt": "Industrial MoonBase command hall concept art, mission control room, steel structural framing, racks of telemetry monitors, pipework, warning strips, matte blue ambient monitors, cinematic side-light, engineering-first composition, realistic materials, no characters"
+    },
+    {
+      "id": "hub_02",
+      "category": "hero_background",
+      "scene": "Launch countdown room closeup",
+      "prompt": "Space launch control desk closeup, brushed metal panel, progress bars, launch window timeline, analog indicators, engineer atmosphere, cinematic low-key lighting, gritty industrial design, no text, no logos"
+    },
+    {
+      "id": "pad_01",
+      "category": "hero_background",
+      "scene": "Reusable rocket pad under assembly",
+      "prompt": "Reusable heavy launch vehicle on engineering pad in late build phase, gantry arms, cryogenic lines, test rigs, thermal shielding smoke, dynamic blue warning LEDs, cinematic wide angle, photoreal render style, no characters"
+    },
+    {
+      "id": "pad_02",
+      "category": "hero_background",
+      "scene": "Rocket engine integration bay",
+      "prompt": "Rocket engine assembly bay, thick cable bundles, instrumentation panels, precision robotic arms, high-precision weld seams, pressure gauges, industrial sci-fi realism, hard shadows, cinematic volumetric beams"
+    },
+    {
+      "id": "science_01",
+      "category": "ui_texture",
+      "scene": "Orbital trajectory analysis station",
+      "prompt": "Data-heavy mission planning interface wall, orbital trajectories, telemetry graphs, Δv and TWR readouts, engineering diagrams, brushed steel overlays, monitor reflection, technical utility style"
+    },
+    {
+      "id": "science_02",
+      "category": "ui_texture",
+      "scene": "Propellant and resource command deck",
+      "prompt": "Space logistics command deck with layered gauges, fuel flow diagrams, resource pipeline cards, industrial dashboards, pipework and valve indicators, realistic UI texture, cinematic moody light"
+    },
+    {
+      "id": "ui_btn_01",
+      "category": "asset_reference",
+      "scene": "Industrial mission control button set",
+      "prompt": "Game UI button texture set, industrial steel panel with warning stripes, rounded-corner modules, blue and teal edge glow, rivets and micro scratches, clean center area for text, high-detail game asset reference"
+    },
+    {
+      "id": "ui_btn_02",
+      "category": "asset_reference",
+      "scene": "Mission panel corner decals",
+      "prompt": "Metal corner brace decals for space game UI, brushed steel, micro-circuit pattern, subtle cyan glow, engraved labels, industrial design pack, no text"
+    },
+    {
+      "id": "ui_panel_01",
+      "category": "asset_reference",
+      "scene": "Mission panel frame",
+      "prompt": "UI panel frame asset for sci-fi engineering dashboard, layered border, industrial metal texture, vent slits, corner bolts, restrained blue highlights, realistic game interface source asset"
+    },
+    {
+      "id": "ui_panel_02",
+      "category": "asset_reference",
+      "scene": "Secondary dashboard plate",
+      "prompt": "Flat sci-fi control panel tile, matte steel with thin cyan edge light, status light markers, no characters, no text, clean print-ready asset reference, realistic roughness"
+    },
+    {
+      "id": "timeline_01",
+      "category": "hero_background",
+      "scene": "Launch sequence timeline wall",
+      "prompt": "Large control timeline wall board, stacked mission phases, launch cadence indicators, status dots, heat-haze atmosphere, industrial engineering room, wide cinematic composition"
+    },
+    {
+      "id": "surface_01",
+      "category": "extension_pack",
+      "scene": "Lunar transfer pre-launch",
+      "prompt": "Moon transfer trajectory visual, Earth departure arc in starfield, spacecraft cluster with modular stages, navigation markers, engineering-style scientific display overlays, no fantasy, realistic astrophysical composition"
+    }
+  ]
+}

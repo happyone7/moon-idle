@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="160" viewBox="0 0 220 160" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a304d" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#12233d" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="216" height="156" rx="14" ry="14" fill="url(#top)"/>
+  <rect x="0.5" y="0.5" width="219" height="159" rx="14" ry="14" fill="none" stroke="#5cc8ff" stroke-width="2" opacity="0.45"/>
+  <rect x="0.5" y="0.5" width="219" height="159" rx="14" ry="14" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.08"/>
+  <path d="M0 30 H220 M0 130 H220" stroke="#5cc8ff" stroke-opacity="0.15"/>
+  <path d="M8 30 Q20 38 32 30 Q44 22 56 30 Q68 38 80 30" fill="none" stroke="#ff7d56" stroke-opacity="0.75" stroke-width="1.2"/>
+  <path d="M140 30 Q152 38 164 30 Q176 22 188 30 Q200 38 212 30" fill="none" stroke="#67e5ad" stroke-opacity="0.7" stroke-width="1.2"/>
+  <g fill="#6fbeff" opacity="0.5">
+    <circle cx="18" cy="22" r="2.6"/>
+    <circle cx="204" cy="22" r="2.6"/>
+    <circle cx="18" cy="138" r="2.6"/>
+    <circle cx="204" cy="138" r="2.6"/>
+  </g>
+</svg>

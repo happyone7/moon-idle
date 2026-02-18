@@ -1,0 +1,830 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle - Lunar Industrial Command</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Space+Grotesk:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      --bg: #04070f;
+      --panel: #0a1326cc;
+      --panel2: #111e34cc;
+      --panel-frame: url("./assets/ui_panel_frame.svg");
+      --panel-frame-dark: url("./assets/ui_panel_border_dark.svg");
+      --btn-primary: url("./assets/ui_btn_primary.svg");
+      --btn-secondary: url("./assets/ui_btn_secondary.svg");
+      --btn-warn: url("./assets/ui_btn_warn.svg");
+      --line: #5ec3ff44;
+      --line-hot: #ff8f62aa;
+      --cyan: #6ed0ff;
+      --teal: #5fe2ad;
+      --amber: #ffcc73;
+      --txt: #e9f2ff;
+      --muted: #9fb0cc;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", "Malgun Gothic", sans-serif;
+      color: var(--txt);
+      background: var(--bg);
+      overflow-x: hidden;
+    }
+
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      background:
+        radial-gradient(circle at 78% -8%, #355f9fcc, transparent 54%),
+        radial-gradient(circle at -10% 22%, #215f6dcc, transparent 58%),
+        radial-gradient(circle at 54% 58%, #1a2f58, transparent 72%),
+        linear-gradient(180deg, #02070d 0%, #081224 62%, #031022 100%);
+    }
+
+    .bg::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(#fff2 1px, transparent 1px),
+        linear-gradient(90deg, #fff2 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: .08;
+      animation: gridDrift 38s linear infinite;
+    }
+
+    .scanline {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      background: linear-gradient(180deg, transparent 48%, #5fe4ad12 50%, transparent 52%);
+      transform: translateY(-100%);
+      animation: scan 7.8s linear infinite;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      opacity: .07;
+      background: repeating-linear-gradient(0deg, #fff2 0 1px, transparent 1px 3px);
+      mix-blend-mode: screen;
+      animation: flicker .12s steps(2, end) infinite;
+    }
+
+    .shell {
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 12px 14px 20px;
+    }
+
+    .topline {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background:
+        linear-gradient(180deg, #132040dd, #101b34dd),
+        var(--panel-frame);
+      background-repeat: no-repeat;
+      background-size: cover, 220px 160px;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      box-shadow: inset 0 1px 0 #fff4, 0 10px 26px #000a;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .topline::after {
+      content: "";
+      position: absolute;
+      top: -34px;
+      right: 4%;
+      width: 152px;
+      height: 152px;
+      border: 1px solid #66caff44;
+      border-radius: 50%;
+      animation: orbitRing 20s linear infinite;
+    }
+
+    .brand {
+      display: grid;
+      gap: 2px;
+      letter-spacing: 1.05px;
+      font-family: "Orbitron", sans-serif;
+    }
+
+    .brand strong {
+      font-size: 1.18rem;
+    }
+
+    .brand small {
+      color: var(--muted);
+      font-size: .76rem;
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: .8px;
+    }
+
+    .status {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 7px;
+    }
+
+    .status span {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--cyan);
+      padding: 5px 10px;
+      background: #61c2ff13;
+      font-size: .76rem;
+    }
+
+    .status span.warn {
+      color: #ffe0d8;
+      border-color: var(--line-hot);
+      background: #ff8b5322;
+    }
+
+    .layout {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 320px 1.1fr 390px;
+      gap: 10px;
+    }
+
+    .panel {
+      border: 1px solid #5ec3ff42;
+      border-radius: 14px;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, var(--panel), var(--panel2)),
+        var(--panel-frame);
+      background-repeat: repeat;
+      box-shadow: inset 0 1px 0 #fff3, 0 8px 22px #0009;
+    }
+
+    .section-head {
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 11px 8px;
+      border-bottom: 1px solid #ffffff1a;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 1px;
+      font-size: .83rem;
+      color: var(--cyan);
+    }
+
+    .section-head small {
+      color: var(--muted);
+      font-family: "Space Grotesk", sans-serif;
+      letter-spacing: .7px;
+      font-size: .68rem;
+    }
+
+    .section-head::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6ec8ff80, transparent 80%);
+    }
+
+    .resource-stack {
+      padding: 10px;
+      display: grid;
+      gap: 7px;
+    }
+
+    .resource-item {
+      border: 1px solid #ffffff1c;
+      border-radius: 10px;
+      padding: 8px;
+      background: #ffffff07;
+    }
+
+    .resource-item .row1,
+    .resource-item .row2 {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .resource-item .row1 {
+      font-size: .82rem;
+    }
+
+    .resource-item .row2 {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: .72rem;
+    }
+
+    .resource-item strong {
+      font-size: .88rem;
+    }
+
+    .center {
+      min-height: 680px;
+    }
+
+    .hero {
+      position: relative;
+      height: 260px;
+      overflow: hidden;
+      border-bottom: 1px solid #ffffff16;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, #0c1636d2 0%, #07162ed8 54%, #040f24d9 100%),
+        url("./assets/Concept_TitleScreen_v2_00001_.png") center/cover no-repeat;
+      filter: saturate(.74) contrast(1.06) brightness(.56);
+      animation: heroFloat 15s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .hero-text {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      z-index: 2;
+      padding: 10px;
+      background: linear-gradient(90deg, #041329cc 0, transparent 100%);
+      border-left: 3px solid #8ce2ff;
+    }
+
+    .hero-text h1 {
+      margin: 0 0 4px;
+      font-family: "Orbitron", sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 1.05px;
+    }
+
+    .hero-text p {
+      margin: 0;
+      color: #d8e7ff;
+      font-size: .8rem;
+      line-height: 1.44;
+    }
+
+    .ticker {
+      margin: 10px;
+      border: 1px solid #ffffff1f;
+      border-radius: 10px;
+      padding: 9px;
+      background: #091735e0;
+      position: relative;
+      min-height: 60px;
+      overflow: hidden;
+    }
+
+    .ticker::before {
+      content: "";
+      position: absolute;
+      inset: 8px 4px 0;
+      border-top: 1px solid #6ecaff35;
+      border-bottom: 1px solid #6ecaff15;
+      pointer-events: none;
+      animation: tickerWobble 10s linear infinite;
+    }
+
+    .ticker ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 4px;
+      font-size: .77rem;
+      color: #cbe4ff;
+    }
+
+    .kpi {
+      margin: 10px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 7px;
+    }
+
+    .kpi-card {
+      border: 1px solid #ffffff24;
+      border-radius: 9px;
+      padding: 7px 8px;
+      background: #ffffff08;
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: .66rem;
+    }
+
+    .kpi-value {
+      margin-top: 2px;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: 1px;
+      font-size: .98rem;
+    }
+
+    .upgrade-grid {
+      margin: 0 10px 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .upgrade {
+      border: 1px solid #ffffff20;
+      border-radius: 10px;
+      padding: 8px;
+      background: #ffffff05;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 128px;
+    }
+
+    .upgrade .name {
+      font-size: .84rem;
+      margin-bottom: 4px;
+    }
+
+    .upgrade .desc {
+      color: var(--muted);
+      font-size: .71rem;
+      line-height: 1.38;
+    }
+
+    .btn {
+      margin-top: 8px;
+      width: 100%;
+      border: 1px solid #70e7ab7f;
+      border-radius: 9px;
+      padding: 7px 8px;
+      color: #fff;
+      background:
+        linear-gradient(135deg, #0da282, #2ac8a1),
+        var(--btn-primary);
+      background-repeat: no-repeat;
+      background-size: cover;
+      box-shadow: inset 0 0 0 1px #9de4ff35;
+      font-size: .72rem;
+      text-shadow: 0 1px 0 #0008;
+      cursor: pointer;
+    }
+
+    .btn.secondary {
+      border-color: #4fc4ee66;
+      background:
+        linear-gradient(135deg, #23536f, #288fd8),
+        var(--btn-secondary);
+    }
+
+    .btn.warn {
+      border-color: #ff895a7a;
+      background:
+        linear-gradient(135deg, #a84a2a, #f9734d),
+        var(--btn-warn);
+    }
+
+    .right {
+      display: grid;
+      grid-template-rows: auto auto 1fr auto auto;
+      gap: 8px;
+      padding-bottom: 10px;
+    }
+
+    .status-block {
+      margin: 10px;
+      border: 1px solid #ffffff1f;
+      border-radius: 10px;
+      padding: 9px;
+      background: #ffffff06;
+    }
+
+    .status-block .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: .8rem;
+    }
+
+    .status-block .row + .row {
+      margin-top: 5px;
+    }
+
+    .slots {
+      padding: 0 10px;
+    }
+
+    .slot {
+      border: 1px solid #ffffff22;
+      border-radius: 10px;
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #ffffff08;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .slot::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, #6ecaff12, transparent 45%, transparent);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+
+    .slot.active::before {
+      opacity: 1;
+    }
+
+    .slot .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: .8rem;
+    }
+
+    .slot .tag {
+      border: 1px solid #ffffff3a;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: .64rem;
+      color: #d6e6ff;
+    }
+
+    .bar-wrap {
+      margin-top: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: #ffffff16;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 62%;
+      background: linear-gradient(90deg, #ff8d5a, #ffcb64);
+      animation: progressPulse 2.6s ease-in-out infinite;
+    }
+
+    .feed {
+      margin: 0 10px;
+      border: 1px solid #ffffff1f;
+      border-radius: 10px;
+      height: 140px;
+      background: url("./assets/Concept_HubScreen_v2_00001_.png") center/cover no-repeat;
+      filter: saturate(.75) contrast(1.02) brightness(.53);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feed::after {
+      content: "LIVE CAM // ORBITAL ASSEMBLY DOCK";
+      position: absolute;
+      left: 9px;
+      top: 6px;
+      color: #c6ddf6;
+      font-family: "Orbitron", sans-serif;
+      letter-spacing: .8px;
+      font-size: .72rem;
+    }
+
+    .audio {
+      margin: 0 10px;
+      border: 1px solid #ffffff1f;
+      border-radius: 10px;
+      padding: 9px;
+      background:
+        linear-gradient(180deg, #0a1630bf, #0c1023cc),
+        var(--panel-frame-dark);
+      background-size: auto, 220px 160px;
+    }
+
+    .audio label {
+      color: var(--muted);
+      font-size: .72rem;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    audio {
+      width: 100%;
+      height: 28px;
+    }
+
+    .cta {
+      margin: 0 10px;
+      border: 0;
+      border-radius: 10px;
+      width: calc(100% - 20px);
+      padding: 11px 12px;
+      color: #1f1f1f;
+      font-family: "Orbitron", sans-serif;
+      font-size: .86rem;
+      letter-spacing: .7px;
+      background:
+        linear-gradient(135deg, #ff915f, #ffd26e),
+        var(--btn-warn);
+      background-size: cover;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px #ffd1a35f;
+    }
+
+    .footer-note {
+      margin: 8px 10px 0;
+      border: 1px dashed #5db8ff48;
+      border-radius: 8px;
+      padding: 7px;
+      color: #bbd1f2;
+      background: #ffffff05;
+      font-size: .67rem;
+    }
+
+    .footer-note strong {
+      color: #a8d6ff;
+    }
+
+    .glow {
+      position: fixed;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #83dfff;
+      opacity: .9;
+      animation: drift 15s linear infinite;
+      box-shadow: 0 0 10px 2px #7ed8ff55;
+      z-index: -1;
+    }
+
+    .g1 { top: 14%; left: 8%; animation-delay: -2s; }
+    .g2 { top: 60%; left: 82%; animation-delay: -6s; }
+    .g3 { top: 30%; left: 48%; animation-delay: -10s; }
+
+    @media (max-width: 1180px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .kpi { grid-template-columns: 1fr 1fr; }
+      .upgrade-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .topline {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .brand strong { font-size: 1rem; }
+      .kpi { grid-template-columns: 1fr; }
+      .status { justify-content: flex-start; }
+      .hero { height: 220px; }
+    }
+
+    @keyframes gridDrift {
+      0% { background-position: 0 0, 0 0; }
+      100% { background-position: 48px 48px, -48px -48px; }
+    }
+
+    @keyframes scan {
+      to { transform: translateY(100%); }
+    }
+
+    @keyframes flicker {
+      0%, 90% { opacity: .04; }
+      92%, 94% { opacity: .08; }
+      96%, 100% { opacity: .03; }
+    }
+
+    @keyframes heroFloat {
+      0%, 100% { transform: scale(1.06); }
+      50% { transform: scale(1.01); }
+    }
+
+    @keyframes orbitRing {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes tickerWobble {
+      0%, 45% { transform: translateX(0); }
+      55%, 95% { transform: translateX(-4px); }
+      100% { transform: translateX(0); }
+    }
+
+    @keyframes progressPulse {
+      0% { width: 40%; }
+      50% { width: 68%; }
+      100% { width: 62%; }
+    }
+
+    @keyframes drift {
+      0% { transform: translateY(0) translateX(0); opacity: .4; }
+      45% { opacity: .8; }
+      100% { transform: translateY(-44vh) translateX(18px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="scanline"></div>
+  <div class="noise"></div>
+  <div class="glow g1"></div>
+  <div class="glow g2"></div>
+  <div class="glow g3"></div>
+
+  <main class="shell">
+    <section class="topline">
+      <div class="brand">
+        <strong>MoonIdle // STARSHIP RESEARCH COMPLEX</strong>
+        <small>공학도와 SpaceX 프로젝트 마니아를 위한 산업형 우주 공장형 UI</small>
+      </div>
+      <div class="status">
+        <span>Moonstone 126</span>
+        <span>운영일 03:18</span>
+        <span class="warn">가동률 97.2%</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="panel">
+        <header class="section-head">RESOURCE HUB <small>연료·자재 생성 버스</small></header>
+        <div class="resource-stack">
+          <article class="resource-item">
+            <div class="row1"><span>달의 바위 분말 (Moonstone)</span><strong>2.41M</strong></div>
+            <div class="row2"><span>+15.8K/s</span><span>광산 A-12 오퍼레이터</span></div>
+          </article>
+          <article class="resource-item">
+            <div class="row1"><span>액체 산소</span><strong>802K</strong></div>
+            <div class="row2"><span>+8.7K/s</span><span>저온 정제 라인</span></div>
+          </article>
+          <article class="resource-item">
+            <div class="row1"><span>연료 촉매제</span><strong>193K</strong></div>
+            <div class="row2"><span>+2.6K/s</span><span>엔진 라인 B</span></div>
+          </article>
+          <article class="resource-item">
+            <div class="row1"><span>컴퓨팅 파워</span><strong>101K</strong></div>
+            <div class="row2"><span>+1.2K/s</span><span>오토파일럿 시뮬레이션 팜</span></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel center">
+        <header class="section-head">MISSION CONTROL <small>공정 제어 + 과학 실험</small></header>
+
+        <div class="hero">
+          <div class="hero-bg"></div>
+          <div class="hero-text">
+            <h1>재사용형 화물형 로켓 프로토타입</h1>
+            <p>
+              플레이어는 초기에 1~2시간 안에 발사 가능한 기본 로켓을 완성합니다.
+              이후 자원 동역학, 생산 라인, 슬롯 확장, 미션 설계를 통해 발사 간격을 기하급수적으로 줄여갑니다.
+              각 단계는 과학적 계산치와 오차율 관리가 수치적으로 반영됩니다.
+            </p>
+          </div>
+        </div>
+
+        <div class="ticker">
+          <ul>
+            <li>연구 지침: 엔진 회수 장치가 활성화되어 Block-I 회수 확률이 18% → 44%로 상승</li>
+            <li>발사장 상태: 점화 안정성 98.4%, 하우징 진동 허용치 2% 이내</li>
+            <li>현재 미션: 2단 가속기 업그레이드 완료 시 페이로드 운반량 +2.4T</li>
+          </ul>
+        </div>
+
+        <div class="kpi">
+          <div class="kpi-card">
+            <div class="kpi-label">Δv</div>
+            <div class="kpi-value">9.48 km/s</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">TWR</div>
+            <div class="kpi-value">1.61</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">신뢰성</div>
+            <div class="kpi-value">93.1%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">품질 지수</div>
+            <div class="kpi-value">51%</div>
+          </div>
+        </div>
+
+        <div class="upgrade-grid">
+          <article class="upgrade">
+            <div>
+              <div class="name">고압 산소 펌프 증설</div>
+              <div class="desc">
+                펌프 토출량 증가로 점화 구간 과열을 줄이고 대기시간을 단축합니다.
+              </div>
+            </div>
+            <button class="btn">구매 비용: Moonstone 1.6M / 촉매제 260K</button>
+          </article>
+          <article class="upgrade">
+            <div>
+              <div class="name">AI 안전점검 모듈</div>
+              <div class="desc">
+                진동·온도 이상 징후를 탐지해 대기열 오류를 줄이고 점검시간을 절반으로 감소.
+              </div>
+            </div>
+            <button class="btn secondary">구매 비용: Moonstone 180K</button>
+          </article>
+          <article class="upgrade">
+            <div>
+              <div class="name">리브 하우징 강화</div>
+              <div class="desc">
+                하중 분산이 향상되어 착륙 충격 15% 감소, 회수 성공률이 가속됩니다.
+              </div>
+            </div>
+            <button class="btn">구매 비용: Moonstone 90K</button>
+          </article>
+          <article class="upgrade">
+            <div>
+              <div class="name">차폐 복합 재질</div>
+              <div class="desc">
+                추진제 라인 효율 +10%, 연소실 온도 편차 저감으로 구조 안정성 상향.
+              </div>
+            </div>
+            <button class="btn secondary">구매 비용: Moonstone 520K / Moonstone 72K</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <header class="section-head">LAUNCH QUEUE <small>발사 슬롯 및 대기열</small></header>
+
+        <div class="status-block">
+          <div class="row"><span>우선 프로젝트</span><span>Moonstone Heavy</span></div>
+          <div class="row"><span>다음 이륙 까지</span><span>4h 00m</span></div>
+          <div class="row"><span>가속 보너스</span><span>+37%</span></div>
+          <div class="row"><span>안전율</span><span style="color: var(--teal)">93.1%</span></div>
+        </div>
+
+        <div class="slots">
+          <article class="slot active">
+            <div class="row">
+              <span>슬롯 1 · Block-I</span>
+              <span class="tag">진행: 14m 08s</span>
+            </div>
+            <div class="bar-wrap"><div class="bar"></div></div>
+          </article>
+          <article class="slot">
+            <div class="row">
+              <span>슬롯 2 · Moonstone Heavy</span>
+              <span class="tag" style="color: var(--teal); border-color:#5fe2ad66">발사 준비 완료</span>
+            </div>
+            <button class="btn warn" style="margin-top:8px;">발사 대기열 등록</button>
+          </article>
+          <article class="slot">
+            <div class="row">
+              <span>슬롯 3</span>
+              <span class="tag" style="color: var(--muted)">잠금 해제 필요</span>
+            </div>
+            <button class="btn secondary" style="margin-top:8px;">조합 설비 확장</button>
+          </article>
+        </div>
+
+        <div class="feed"></div>
+
+        <div class="audio">
+          <label>BGM 샘플 (로컬)</label>
+          <audio controls loop>
+            <source src="./assets/moonidle_industrial_bgm_v1.wav" type="audio/wav" />
+          </audio>
+        </div>
+
+        <button class="cta">일일 브리핑 수신 후 다음 업그레이드 실행</button>
+        <div class="footer-note">
+          <strong>참고:</strong> 현재는 목업 단계입니다. 다음 스프린트에서 슬롯 확장 공식, 오프라인 진행, 과학기술 트리, 저장/불러오기 시스템으로 연결합니다.
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
