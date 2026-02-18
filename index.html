@@ -6,863 +6,1654 @@
 <title>MOON IDLE — 달 탐사 로켓 제작소</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-/* ==================== v7 CRT DESIGN TOKENS ==================== */
-:root {
-  --bg:         #010800;
-  --panel-bg:   #020d04;
-  --green:      #00e676;
-  --green-dim:  #1a5c34;
-  --green-mid:  #00994d;
-  --amber:      #ffab00;
-  --red:        #ff1744;
-  --font:       'Share Tech Mono', monospace;
-  --border:     1px solid #1a5c34;
-  --glow:       0 0 6px #00e67680;
-  --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
-}
+  /* ===== DESIGN TOKENS ===== */
+  :root {
+    --bg: #010800;
+    --panel-bg: #020d04;
+    --green: #00e676;
+    --green-dim: #1a5c34;
+    --green-mid: #00994d;
+    --amber: #ffab00;
+    --red: #ff1744;
+    --font: 'Share Tech Mono', monospace;
+    --border: 1px solid #1a5c34;
+    --glow: 0 0 6px #00e67680;
+    --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
+    --amber-glow: 0 0 8px #ffab0080;
+  }
 
-/* ==================== RESET & BASE ==================== */
-*{box-sizing:border-box;margin:0;padding:0;border-radius:0!important;}
-html,body{min-height:100vh;}
-body{
-  font-family:var(--font);
-  background:var(--bg);
-  color:var(--green);
-  font-size:15px;
-  overflow-x:hidden;
-  animation:crt-flicker 8s linear infinite;
-}
+  /* ===== GLOBAL RESET ===== */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border-radius: 0 !important;
+  }
 
-/* CRT SCANLINES */
-body::before{
-  content:'';
-  position:fixed;inset:0;
-  background:repeating-linear-gradient(
-    0deg,
-    transparent,transparent 2px,
-    rgba(0,0,0,0.18) 2px,rgba(0,0,0,0.18) 4px
-  );
-  pointer-events:none;z-index:9999;
-}
-/* CRT VIGNETTE */
-body::after{
-  content:'';
-  position:fixed;inset:0;
-  background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,0.7) 100%);
-  pointer-events:none;z-index:9998;
-}
-@keyframes crt-flicker{
-  0%,92%,94%,97%,100%{opacity:1;}
-  93%{opacity:0.85;}
-  96%{opacity:0.90;}
-}
+  html, body {
+    width: 100%;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 16px;
+    overflow-x: hidden;
+  }
 
-/* ==================== SCROLLBAR ==================== */
-::-webkit-scrollbar{width:4px;height:4px;}
-::-webkit-scrollbar-track{background:var(--bg);}
-::-webkit-scrollbar-thumb{background:var(--green-dim);}
+  /* ===== CRT SCANLINES ===== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 2px,
+      rgba(0, 0, 0, 0.18) 2px,
+      rgba(0, 0, 0, 0.18) 4px
+    );
+  }
 
-/* ==================== TEXT GLOW ==================== */
-.glow{text-shadow:var(--glow);}
-.glow-strong{text-shadow:var(--glow-strong);}
+  /* ===== CRT VIGNETTE ===== */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 60%,
+      rgba(0, 0, 0, 0.6) 100%
+    );
+  }
 
-/* ==================== TITLE SCREEN ==================== */
-#title-screen{
-  position:fixed;inset:0;
-  background:var(--bg);
-  z-index:5000;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  padding:20px;
-  transition:opacity 0.8s ease;
-}
-#title-screen.fade-out{opacity:0;pointer-events:none;}
-.title-logo{
-  font-size:clamp(24px,5vw,48px);
-  letter-spacing:16px;
-  color:var(--green);
-  text-shadow:var(--glow-strong);
-  margin-bottom:8px;
-  text-align:center;
-}
-.title-subtitle{
-  font-size:13px;
-  letter-spacing:4px;
-  color:var(--green-mid);
-  margin-bottom:32px;
-  text-align:center;
-}
-.boot-log{
-  width:100%;max-width:600px;
-  height:200px;
-  overflow:hidden;
-  border:var(--border);
-  background:var(--panel-bg);
-  padding:12px;
-  font-size:13px;
-  color:var(--green-mid);
-  margin-bottom:24px;
-}
-.boot-line{
-  display:block;
-  margin-bottom:2px;
-  opacity:0;
-  animation:boot-appear 0.1s forwards;
-}
-@keyframes boot-appear{to{opacity:1;}}
-.title-save-strip{
-  width:100%;max-width:600px;
-  border:var(--border);
-  background:var(--panel-bg);
-  padding:10px 16px;
-  font-size:13px;
-  color:var(--green-mid);
-  margin-bottom:20px;
-  display:flex;gap:24px;flex-wrap:wrap;
-}
-.title-save-strip span{color:var(--green);}
-.title-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
-.title-btn{
-  background:none;
-  border:2px solid var(--green-dim);
-  color:var(--green);
-  font-family:var(--font);
-  font-size:15px;
-  letter-spacing:3px;
-  padding:10px 28px;
-  cursor:pointer;
-  transition:all 0.15s;
-  text-transform:uppercase;
-}
-.title-btn:hover{
-  border-color:var(--green);
-  text-shadow:var(--glow-strong);
-  box-shadow:var(--glow-strong);
-}
-.title-btn.primary{border-color:var(--amber);color:var(--amber);}
-.title-btn.primary:hover{box-shadow:0 0 12px #ffab00,0 0 24px #ffab0050;}
+  /* ===== CRT FLICKER ===== */
+  @keyframes crt-flicker {
+    0%   { opacity: 1; }
+    93%  { opacity: 1; }
+    93.5%{ opacity: 0.94; }
+    94%  { opacity: 1; }
+    96%  { opacity: 1; }
+    96.5%{ opacity: 0.96; }
+    97%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
 
-/* ==================== MAIN APP ==================== */
-#app{
-  display:none;
-  max-width:1200px;
-  margin:0 auto;
-  padding:0 8px 20px;
-}
-#app.visible{display:block;}
+  body {
+    animation: crt-flicker 8s step-end infinite;
+  }
 
-/* ==================== RESOURCE BAR ==================== */
-#res-bar{
-  position:sticky;top:0;z-index:100;
-  background:var(--bg);
-  border-bottom:var(--border);
-  padding:6px 8px;
-  display:flex;align-items:center;justify-content:space-between;
-  gap:6px;flex-wrap:wrap;
-}
-.res-bar-inner{
-  display:flex;gap:6px;flex-wrap:wrap;align-items:center;flex:1;
-}
-.res-cell{
-  border:var(--border);
-  padding:3px 8px;
-  font-size:13px;
-  color:var(--green);
-  white-space:nowrap;
-  text-shadow:var(--glow);
-}
-.res-cell .rate{color:var(--green-mid);font-size:12px;}
-.res-cell .ms{color:var(--amber);}
-.res-bar-right{display:flex;align-items:center;gap:8px;}
-#sound-btn{
-  background:none;
-  border:var(--border);
-  color:var(--green-mid);
-  font-family:var(--font);
-  font-size:13px;
-  padding:3px 10px;
-  cursor:pointer;
-  letter-spacing:1px;
-  text-transform:uppercase;
-}
-#sound-btn:hover{color:var(--green);border-color:var(--green);}
+  /* ===== SCROLLBAR ===== */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) transparent;
+  }
 
-/* ==================== NAV TABS ==================== */
-#nav-tabs{
-  display:flex;
-  border-bottom:var(--border);
-  margin-bottom:0;
-}
-.nav-tab{
-  flex:1;
-  background:none;
-  border:none;
-  border-bottom:2px solid transparent;
-  border-right:var(--border);
-  color:var(--green-dim);
-  font-family:var(--font);
-  font-size:14px;
-  letter-spacing:1px;
-  padding:8px 4px;
-  cursor:pointer;
-  text-transform:uppercase;
-  transition:all 0.15s;
-  text-align:center;
-}
-.nav-tab:last-child{border-right:none;}
-.nav-tab:hover{color:var(--green);text-shadow:var(--glow);}
-.nav-tab.active{
-  color:var(--green);
-  border-bottom-color:var(--green);
-  text-shadow:var(--glow-strong);
-  background:rgba(0,230,118,0.04);
-}
+  /* ===== PANEL HEADER :: before ===== */
+  .panel-header::before {
+    content: '// ';
+  }
 
-/* ==================== TAB PANES ==================== */
-.tab-pane{display:none;padding:12px 0;}
-.tab-pane.active{display:block;}
+  /* ===========================
+     1. TITLE SCREEN
+     =========================== */
+  #title-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 5000;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+  }
 
-/* ==================== PANELS ==================== */
-.panel{
-  background:var(--panel-bg);
-  border:var(--border);
-  padding:10px 12px;
-  margin-bottom:10px;
-}
-.panel-header{
-  font-size:13px;
-  letter-spacing:3px;
-  color:var(--green);
-  text-transform:uppercase;
-  border-bottom:var(--border);
-  padding-bottom:6px;
-  margin-bottom:8px;
-  text-shadow:var(--glow);
-}
-.panel-header::before{content:'// ';}
+  .title-logo {
+    font-size: 52px;
+    letter-spacing: 12px;
+    text-transform: uppercase;
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+    margin-bottom: 6px;
+    text-align: center;
+  }
 
-/* ==================== BUTTONS ==================== */
-.btn{
-  background:none;
-  border:2px solid var(--green-dim);
-  color:var(--green);
-  font-family:var(--font);
-  font-size:14px;
-  letter-spacing:2px;
-  padding:6px 14px;
-  cursor:pointer;
-  text-transform:uppercase;
-  transition:all 0.12s;
-  display:inline-block;
-}
-.btn:hover:not(:disabled){
-  border-color:var(--green);
-  text-shadow:var(--glow);
-}
-.btn:disabled{opacity:0.3;cursor:not-allowed;}
-.btn-amber{border-color:var(--amber);color:var(--amber);}
-.btn-amber:hover:not(:disabled){box-shadow:0 0 8px #ffab00;}
-.btn-red{border-color:var(--red);color:var(--red);}
-.btn-sm{font-size:12px;padding:3px 8px;letter-spacing:1px;}
-.btn-full{display:block;width:100%;text-align:center;}
+  .title-subtitle {
+    font-size: 14px;
+    letter-spacing: 4px;
+    color: var(--green-mid);
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 8px;
+  }
 
-/* ==================== PROGRESS BAR ==================== */
-.prog-wrap{
-  border:1px solid var(--green-dim);
-  height:8px;
-  background:var(--bg);
-  overflow:hidden;
-  margin:4px 0;
-}
-.prog-fill{
-  height:100%;
-  background:var(--green-mid);
-  transition:width 0.3s;
-}
-.prog-fill.amber{background:var(--amber);}
-.prog-fill.red{background:var(--red);}
+  #boot-log.boot-log {
+    width: 100%;
+    max-width: 540px;
+    height: 200px;
+    overflow-y: auto;
+    border: var(--border);
+    background: var(--panel-bg);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--green-mid);
+    line-height: 1.6;
+  }
 
-/* ==================== OFFLINE BANNER ==================== */
-#offline-banner{
-  display:none;
-  background:rgba(255,171,0,0.08);
-  border:1px solid var(--amber);
-  color:var(--amber);
-  padding:6px 12px;
-  font-size:13px;
-  margin-bottom:8px;
-}
+  #save-strip.title-save-strip {
+    font-size: 13px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+    border: var(--border);
+    padding: 5px 14px;
+    max-width: 540px;
+    width: 100%;
+    text-align: center;
+  }
 
-/* ==================== NOTIFICATIONS ==================== */
-#notif{
-  position:fixed;bottom:16px;right:16px;
-  z-index:8000;
-  display:flex;flex-direction:column;gap:6px;
-  pointer-events:none;
-}
-.notif-item{
-  background:var(--panel-bg);
-  border:1px solid var(--green-dim);
-  color:var(--green);
-  font-size:13px;
-  padding:7px 14px;
-  text-shadow:var(--glow);
-  animation:notif-in 0.2s ease,notif-out 0.4s ease 2.6s forwards;
-  max-width:320px;
-}
-.notif-item.amber{border-color:var(--amber);color:var(--amber);}
-.notif-item.red{border-color:var(--red);color:var(--red);}
-@keyframes notif-in{from{opacity:0;transform:translateX(40px);}to{opacity:1;transform:none;}}
-@keyframes notif-out{to{opacity:0;transform:translateX(40px);}}
+  .title-btns {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 4px;
+  }
 
-/* ==================== TAB 1: PRODUCTION HUB ==================== */
-.prod-status-line{
-  font-size:13px;color:var(--green-mid);
-  margin-bottom:8px;
-  border-bottom:var(--border);
-  padding-bottom:6px;
-}
-.prod-world-wrap{
-  overflow-x:auto;
-  border:var(--border);
-  padding:10px;
-  background:var(--bg);
-  margin-bottom:10px;
-}
-.prod-world{
-  min-width:2400px;
-  display:flex;
-  gap:16px;
-  align-items:flex-end;
-  padding:8px 4px;
-  font-size:13px;
-  line-height:1.3;
-}
-.building-ascii-wrap{
-  position:relative;
-  display:inline-block;
-  cursor:pointer;
-  flex-shrink:0;
-}
-.building-ascii{
-  font-size:12px;
-  line-height:1.25;
-  color:var(--green-mid);
-  white-space:pre;
-  transition:color 0.15s;
-  text-shadow:none;
-}
-.building-ascii-wrap:hover .building-ascii{
-  color:var(--green);
-  text-shadow:var(--glow);
-}
-.building-ascii-wrap .bld-count-badge{
-  position:absolute;top:-4px;right:-4px;
-  background:var(--green-dim);
-  color:var(--green);
-  font-size:11px;
-  padding:0 4px;
-  min-width:18px;
-  text-align:center;
-  border:1px solid var(--green);
-}
-.bld-hover-overlay{
-  display:none;
-  position:absolute;
-  top:0;left:100%;
-  z-index:200;
-  background:var(--panel-bg);
-  border:1px solid var(--green);
-  padding:8px 12px;
-  white-space:pre;
-  font-size:12px;
-  line-height:1.5;
-  color:var(--green);
-  min-width:240px;
-  text-shadow:var(--glow);
-  pointer-events:none;
-}
-.building-ascii-wrap:hover .bld-hover-overlay{display:block;}
-.bld-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:8px;
-}
-.bld-card{
-  border:var(--border);
-  background:var(--panel-bg);
-  padding:8px 10px;
-}
-.bld-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-.bld-name{font-size:14px;color:var(--green);letter-spacing:1px;}
-.bld-cnt{color:var(--amber);font-size:13px;}
-.bld-desc{font-size:12px;color:var(--green-mid);margin-bottom:6px;}
-.bld-rate{font-size:12px;color:var(--green-mid);margin-bottom:4px;}
-.bld-cost{font-size:12px;color:var(--amber);margin-bottom:6px;}
+  .title-btn {
+    background: none;
+    border: 2px solid var(--green-dim);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 15px;
+    letter-spacing: 3px;
+    padding: 9px 28px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
 
-/* ==================== TAB 2: RESEARCH ==================== */
-.upg-tree{
-  font-size:13px;
-  line-height:1.6;
-  overflow-x:auto;
-}
-.upg-tree-row{
-  display:flex;gap:16px;margin-bottom:4px;flex-wrap:wrap;
-}
-.upg-node{
-  border:1px solid var(--green-dim);
-  background:var(--panel-bg);
-  padding:8px 12px;
-  cursor:pointer;
-  min-width:180px;
-  transition:all 0.12s;
-  position:relative;
-}
-.upg-node.available{border-color:var(--amber);color:var(--amber);}
-.upg-node.purchased{border-color:var(--green-dim);color:var(--green-dim);cursor:default;}
-.upg-node.purchased .upg-node-name::after{content:' [OK]';}
-.upg-node.locked{border-color:var(--bg);color:#0e2a18;cursor:not-allowed;}
-.upg-node:hover:not(.purchased):not(.locked){border-color:var(--green);color:var(--green);text-shadow:var(--glow);}
-.upg-node-name{font-size:13px;letter-spacing:1px;margin-bottom:3px;text-transform:uppercase;}
-.upg-node-desc{font-size:11px;color:var(--green-mid);}
-.upg-node.available .upg-node-desc{color:var(--amber);}
-.upg-node-cost{font-size:11px;margin-top:4px;}
-.upg-connector{
-  font-size:12px;color:var(--green-dim);
-  align-self:center;
-  user-select:none;
-}
-.upg-tree-section{margin-bottom:16px;}
-.upg-tree-section-title{
-  font-size:11px;letter-spacing:3px;color:var(--green-mid);
-  text-transform:uppercase;border-bottom:var(--border);
-  padding-bottom:4px;margin-bottom:8px;
-}
-.upg-tree-section-title::before{content:'// ';}
+  .title-btn:hover {
+    border-color: var(--green);
+    text-shadow: var(--glow);
+  }
 
-/* ==================== TAB 3: ASSEMBLY ==================== */
-.assembly-layout{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-}
-@media(max-width:700px){.assembly-layout{grid-template-columns:1fr;}}
-.rocket-art-wrap{
-  border:var(--border);
-  background:var(--bg);
-  padding:12px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-}
-.rocket-art{
-  font-size:12px;
-  line-height:1.3;
-  white-space:pre;
-  text-align:left;
-  font-family:var(--font);
-  color:var(--green-mid);
-}
-.rocket-art .r-nose{color:var(--green-dim);}
-.rocket-art .r-payload{color:var(--green-dim);}
-.rocket-art .r-avionics{color:var(--green-dim);}
-.rocket-art .r-engine{color:var(--green-dim);}
-.rocket-art .r-exhaust{color:var(--green-dim);}
+  .title-btn.primary {
+    border-color: var(--green);
+    text-shadow: var(--glow);
+  }
 
-.rocket-art .r-nose.done{color:var(--green);text-shadow:var(--glow);}
-.rocket-art .r-payload.done{color:var(--green);text-shadow:var(--glow);}
-.rocket-art .r-avionics.done{color:var(--green);text-shadow:var(--glow);}
-.rocket-art .r-engine.done{color:var(--green);text-shadow:var(--glow);}
-.rocket-art .r-exhaust.done{color:var(--amber);text-shadow:0 0 6px #ffab0080;}
+  /* ===========================
+     2. WORLD BACKGROUND
+     =========================== */
+  #world-bg {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 220px;
+    z-index: 1;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #000800 0%, #010c04 60%, #020d04 100%);
+  }
 
-.quality-selector{
-  display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;
-}
-.qual-btn{
-  background:none;
-  border:1px solid var(--green-dim);
-  color:var(--green-mid);
-  font-family:var(--font);
-  font-size:12px;
-  padding:4px 10px;
-  cursor:pointer;
-  text-transform:uppercase;
-  letter-spacing:1px;
-  transition:all 0.12s;
-}
-.qual-btn.active{
-  border-color:var(--amber);
-  color:var(--amber);
-  text-shadow:0 0 6px #ffab0080;
-}
-.qual-btn:hover:not(.active){border-color:var(--green-dim);color:var(--green);}
+  #world-scene {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 3200px;
+    height: 220px;
+    transition: transform 0.8s ease;
+  }
 
-.parts-list-item{
-  display:flex;justify-content:space-between;align-items:center;
-  border-bottom:1px solid #0e2a18;
-  padding:5px 0;
-  font-size:13px;
-  gap:8px;
-}
-.part-done{color:var(--green);text-shadow:var(--glow);}
-.part-pending{color:var(--green-dim);}
-.part-check{font-size:12px;color:var(--green-mid);min-width:14px;}
+  #sky-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 160px;
+  }
 
-.slot-card{
-  border:var(--border);
-  background:var(--panel-bg);
-  padding:8px 10px;
-  margin-bottom:8px;
-}
-.slot-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-.slot-title{font-size:13px;color:var(--green);letter-spacing:1px;}
-.slot-state{font-size:12px;}
-.slot-state.idle{color:var(--green-mid);}
-.slot-state.busy{color:var(--amber);}
-.slot-state.ready{color:var(--green);text-shadow:var(--glow);}
+  .star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--green-dim);
+    opacity: 0.6;
+  }
 
-.science-box{
-  border:var(--border);
-  background:var(--bg);
-  padding:8px 10px;
-  font-size:12px;
-  color:var(--green-mid);
-  margin-top:8px;
-  line-height:1.6;
-}
-.science-box .val{color:var(--green);}
-.science-box .ms-val{color:var(--amber);}
+  #buildings-layer {
+    position: absolute;
+    bottom: 32px;
+    left: 0;
+    width: 100%;
+  }
 
-/* ==================== TAB 4: LAUNCH CONTROL ==================== */
-.launch-layout{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:700px){.launch-layout{grid-template-columns:1fr;}}
+  #ground-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 32px;
+    background: linear-gradient(to bottom, #0a1a08, #020d04);
+    border-top: 2px solid var(--green-dim);
+  }
 
-.ready-list{font-size:13px;color:var(--green-mid);line-height:1.8;}
-.ready-slot-row{
-  display:flex;justify-content:space-between;align-items:center;
-  border-bottom:1px solid #0e2a18;
-  padding:5px 0;
-  gap:8px;
-}
+  #workers-layer {
+    position: absolute;
+    bottom: 32px;
+    left: 0;
+    width: 100%;
+  }
 
-.telemetry-wrap{
-  border:var(--border);
-  background:var(--bg);
-  padding:10px 12px;
-  font-size:13px;
-  min-height:160px;
-}
-.telem-line{
-  display:flex;align-items:center;gap:8px;
-  padding:3px 0;
-  border-bottom:1px solid #0a1a0a;
-  color:var(--green-mid);
-}
-.telem-time{color:var(--green-mid);min-width:55px;font-size:12px;}
-.telem-event{min-width:160px;color:var(--green);text-transform:uppercase;font-size:12px;}
-.telem-bar{flex:1;height:6px;border:1px solid var(--green-dim);position:relative;}
-.telem-bar-fill{height:100%;background:var(--green-mid);transition:width 0.5s;}
-.telem-pct{color:var(--green);font-size:12px;min-width:36px;text-align:right;}
+  /* ===== WORLD BUILDINGS ===== */
+  .world-building {
+    position: absolute;
+    bottom: 0;
+  }
 
-.launch-result{
-  display:none;
-  border:1px solid var(--amber);
-  background:rgba(255,171,0,0.05);
-  padding:12px;
-  font-size:13px;
-  color:var(--amber);
-  margin-top:10px;
-}
-.launch-result.show{display:block;}
-.launch-result-title{
-  font-size:15px;letter-spacing:3px;text-transform:uppercase;
-  text-shadow:0 0 12px #ffab00;margin-bottom:8px;
-}
-.launch-result-stats{
-  display:grid;grid-template-columns:1fr 1fr;gap:4px;
-  font-size:12px;margin-bottom:10px;
-}
-.launch-result-stat-lbl{color:var(--green-mid);}
-.launch-result-stat-val{color:var(--amber);}
+  /* Mine */
+  .wb-mine {
+    width: 70px;
+    height: 85px;
+    background: #0a1808;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+    position: relative;
+  }
+  .wb-mine::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 10px;
+    right: 10px;
+    height: 8px;
+    background: #0a2010;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+  }
+  .wb-mine::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 5px;
+    width: 60px;
+    height: 4px;
+    background: var(--green-dim);
+  }
+  .wb-mine .conveyor {
+    position: absolute;
+    bottom: 20px;
+    right: -20px;
+    width: 22px;
+    height: 8px;
+    background: #0a1a08;
+    border: 1px solid var(--green-dim);
+    transform: rotate(-20deg);
+  }
+  .mine-light {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    width: 6px;
+    height: 6px;
+    background: var(--amber);
+    box-shadow: 0 0 6px var(--amber);
+    animation: mine-blink 2s step-start infinite;
+  }
+  @keyframes mine-blink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.2; }
+  }
 
-.launch-anim-wrap{
-  text-align:center;
-  padding:10px;
-  min-height:120px;
-  position:relative;
-  overflow:hidden;
-}
-.launch-rocket-ascii{
-  font-size:11px;
-  white-space:pre;
-  color:var(--green);
-  display:inline-block;
-  transition:transform 1.5s ease-in;
-  position:relative;
-}
-.launch-rocket-ascii.launching{
-  animation:rocket-launch 3s ease-in forwards;
-}
-@keyframes rocket-launch{
-  0%{transform:translateY(0);}
-  100%{transform:translateY(-400px);}
-}
-.exhaust-anim{
-  font-size:11px;
-  white-space:pre;
-  color:var(--amber);
-  text-shadow:0 0 6px #ffab00;
-  display:inline-block;
-  animation:exhaust-flicker 0.15s step-start infinite;
-}
-@keyframes exhaust-flicker{
-  0%{opacity:1;}50%{opacity:0.4;}100%{opacity:1;}
-}
+  /* Refinery */
+  .wb-refinery {
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    position: absolute;
+    bottom: 0;
+  }
+  .refinery-tank {
+    width: 40px;
+    background: #081408;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+    position: relative;
+  }
+  .refinery-tank.tall  { height: 90px; }
+  .refinery-tank.short { height: 65px; }
+  .refinery-tank::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: -2px;
+    right: -2px;
+    height: 6px;
+    background: #0a1a08;
+    border: 2px solid var(--green-dim);
+  }
+  .refinery-pipe {
+    position: absolute;
+    bottom: 30px;
+    left: 40px;
+    width: 20px;
+    height: 3px;
+    background: var(--green-dim);
+  }
 
-/* ==================== TAB 5: MISSION PROGRESS ==================== */
-.phase-row{
-  display:flex;align-items:center;gap:10px;
-  padding:6px 0;
-  border-bottom:1px solid #0e2a18;
-  font-size:13px;
-}
-.phase-name{min-width:200px;color:var(--green-mid);text-transform:uppercase;font-size:12px;}
-.phase-bar-wrap{flex:1;height:8px;border:1px solid var(--green-dim);background:var(--bg);}
-.phase-bar-fill{height:100%;background:var(--green-mid);transition:width 0.5s;}
-.phase-bar-fill.done{background:var(--green);}
-.phase-status{min-width:80px;font-size:12px;text-align:right;color:var(--green-mid);}
-.phase-status.done{color:var(--green);}
-.phase-status.locked{color:#0e2a18;}
+  /* Research Lab */
+  .wb-research {
+    width: 110px;
+    height: 75px;
+    background: #060f08;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+    position: relative;
+  }
+  .wb-research::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 30px;
+    right: 30px;
+    height: 10px;
+    background: #060f08;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+  }
+  .research-windows {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 8px 6px;
+  }
+  .research-win {
+    height: 12px;
+    background: var(--panel-bg);
+    border: 1px solid var(--green-dim);
+  }
+  .research-win.lit {
+    background: rgba(0,230,118,0.15);
+    box-shadow: 0 0 4px #00e67640;
+  }
 
-.history-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:12px;
-  margin-top:6px;
-}
-.history-table th{
-  background:#021508;
-  color:var(--green-mid);
-  text-align:left;
-  padding:5px 8px;
-  border:var(--border);
-  letter-spacing:1px;
-  font-weight:normal;
-  text-transform:uppercase;
-}
-.history-table td{
-  padding:4px 8px;
-  border:1px solid #0e2a18;
-  color:var(--green);
-}
-.history-table tr:hover td{background:rgba(0,230,118,0.04);}
+  /* Electronics Lab */
+  .wb-eleclab {
+    width: 90px;
+    height: 60px;
+    background: #050a06;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+    position: relative;
+  }
+  .elec-circuit {
+    position: absolute;
+    top: 10px;
+    left: 8px;
+    right: 8px;
+    height: 1px;
+    background: var(--green-dim);
+  }
+  .elec-circuit::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 20px;
+    width: 6px;
+    height: 7px;
+    background: var(--green-dim);
+  }
+  .elec-circuit::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    right: 20px;
+    width: 6px;
+    height: 7px;
+    background: var(--green-dim);
+  }
+  .elec-led {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    background: var(--green);
+    box-shadow: var(--glow);
+    animation: elec-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes elec-pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
 
-.prestige-panel{
-  border:1px solid var(--amber);
-  background:rgba(255,171,0,0.04);
-  padding:12px;
-  margin-top:10px;
-}
-.prestige-panel .panel-header{
-  color:var(--amber);
-  border-bottom-color:var(--amber);
-}
-.prestige-panel .panel-header::before{content:'// ';}
-.prestige-stat{
-  font-size:13px;color:var(--amber);
-  margin-bottom:6px;line-height:1.6;
-}
+  /* Ops Center */
+  .wb-ops {
+    width: 120px;
+    height: 80px;
+    background: #060e07;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+    position: relative;
+  }
+  .ops-windows {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+    padding: 8px 6px 6px;
+  }
+  .ops-win {
+    height: 10px;
+    background: var(--panel-bg);
+    border: 1px solid #0d2016;
+  }
+  .ops-win.lit {
+    background: rgba(0,230,118,0.1);
+  }
+  .ops-sign {
+    position: absolute;
+    bottom: 6px;
+    left: 0;
+    right: 0;
+    height: 12px;
+    border-top: 1px solid var(--green-dim);
+  }
 
-/* ==================== LAUNCH OVERLAY ==================== */
-#launch-overlay{
-  display:none;
-  position:fixed;inset:0;
-  background:rgba(1,8,0,0.97);
-  z-index:7000;
-  align-items:center;justify-content:center;
-  flex-direction:column;
-  text-align:center;
-  padding:20px;
-}
-#launch-overlay.show{display:flex;}
-.lo-title{
-  font-size:24px;letter-spacing:8px;text-transform:uppercase;
-  color:var(--amber);text-shadow:0 0 20px #ffab00;
-  margin-bottom:12px;
-}
-.lo-rocket{
-  font-size:11px;white-space:pre;
-  color:var(--amber);text-shadow:0 0 6px #ffab0080;
-  margin-bottom:12px;
-  animation:rocket-launch 4s ease-in forwards;
-}
-.lo-stats{
-  font-size:14px;color:var(--green);
-  margin-bottom:16px;line-height:2;
-  text-shadow:var(--glow);
-}
-.lo-ms{font-size:18px;color:var(--amber);letter-spacing:3px;margin-bottom:20px;}
-.lo-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  /* Launch Pad */
+  .wb-launchpad {
+    width: 80px;
+    height: 160px;
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .lp-gantry {
+    width: 6px;
+    height: 130px;
+    background: var(--green-dim);
+    margin-left: 20px;
+    position: relative;
+  }
+  .lp-gantry::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    background: var(--green-dim);
+  }
+  .lp-gantry::after {
+    content: '';
+    position: absolute;
+    top: 50px;
+    left: 0;
+    width: 25px;
+    height: 2px;
+    background: var(--green-dim);
+  }
+  .lp-rocket {
+    position: absolute;
+    bottom: 20px;
+    left: 28px;
+    width: 20px;
+    height: 50px;
+    background: #0a1808;
+    border: 1px solid var(--green);
+  }
+  .lp-rocket::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 3px;
+    right: 3px;
+    height: 10px;
+    background: #0a1808;
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    border: 1px solid var(--green);
+  }
+  .lp-base {
+    width: 70px;
+    height: 10px;
+    background: #0a1a08;
+    border: 2px solid var(--green-dim);
+    border-bottom: none;
+  }
 
-/* ==================== MISC ==================== */
-.sep{border:none;border-top:var(--border);margin:8px 0;}
-.label-sm{font-size:11px;color:var(--green-mid);letter-spacing:2px;text-transform:uppercase;}
-.val-green{color:var(--green);text-shadow:var(--glow);}
-.val-amber{color:var(--amber);}
-.val-red{color:var(--red);}
-.cursor-blink::after{content:'_';animation:blink 1s step-start infinite;}
-@keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+  /* Solar Array */
+  .wb-solar {
+    width: 120px;
+    height: 30px;
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    gap: 3px;
+    align-items: flex-end;
+  }
+  .solar-panel {
+    width: 22px;
+    height: 18px;
+    background: #041028;
+    border: 1px solid #1a3c6a;
+    transform: rotate(-10deg);
+    position: relative;
+  }
+  .solar-panel::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: linear-gradient(135deg, #062040 0%, #0a3060 100%);
+    border: 1px solid #1a3c6a;
+  }
+  .solar-pole {
+    width: 2px;
+    height: 20px;
+    background: var(--green-dim);
+    align-self: flex-end;
+  }
+
+  /* Smoke */
+  .smoke-puff {
+    position: absolute;
+    top: -8px;
+    width: 4px;
+    height: 4px;
+    background: #1a3020;
+    border-radius: 50%;
+    animation: smoke-rise 2s ease-out infinite;
+  }
+  @keyframes smoke-rise {
+    0%   { transform: translateY(0); opacity: 0.8; }
+    100% { transform: translateY(-30px) translateX(8px); opacity: 0; }
+  }
+
+  /* Workers */
+  .worker {
+    position: absolute;
+    bottom: 0;
+    width: 6px;
+    height: 14px;
+    background: var(--green);
+  }
+  .worker::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 0;
+    width: 6px;
+    height: 5px;
+    background: var(--green-mid);
+  }
+  @keyframes worker-walk-r {
+    0%   { left: 80px; }
+    100% { left: 3100px; transform: scaleX(-1); }
+  }
+  @keyframes worker-walk-l {
+    0%   { left: 3100px; transform: scaleX(-1); }
+    100% { left: 80px; }
+  }
+  .worker-1 { animation: worker-walk-r 28s linear infinite; }
+  .worker-2 { animation: worker-walk-l 32s linear infinite; animation-delay: -10s; }
+  .worker-3 { animation: worker-walk-r 24s linear infinite; animation-delay: -5s; }
+  .worker-4 { animation: worker-walk-l 30s linear infinite; animation-delay: -18s; }
+  .worker-5 { animation: worker-walk-r 26s linear infinite; animation-delay: -22s; }
+
+  /* ===========================
+     3. GAME UI #app
+     =========================== */
+  #app {
+    position: relative;
+    z-index: 10;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+    padding-bottom: 230px;
+    display: none;
+  }
+  #app.visible { display: block; }
+
+  /* ===== 3a. Resource Bar ===== */
+  #res-bar {
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: rgba(1,8,0,0.97);
+    border-bottom: var(--border);
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.8);
+  }
+
+  .res-bar-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    flex: 1;
+  }
+
+  .res-cell {
+    border: var(--border);
+    padding: 4px 12px;
+    font-size: 15px;
+    color: var(--green);
+    white-space: nowrap;
+    text-shadow: var(--glow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .res-cell .res-name {
+    font-size: 11px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .res-cell .res-val {
+    font-size: 17px;
+    font-weight: normal;
+  }
+  .res-cell .res-rate {
+    font-size: 12px;
+    color: var(--green-mid);
+  }
+  .res-cell.amber .res-val {
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+  }
+
+  #ms-cell { border-color: var(--amber); }
+
+  .res-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  /* ===== 3b. Nav Tabs ===== */
+  #nav-tabs {
+    display: flex;
+    border-bottom: var(--border);
+    background: rgba(1,8,0,0.95);
+    position: sticky;
+    top: 72px;
+    z-index: 150;
+  }
+
+  .nav-tab {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--green-dim);
+    font-family: var(--font);
+    font-size: 15px;
+    letter-spacing: 2px;
+    padding: 10px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    text-align: center;
+    border-right: var(--border);
+  }
+  .nav-tab:last-child { border-right: none; }
+  .nav-tab:hover { color: var(--green); }
+  .nav-tab.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+    text-shadow: var(--glow-strong);
+    background: rgba(0,230,118,0.04);
+  }
+  .nav-tab.new-unlock { animation: tab-unlock 0.8s ease; }
+  @keyframes tab-unlock {
+    0%   { color: var(--amber); text-shadow: 0 0 20px var(--amber); }
+    100% { color: var(--green); }
+  }
+
+  /* ===== 3c. Tab Panes ===== */
+  .tab-pane {
+    display: none;
+    padding: 14px 12px;
+  }
+  .tab-pane.active { display: block; }
+
+  /* Panels */
+  .panel {
+    background: rgba(2,13,4,0.96);
+    border: var(--border);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+  }
+  .panel-header {
+    font-size: 17px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-transform: uppercase;
+    border-bottom: var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    text-shadow: var(--glow);
+  }
+
+  /* Buttons */
+  .btn {
+    background: none;
+    border: 2px solid var(--green-dim);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 15px;
+    letter-spacing: 2px;
+    padding: 7px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.12s;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--green);
+    text-shadow: var(--glow);
+  }
+  .btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+  .btn-amber {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+  .btn-sm {
+    font-size: 13px;
+    padding: 4px 10px;
+    letter-spacing: 1px;
+  }
+  .btn-full {
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 8px;
+  }
+
+  /* Sound button */
+  #sound-btn {
+    background: none;
+    border: 1px solid var(--green-dim);
+    color: var(--green-dim);
+    font-family: var(--font);
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.12s;
+  }
+  #sound-btn:hover {
+    color: var(--green);
+    border-color: var(--green);
+  }
+
+  /* Progress bars */
+  .prog-wrap {
+    border: 1px solid var(--green-dim);
+    height: 8px;
+    background: var(--bg);
+    overflow: hidden;
+    margin: 4px 0;
+  }
+  .prog-fill {
+    height: 100%;
+    background: var(--green-mid);
+    transition: width 0.3s;
+  }
+  .prog-fill.amber { background: var(--amber); }
+
+  /* Offline banner */
+  #offline-banner {
+    display: none;
+    background: rgba(255,171,0,0.08);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    padding: 7px 14px;
+    font-size: 14px;
+    margin: 8px 12px;
+  }
+
+  /* Notifications */
+  #notif {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 8000;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    pointer-events: none;
+  }
+  .notif-item {
+    background: var(--panel-bg);
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-size: 14px;
+    padding: 8px 16px;
+    text-shadow: var(--glow);
+    animation: notif-in 0.2s ease, notif-out 0.4s ease 2.6s forwards;
+    max-width: 340px;
+  }
+  .notif-item.amber { border-color: var(--amber); color: var(--amber); }
+  .notif-item.red   { border-color: var(--red);   color: var(--red);   }
+  @keyframes notif-in {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes notif-out {
+    to { opacity: 0; transform: translateX(40px); }
+  }
+
+  /* ===========================
+     PRODUCTION TAB
+     =========================== */
+  .bld-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .bld-card {
+    border: var(--border);
+    background: var(--panel-bg);
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .bld-card:hover { border-color: var(--green); }
+  .bld-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .bld-name {
+    font-size: 16px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+  .bld-cnt {
+    color: var(--amber);
+    font-size: 15px;
+  }
+  .bld-desc {
+    font-size: 13px;
+    color: var(--green-mid);
+    margin-bottom: 8px;
+  }
+  .bld-rate {
+    font-size: 13px;
+    color: var(--green-mid);
+    margin-bottom: 6px;
+  }
+  .bld-cost {
+    font-size: 13px;
+    color: var(--green-dim);
+    margin-bottom: 8px;
+  }
+
+  /* ===========================
+     RESEARCH TAB
+     =========================== */
+  #research-layout {
+    display: flex;
+    height: calc(100vh - 200px);
+    gap: 0;
+  }
+  #panel-left-research {
+    width: 22%;
+    flex-shrink: 0;
+    background: var(--panel-bg);
+    border-right: var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #panel-center-research {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  #panel-right-research {
+    width: 25%;
+    flex-shrink: 0;
+    background: var(--panel-bg);
+    border-left: var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .r-panel-header {
+    padding: 8px 12px;
+    background: #041208;
+    border-bottom: var(--border);
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+  .r-panel-header::before { content: '> '; }
+  .r-panel-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) transparent;
+  }
+
+  /* Research queue card */
+  .res-queue-card {
+    border: var(--border);
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    background: #010f04;
+  }
+  .rqc-title {
+    font-size: 13px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    margin-bottom: 4px;
+  }
+  .rqc-sub {
+    font-size: 11px;
+    color: var(--green-dim);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .rqc-flash {
+    font-size: 12px;
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+    animation: pulse-amber 0.5s ease-in-out 3;
+  }
+  @keyframes pulse-amber {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  /* Tech tree */
+  #tree-container {
+    flex: 1;
+    overflow: auto;
+    padding: 14px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) transparent;
+    position: relative;
+  }
+  .branch-headers {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+    min-width: 800px;
+  }
+  .branch-header {
+    flex: 1;
+    text-align: center;
+    padding: 5px;
+    border: var(--border);
+    background: #041208;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+  .branch-header.locked {
+    border-color: #1a1f1a;
+    color: #3a4a3a;
+    text-shadow: none;
+  }
+  #tree-svg {
+    display: block;
+    min-width: 800px;
+  }
+  .tech-node { cursor: pointer; }
+
+  /* Right detail panel */
+  .detail-tech-id {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .detail-tech-name {
+    font-size: 16px;
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+  }
+  .detail-divider {
+    border: none;
+    border-top: var(--border);
+    margin: 8px 0;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid;
+    margin-bottom: 8px;
+  }
+  .status-complete  { color: var(--green);  border-color: var(--green);     background: #011a0a; }
+  .status-available { color: var(--green);  border-color: var(--green-mid); background: #010f04; }
+  .status-locked    { color: #3a4a3a;       border-color: #2a2f2a;          background: #1a1f1a; }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 3px 0;
+    border-bottom: 1px solid #091608;
+  }
+  .detail-row .dr-key {
+    color: var(--green-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 12px;
+  }
+  .detail-row .dr-val {
+    color: var(--green);
+    text-align: right;
+  }
+
+  .btn-research {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    background: none;
+    border: 2px solid var(--green-mid);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 15px;
+    letter-spacing: 2px;
+    padding: 9px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .btn-research:hover:not(:disabled) {
+    border-color: var(--green);
+    text-shadow: var(--glow-strong);
+  }
+  .btn-research:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .rp-section {
+    margin-top: 12px;
+    border-top: 1px solid #0d2016;
+    padding-top: 10px;
+  }
+  .rp-section-title {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .lab-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--green-mid);
+    padding: 3px 0;
+    border-bottom: 1px solid #091608;
+  }
+  .lab-item .lab-rate {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .ov-card {
+    border: var(--border);
+    background: #010f04;
+    padding: 8px;
+    text-align: center;
+  }
+  .ov-num {
+    font-size: 22px;
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+    line-height: 1.2;
+  }
+  .ov-num.amber {
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+  }
+  .ov-label {
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-top: 2px;
+  }
+
+  /* ===========================
+     ASSEMBLY TAB
+     =========================== */
+  .assembly-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 700px) {
+    .assembly-layout { grid-template-columns: 1fr; }
+  }
+  .rocket-art-wrap {
+    text-align: center;
+    padding: 10px;
+    border: var(--border);
+    background: var(--bg);
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #rocket-art-display {
+    font-size: 13px;
+    white-space: pre;
+    line-height: 1.3;
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+  .parts-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #0e2a18;
+    padding: 6px 0;
+    font-size: 14px;
+    gap: 8px;
+  }
+  .part-done    { color: var(--green); text-shadow: var(--glow); }
+  .part-pending { color: var(--green-dim); }
+
+  .quality-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .q-btn { flex: 1; min-width: 100px; }
+  .q-btn.selected {
+    border-color: var(--amber);
+    color: var(--amber);
+    box-shadow: 0 0 8px var(--amber);
+  }
+
+  .slot-card {
+    border: var(--border);
+    background: var(--panel-bg);
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+  .slot-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  .slot-title { font-size: 14px; color: var(--green); letter-spacing: 1px; }
+  .slot-state.idle  { color: var(--green-mid); }
+  .slot-state.busy  { color: var(--amber); }
+  .slot-state.ready { color: var(--green); text-shadow: var(--glow); }
+
+  .science-box {
+    border: var(--border);
+    background: var(--bg);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--green-mid);
+    margin-top: 10px;
+    line-height: 1.7;
+  }
+  .science-box .val    { color: var(--green); }
+  .science-box .ms-val { color: var(--amber); }
+
+  /* ===========================
+     LAUNCH TAB
+     =========================== */
+  .launch-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 700px) {
+    .launch-layout { grid-template-columns: 1fr; }
+  }
+
+  .ready-slot-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #0e2a18;
+    padding: 7px 0;
+    font-size: 14px;
+    gap: 8px;
+  }
+
+  .telemetry-wrap {
+    border: var(--border);
+    background: var(--bg);
+    padding: 12px 14px;
+    font-size: 13px;
+    min-height: 180px;
+  }
+  .telem-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid #0a1a0a;
+    color: var(--green-mid);
+  }
+  .telem-time  { color: var(--green-mid); min-width: 55px; font-size: 13px; }
+  .telem-event { min-width: 170px; color: var(--green); text-transform: uppercase; font-size: 13px; }
+  .telem-bar   { flex: 1; height: 6px; border: 1px solid var(--green-dim); }
+  .telem-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.5s; }
+  .telem-pct   { color: var(--green); font-size: 13px; min-width: 38px; text-align: right; }
+
+  .launch-anim-wrap {
+    text-align: center;
+    padding: 14px;
+    min-height: 160px;
+    position: relative;
+    overflow: hidden;
+    border: var(--border);
+    background: var(--bg);
+  }
+  .launch-rocket-ascii {
+    font-size: 12px;
+    white-space: pre;
+    color: var(--green);
+    display: inline-block;
+  }
+  .launch-rocket-ascii.launching {
+    animation: rocket-launch 3s ease-in forwards;
+  }
+  @keyframes rocket-launch {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-400px); }
+  }
+  .exhaust-anim {
+    font-size: 12px;
+    white-space: pre;
+    color: var(--amber);
+    text-shadow: 0 0 6px var(--amber);
+    display: inline-block;
+    animation: exhaust-flicker 0.15s step-start infinite;
+  }
+  @keyframes exhaust-flicker {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
+
+  .launch-result {
+    display: none;
+    border: 1px solid var(--amber);
+    background: rgba(255,171,0,0.05);
+    padding: 14px;
+    font-size: 14px;
+    color: var(--amber);
+    margin-top: 12px;
+  }
+  .launch-result.show { display: block; }
+  .launch-result-title {
+    font-size: 17px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px var(--amber);
+    margin-bottom: 8px;
+  }
+  .launch-result-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .launch-result-stat-lbl { color: var(--green-mid); }
+  .launch-result-stat-val { color: var(--amber); }
+
+  /* ===========================
+     MISSION TAB
+     =========================== */
+  .phase-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid #0e2a18;
+    font-size: 14px;
+  }
+  .phase-name {
+    min-width: 200px;
+    color: var(--green-mid);
+    text-transform: uppercase;
+    font-size: 13px;
+  }
+  .phase-bar-wrap {
+    flex: 1;
+    height: 8px;
+    border: 1px solid var(--green-dim);
+    background: var(--bg);
+  }
+  .phase-bar-fill {
+    height: 100%;
+    background: var(--green-mid);
+    transition: width 0.5s;
+  }
+  .phase-bar-fill.done { background: var(--green); }
+  .phase-status {
+    min-width: 80px;
+    font-size: 13px;
+    text-align: right;
+    color: var(--green-mid);
+  }
+  .phase-status.done   { color: var(--green); }
+  .phase-status.locked { color: #0e2a18; }
+
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .history-table th {
+    background: #021508;
+    color: var(--green-mid);
+    text-align: left;
+    padding: 6px 10px;
+    border: var(--border);
+    letter-spacing: 1px;
+    font-weight: normal;
+    text-transform: uppercase;
+  }
+  .history-table td {
+    padding: 5px 10px;
+    border: 1px solid #0e2a18;
+    color: var(--green);
+  }
+  .history-table tr:hover td {
+    background: rgba(0,230,118,0.04);
+  }
+
+  .prestige-panel {
+    border: 1px solid var(--amber);
+    background: rgba(255,171,0,0.04);
+    padding: 14px;
+    margin-top: 12px;
+  }
+  .prestige-stat {
+    font-size: 14px;
+    color: var(--amber);
+    margin-bottom: 8px;
+    line-height: 1.7;
+  }
+
+  /* ===========================
+     4. LAUNCH OVERLAY
+     =========================== */
+  #launch-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(1,8,0,0.97);
+    z-index: 7000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 24px;
+  }
+  #launch-overlay.show { display: flex; }
+  .lo-title {
+    font-size: 28px;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    color: var(--amber);
+    text-shadow: 0 0 20px var(--amber);
+    margin-bottom: 14px;
+  }
+  .lo-rocket {
+    font-size: 12px;
+    white-space: pre;
+    color: var(--amber);
+    text-shadow: 0 0 6px #ffab0080;
+    margin-bottom: 14px;
+    animation: rocket-launch 4s ease-in forwards;
+  }
+  .lo-stats {
+    font-size: 16px;
+    color: var(--green);
+    margin-bottom: 18px;
+    line-height: 2.2;
+    text-shadow: var(--glow);
+  }
+  .lo-ms {
+    font-size: 20px;
+    color: var(--amber);
+    letter-spacing: 3px;
+    margin-bottom: 24px;
+  }
+  .lo-btns {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
 </style>
 </head>
 <body>
 
-<!-- ==================== TITLE SCREEN ==================== -->
-<div id="title-screen">
-  <div class="title-logo glow-strong">MOON IDLE</div>
-  <div class="title-subtitle">달 탐사 로켓 제작소 / LUNAR EXPLORATION SIM</div>
-  <div class="boot-log" id="boot-log"></div>
-  <div class="title-save-strip" id="save-strip">
-    <span>세이브 없음</span>
-  </div>
-  <div class="title-btns">
-    <button class="title-btn primary" onclick="startNewGame()">새 게임</button>
-    <button class="title-btn" id="continue-btn" onclick="continueGame()" style="display:none">이어하기</button>
-    <button class="title-btn" onclick="openSettings()">설정</button>
-  </div>
-</div>
-
-<!-- ==================== MAIN APP ==================== -->
-<div id="app">
-  <!-- RESOURCE BAR -->
-  <div id="res-bar">
-    <div class="res-bar-inner" id="res-bar-inner"></div>
-    <div class="res-bar-right">
-      <button id="sound-btn" onclick="toggleSound()">SND:ON</button>
+  <!-- ===========================
+       1. TITLE SCREEN
+       =========================== -->
+  <div id="title-screen">
+    <div class="title-logo">MOON IDLE</div>
+    <div class="title-subtitle">달 탐사 로켓 제작소 / LUNAR EXPLORATION SIM</div>
+    <div id="boot-log" class="boot-log"></div>
+    <div id="save-strip" class="title-save-strip">// 저장 데이터 없음</div>
+    <div class="title-btns">
+      <button class="title-btn primary" id="new-game-btn">새 게임</button>
+      <button class="title-btn" id="continue-btn" style="display:none">이어하기</button>
+      <button class="title-btn" id="settings-btn">설정</button>
     </div>
   </div>
 
-  <!-- NAV TABS -->
-  <div id="nav-tabs">
-    <button class="nav-tab active" onclick="switchMainTab(0)">생산 허브</button>
-    <button class="nav-tab" onclick="switchMainTab(1)">연구소</button>
-    <button class="nav-tab" onclick="switchMainTab(2)">조립동</button>
-    <button class="nav-tab" onclick="switchMainTab(3)">발사 통제</button>
-    <button class="nav-tab" onclick="switchMainTab(4)">미션 현황</button>
-  </div>
-
-  <!-- OFFLINE BANNER -->
-  <div id="offline-banner"></div>
-
-  <!-- ===== TAB 0: PRODUCTION HUB ===== -->
-  <div class="tab-pane active" id="pane-0">
-    <div class="panel">
-      <div class="panel-header">생산 허브</div>
-      <div class="prod-status-line" id="prod-status"></div>
-      <!-- ASCII world -->
-      <div class="prod-world-wrap">
-        <div class="prod-world" id="prod-world"></div>
-      </div>
-      <!-- Building cards -->
-      <div class="bld-grid" id="bld-grid"></div>
-    </div>
-  </div>
-
-  <!-- ===== TAB 1: RESEARCH ===== -->
-  <div class="tab-pane" id="pane-1">
-    <div class="panel">
-      <div class="panel-header">연구소 — 업그레이드 트리</div>
-      <div id="upg-tree-wrap"></div>
-    </div>
-  </div>
-
-  <!-- ===== TAB 2: ASSEMBLY ===== -->
-  <div class="tab-pane" id="pane-2">
-    <div class="panel">
-      <div class="panel-header">로켓 조립동</div>
-      <div class="assembly-layout">
-        <!-- LEFT: ASCII rocket + parts -->
-        <div>
-          <div class="rocket-art-wrap">
-            <div id="rocket-art-display"></div>
-          </div>
-          <div class="panel" style="margin-top:8px;">
-            <div class="panel-header">부품 현황</div>
-            <div id="parts-checklist"></div>
-          </div>
-          <div class="science-box" id="science-box"></div>
-        </div>
-        <!-- RIGHT: quality + slots -->
-        <div>
-          <div class="panel">
-            <div class="panel-header">품질 등급</div>
-            <div class="quality-selector" id="quality-selector"></div>
-          </div>
-          <div class="panel" style="margin-top:8px;">
-            <div class="panel-header">조립 슬롯</div>
-            <div id="assembly-slots-wrap"></div>
-          </div>
-        </div>
+  <!-- ===========================
+       2. WORLD BACKGROUND
+       =========================== -->
+  <div id="world-bg">
+    <div id="world-scene">
+      <div id="sky-layer"></div>
+      <div id="buildings-layer"></div>
+      <div id="ground-line"></div>
+      <div id="workers-layer">
+        <div class="worker worker-1"></div>
+        <div class="worker worker-2"></div>
+        <div class="worker worker-3"></div>
+        <div class="worker worker-4"></div>
+        <div class="worker worker-5"></div>
       </div>
     </div>
   </div>
 
-  <!-- ===== TAB 3: LAUNCH CONTROL ===== -->
-  <div class="tab-pane" id="pane-3">
-    <div class="panel">
-      <div class="panel-header">발사 통제</div>
-      <div class="launch-layout">
-        <div>
-          <div class="panel">
-            <div class="panel-header">발사 준비 목록</div>
-            <div id="ready-list-wrap"></div>
-          </div>
-          <div class="launch-result" id="launch-result">
-            <div class="launch-result-title">발사 성공</div>
-            <div class="launch-result-stats" id="lr-stats"></div>
-            <div id="lr-ms" style="color:var(--amber);font-size:14px;margin-bottom:8px;"></div>
+  <!-- ===========================
+       3. GAME UI
+       =========================== -->
+  <div id="app">
+
+    <!-- 3a. Resource Bar -->
+    <div id="res-bar">
+      <div id="res-bar-inner" class="res-bar-inner"></div>
+      <div class="res-bar-right">
+        <span id="ms-display" style="color:var(--amber);font-size:14px;display:none"></span>
+        <button id="sound-btn">SND:ON</button>
+      </div>
+    </div>
+
+    <!-- 3b. Nav Tabs -->
+    <div id="nav-tabs">
+      <button class="nav-tab active" data-tab="production">생산 허브</button>
+      <button class="nav-tab" data-tab="research">연구소</button>
+      <button class="nav-tab" data-tab="assembly" style="display:none">조립동</button>
+      <button class="nav-tab" data-tab="launch" style="display:none">발사 통제</button>
+      <button class="nav-tab" data-tab="mission" style="display:none">미션 현황</button>
+    </div>
+
+    <!-- Offline Banner -->
+    <div id="offline-banner"></div>
+
+    <!-- ===== PRODUCTION TAB ===== -->
+    <div class="tab-pane active" id="pane-production">
+      <div class="panel">
+        <div class="panel-header">생산 허브</div>
+        <div id="prod-status" style="font-size:14px;color:var(--green-mid);margin-bottom:10px;border-bottom:var(--border);padding-bottom:8px;"></div>
+        <div id="bld-grid" class="bld-grid"></div>
+      </div>
+    </div>
+
+    <!-- ===== RESEARCH TAB ===== -->
+    <div class="tab-pane" id="pane-research">
+      <div id="research-layout">
+        <div id="panel-left-research">
+          <div class="r-panel-header">연구 현황</div>
+          <div class="r-panel-scroll" id="research-left-content"></div>
+        </div>
+        <div id="panel-center-research">
+          <div class="r-panel-header">기술 트리</div>
+          <div id="tree-container">
+            <div class="branch-headers" id="branch-headers"></div>
+            <svg id="tree-svg" height="480"></svg>
           </div>
         </div>
-        <div>
-          <div class="panel">
-            <div class="panel-header">발사 시퀀스</div>
-            <div class="launch-anim-wrap" id="launch-anim-wrap">
-              <div style="color:var(--green-mid);font-size:12px;">// 발사 대기 중</div>
+        <div id="panel-right-research">
+          <div class="r-panel-header">기술 상세</div>
+          <div class="r-panel-scroll" id="research-right-content">
+            <div id="tech-detail-panel"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ASSEMBLY TAB ===== -->
+    <div class="tab-pane" id="pane-assembly">
+      <div class="panel">
+        <div class="panel-header">로켓 조립동</div>
+        <div class="assembly-layout">
+          <div>
+            <div class="rocket-art-wrap"><pre id="rocket-art-display"></pre></div>
+            <div class="panel" style="margin-top:10px">
+              <div class="panel-header">부품 현황</div>
+              <div id="parts-checklist"></div>
             </div>
-            <div id="telem-wrap"></div>
+            <div class="science-box" id="science-box"></div>
+          </div>
+          <div>
+            <div class="panel">
+              <div class="panel-header">품질 등급</div>
+              <div class="quality-selector" id="quality-selector"></div>
+            </div>
+            <div class="panel" style="margin-top:10px">
+              <div class="panel-header">조립 슬롯</div>
+              <div id="assembly-slots-wrap"></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ===== TAB 4: MISSION PROGRESS ===== -->
-  <div class="tab-pane" id="pane-4">
-    <div class="panel">
-      <div class="panel-header">미션 진행 현황</div>
-      <div id="phase-progress-wrap"></div>
+    <!-- ===== LAUNCH TAB ===== -->
+    <div class="tab-pane" id="pane-launch">
+      <div class="panel">
+        <div class="panel-header">발사 통제</div>
+        <div class="launch-layout">
+          <div>
+            <div class="panel"><div class="panel-header">발사 준비</div><div id="ready-list-wrap"></div></div>
+            <div class="launch-result" id="launch-result">
+              <div class="launch-result-title">발사 성공</div>
+              <div class="launch-result-stats" id="lr-stats"></div>
+              <div id="lr-ms" style="color:var(--amber);font-size:16px;margin-bottom:10px;"></div>
+            </div>
+          </div>
+          <div>
+            <div class="panel">
+              <div class="panel-header">발사 시퀀스</div>
+              <div class="launch-anim-wrap" id="launch-anim-wrap"><div style="color:var(--green-mid);font-size:14px;">// 발사 대기 중</div></div>
+              <div id="telem-wrap"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="panel">
-      <div class="panel-header">발사 기록</div>
-      <div id="history-wrap"></div>
+
+    <!-- ===== MISSION TAB ===== -->
+    <div class="tab-pane" id="pane-mission">
+      <div class="panel"><div class="panel-header">미션 진행 현황</div><div id="phase-progress-wrap"></div></div>
+      <div class="panel"><div class="panel-header">발사 기록</div><div id="history-wrap"></div></div>
+      <div id="prestige-wrap"></div>
     </div>
-    <div id="prestige-wrap"></div>
-  </div>
-</div>
 
-<!-- ==================== LAUNCH OVERLAY ==================== -->
-<div id="launch-overlay">
-  <div class="lo-title">// 달 탐사 성공</div>
-  <pre class="lo-rocket" id="lo-rocket-art"></pre>
-  <div class="lo-stats" id="lo-stats"></div>
-  <div class="lo-ms" id="lo-ms"></div>
-  <div class="lo-btns">
-    <button class="btn btn-amber" onclick="confirmLaunch()">문스톤 획득 후 재시작</button>
-    <button class="btn" onclick="closeLaunchOverlay()">계속 진행</button>
-  </div>
-</div>
+  </div><!-- /#app -->
 
-<!-- NOTIFICATIONS -->
-<div id="notif"></div>
+  <!-- ===========================
+       4. LAUNCH OVERLAY
+       =========================== -->
+  <div id="launch-overlay">
+    <div class="lo-title">// 달 탐사 성공</div>
+    <pre class="lo-rocket" id="lo-rocket-art"></pre>
+    <div class="lo-stats" id="lo-stats"></div>
+    <div class="lo-ms" id="lo-ms"></div>
+    <div class="lo-btns">
+      <button class="btn btn-amber" id="btn-prestige">문스톤 획득 후 재시작</button>
+      <button class="btn" id="btn-continue-game">계속 진행</button>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div id="notif"></div>
 
 <script>
 // ============================================================
@@ -877,45 +1668,52 @@ const RESOURCES = [
 ];
 
 const BUILDINGS = [
-  { id:'ops_center',   name:'운영 센터',      icon:'[OPS]', produces:'money',       baseRate:20,  baseCost:{metal:50},                          desc:'수익 창출 허브' },
-  { id:'supply_depot', name:'보급 창고',      icon:'[DEP]', produces:'money',       baseRate:60,  baseCost:{metal:200,electronics:50},           desc:'물류 수익' },
-  { id:'mine',         name:'철광석 채굴기',  icon:'[MIN]', produces:'metal',       baseRate:1.2, baseCost:{money:100},                          desc:'기본 금속 생산' },
-  { id:'extractor',    name:'보크사이트 추출기',icon:'[EXT]',produces:'metal',      baseRate:3.5, baseCost:{money:500,metal:200},                 desc:'고급 금속 추출' },
-  { id:'refinery',     name:'연료 정제소',    icon:'[REF]', produces:'fuel',        baseRate:0.8, baseCost:{money:300,metal:100},                 desc:'LOX/RP-1 생산' },
-  { id:'cryo_plant',   name:'극저온 플랜트',  icon:'[CRY]', produces:'fuel',        baseRate:2.0, baseCost:{money:1000,metal:400,electronics:100},desc:'고순도 극저온 연료' },
-  { id:'elec_lab',     name:'전자공학 연구소',icon:'[PCB]', produces:'electronics', baseRate:0.5, baseCost:{money:400,metal:150},                 desc:'회로 부품 생산' },
-  { id:'fab_plant',    name:'반도체 공장',    icon:'[FAB]', produces:'electronics', baseRate:1.8, baseCost:{money:2000,metal:800,electronics:200}, desc:'고급 반도체' },
-  { id:'research_lab', name:'연구소',         icon:'[RSH]', produces:'research',    baseRate:0.4, baseCost:{money:500,electronics:100},            desc:'기술 연구 포인트' },
-  { id:'r_and_d',      name:'R&D 센터',       icon:'[RND]', produces:'research',    baseRate:1.2, baseCost:{money:3000,electronics:500},           desc:'고급 연구 가속' },
-  { id:'solar_array',  name:'태양광 어레이',  icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:800,electronics:200},            desc:'전체 생산 +10%/개' },
-  { id:'launch_pad',   name:'발사대',         icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:5000,metal:2000,electronics:500},desc:'발사 슬롯 +1' },
+  { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:20,  baseCost:{metal:50},                            desc:'수익 창출 허브',    wbClass:'wb-ops' },
+  { id:'supply_depot', name:'보급 창고',        icon:'[DEP]', produces:'money',       baseRate:60,  baseCost:{metal:200,electronics:50},             desc:'물류 수익',         wbClass:'wb-ops' },
+  { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'metal',       baseRate:1.2, baseCost:{money:100},                            desc:'기본 금속 생산',    wbClass:'wb-mine' },
+  { id:'extractor',    name:'보크사이트 추출기', icon:'[EXT]', produces:'metal',       baseRate:3.5, baseCost:{money:500,metal:200},                  desc:'고급 금속 추출',    wbClass:'wb-mine' },
+  { id:'refinery',     name:'연료 정제소',      icon:'[REF]', produces:'fuel',        baseRate:0.8, baseCost:{money:300,metal:100},                  desc:'LOX/RP-1 생산',    wbClass:'wb-refinery' },
+  { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:2.0, baseCost:{money:1000,metal:400,electronics:100}, desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
+  { id:'elec_lab',     name:'전자공학 연구소',  icon:'[PCB]', produces:'electronics', baseRate:0.5, baseCost:{money:400,metal:150},                  desc:'회로 부품 생산',    wbClass:'wb-eleclab' },
+  { id:'fab_plant',    name:'반도체 공장',      icon:'[FAB]', produces:'electronics', baseRate:1.8, baseCost:{money:2000,metal:800,electronics:200},  desc:'고급 반도체',       wbClass:'wb-eleclab' },
+  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:0.4, baseCost:{money:500,electronics:100},             desc:'기술 연구 포인트',  wbClass:'wb-research' },
+  { id:'r_and_d',      name:'R&D 센터',         icon:'[RND]', produces:'research',    baseRate:1.2, baseCost:{money:3000,electronics:500},            desc:'고급 연구 가속',    wbClass:'wb-research' },
+  { id:'solar_array',  name:'태양광 어레이',    icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:800,electronics:200},             desc:'전체 생산 +10%/개', wbClass:'wb-solar' },
+  { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:5000,metal:2000,electronics:500}, desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },
 ];
 
 const PARTS = [
-  { id:'engine',   name:'엔진',      icon:'[ENG]', cost:{metal:80,  fuel:40,  electronics:20} },
-  { id:'fueltank', name:'연료 탱크', icon:'[TNK]', cost:{metal:60,  fuel:60} },
-  { id:'control',  name:'제어 시스템',icon:'[CTL]',cost:{electronics:80, research:30} },
-  { id:'hull',     name:'기체 선체', icon:'[HUL]', cost:{metal:100} },
-  { id:'payload',  name:'탑재체',    icon:'[PLD]', cost:{electronics:40, research:50} },
+  { id:'engine',   name:'엔진',        icon:'[ENG]', cost:{metal:80,fuel:40,electronics:20} },
+  { id:'fueltank', name:'연료 탱크',   icon:'[TNK]', cost:{metal:60,fuel:60} },
+  { id:'control',  name:'제어 시스템', icon:'[CTL]', cost:{electronics:80,research:30} },
+  { id:'hull',     name:'기체 선체',   icon:'[HUL]', cost:{metal:100} },
+  { id:'payload',  name:'탑재체',      icon:'[PLD]', cost:{electronics:40,research:50} },
 ];
 
 const QUALITIES = [
   { id:'proto',    name:'PROTO-MK1', icon:'[P1]', costMult:1.0, timeSec:30,  ispBonus:0,  dryMassMult:1.0,  relBonus:0,  reuseBonus:0,  rewardMult:1.0 },
-  { id:'standard', name:'STD-MK2',   icon:'[S2]', costMult:2.0, timeSec:60,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:1.5 },
-  { id:'advanced', name:'ADV-MK3',   icon:'[A3]', costMult:4.0, timeSec:120, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:2.5 },
-  { id:'elite',    name:'ELITE-MK4', icon:'[E4]', costMult:8.0, timeSec:240, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:4.5 },
+  { id:'standard', name:'STD-MK2',  icon:'[S2]', costMult:2.0, timeSec:60,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:1.5 },
+  { id:'advanced', name:'ADV-MK3',  icon:'[A3]', costMult:4.0, timeSec:120, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:2.5 },
+  { id:'elite',    name:'ELITE-MK4',icon:'[E4]', costMult:8.0, timeSec:240, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:4.5 },
 ];
 
+// Each upgrade has optional 'unlocks' array: strings matching keys in gs.unlocks
 const UPGRADES = [
-  { id:'drill',      name:'정밀 드릴',     icon:'[DRL]', cost:{research:50},                   req:null,        desc:'금속 생산 +25%',            effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.25; } },
-  { id:'catalyst',   name:'촉매 정제',     icon:'[CAT]', cost:{research:80,fuel:100},           req:'drill',     desc:'연료 생산 +30%',            effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; } },
-  { id:'microchip',  name:'마이크로칩',    icon:'[MCH]', cost:{research:100,electronics:80},    req:null,        desc:'전자부품 +35%',             effect:()=>{ prodMult.electronics=(prodMult.electronics||1)*1.35; } },
-  { id:'automation', name:'자동화 시스템', icon:'[AUT]', cost:{research:200,electronics:200},   req:'microchip', desc:'전체 생산 ×1.5',            effect:()=>{ globalMult*=1.5; } },
-  { id:'alloy',      name:'고강도 합금',   icon:'[ALY]', cost:{research:150,metal:500},         req:'drill',     desc:'부품 비용 -20%',            effect:()=>{ partCostMult*=0.8; } },
-  { id:'lightweight',name:'경량 구조',     icon:'[LGT]', cost:{research:250,metal:800},         req:'alloy',     desc:'건조질량 -10%, 재활용 +8%', effect:()=>{ /* handled in getRocketScience */ } },
-  { id:'fusion',     name:'핵융합 엔진',   icon:'[FSN]', cost:{research:500,electronics:400},   req:'automation',desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
-  { id:'reliability',name:'신뢰도 강화',   icon:'[REL]', cost:{research:300},                   req:'microchip', desc:'발사 신뢰도 +15%',          effect:()=>{ reliabilityBonus+=15; } },
-  { id:'multipad',   name:'복수 발사대',   icon:'[MUL]', cost:{research:400,metal:1000},        req:'alloy',     desc:'조립 슬롯 +1',              effect:()=>{ slotBonus++; } },
+  { id:'basic_prod',         name:'기초 생산 기술',   icon:'[BAS]', cost:{research:10},                    req:null,                 desc:'생산 시설 잠금 해제',          effect:()=>{},                                                                       unlocks:['bld_mine','bld_ops_center'] },
+  { id:'drill',              name:'정밀 드릴',         icon:'[DRL]', cost:{research:50},                    req:'basic_prod',         desc:'금속 생산 +25%',               effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.25; },                             unlocks:['bld_extractor'] },
+  { id:'fuel_chem',          name:'연료 화학',         icon:'[FUL]', cost:{research:60,metal:50},           req:'basic_prod',         desc:'연료 정제 시설 해금',           effect:()=>{},                                                                       unlocks:['bld_refinery'] },
+  { id:'electronics_basics', name:'전자공학 기초',     icon:'[ELB]', cost:{research:80},                    req:'basic_prod',         desc:'전자 시설 해금',               effect:()=>{},                                                                       unlocks:['bld_elec_lab','bld_supply_depot'] },
+  { id:'catalyst',           name:'촉매 정제',         icon:'[CAT]', cost:{research:80,fuel:100},           req:'fuel_chem',          desc:'연료 생산 +30%',               effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; },                               unlocks:['bld_cryo_plant'] },
+  { id:'microchip',          name:'마이크로칩',        icon:'[MCH]', cost:{research:100,electronics:80},    req:'electronics_basics', desc:'전자부품 +35%',               effect:()=>{ prodMult.electronics=(prodMult.electronics||1)*1.35; },                 unlocks:['bld_fab_plant'] },
+  { id:'automation',         name:'자동화 시스템',     icon:'[AUT]', cost:{research:200,electronics:200},   req:'microchip',          desc:'전체 생산 ×1.5',              effect:()=>{ globalMult*=1.5; },                                                     unlocks:['bld_solar_array'] },
+  { id:'alloy',              name:'고강도 합금',       icon:'[ALY]', cost:{research:150,metal:500},         req:'drill',              desc:'부품 비용 -20%',               effect:()=>{ partCostMult*=0.8; },                                                   unlocks:['bld_r_and_d'] },
+  { id:'rocket_eng',         name:'로켓 공학 기초',    icon:'[RKT]', cost:{research:200,metal:300},         req:'alloy',              desc:'조립동 해금 + 로켓 제조 시작',  effect:()=>{},                                                                       unlocks:['tab_assembly','bld_launch_pad'] },
+  { id:'launch_ctrl',        name:'발사 제어 시스템',  icon:'[LCH]', cost:{research:300,electronics:200},   req:'rocket_eng',         desc:'발사 통제 탭 해금',             effect:()=>{},                                                                       unlocks:['tab_launch'] },
+  { id:'mission_sys',        name:'임무 분석 시스템',  icon:'[MIS]', cost:{research:400},                   req:'launch_ctrl',        desc:'미션 현황 탭 해금',             effect:()=>{},                                                                       unlocks:['tab_mission'] },
+  { id:'lightweight',        name:'경량 구조',         icon:'[LGT]', cost:{research:250,metal:800},         req:'alloy',              desc:'건조질량 -10%, 재활용 +8%',    effect:()=>{ /* handled in getRocketScience */ } },
+  { id:'fusion',             name:'핵융합 엔진',       icon:'[FSN]', cost:{research:500,electronics:400},   req:'automation',         desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
+  { id:'reliability',        name:'신뢰도 강화',       icon:'[REL]', cost:{research:300},                   req:'microchip',          desc:'발사 신뢰도 +15%',             effect:()=>{ reliabilityBonus+=15; } },
+  { id:'multipad',           name:'복수 발사대',       icon:'[MUL]', cost:{research:400,metal:1000},        req:'alloy',              desc:'조립 슬롯 +1',                 effect:()=>{ slotBonus++; } },
 ];
 
 // ============================================================
@@ -923,7 +1721,7 @@ const UPGRADES = [
 // ============================================================
 let gs = {
   res: { money:500, metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
+  buildings: { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:1, r_and_d:0, solar_array:0, launch_pad:0 },
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
   assembly: { selectedQuality:'proto', jobs:[] },
   upgrades: {},
@@ -933,6 +1731,25 @@ let gs = {
   lastTick: Date.now(),
   settings: { sound: true },
   saveVersion: 2,
+  unlocks: {
+    tab_production: true,
+    tab_research: true,
+    tab_assembly: false,
+    tab_launch: false,
+    tab_mission: false,
+    bld_ops_center: false,
+    bld_supply_depot: false,
+    bld_mine: false,
+    bld_extractor: false,
+    bld_refinery: false,
+    bld_cryo_plant: false,
+    bld_elec_lab: false,
+    bld_fab_plant: false,
+    bld_research_lab: true,
+    bld_r_and_d: false,
+    bld_solar_array: false,
+    bld_launch_pad: false,
+  },
 };
 let prodMult = {};
 let globalMult = 1;
@@ -940,610 +1757,635 @@ let partCostMult = 1;
 let fusionBonus = 0;
 let reliabilityBonus = 0;
 let slotBonus = 0;
-
 let audioCtx = null;
-let activeTab = 0;
+let activeTab = 'production';
 let launchInProgress = false;
 let pendingLaunchMs = 0;
 let pendingLaunchData = null;
+let selectedTechId = null;
+let recentResearches = [];
 
 // ============================================================
 //  HELPERS
 // ============================================================
 function fmt(n) {
   if (typeof n !== 'number' || isNaN(n)) return '0';
-  if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
-  if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
   if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
   return Math.floor(n).toString();
 }
-function fmtDec(n,d=1) {
+
+function fmtDec(n, d=1) {
   if (typeof n !== 'number' || isNaN(n)) return '0.0';
   if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
   if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
   return n.toFixed(d);
 }
+
 function fmtTime(sec) {
   const s = Math.max(0, Math.floor(sec));
-  const h = Math.floor(s/3600);
-  const m = Math.floor((s%3600)/60);
-  const r = s%60;
-  if (h>0) return `${h}h ${m}m`;
-  if (m>0) return `${m}m ${r}s`;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const r = s % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${r}s`;
   return `${r}s`;
 }
-function clamp(v,mn,mx){return Math.min(mx,Math.max(mn,v));}
-function getQuality(qid){return QUALITIES.find(q=>q.id===qid)||QUALITIES[0];}
-function getAssemblySlots(){return 1+gs.buildings.launch_pad+slotBonus;}
-function ensureAssemblyState(){
-  if(!gs.assembly) gs.assembly={selectedQuality:'proto',jobs:[]};
-  if(!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs=[];
-  if(!gs.assembly.selectedQuality) gs.assembly.selectedQuality='proto';
-  const slots=getAssemblySlots();
-  while(gs.assembly.jobs.length<slots) gs.assembly.jobs.push(null);
-  if(gs.assembly.jobs.length>slots) gs.assembly.jobs=gs.assembly.jobs.slice(0,slots);
+
+function clamp(v, mn, mx) { return Math.min(mx, Math.max(mn, v)); }
+
+function getQuality(qid) { return QUALITIES.find(q => q.id === qid) || QUALITIES[0]; }
+
+function getAssemblySlots() { return 1 + gs.buildings.launch_pad + slotBonus; }
+
+function ensureAssemblyState() {
+  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
+  if (!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs = [];
+  if (!gs.assembly.selectedQuality) gs.assembly.selectedQuality = 'proto';
+  const slots = getAssemblySlots();
+  while (gs.assembly.jobs.length < slots) gs.assembly.jobs.push(null);
+  if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
 }
-function getMoonstoneMult(){return 1+gs.moonstone*0.05;}
-function getSolarBonus(){return 1+gs.buildings.solar_array*0.1;}
-function canAfford(cost){return Object.entries(cost).every(([r,v])=>(gs.res[r]||0)>=v);}
-function spend(cost){Object.entries(cost).forEach(([r,v])=>{gs.res[r]-=v;});}
-function getBuildingCost(bld){
-  const cost={};
-  Object.entries(bld.baseCost).forEach(([r,v])=>{cost[r]=Math.floor(v*Math.pow(1.15,gs.buildings[bld.id]));});
+
+function getMoonstoneMult() { return 1 + gs.moonstone * 0.05; }
+
+function getSolarBonus() { return 1 + gs.buildings.solar_array * 0.1; }
+
+function canAfford(cost) {
+  return Object.entries(cost).every(([r, v]) => (gs.res[r] || 0) >= v);
+}
+
+function spend(cost) {
+  Object.entries(cost).forEach(([r, v]) => { gs.res[r] -= v; });
+}
+
+function getBuildingCost(bld) {
+  const cost = {};
+  Object.entries(bld.baseCost).forEach(([r, v]) => {
+    cost[r] = Math.floor(v * Math.pow(1.15, gs.buildings[bld.id] || 0));
+  });
   return cost;
 }
-function getPartCost(part){
-  const cost={};
-  Object.entries(part.cost).forEach(([r,v])=>{cost[r]=Math.floor(v*partCostMult);});
+
+function getPartCost(part) {
+  const cost = {};
+  Object.entries(part.cost).forEach(([r, v]) => {
+    cost[r] = Math.floor(v * partCostMult);
+  });
   return cost;
 }
-function getProduction(){
-  const prod={money:0,metal:0,fuel:0,electronics:0,research:0};
-  BUILDINGS.forEach(b=>{
-    if(b.produces==='bonus'||!(b.produces in prod)) return;
-    const cnt=gs.buildings[b.id]||0;
-    const rate=b.baseRate*cnt*(prodMult[b.produces]||1)*globalMult*getMoonstoneMult()*getSolarBonus();
-    prod[b.produces]+=rate;
+
+function getProduction() {
+  const prod = { money:0, metal:0, fuel:0, electronics:0, research:0 };
+  BUILDINGS.forEach(b => {
+    if (b.produces === 'bonus' || !(b.produces in prod)) return;
+    const cnt = gs.buildings[b.id] || 0;
+    if (cnt === 0) return;
+    const rate = b.baseRate * cnt * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    prod[b.produces] += rate;
   });
   return prod;
 }
-function getTotalIncome(){
-  const p=getProduction();
-  return p.money;
+
+function getTotalWorkers() {
+  return Object.values(gs.buildings).reduce((a, b) => a + b, 0);
 }
-function getTotalWorkers(){
-  return Object.values(gs.buildings).reduce((a,b)=>a+b,0);
+
+function getRocketScience(qualityId) {
+  const q = getQuality(qualityId);
+  const isp = 315 + q.ispBonus + gs.buildings.elec_lab * 1.2 + (gs.upgrades.fusion ? 22 : 0);
+  const dryMass = 28 * q.dryMassMult * (gs.upgrades.lightweight ? 0.9 : 1);
+  const propMass = 76 + gs.buildings.refinery * 0.1 + gs.buildings.cryo_plant * 0.2;
+  const thrust = 1450 + gs.buildings.mine * 0.8 + (gs.upgrades.fusion ? 120 : 0);
+  const m0 = dryMass + propMass;
+  const deltaV = isp * 9.81 * Math.log(m0 / dryMass) / 1000;
+  const twr = thrust / (m0 * 9.81);
+  const reliability = clamp(
+    56 + gs.buildings.research_lab * 1.9 + gs.buildings.elec_lab * 0.8 + reliabilityBonus + q.relBonus,
+    0, 99.5
+  );
+  const altitude = clamp(deltaV * 22, 0, 400);
+  return { deltaV, twr, reliability, altitude };
 }
-function getRocketScience(qualityId){
-  const q=getQuality(qualityId);
-  const isp=315+q.ispBonus+gs.buildings.elec_lab*1.2+(gs.upgrades.fusion?22:0);
-  const dryMass=28*q.dryMassMult*(gs.upgrades.lightweight?0.9:1);
-  const propMass=76+gs.buildings.refinery*0.1+gs.buildings.cryo_plant*0.2;
-  const thrust=1450+gs.buildings.mine*0.8+(gs.upgrades.fusion?120:0);
-  const m0=dryMass+propMass;
-  const deltaV=isp*9.81*Math.log(m0/dryMass)/1000;
-  const twr=thrust/(m0*9.81);
-  const reliability=clamp(56+gs.buildings.research_lab*1.9+gs.buildings.elec_lab*0.8+reliabilityBonus+q.relBonus,0,99.5);
-  const altitude=clamp(deltaV*22,0,400);
-  return {deltaV,twr,reliability,altitude};
+
+function getMoonstoneReward(qualityId) {
+  const sci = getRocketScience(qualityId);
+  const q = getQuality(qualityId);
+  return Math.max(1, Math.floor((sci.altitude / 20) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / 4));
 }
-function getMoonstoneReward(qualityId){
-  const sci=getRocketScience(qualityId);
-  const q=getQuality(qualityId);
-  return Math.max(1,Math.floor((sci.altitude/20)*q.rewardMult)+fusionBonus+Math.floor(gs.launches/4));
-}
-function getCostStr(cost){
-  return Object.entries(cost).map(([r,v])=>{
-    const res=RESOURCES.find(x=>x.id===r);
-    return `${res?res.symbol:r}:${fmt(v)}`;
+
+function getCostStr(cost) {
+  return Object.entries(cost).map(([r, v]) => {
+    const res = RESOURCES.find(x => x.id === r);
+    return `${res ? res.symbol : r}:${fmt(v)}`;
   }).join(' ');
+}
+
+function getAssemblyCost(qualityId) {
+  const q = getQuality(qualityId);
+  const total = {};
+  PARTS.forEach(p => {
+    const c = getPartCost(p);
+    Object.entries(c).forEach(([r, v]) => {
+      total[r] = (total[r] || 0) + Math.floor(v * q.costMult * 0.32);
+    });
+  });
+  return total;
 }
 
 // ============================================================
 //  AUDIO
 // ============================================================
-function ensureAudio(){
-  if(!audioCtx){
-    const Ctx=window.AudioContext||window.webkitAudioContext;
-    if(!Ctx) return null;
-    audioCtx=new Ctx();
+function ensureAudio() {
+  if (!audioCtx) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    audioCtx = new Ctx();
   }
-  if(audioCtx.state==='suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
-function playSfx(type='sine',freq=440,dur=0.08,vol=0.03,targetFreq=null){
-  if(!gs.settings.sound) return;
-  const ctx=ensureAudio();
-  if(!ctx) return;
-  const osc=ctx.createOscillator();
-  const gain=ctx.createGain();
-  const now=ctx.currentTime;
-  osc.type=type;
-  osc.frequency.setValueAtTime(freq,now);
-  if(targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq,now+dur);
-  gain.gain.setValueAtTime(vol,now);
-  gain.gain.exponentialRampToValueAtTime(0.0001,now+dur);
+
+function playSfx(type='sine', freq=440, dur=0.08, vol=0.03, targetFreq=null) {
+  if (!gs.settings.sound) return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  const now = ctx.currentTime;
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, now);
+  if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, now + dur);
+  gain.gain.setValueAtTime(vol, now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.start(now);
-  osc.stop(now+dur);
-}
-function playLaunchSfx(){
-  if(!gs.settings.sound) return;
-  playSfx('triangle',280,0.12,0.04,380);
-  setTimeout(()=>playSfx('triangle',420,0.16,0.05,620),120);
-  setTimeout(()=>playSfx('sawtooth',680,0.22,0.04,980),250);
-}
-function toggleSound(){
-  gs.settings.sound=!gs.settings.sound;
-  document.getElementById('sound-btn').textContent=gs.settings.sound?'SND:ON':'SND:OFF';
-  document.getElementById('sound-btn').style.color=gs.settings.sound?'var(--green-mid)':'var(--red)';
-  if(gs.settings.sound) playSfx('sine',640,0.06,0.03,720);
+  osc.stop(now + dur);
 }
 
-// ============================================================
-//  NOTIFICATIONS
-// ============================================================
-function notify(msg,cls=''){
-  const el=document.createElement('div');
-  el.className='notif-item'+(cls?' '+cls:'');
-  el.textContent=msg;
-  document.getElementById('notif').appendChild(el);
-  setTimeout(()=>el.remove(),3200);
-}
-
-// ============================================================
-//  TAB SWITCHING
-// ============================================================
-function switchMainTab(idx){
-  activeTab=idx;
-  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
-  document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===idx));
-  renderTab(idx);
-}
-
-// ============================================================
-//  ACTIONS
-// ============================================================
-function buyBuilding(bid){
-  const bld=BUILDINGS.find(b=>b.id===bid);
-  if(!bld) return;
-  const cost=getBuildingCost(bld);
-  if(!canAfford(cost)){notify('자원 부족',  'red');return;}
-  spend(cost);
-  gs.buildings[bid]=(gs.buildings[bid]||0)+1;
-  notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]})`);
-  playSfx('triangle',360,0.08,0.03,520);
-  renderTab(activeTab);
-}
-function craftPart(pid){
-  const part=PARTS.find(p=>p.id===pid);
-  if(!part) return;
-  if(gs.parts[pid]){notify('이미 제작됨');return;}
-  const cost=getPartCost(part);
-  if(!canAfford(cost)){notify('자원 부족','red');return;}
-  spend(cost);
-  gs.parts[pid]=1;
-  notify(`${part.icon} ${part.name} 제작 완료`);
-  playSfx('square',520,0.11,0.03,760);
-  renderTab(activeTab);
-}
-function buyUpgrade(uid){
-  const upg=UPGRADES.find(u=>u.id===uid);
-  if(!upg||gs.upgrades[uid]) return;
-  if(upg.req&&!gs.upgrades[upg.req]){notify('선행 연구 필요','red');return;}
-  if(!canAfford(upg.cost)){notify('연구 포인트 부족','red');return;}
-  spend(upg.cost);
-  gs.upgrades[uid]=true;
-  upg.effect();
-  notify(`${upg.icon} ${upg.name} 연구 완료`);
-  playSfx('sawtooth',440,0.1,0.028,700);
-  renderTab(activeTab);
-}
-function selectQuality(qid){
-  gs.assembly.selectedQuality=qid;
-  renderTab(2);
-}
-function startAssembly(slotIdx){
-  ensureAssemblyState();
-  if(!PARTS.every(p=>gs.parts[p.id])){notify('부품을 모두 제작하세요','red');return;}
-  if(gs.assembly.jobs[slotIdx]){notify('슬롯이 사용 중');return;}
-  const q=getQuality(gs.assembly.selectedQuality);
-  const cost=getAssemblyCost(q.id);
-  if(!canAfford(cost)){notify('자원 부족','red');return;}
-  spend(cost);
-  const now=Date.now();
-  gs.assembly.jobs[slotIdx]={qualityId:q.id,startAt:now,endAt:now+q.timeSec*1000,ready:false};
-  notify(`슬롯 ${slotIdx+1}: ${q.name} 조립 시작 (${fmtTime(q.timeSec)})`);
-  playSfx('triangle',310,0.09,0.03,430);
-  renderTab(activeTab);
-}
-function getAssemblyCost(qualityId){
-  const q=getQuality(qualityId);
-  const total={};
-  PARTS.forEach(p=>{
-    const c=getPartCost(p);
-    Object.entries(c).forEach(([r,v])=>{total[r]=(total[r]||0)+Math.floor(v*q.costMult*0.32);});
-  });
-  return total;
-}
-function launchFromSlot(slotIdx){
-  ensureAssemblyState();
-  const job=gs.assembly.jobs[slotIdx];
-  if(!job||!job.ready) return;
-  const q=getQuality(job.qualityId);
-  const sci=getRocketScience(q.id);
-  const earned=getMoonstoneReward(q.id);
-  gs.assembly.jobs[slotIdx]=null;
-  gs.launches++;
-  gs.history.push({
-    no:gs.launches,
-    quality:q.name,
-    deltaV:sci.deltaV.toFixed(2),
-    altitude:Math.floor(sci.altitude),
-    reliability:sci.reliability.toFixed(1),
-    date:`D+${gs.launches*2}`
-  });
-  pendingLaunchMs=earned;
-  pendingLaunchData={q,sci,earned};
-  showLaunchSequence(q,sci,earned,slotIdx);
-}
-function showLaunchSequence(q,sci,earned,slotIdx){
-  // Switch to launch control tab and run telemetry
-  switchMainTab(3);
-  launchInProgress=true;
-  const anim=document.getElementById('launch-anim-wrap');
-  anim.innerHTML=`
-<div id="launch-rocket-cnt">
-<pre class="launch-rocket-ascii" id="launch-rocket-pre">        *
-       /|\\
-      / | \\
-     /  |  \\
-    / BETA  \\
-   /__mk.2__\\
-  |          |
-  |  ENGINE  |
-  |__________|</pre>
-<pre class="exhaust-anim" id="exhaust-art" style="display:none;">  |   |   |
- /|\\ /|\\ /|\\
-   |||||||||
-    |||||||
-     |||||</pre>
-</div>`;
-  const telemEl=document.getElementById('telem-wrap');
-  telemEl.innerHTML='<div class="panel-header">텔레메트리</div>';
-  const steps=[
-    {t:0,   label:'T+0  IGNITION',    pct:5},
-    {t:800, label:'T+3  LIFTOFF',     pct:22},
-    {t:1600,label:'T+8  MAX-Q',       pct:45},
-    {t:2500,label:'T+14 MECO',        pct:72},
-    {t:3400,label:'T+20 STAGE-2',     pct:88},
-    {t:4000,label:`T+25 ALT:${Math.floor(sci.altitude)}KM`, pct:100},
-  ];
-  const telemDiv=document.createElement('div');
-  telemDiv.className='telemetry-wrap';
-  telemEl.appendChild(telemDiv);
-  let exhaustShown=false;
-  steps.forEach((step,i)=>{
-    setTimeout(()=>{
-      if(i===1){
-        document.getElementById('exhaust-art').style.display='block';
-        exhaustShown=true;
-        document.getElementById('launch-rocket-pre').classList.add('launching');
-      }
-      const line=document.createElement('div');
-      line.className='telem-line';
-      line.innerHTML=`
-        <span class="telem-time">${step.label.split(' ')[0]}</span>
-        <span class="telem-event">${step.label.split(' ').slice(1).join(' ')}</span>
-        <div class="telem-bar"><div class="telem-bar-fill" style="width:${step.pct}%"></div></div>
-        <span class="telem-pct">${step.pct}%</span>`;
-      telemDiv.appendChild(line);
-      if(gs.settings.sound){
-        playSfx('triangle',300+i*40,0.06,0.02,400+i*30);
-      }
-    },step.t);
-  });
-  setTimeout(()=>{
-    launchInProgress=false;
-    showLaunchOverlay(q,sci,earned);
-    playLaunchSfx();
-    // show result in tab 3
-    const lr=document.getElementById('launch-result');
-    lr.classList.add('show');
-    document.getElementById('lr-stats').innerHTML=`
-      <span class="launch-result-stat-lbl">기체</span><span class="launch-result-stat-val">${q.name}</span>
-      <span class="launch-result-stat-lbl">Δv</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>
-      <span class="launch-result-stat-lbl">TWR</span><span class="launch-result-stat-val">${sci.twr.toFixed(2)}</span>
-      <span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${Math.floor(sci.altitude)} km</span>
-      <span class="launch-result-stat-lbl">신뢰도</span><span class="launch-result-stat-val">${sci.reliability.toFixed(1)}%</span>
-    `;
-    document.getElementById('lr-ms').textContent=`문스톤 보상: +${earned}개`;
-  },4600);
-}
-function showLaunchOverlay(q,sci,earned){
-  document.getElementById('lo-rocket-art').textContent=
-`        *
-       /|\\
-      / | \\
-     /  |  \\
-    / BETA  \\
-   /__mk.2__\\
-  |          |
-  |  ENGINE  |
-  |__________|`;
-  document.getElementById('lo-stats').innerHTML=
-    `기체: ${q.name}  |  Δv: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${Math.floor(sci.altitude)} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
-  document.getElementById('lo-ms').textContent=`문스톤 +${earned}개 획득 예정`;
-  document.getElementById('launch-overlay').classList.add('show');
-}
-function closeLaunchOverlay(){
-  document.getElementById('launch-overlay').classList.remove('show');
-  renderTab(activeTab);
-}
-function confirmLaunch(){
-  gs.moonstone+=pendingLaunchMs;
-  // Prestige reset
-  gs.res={money:500,metal:0,fuel:0,electronics:0,research:0};
-  gs.buildings={ops_center:0,supply_depot:0,mine:0,extractor:0,refinery:0,cryo_plant:0,elec_lab:0,fab_plant:0,research_lab:0,r_and_d:0,solar_array:0,launch_pad:0};
-  gs.parts={engine:0,fueltank:0,control:0,hull:0,payload:0};
-  gs.assembly={selectedQuality:'proto',jobs:[]};
-  gs.upgrades={};
-  prodMult={};
-  globalMult=1;
-  partCostMult=1;
-  fusionBonus=0;
-  reliabilityBonus=0;
-  slotBonus=0;
-  document.getElementById('launch-overlay').classList.remove('show');
-  notify(`문스톤 ${gs.moonstone}개 보유 — 생산 +${gs.moonstone*5}%`,'');
-  playSfx('triangle',500,0.12,0.04,760);
-  saveGame();
-  renderAll();
-}
-
-// ============================================================
-//  TICK / OFFLINE
-// ============================================================
-function tick(){
-  const now=Date.now();
-  const dt=Math.min((now-gs.lastTick)/1000,1);
-  gs.lastTick=now;
-  const prod=getProduction();
-  RESOURCES.forEach(r=>{gs.res[r.id]=(gs.res[r.id]||0)+prod[r.id]*dt;});
-  updateAssemblyJobs(now);
-}
-function updateAssemblyJobs(now=Date.now()){
-  ensureAssemblyState();
-  for(let i=0;i<gs.assembly.jobs.length;i++){
-    const job=gs.assembly.jobs[i];
-    if(!job||job.ready) continue;
-    if(now>=job.endAt){
-      job.ready=true;
-      notify(`슬롯 ${i+1}: ${getQuality(job.qualityId).name} 조립 완료`);
-    }
-  }
-}
-function calcOffline(){
-  const now=Date.now();
-  const elapsed=Math.min((now-gs.lastTick)/1000,8*3600);
-  if(elapsed<5){gs.lastTick=now;return;}
-  const prod=getProduction();
-  RESOURCES.forEach(r=>{gs.res[r.id]=(gs.res[r.id]||0)+prod[r.id]*elapsed;});
-  gs.lastTick=now;
-  updateAssemblyJobs(now);
-  const mins=Math.floor(elapsed/60);
-  if(mins>0){
-    const banner=document.getElementById('offline-banner');
-    banner.style.display='block';
-    banner.textContent=`오프라인 ${mins}분 — 자원 생산 완료`;
-    setTimeout(()=>banner.style.display='none',5000);
-  }
+function playLaunchSfx() {
+  playSfx('triangle', 280, 0.12, 0.04, 380);
+  setTimeout(() => playSfx('triangle', 420, 0.16, 0.05, 620), 120);
+  setTimeout(() => playSfx('sawtooth', 680, 0.22, 0.04, 980), 250);
 }
 
 // ============================================================
 //  SAVE / LOAD
 // ============================================================
-const SAVE_KEY='moonIdle_v2';
-function saveGame(){
-  const save={
-    saveVersion:2,gs,prodMult,globalMult,partCostMult,
-    fusionBonus,reliabilityBonus,slotBonus,lastSave:Date.now()
-  };
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}
+const SAVE_KEY = 'moonIdle_v2';
+
+function saveGame() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(gs));
+  } catch(e) {}
 }
-function loadGame(){
-  try{
-    const raw=localStorage.getItem(SAVE_KEY);
-    if(!raw) return false;
-    const save=JSON.parse(raw);
-    // merge gs
-    if(save.gs){
-      Object.assign(gs.res,save.gs.res||{});
-      Object.assign(gs.buildings,save.gs.buildings||{});
-      Object.assign(gs.parts,save.gs.parts||{});
-      gs.launches=save.gs.launches||0;
-      gs.moonstone=save.gs.moonstone||0;
-      gs.history=save.gs.history||[];
-      gs.upgrades=save.gs.upgrades||{};
-      gs.assembly=save.gs.assembly||{selectedQuality:'proto',jobs:[]};
-      gs.settings=save.gs.settings||{sound:true};
-      gs.lastTick=save.gs.lastTick||Date.now();
-    }
-    if(typeof save.prodMult==='object') Object.assign(prodMult,save.prodMult);
-    globalMult=save.globalMult||1;
-    partCostMult=save.partCostMult||1;
-    fusionBonus=save.fusionBonus||0;
-    reliabilityBonus=save.reliabilityBonus||0;
-    slotBonus=save.slotBonus||0;
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+
+    // Merge resources
+    if (saved.res) Object.assign(gs.res, saved.res);
+
+    // Merge buildings
+    if (saved.buildings) Object.assign(gs.buildings, saved.buildings);
+
+    // Merge parts
+    if (saved.parts) Object.assign(gs.parts, saved.parts);
+
+    // Scalars
+    gs.launches = saved.launches || 0;
+    gs.moonstone = saved.moonstone || 0;
+    gs.history = saved.history || [];
+    gs.upgrades = saved.upgrades || {};
+    gs.assembly = saved.assembly || { selectedQuality:'proto', jobs:[] };
+    gs.settings = saved.settings || { sound: true };
+    gs.lastTick = saved.lastTick || Date.now();
+
+    // Merge unlocks — keep defaults for any missing keys
+    const defaultUnlocks = {
+      tab_production: true,
+      tab_research: true,
+      tab_assembly: false,
+      tab_launch: false,
+      tab_mission: false,
+      bld_ops_center: false,
+      bld_supply_depot: false,
+      bld_mine: false,
+      bld_extractor: false,
+      bld_refinery: false,
+      bld_cryo_plant: false,
+      bld_elec_lab: false,
+      bld_fab_plant: false,
+      bld_research_lab: true,
+      bld_r_and_d: false,
+      bld_solar_array: false,
+      bld_launch_pad: false,
+    };
+    gs.unlocks = Object.assign({}, defaultUnlocks, saved.unlocks || {});
+
+    // Re-apply upgrade effects to restore prodMult/globalMult etc.
+    prodMult = {};
+    globalMult = 1;
+    partCostMult = 1;
+    fusionBonus = 0;
+    reliabilityBonus = 0;
+    slotBonus = 0;
+    Object.keys(gs.upgrades).forEach(uid => {
+      if (!gs.upgrades[uid]) return;
+      const upg = UPGRADES.find(u => u.id === uid);
+      if (upg) upg.effect();
+    });
+
     ensureAssemblyState();
     return true;
-  }catch(e){console.warn('Load failed',e);return false;}
+  } catch(e) {
+    console.warn('Load failed', e);
+    return false;
+  }
 }
-function hasSave(){
-  try{return !!localStorage.getItem(SAVE_KEY);}catch(e){return false;}
+
+function calcOffline() {
+  const now = Date.now();
+  const elapsed = Math.min((now - gs.lastTick) / 1000, 8 * 3600);
+  if (elapsed < 5) { gs.lastTick = now; return; }
+  const prod = getProduction();
+  RESOURCES.forEach(r => { gs.res[r.id] = (gs.res[r.id] || 0) + prod[r.id] * elapsed; });
+  gs.lastTick = now;
+  updateAssemblyJobs(now);
+  const mins = Math.floor(elapsed / 60);
+  if (mins > 0) {
+    const banner = document.getElementById('offline-banner');
+    if (banner) {
+      banner.style.display = 'block';
+      banner.textContent = `오프라인 ${mins}분 — 자원 생산 완료`;
+      setTimeout(() => { banner.style.display = 'none'; }, 5000);
+    }
+  }
 }
 
 // ============================================================
-//  RENDER HELPERS
+//  UNLOCK SYSTEM
 // ============================================================
-function renderResourceBar(){
-  const prod=getProduction();
-  let html='';
-  RESOURCES.forEach(r=>{
-    const rate=prod[r.id]||0;
-    const rateStr=rate>0.001?` <span class="rate">(+${fmtDec(rate,1)}/s)</span>`:'';
-    html+=`<div class="res-cell" style="color:${r.color}">
-      ${r.symbol}: <strong>${fmt(gs.res[r.id]||0)}</strong>${rateStr}
-    </div>`;
+let _prevUnlocks = {};
+
+function applyUnlocks(unlockList) {
+  if (!Array.isArray(unlockList)) return;
+  unlockList.forEach(key => {
+    gs.unlocks[key] = true;
   });
-  html+=`<div class="res-cell ms">🌙 문스톤: <strong>${gs.moonstone}</strong></div>`;
-  document.getElementById('res-bar-inner').innerHTML=html;
-  document.getElementById('sound-btn').textContent=gs.settings.sound?'SND:ON':'SND:OFF';
-  document.getElementById('sound-btn').style.color=gs.settings.sound?'var(--green-mid)':'var(--red)';
+  renderUnlocks();
 }
 
-// ============================================================
-//  TAB 0: PRODUCTION HUB
-// ============================================================
-
-// ASCII building art per building id
-function getBuildingArt(bid,cnt){
-  const w=cnt>0?'♟':'·';
-  const arts={
-    ops_center:
-`╔══════════════╗
-║  [OPS]  센터  ║
-║  ${w} ${w} ${w} ${w}    ║
-║  ══════════  ║
-╚══════════════╝`,
-    supply_depot:
-`╔══════════╗
-║  [DEP]   ║
-║ ▓▓▓▓▓▓▓ ║
-║ 보급 창고  ║
-╚══════════╝`,
-    mine:
-`  ▲▲▲
- ▲▲▲▲▲
-╔══════╗
-║[MIN] ║
-║ ||| ${w}║
-╚══════╝
-  |||`,
-    extractor:
-` ╔════╗
- ║[EXT]║
-═╣    ╠═
- ║ ${w}${w}${w} ║
- ╚════╝`,
-    refinery:
-` _╔══╗_
-╔╣  ╠══╗
-║╚══╝  ║
-║[REF]${w}║
-║ ~~~  ║
-╚══════╝`,
-    cryo_plant:
-`╔══════╗
-║[CRY] ║
-║*~*~*~║
-║ ${w} ${w} ${w}║
-╚══════╝`,
-    elec_lab:
-`╔══════╗
-║[PCB] ║
-║⊙ ⊙ ⊙║
-║ ${w}${w}${w}  ║
-╚══════╝`,
-    fab_plant:
-`╔══════╗
-║[FAB] ║
-║▤▤▤▤▤║
-║ ${w}  ${w} ║
-╚══════╝`,
-    research_lab:
-`╔══════╗
-║[RSH] ║
-║ ◎◎◎ ║
-║ ${w}  ${w} ║
-╚══════╝`,
-    r_and_d:
-`╔══════╗
-║[RND] ║
-║⌬⌬⌬⌬⌬║
-║ ${w}${w}${w}  ║
-╚══════╝`,
-    solar_array:
-`  ┌─┐
-  │☀│
-┌─┴─┴─┐
-│[SOL]│
-└─────┘`,
-    launch_pad:
-`  __|__
- / [PAD]\\
-|  ═══  |
-|_______|
-  | | |`
+function renderUnlocks() {
+  // Map of tab id suffix -> element id
+  const TAB_MAP = {
+    tab_production: 'nav-tab-production',
+    tab_research:   'nav-tab-research',
+    tab_assembly:   'nav-tab-assembly',
+    tab_launch:     'nav-tab-launch',
+    tab_mission:    'nav-tab-mission',
   };
-  return arts[bid]||`[${bid}]\n×${cnt}`;
+
+  Object.entries(TAB_MAP).forEach(([key, elId]) => {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const nowUnlocked = !!gs.unlocks[key];
+    const wasUnlocked = !!_prevUnlocks[key];
+    if (nowUnlocked) {
+      el.style.display = '';
+      if (!wasUnlocked) {
+        // Flash animation for newly revealed tab
+        el.classList.add('new-unlock');
+        setTimeout(() => el.classList.remove('new-unlock'), 800);
+      }
+    } else {
+      el.style.display = 'none';
+    }
+  });
+
+  // Track previous state
+  _prevUnlocks = Object.assign({}, gs.unlocks);
+
+  // Re-render production tab to show newly unlocked buildings
+  if (activeTab === 'production') renderProductionTab();
 }
 
-function renderProdHub(){
-  const prod=getProduction();
-  const totalIncome=prod.money;
-  const workers=getTotalWorkers();
-  document.getElementById('prod-status').textContent=
-    `[ 총 수입: ₩${fmtDec(totalIncome,1)}/s ]  [ 인력: ${workers}명 배치 ]`;
+// ============================================================
+//  NOTIFICATIONS
+// ============================================================
+function notify(msg, type='') {
+  const el = document.createElement('div');
+  el.className = 'notif-item' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  const notif = document.getElementById('notif');
+  if (notif) notif.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
 
-  // ASCII world
-  let worldHtml='';
-  BUILDINGS.forEach(b=>{
-    const cnt=gs.buildings[b.id]||0;
-    const art=getBuildingArt(b.id,cnt);
-    const cost=getBuildingCost(b);
-    const costStr=getCostStr(cost);
-    const affordable=canAfford(cost);
-    let rateInfo='';
-    if(b.produces!=='bonus'){
-      const rate=b.baseRate*Math.max(cnt,1)*(prodMult[b.produces]||1)*globalMult*getMoonstoneMult()*getSolarBonus();
-      rateInfo=`생산: ${fmtDec(rate,2)} ${b.produces}/s`;
-    } else {
-      rateInfo=b.id==='solar_array'?`전체 생산 +${cnt*10}%`:`조립 슬롯: ${getAssemblySlots()}`;
-    }
-    const overlay=
-`╔══════════════════════════════╗
-║ // ${b.name.padEnd(20)}LV.${cnt} ║
-║ ${rateInfo.padEnd(28)}║
-╠══════════════════════════════╣
-║ [ 업그레이드 ]                ║
-║ 비용: ${costStr.padEnd(23)}║
-╚══════════════════════════════╝`;
-    worldHtml+=`
-<div class="building-ascii-wrap" onclick="buyBuilding('${b.id}')">
-  <pre class="building-ascii">${art}</pre>
-  <div class="bld-count-badge">×${cnt}</div>
-  <pre class="bld-hover-overlay">${overlay}</pre>
-</div>`;
+// ============================================================
+//  TAB SWITCHING
+// ============================================================
+function switchMainTab(tabId) {
+  activeTab = tabId;
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tabId);
   });
-  document.getElementById('prod-world').innerHTML=worldHtml;
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  const pane = document.getElementById('pane-' + tabId);
+  if (pane) pane.classList.add('active');
+  renderAll();
+}
 
-  // Building cards
-  let cardsHtml='';
-  BUILDINGS.forEach(b=>{
-    const cnt=gs.buildings[b.id]||0;
-    const cost=getBuildingCost(b);
-    const costStr=getCostStr(cost);
-    const affordable=canAfford(cost);
-    let rateStr='';
-    if(b.produces!=='bonus'){
-      const rate=b.baseRate*cnt*(prodMult[b.produces]||1)*globalMult*getMoonstoneMult()*getSolarBonus();
-      rateStr=`${b.produces} +${fmtDec(rate,2)}/s`;
-    } else {
-      rateStr=b.id==='solar_array'?`전체 생산 +${cnt*10}%`:`발사 슬롯 +${cnt}`;
+// ============================================================
+//  ACTIONS
+// ============================================================
+function buyBuilding(bid) {
+  const bld = BUILDINGS.find(b => b.id === bid);
+  if (!bld) return;
+  if (!gs.unlocks['bld_' + bid]) { notify('잠금 해제 필요', 'red'); return; }
+  const cost = getBuildingCost(bld);
+  if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
+  spend(cost);
+  gs.buildings[bid] = (gs.buildings[bid] || 0) + 1;
+  notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]})`);
+  playSfx('triangle', 360, 0.08, 0.03, 520);
+  renderAll();
+}
+
+function craftPart(pid) {
+  const part = PARTS.find(p => p.id === pid);
+  if (!part) return;
+  if (gs.parts[pid]) { notify('이미 제작됨'); return; }
+  const cost = getPartCost(part);
+  if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
+  spend(cost);
+  gs.parts[pid] = 1;
+  notify(`${part.icon} ${part.name} 제작 완료`);
+  playSfx('square', 520, 0.11, 0.03, 760);
+  renderAll();
+}
+
+function buyUpgrade(uid) {
+  const upg = UPGRADES.find(u => u.id === uid);
+  if (!upg || gs.upgrades[uid]) return;
+  if (upg.req && !gs.upgrades[upg.req]) { notify('선행 연구 필요', 'red'); return; }
+  if (!canAfford(upg.cost)) { notify('연구 포인트 부족', 'red'); return; }
+  spend(upg.cost);
+  gs.upgrades[uid] = true;
+  upg.effect();
+  if (upg.unlocks) applyUnlocks(upg.unlocks);
+  recentResearches.push({ name: upg.name, ts: Date.now() });
+  notify(`${upg.icon} ${upg.name} 연구 완료`);
+  playSfx('sawtooth', 440, 0.1, 0.028, 700);
+  renderAll();
+}
+
+function selectQuality(qid) {
+  gs.assembly.selectedQuality = qid;
+  renderAssemblyTab();
+}
+
+function startAssembly(slotIdx) {
+  ensureAssemblyState();
+  if (!PARTS.every(p => gs.parts[p.id])) { notify('부품을 모두 제작하세요', 'red'); return; }
+  if (gs.assembly.jobs[slotIdx]) { notify('슬롯이 사용 중'); return; }
+  const q = getQuality(gs.assembly.selectedQuality);
+  const cost = getAssemblyCost(q.id);
+  if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
+  spend(cost);
+  const now = Date.now();
+  gs.assembly.jobs[slotIdx] = {
+    qualityId: q.id,
+    startAt: now,
+    endAt: now + q.timeSec * 1000,
+    ready: false,
+  };
+  notify(`슬롯 ${slotIdx + 1}: ${q.name} 조립 시작 (${fmtTime(q.timeSec)})`);
+  playSfx('triangle', 310, 0.09, 0.03, 430);
+  renderAll();
+}
+
+function updateAssemblyJobs(now=Date.now()) {
+  ensureAssemblyState();
+  for (let i = 0; i < gs.assembly.jobs.length; i++) {
+    const job = gs.assembly.jobs[i];
+    if (!job || job.ready) continue;
+    if (now >= job.endAt) {
+      job.ready = true;
+      notify(`슬롯 ${i + 1}: ${getQuality(job.qualityId).name} 조립 완료`);
     }
-    cardsHtml+=`
+  }
+}
+
+function launchFromSlot(slotIdx) {
+  ensureAssemblyState();
+  const job = gs.assembly.jobs[slotIdx];
+  if (!job || !job.ready) return;
+  const q = getQuality(job.qualityId);
+  const sci = getRocketScience(q.id);
+  const earned = getMoonstoneReward(q.id);
+  gs.assembly.jobs[slotIdx] = null;
+  gs.launches++;
+  gs.history.push({
+    no: gs.launches,
+    quality: q.name,
+    deltaV: sci.deltaV.toFixed(2),
+    altitude: Math.floor(sci.altitude),
+    reliability: sci.reliability.toFixed(1),
+    date: `D+${gs.launches * 2}`,
+  });
+  pendingLaunchMs = earned;
+  pendingLaunchData = { q, sci, earned };
+
+  // Switch to launch tab
+  switchMainTab('launch');
+
+  // Run animation sequence
+  _runLaunchAnimation(q, sci, earned);
+}
+
+function _runLaunchAnimation(q, sci, earned) {
+  launchInProgress = true;
+
+  const animWrap = document.getElementById('launch-anim-wrap');
+  if (!animWrap) return;
+
+  // Build ASCII rocket + exhaust
+  animWrap.innerHTML = `
+<div id="launch-rocket-cnt" style="text-align:center;position:relative;">
+<pre class="launch-rocket-ascii" id="launch-rocket-pre">    *
+   /|\\
+  / | \\
+ /  |  \\
+|ENGINE |
+|_______|</pre>
+<pre class="exhaust-anim" id="exhaust-art" style="display:none;">  |||
+ |||||
+  |||</pre>
+</div>`;
+
+  // Add 'launching' class after short delay
+  setTimeout(() => {
+    const rocketEl = document.getElementById('launch-rocket-pre');
+    if (rocketEl) rocketEl.classList.add('launching');
+    const exhaustEl = document.getElementById('exhaust-art');
+    if (exhaustEl) exhaustEl.style.display = 'block';
+  }, 100);
+
+  // Telemetry lines
+  const telemWrap = document.getElementById('telem-wrap');
+  if (telemWrap) telemWrap.innerHTML = '<div class="panel-header">텔레메트리</div>';
+
+  const telemDiv = document.createElement('div');
+  telemDiv.className = 'telemetry-wrap';
+  if (telemWrap) telemWrap.appendChild(telemDiv);
+
+  const steps = [
+    { delay: 0,    label: 'T+0',  event: 'IGNITION',             pct: 15 },
+    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',            pct: 35 },
+    { delay: 1200, label: 'T+8',  event: 'MECO',                 pct: 60 },
+    { delay: 1800, label: 'T+12', event: '단계 분리',              pct: 78 },
+    { delay: 2400, label: 'T+20', event: `목표 고도 달성 ${Math.floor(sci.altitude)}km`, pct: 100 },
+  ];
+
+  steps.forEach((step, i) => {
+    setTimeout(() => {
+      const line = document.createElement('div');
+      line.className = 'telem-line';
+      line.innerHTML = `
+        <span class="telem-time">${step.label}</span>
+        <span class="telem-event">${step.event}</span>
+        <div class="telem-bar"><div class="telem-bar-fill" style="width:${step.pct}%"></div></div>
+        <span class="telem-pct">${step.pct}%</span>`;
+      telemDiv.appendChild(line);
+      playSfx('triangle', 300 + i * 40, 0.06, 0.02, 400 + i * 30);
+    }, step.delay);
+  });
+
+  // After last telemetry (3000ms), show result panel
+  setTimeout(() => {
+    const lr = document.getElementById('launch-result');
+    if (lr) {
+      lr.classList.add('show');
+      const lrStats = document.getElementById('lr-stats');
+      if (lrStats) lrStats.innerHTML = `
+        <span class="launch-result-stat-lbl">기체</span><span class="launch-result-stat-val">${q.name}</span>
+        <span class="launch-result-stat-lbl">Δv</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>
+        <span class="launch-result-stat-lbl">TWR</span><span class="launch-result-stat-val">${sci.twr.toFixed(2)}</span>
+        <span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${Math.floor(sci.altitude)} km</span>
+        <span class="launch-result-stat-lbl">신뢰도</span><span class="launch-result-stat-val">${sci.reliability.toFixed(1)}%</span>
+      `;
+      const lrMs = document.getElementById('lr-ms');
+      if (lrMs) lrMs.textContent = `문스톤 보상: +${earned}개`;
+    }
+  }, 3000);
+
+  // After 3.5s show overlay
+  setTimeout(() => {
+    launchInProgress = false;
+    playLaunchSfx();
+    _showLaunchOverlay(q, sci, earned);
+  }, 3500);
+}
+
+function _showLaunchOverlay(q, sci, earned) {
+  const loRocket = document.getElementById('lo-rocket-art');
+  if (loRocket) loRocket.textContent =
+`    *
+   /|\\
+  / | \\
+ /  |  \\
+|ENGINE |
+|_______|`;
+  const loStats = document.getElementById('lo-stats');
+  if (loStats) loStats.innerHTML =
+    `기체: ${q.name}  |  Δv: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${Math.floor(sci.altitude)} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
+  const loMs = document.getElementById('lo-ms');
+  if (loMs) loMs.textContent = `문스톤 +${earned}개 획득 예정`;
+  const overlay = document.getElementById('launch-overlay');
+  if (overlay) overlay.classList.add('show');
+}
+
+function confirmLaunch() {
+  gs.moonstone += pendingLaunchMs;
+  // Prestige reset — keep moonstone, launches, history, unlocks
+  gs.res = { money:500, metal:0, fuel:0, electronics:0, research:0 };
+  gs.buildings = { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:1, r_and_d:0, solar_array:0, launch_pad:0 };
+  gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
+  gs.assembly = { selectedQuality:'proto', jobs:[] };
+  gs.upgrades = {};
+  prodMult = {};
+  globalMult = 1;
+  partCostMult = 1;
+  fusionBonus = 0;
+  reliabilityBonus = 0;
+  slotBonus = 0;
+  // unlocks persist
+  closeLaunchOverlay();
+  notify(`문스톤 ${gs.moonstone}개 보유 — 생산 +${gs.moonstone * 5}%`, '');
+  playSfx('triangle', 500, 0.12, 0.04, 760);
+  saveGame();
+  renderAll();
+}
+
+function closeLaunchOverlay() {
+  const overlay = document.getElementById('launch-overlay');
+  if (overlay) overlay.classList.remove('show');
+}
+
+// ============================================================
+//  RENDER: RESOURCES
+// ============================================================
+function renderResources() {
+  const prod = getProduction();
+  let html = '';
+  RESOURCES.forEach(r => {
+    const rate = prod[r.id] || 0;
+    const rateStr = rate > 0.001 ? ` <span class="rate">(+${fmtDec(rate, 1)}/s)</span>` : '';
+    html += `<div class="res-cell" style="color:${r.color}">${r.symbol}: <strong>${fmt(gs.res[r.id] || 0)}</strong>${rateStr}</div>`;
+  });
+  if (gs.moonstone > 0) {
+    html += `<div class="res-cell ms" id="ms-display" style="color:var(--amber)">MS: <strong>${gs.moonstone}</strong></div>`;
+  }
+  const el = document.getElementById('res-bar-inner');
+  if (el) el.innerHTML = html;
+  const sndBtn = document.getElementById('sound-btn');
+  if (sndBtn) {
+    sndBtn.textContent = gs.settings.sound ? 'SND:ON' : 'SND:OFF';
+    sndBtn.style.color = gs.settings.sound ? 'var(--green-mid)' : 'var(--red)';
+  }
+}
+
+// ============================================================
+//  RENDER: PRODUCTION TAB
+// ============================================================
+function renderProductionTab() {
+  const prod = getProduction();
+  const totalIncome = prod.money;
+  const workers = getTotalWorkers();
+  const statusEl = document.getElementById('prod-status');
+  if (statusEl) statusEl.textContent = `[ 총 수입: ₩${fmtDec(totalIncome, 1)}/s ]  [ 가동 시설: ${workers}개 ]`;
+
+  let cardsHtml = '';
+  BUILDINGS.forEach(b => {
+    if (!gs.unlocks['bld_' + b.id]) return;
+    const cnt = gs.buildings[b.id] || 0;
+    const cost = getBuildingCost(b);
+    const costStr = getCostStr(cost);
+    const affordable = canAfford(cost);
+    let rateStr = '';
+    if (b.produces !== 'bonus') {
+      const rate = b.baseRate * cnt * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+      rateStr = `${b.produces} +${fmtDec(rate, 2)}/s`;
+    } else {
+      rateStr = b.id === 'solar_array' ? `전체 생산 +${cnt * 10}%` : `발사 슬롯 +${cnt}`;
+    }
+    cardsHtml += `
 <div class="bld-card">
   <div class="bld-card-top">
     <span class="bld-name">${b.icon} ${b.name}</span>
@@ -1552,63 +2394,275 @@ function renderProdHub(){
   <div class="bld-desc">${b.desc}</div>
   <div class="bld-rate">${rateStr}</div>
   <div class="bld-cost">비용: ${costStr}</div>
-  <button class="btn btn-sm btn-full${affordable?'':' btn-amber'}" onclick="buyBuilding('${b.id}')" ${affordable?'':'disabled'}>
-    ${affordable?'[ 구매 ]':'[ 자원 부족 ]'}
+  <button class="btn btn-sm btn-full${affordable ? '' : ' btn-amber'}" onclick="buyBuilding('${b.id}')" ${affordable ? '' : 'disabled'}>
+    ${affordable ? '[ 구매 ]' : '[ 자원 부족 ]'}
   </button>
 </div>`;
   });
-  document.getElementById('bld-grid').innerHTML=cardsHtml;
+  const bldGrid = document.getElementById('bld-grid');
+  if (bldGrid) bldGrid.innerHTML = cardsHtml;
 }
 
 // ============================================================
-//  TAB 1: RESEARCH
+//  RENDER: RESEARCH TAB — v7b 3-column layout
 // ============================================================
-function renderResearch(){
-  // Organize into rows/chains
-  const chains=[
-    {title:'광업 / 연료', nodes:['drill','catalyst','alloy','lightweight']},
-    {title:'전자 / 자동화', nodes:['microchip','automation','reliability','fusion']},
-    {title:'생산 확장', nodes:['multipad']},
-  ];
-  let html='';
-  chains.forEach(chain=>{
-    html+=`<div class="upg-tree-section"><div class="upg-tree-section-title">${chain.title}</div><div class="upg-tree-row">`;
-    chain.nodes.forEach((uid,i)=>{
-      const upg=UPGRADES.find(u=>u.id===uid);
-      if(!upg) return;
-      const purchased=gs.upgrades[uid];
-      const reqMet=!upg.req||gs.upgrades[upg.req];
-      let cls='upg-node';
-      if(purchased) cls+=' purchased';
-      else if(!reqMet) cls+=' locked';
-      else if(canAfford(upg.cost)) cls+=' available';
-      const costStr=getCostStr(upg.cost);
-      const onclick=purchased||!reqMet?'':`onclick="buyUpgrade('${uid}')"`;
-      if(i>0) html+=`<span class="upg-connector">→</span>`;
-      html+=`<div class="${cls}" ${onclick}>
-        <div class="upg-node-name">${upg.icon} ${upg.name}</div>
-        <div class="upg-node-desc">${upg.desc}</div>
-        ${!purchased?`<div class="upg-node-cost">${costStr}</div>`:''}
+
+// Tech tree node layout by tier
+const TECH_TIERS = [
+  { x: 50,  nodes: ['basic_prod'] },
+  { x: 220, nodes: ['drill', 'fuel_chem', 'electronics_basics'] },
+  { x: 390, nodes: ['catalyst', 'microchip', 'alloy'] },
+  { x: 560, nodes: ['automation', 'rocket_eng', 'reliability'] },
+  { x: 730, nodes: ['fusion', 'multipad', 'lightweight', 'launch_ctrl'] },
+  { x: 900, nodes: ['mission_sys'] },
+];
+
+// Pre-compute Y positions for each node
+function _buildNodePositions() {
+  const pos = {};
+  TECH_TIERS.forEach(tier => {
+    tier.nodes.forEach((uid, i) => {
+      pos[uid] = { x: tier.x, y: 30 + i * 70 };
+    });
+  });
+  return pos;
+}
+
+function renderResearchTab() {
+  const nodePos = _buildNodePositions();
+
+  // --- LEFT PANEL ---
+  const researchedCount = Object.keys(gs.upgrades).filter(k => gs.upgrades[k]).length;
+  const prod = getProduction();
+  const rpRate = prod.research || 0;
+
+  // Build research buildings list for RP sources
+  const researchBldgs = BUILDINGS.filter(b => b.produces === 'research');
+  let rpSourcesHtml = '';
+  researchBldgs.forEach(b => {
+    const cnt = gs.buildings[b.id] || 0;
+    if (cnt === 0) return;
+    const rate = b.baseRate * cnt * (prodMult.research || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    rpSourcesHtml += `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px;">
+      <span style="color:var(--green-mid)">${b.icon} ${b.name} ×${cnt}</span>
+      <span style="color:var(--green-mid)">+${fmtDec(rate, 2)}/s</span>
+    </div>`;
+  });
+  if (!rpSourcesHtml) rpSourcesHtml = '<div style="color:#1a3a1a;font-size:12px;">// 연구 시설 없음</div>';
+
+  // Recent researches — last 5
+  let recentHtml = '';
+  const recent5 = recentResearches.slice(-5).reverse();
+  if (recent5.length === 0) {
+    recentHtml = '<div style="color:#1a3a1a;font-size:12px;">// 연구 기록 없음</div>';
+  } else {
+    recent5.forEach(r => {
+      const ago = Math.floor((Date.now() - r.ts) / 1000);
+      recentHtml += `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:12px;border-bottom:1px solid #0a1a0a;">
+        <span style="color:var(--green)">${r.name}</span>
+        <span style="color:var(--green-dim)">${fmtTime(ago)} 전</span>
       </div>`;
     });
-    html+='</div></div>';
+  }
+
+  const leftHtml = `
+<div class="panel" style="margin-bottom:8px;">
+  <div class="panel-header">연구 현황</div>
+  <div class="overview-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:8px;">
+    <div style="border:var(--border);padding:6px;">
+      <div style="color:var(--green-mid)">완료된 연구</div>
+      <div style="color:var(--green);font-size:16px;">${researchedCount}</div>
+    </div>
+    <div style="border:var(--border);padding:6px;">
+      <div style="color:var(--green-mid)">총 연구</div>
+      <div style="color:var(--green);font-size:16px;">${UPGRADES.length}</div>
+    </div>
+    <div style="border:var(--border);padding:6px;">
+      <div style="color:var(--green-mid)">RP 수입</div>
+      <div style="color:var(--green-mid);font-size:14px;">+${fmtDec(rpRate, 2)}/s</div>
+    </div>
+    <div style="border:var(--border);padding:6px;">
+      <div style="color:var(--green-mid)">문스톤</div>
+      <div style="color:var(--amber);font-size:14px;">${gs.moonstone}</div>
+    </div>
+  </div>
+</div>
+<div class="panel" style="margin-bottom:8px;">
+  <div class="panel-header">최근 연구</div>
+  ${recentHtml}
+</div>
+<div class="panel">
+  <div class="panel-header">RP 수입원</div>
+  ${rpSourcesHtml}
+</div>`;
+
+  const leftContent = document.getElementById('research-left-content');
+  if (leftContent) leftContent.innerHTML = leftHtml;
+
+  // --- CENTER PANEL: SVG tech tree ---
+  const svgWidth = 1060;
+  const svgHeight = 360;
+
+  // Draw connector lines first (behind nodes)
+  let linesHtml = '';
+  UPGRADES.forEach(upg => {
+    if (!upg.req) return;
+    const from = nodePos[upg.req];
+    const to = nodePos[upg.id];
+    if (!from || !to) return;
+    const purchased = gs.upgrades[upg.id];
+    const reqMet = gs.upgrades[upg.req];
+    const lineColor = purchased ? '#1a5c34' : reqMet ? '#0d4020' : '#0a1a0a';
+    linesHtml += `<line x1="${from.x + 65}" y1="${from.y + 25}" x2="${to.x}" y2="${to.y + 25}" stroke="${lineColor}" stroke-width="1.5"/>`;
   });
-  document.getElementById('upg-tree-wrap').innerHTML=html;
+
+  // Draw nodes
+  let nodesHtml = '';
+  UPGRADES.forEach(upg => {
+    const p = nodePos[upg.id];
+    if (!p) return;
+    const purchased = !!gs.upgrades[upg.id];
+    const reqMet = !upg.req || !!gs.upgrades[upg.req];
+    const affordable = canAfford(upg.cost);
+    const isSelected = selectedTechId === upg.id;
+
+    let fill, stroke, textColor;
+    if (purchased) {
+      fill = '#011a0a'; stroke = 'var(--green)'; textColor = '#00e676';
+    } else if (reqMet && affordable) {
+      fill = '#010f04'; stroke = '#00994d'; textColor = '#00e676';
+    } else if (reqMet) {
+      fill = '#010f04'; stroke = '#1a4020'; textColor = '#1a6030';
+    } else {
+      fill = '#0d1a0d'; stroke = '#1a2a1a'; textColor = '#2a3a2a';
+    }
+    if (isSelected) stroke = 'var(--amber)';
+
+    const statusMark = purchased ? ' [OK]' : '';
+    // Truncate name for display
+    const displayName = upg.name.length > 10 ? upg.name.slice(0, 9) + '…' : upg.name;
+
+    nodesHtml += `<g class="tech-node" onclick="selectTech('${upg.id}')" style="cursor:pointer;">
+  <rect x="${p.x}" y="${p.y}" width="130" height="50" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+  <text x="${p.x + 65}" y="${p.y + 18}" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="${textColor}">${displayName}${statusMark}</text>
+  <text x="${p.x + 65}" y="${p.y + 32}" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="${textColor === '#00e676' ? '#00994d' : '#1a3a2a'}">${upg.icon}</text>
+</g>`;
+  });
+
+  // Branch column headers
+  const BRANCH_LABELS = ['기초', '자원', '화학/전자', '고급', '최고급', '임무'];
+  let headerHtml = '';
+  TECH_TIERS.forEach((tier, i) => {
+    headerHtml += `<div style="position:absolute;left:${tier.x}px;width:130px;text-align:center;font-size:10px;color:var(--green-dim);letter-spacing:2px;text-transform:uppercase;">${BRANCH_LABELS[i] || ''}</div>`;
+  });
+
+  const svgHtml = `
+<div id="branch-headers" style="position:relative;height:18px;min-width:${svgWidth}px;margin-bottom:4px;">${headerHtml}</div>
+<svg id="tree-svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}" style="display:block;min-width:${svgWidth}px;">
+  ${linesHtml}
+  ${nodesHtml}
+</svg>`;
+
+  const centerPanel = document.getElementById('research-center-content');
+  if (centerPanel) centerPanel.innerHTML = svgHtml;
+
+  // --- RIGHT PANEL: tech detail ---
+  renderTechDetail();
+}
+
+function selectTech(uid) {
+  selectedTechId = uid;
+  renderTechDetail();
+}
+
+function renderTechDetail() {
+  const panel = document.getElementById('tech-detail-panel');
+  if (!panel) return;
+
+  if (!selectedTechId) {
+    panel.innerHTML = '<div style="color:var(--green-dim);font-size:12px;padding:8px;">// 기술 노드를 선택하세요</div>';
+    return;
+  }
+
+  const upg = UPGRADES.find(u => u.id === selectedTechId);
+  if (!upg) return;
+
+  const purchased = !!gs.upgrades[upg.id];
+  const reqMet = !upg.req || !!gs.upgrades[upg.req];
+  const affordable = canAfford(upg.cost);
+
+  let statusBadge = '';
+  let statusColor = 'var(--green-dim)';
+  if (purchased) {
+    statusBadge = '[연구 완료]'; statusColor = 'var(--green)';
+  } else if (!reqMet) {
+    statusBadge = '[잠금]'; statusColor = '#2a3a2a';
+  } else if (affordable) {
+    statusBadge = '[연구 가능]'; statusColor = 'var(--amber)';
+  } else {
+    statusBadge = '[자원 부족]'; statusColor = '#1a4020';
+  }
+
+  let costHtml = '';
+  Object.entries(upg.cost).forEach(([r, v]) => {
+    const res = RESOURCES.find(x => x.id === r);
+    const have = gs.res[r] || 0;
+    const enough = have >= v;
+    costHtml += `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;">
+      <span style="color:var(--green-mid)">${res ? res.symbol : r}</span>
+      <span style="color:${enough ? 'var(--green)' : 'var(--red)'}">${fmt(have)} / ${fmt(v)}</span>
+    </div>`;
+  });
+
+  let unlocksHtml = '';
+  if (upg.unlocks && upg.unlocks.length > 0) {
+    unlocksHtml = `<div style="margin-top:8px;font-size:11px;color:var(--green-mid);">잠금 해제:</div>`;
+    upg.unlocks.forEach(key => {
+      unlocksHtml += `<div style="font-size:11px;color:var(--green);padding:1px 0;">▶ ${key.replace('bld_', '').replace('tab_', '[탭] ')}</div>`;
+    });
+  }
+
+  const reqUpg = upg.req ? UPGRADES.find(u => u.id === upg.req) : null;
+  const prereqHtml = reqUpg
+    ? `<div style="font-size:11px;color:var(--green-mid);margin-top:6px;">선행: <span style="color:${gs.upgrades[upg.req] ? 'var(--green)' : 'var(--red)'}">${reqUpg.name} ${gs.upgrades[upg.req] ? '[완료]' : '[미완료]'}</span></div>`
+    : '<div style="font-size:11px;color:var(--green-mid);margin-top:6px;">선행: 없음</div>';
+
+  const btnDisabled = purchased || !reqMet || !affordable;
+  const btnText = purchased ? '[ 연구 완료 ]' : !reqMet ? '[ 선행 필요 ]' : !affordable ? '[ 자원 부족 ]' : '[ 연구 실행 ]';
+
+  panel.innerHTML = `
+<div style="font-size:10px;color:var(--green-dim);letter-spacing:2px;margin-bottom:4px;">${upg.id}</div>
+<div style="font-size:14px;color:var(--green);margin-bottom:4px;">${upg.icon} ${upg.name}</div>
+<div style="font-size:12px;color:${statusColor};margin-bottom:8px;">${statusBadge}</div>
+<hr style="border:none;border-top:var(--border);margin:6px 0;">
+<div style="font-size:11px;color:var(--green-mid);margin-bottom:4px;">비용</div>
+${costHtml}
+<hr style="border:none;border-top:var(--border);margin:6px 0;">
+<div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">${upg.desc}</div>
+${unlocksHtml}
+${prereqHtml}
+<div style="margin-top:12px;">
+  <button class="btn btn-full btn-sm${purchased ? '' : !reqMet || !affordable ? ' btn-amber' : ''}" onclick="buyUpgrade('${upg.id}');renderTechDetail();" ${btnDisabled ? 'disabled' : ''}>
+    ${btnText}
+  </button>
+</div>`;
 }
 
 // ============================================================
-//  TAB 2: ASSEMBLY
+//  RENDER: ASSEMBLY TAB
 // ============================================================
-function renderAssembly(){
+function renderAssemblyTab() {
   ensureAssemblyState();
-  const pd=gs.parts;
-  // Rocket art with glow on completed sections
-  const noseClass='r-nose'+(pd.hull?' done':'');
-  const payloadClass='r-payload'+(pd.payload?' done':'');
-  const avionicsClass='r-avionics'+(pd.control?' done':'');
-  const engineClass='r-engine'+(pd.engine?' done':'');
-  const exhaustClass='r-exhaust'+(pd.fueltank&&pd.engine?' done':'');
-  const rocketHtml=`<pre class="rocket-art"><span class="${noseClass}">           *
+  const pd = gs.parts;
+
+  // Rocket ASCII art with color-coded sections
+  const noseClass   = 'r-nose'    + (pd.hull    ? ' done' : '');
+  const payClass    = 'r-payload' + (pd.payload  ? ' done' : '');
+  const aviClass    = 'r-avionics'+ (pd.control  ? ' done' : '');
+  const engClass    = 'r-engine'  + (pd.engine   ? ' done' : '');
+  const exhClass    = 'r-exhaust' + ((pd.fueltank && pd.engine) ? ' done' : '');
+
+  const rocketHtml = `<pre class="rocket-art"><span class="${noseClass}">           *
           /|\\
          / | \\
         /  |  \\
@@ -1616,108 +2670,109 @@ function renderAssembly(){
       /  BETA   \\
      /   mk.2    \\
     /______________\\</span>
-<span class="${payloadClass}">   |  [PAYLOAD]    |
+<span class="${payClass}">   |  [PAYLOAD]    |
    |   _________   |
    |  |  NAV    |  |
    |  |  SYS    |  |
    |  |_________|  |</span>
-<span class="${avionicsClass}">   |               |
+<span class="${aviClass}">   |               |
    |  [AVIONICS]   |
    |  _________    |
    | | O  O  O |   |
    | |  GYRO   |   |
    | |_________|   |</span>
-<span class="${engineClass}">   |               |
+<span class="${engClass}">   |               |
    | [PROPULSION]  |
    |  _________    |
    | |         |   |
    | | 156 kN  |   |
    | |_________|   |
    |_______________|</span>
-<span class="${exhaustClass}">  / [LOX]  [RP-1]  \\
+<span class="${exhClass}">  / [LOX]  [RP-1]  \\
  /___________________\\
        |   |   |
       /|   |   |\\
      /_|___|___|_\\</span></pre>`;
-  document.getElementById('rocket-art-display').innerHTML=rocketHtml;
+
+  const artDisplay = document.getElementById('rocket-art-display');
+  if (artDisplay) artDisplay.innerHTML = rocketHtml;
 
   // Parts checklist
-  let partsHtml='';
-  PARTS.forEach(p=>{
-    const done=gs.parts[p.id];
-    const cost=getPartCost(p);
-    const costStr=getCostStr(cost);
-    const affordable=canAfford(cost);
-    partsHtml+=`<div class="parts-list-item">
-      <span class="part-check ${done?'part-done':'part-pending'}">${done?'[✓]':'[✗]'}</span>
-      <span style="flex:1;color:${done?'var(--green)':'var(--green-dim)'};">${p.icon} ${p.name}</span>
-      ${done?'<span style="color:var(--green);font-size:12px;">완료</span>'
-            :`<button class="btn btn-sm${affordable?'':' btn-amber'}" onclick="craftPart('${p.id}')" ${affordable?'':'disabled'}>제작</button>`}
+  let partsHtml = '';
+  PARTS.forEach(p => {
+    const done = gs.parts[p.id];
+    const cost = getPartCost(p);
+    const costStr = getCostStr(cost);
+    const affordable = canAfford(cost);
+    partsHtml += `<div class="parts-list-item">
+      <span class="part-check ${done ? 'part-done' : 'part-pending'}">${done ? '[✓]' : '[✗]'}</span>
+      <span style="flex:1;color:${done ? 'var(--green)' : 'var(--green-dim)'};">${p.icon} ${p.name}</span>
+      ${done
+        ? '<span style="color:var(--green);font-size:12px;">완료</span>'
+        : `<button class="btn btn-sm${affordable ? '' : ' btn-amber'}" onclick="craftPart('${p.id}')" ${affordable ? '' : 'disabled'}>제작</button>`}
     </div>
-    ${!done?`<div style="font-size:11px;color:var(--green-mid);padding:2px 0 4px 22px;">비용: ${costStr}</div>`:''}`;
+    ${!done ? `<div style="font-size:11px;color:var(--green-mid);padding:2px 0 4px 22px;">비용: ${costStr}</div>` : ''}`;
   });
-  document.getElementById('parts-checklist').innerHTML=partsHtml;
+  const checklist = document.getElementById('parts-checklist');
+  if (checklist) checklist.innerHTML = partsHtml;
 
   // Quality selector
-  let qualHtml='';
-  QUALITIES.forEach(q=>{
-    const active=gs.assembly.selectedQuality===q.id;
-    qualHtml+=`<button class="qual-btn${active?' active':''}" onclick="selectQuality('${q.id}')">${q.icon} ${q.name}</button>`;
+  let qualHtml = '';
+  QUALITIES.forEach(q => {
+    const active = gs.assembly.selectedQuality === q.id;
+    qualHtml += `<button class="qual-btn${active ? ' active' : ''}" onclick="selectQuality('${q.id}')">${q.icon} ${q.name}</button>`;
   });
-  document.getElementById('quality-selector').innerHTML=qualHtml;
+  const qualSel = document.getElementById('quality-selector');
+  if (qualSel) qualSel.innerHTML = qualHtml;
 
   // Science box
-  const q=getQuality(gs.assembly.selectedQuality);
-  const sci=getRocketScience(q.id);
-  const reward=getMoonstoneReward(q.id);
-  const cost=getAssemblyCost(q.id);
-  const costStr=getCostStr(cost);
-  document.getElementById('science-box').innerHTML=`
+  const q = getQuality(gs.assembly.selectedQuality);
+  const sci = getRocketScience(q.id);
+  const reward = getMoonstoneReward(q.id);
+  const asmCost = getAssemblyCost(q.id);
+  const asmCostStr = getCostStr(asmCost);
+  const sciBox = document.getElementById('science-box');
+  if (sciBox) sciBox.innerHTML = `
     <div class="label-sm">// 로켓 제원 — ${q.name}</div>
     <div>Δv: <span class="val">${sci.deltaV.toFixed(2)} km/s</span>  TWR: <span class="val">${sci.twr.toFixed(2)}</span></div>
     <div>신뢰도: <span class="val">${sci.reliability.toFixed(1)}%</span>  예상 고도: <span class="val">${Math.floor(sci.altitude)} km</span></div>
-    <div>조립 시간: <span class="val">${fmtTime(q.timeSec)}</span>  조립 비용: <span class="ms-val">${costStr}</span></div>
+    <div>조립 시간: <span class="val">${fmtTime(q.timeSec)}</span>  조립 비용: <span class="ms-val">${asmCostStr}</span></div>
     <div>예상 문스톤 보상: <span class="ms-val">+${reward}개</span></div>
   `;
 
   // Assembly slots
-  let slotsHtml='';
-  gs.assembly.jobs.forEach((job,idx)=>{
-    if(!job){
-      const canStart=PARTS.every(p=>gs.parts[p.id])&&canAfford(cost);
-      slotsHtml+=`<div class="slot-card">
+  let slotsHtml = '';
+  const now = Date.now();
+  gs.assembly.jobs.forEach((job, idx) => {
+    if (!job) {
+      const canStart = PARTS.every(p => gs.parts[p.id]) && canAfford(asmCost);
+      slotsHtml += `<div class="slot-card">
         <div class="slot-card-header">
-          <span class="slot-title">// 조립 슬롯 ${idx+1}</span>
+          <span class="slot-title">// 조립 슬롯 ${idx + 1}</span>
           <span class="slot-state idle">대기 중</span>
         </div>
-        <div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">
-          선택: ${q.name}  |  비용: ${costStr}
-        </div>
-        <button class="btn btn-full btn-sm${canStart?'':' btn-amber'}" onclick="startAssembly(${idx})" ${canStart?'':'disabled'}>
-          ${canStart?'[ ▶ 조립 시작 ]':'[ 부품/자원 부족 ]'}
+        <div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">선택: ${q.name}  |  비용: ${asmCostStr}</div>
+        <button class="btn btn-full btn-sm${canStart ? '' : ' btn-amber'}" onclick="startAssembly(${idx})" ${canStart ? '' : 'disabled'}>
+          ${canStart ? '[ ▶ 조립 시작 ]' : '[ 부품/자원 부족 ]'}
         </button>
       </div>`;
-    } else if(job.ready){
-      const ms=getMoonstoneReward(job.qualityId);
-      slotsHtml+=`<div class="slot-card" style="border-color:var(--green);">
+    } else if (job.ready) {
+      const ms = getMoonstoneReward(job.qualityId);
+      slotsHtml += `<div class="slot-card" style="border-color:var(--green);">
         <div class="slot-card-header">
-          <span class="slot-title glow">// 슬롯 ${idx+1} — ${getQuality(job.qualityId).name}</span>
+          <span class="slot-title glow">// 슬롯 ${idx + 1} — ${getQuality(job.qualityId).name}</span>
           <span class="slot-state ready">발사 준비!</span>
         </div>
-        <div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">
-          예상 문스톤: +${ms}개
-        </div>
-        <button class="btn btn-full btn-sm btn-amber" onclick="launchFromSlot(${idx})">
-          [ ▶▶ 발사 실행 ]
-        </button>
+        <div style="font-size:12px;color:var(--green-mid);margin-bottom:6px;">예상 문스톤: +${ms}개</div>
+        <button class="btn btn-full btn-sm btn-amber" onclick="launchFromSlot(${idx})">[ ▶▶ 발사 실행 ]</button>
       </div>`;
     } else {
-      const remain=Math.max(0,Math.floor((job.endAt-Date.now())/1000));
-      const total=Math.max(1,Math.floor((job.endAt-job.startAt)/1000));
-      const pct=Math.min(100,((total-remain)/total)*100);
-      slotsHtml+=`<div class="slot-card" style="border-color:var(--amber);">
+      const remain = Math.max(0, Math.floor((job.endAt - now) / 1000));
+      const total = Math.max(1, Math.floor((job.endAt - job.startAt) / 1000));
+      const pct = Math.min(100, ((total - remain) / total) * 100);
+      slotsHtml += `<div class="slot-card" style="border-color:var(--amber);">
         <div class="slot-card-header">
-          <span class="slot-title">// 슬롯 ${idx+1} — ${getQuality(job.qualityId).name}</span>
+          <span class="slot-title">// 슬롯 ${idx + 1} — ${getQuality(job.qualityId).name}</span>
           <span class="slot-state busy">조립 중 ${fmtTime(remain)}</span>
         </div>
         <div class="prog-wrap"><div class="prog-fill amber" style="width:${pct}%"></div></div>
@@ -1725,91 +2780,89 @@ function renderAssembly(){
       </div>`;
     }
   });
-  document.getElementById('assembly-slots-wrap').innerHTML=slotsHtml;
+  const slotsWrap = document.getElementById('assembly-slots-wrap');
+  if (slotsWrap) slotsWrap.innerHTML = slotsHtml;
 }
 
 // ============================================================
-//  TAB 3: LAUNCH CONTROL
+//  RENDER: LAUNCH TAB
 // ============================================================
-function renderLaunchControl(){
+function renderLaunchTab() {
   ensureAssemblyState();
-  let readyHtml='';
-  let hasReady=false;
-  gs.assembly.jobs.forEach((job,idx)=>{
-    if(!job) return;
-    if(job.ready){
-      hasReady=true;
-      const ms=getMoonstoneReward(job.qualityId);
-      readyHtml+=`<div class="ready-slot-row">
-        <span style="color:var(--green);">슬롯 ${idx+1}: ${getQuality(job.qualityId).name}</span>
+  let readyHtml = '';
+  gs.assembly.jobs.forEach((job, idx) => {
+    if (!job) return;
+    if (job.ready) {
+      const ms = getMoonstoneReward(job.qualityId);
+      readyHtml += `<div class="ready-slot-row">
+        <span style="color:var(--green);">슬롯 ${idx + 1}: ${getQuality(job.qualityId).name}</span>
         <span style="color:var(--green);font-size:12px;">[준비 완료]</span>
         <button class="btn btn-sm btn-amber" onclick="launchFromSlot(${idx})">[ ▶▶ 발사 ]</button>
       </div>`;
     } else {
-      const remain=Math.max(0,Math.floor((job.endAt-Date.now())/1000));
-      readyHtml+=`<div class="ready-slot-row">
-        <span style="color:var(--amber);">슬롯 ${idx+1}: ${getQuality(job.qualityId).name}</span>
+      const remain = Math.max(0, Math.floor((job.endAt - Date.now()) / 1000));
+      readyHtml += `<div class="ready-slot-row">
+        <span style="color:var(--amber);">슬롯 ${idx + 1}: ${getQuality(job.qualityId).name}</span>
         <span style="color:var(--amber);font-size:12px;">조립 중 ${fmtTime(remain)}</span>
       </div>`;
     }
   });
-  if(!readyHtml) readyHtml='<div style="color:var(--green-dim);font-size:13px;">// 준비된 로켓이 없습니다. 조립동에서 로켓을 조립하세요.</div>';
-  document.getElementById('ready-list-wrap').innerHTML=readyHtml;
+  if (!readyHtml) {
+    readyHtml = '<div style="color:var(--green-dim);font-size:13px;">// 준비된 로켓이 없습니다. 조립동에서 로켓을 조립하세요.</div>';
+  }
+  const readyWrap = document.getElementById('ready-list-wrap');
+  if (readyWrap) readyWrap.innerHTML = readyHtml;
 }
 
 // ============================================================
-//  TAB 4: MISSION PROGRESS
+//  RENDER: MISSION TAB
 // ============================================================
-function renderMissionProgress(){
-  // Phase definitions
-  const phases=[
-    {name:'PHASE 1: 프로토타입', target:1,    unit:'회', key:'launches' },
-    {name:'PHASE 2: 준궤도',     target:100,  unit:'km', key:'altitude100' },
-    {name:'PHASE 3: 궤도',       target:200,  unit:'km', key:'altitude200' },
-    {name:'PHASE 4: 시스루나',   target:300,  unit:'km', key:'altitude300' },
-    {name:'PHASE 5: 달 착륙',    target:384400,unit:'km',key:'moon' },
-  ];
-  const maxAlt=gs.history.length?Math.max(...gs.history.map(h=>Number(h.altitude)||0)):0;
-  const vals={
-    launches:gs.launches,
-    altitude100:maxAlt,
-    altitude200:maxAlt,
-    altitude300:maxAlt,
-    moon:maxAlt
-  };
-  const targets={launches:1,altitude100:100,altitude200:200,altitude300:300,moon:384400};
-  let phaseHtml='';
-  phases.forEach((ph,i)=>{
-    const val=vals[ph.key];
-    const tgt=targets[ph.key];
-    const pct=Math.min(100,(val/tgt)*100);
-    const done=pct>=100;
-    // Unlock: phase 1 always, phase 2 if launches>0, etc.
-    const locked=i>0&&!done&&(i>=2&&maxAlt<(i===2?100:i===3?200:300))&&gs.launches<1;
-    phaseHtml+=`<div class="phase-row">
+const PHASES = [
+  { id:'proto',    name:'PHASE 1: 프로토타입', targetAlt:50,  targetLaunches:1 },
+  { id:'sub',      name:'PHASE 2: 준궤도',     targetAlt:100, targetLaunches:3 },
+  { id:'orbital',  name:'PHASE 3: 궤도',       targetAlt:200, targetLaunches:5 },
+  { id:'cislunar', name:'PHASE 4: 시스루나',   targetAlt:300, targetLaunches:8 },
+  { id:'lunar',    name:'PHASE 5: 달 착륙',    targetAlt:400, targetLaunches:12 },
+];
+
+function renderMissionTab() {
+  const maxAlt = gs.history.length
+    ? Math.max(...gs.history.map(h => Number(h.altitude) || 0))
+    : 0;
+
+  let phaseHtml = '';
+  let prevDone = true;
+  PHASES.forEach((ph, i) => {
+    const pct = Math.min(100, (maxAlt / ph.targetAlt) * 100);
+    const done = maxAlt >= ph.targetAlt && gs.launches >= ph.targetLaunches;
+    const locked = !prevDone && i > 0;
+    if (done) prevDone = true;
+    phaseHtml += `<div class="phase-row">
       <div class="phase-name">${ph.name}</div>
       <div class="phase-bar-wrap">
-        <div class="phase-bar-fill${done?' done':''}" style="width:${pct}%"></div>
+        <div class="phase-bar-fill${done ? ' done' : ''}" style="width:${locked ? 0 : pct}%"></div>
       </div>
-      <div class="phase-status${done?' done':locked?' locked':''}">
-        ${done?'완료 ✓':locked?'잠금':'진행 중'}
+      <div class="phase-status${done ? ' done' : locked ? ' locked' : ''}">
+        ${done ? '완료 ✓' : locked ? '잠금' : `${Math.floor(pct)}%`}
       </div>
     </div>`;
+    if (!done) prevDone = false;
   });
-  document.getElementById('phase-progress-wrap').innerHTML=phaseHtml;
+  const phaseWrap = document.getElementById('phase-progress-wrap');
+  if (phaseWrap) phaseWrap.innerHTML = phaseHtml;
 
-  // History table
-  let histHtml='';
-  if(gs.history.length===0){
-    histHtml='<div style="color:var(--green-dim);font-size:13px;padding:8px 0;">// 발사 기록 없음</div>';
+  // History table (last 20)
+  let histHtml = '';
+  if (gs.history.length === 0) {
+    histHtml = '<div style="color:var(--green-dim);font-size:13px;padding:8px 0;">// 발사 기록 없음</div>';
   } else {
-    histHtml=`<table class="history-table">
+    histHtml = `<table class="history-table">
       <thead><tr>
         <th>NO.</th><th>날짜</th><th>기체</th><th>Δv</th><th>최고도</th><th>신뢰도</th>
       </tr></thead><tbody>`;
-    gs.history.forEach(h=>{
-      histHtml+=`<tr>
-        <td>${String(h.no).padStart(3,'0')}</td>
+    gs.history.slice(-20).reverse().forEach(h => {
+      histHtml += `<tr>
+        <td>${String(h.no).padStart(3, '0')}</td>
         <td>${h.date}</td>
         <td>${h.quality}</td>
         <td>${h.deltaV} km/s</td>
@@ -1817,157 +2870,236 @@ function renderMissionProgress(){
         <td>${h.reliability}%</td>
       </tr>`;
     });
-    histHtml+='</tbody></table>';
+    histHtml += '</tbody></table>';
   }
-  document.getElementById('history-wrap').innerHTML=histHtml;
+  const histWrap = document.getElementById('history-wrap');
+  if (histWrap) histWrap.innerHTML = histHtml;
 
-  // Prestige
-  let prestigeHtml='';
-  if(gs.launches>0){
-    const nextBonus=(gs.moonstone+1)*5;
-    prestigeHtml=`<div class="prestige-panel">
+  // Prestige panel
+  let prestigeHtml = '';
+  if (gs.launches > 0) {
+    prestigeHtml = `<div class="prestige-panel">
       <div class="panel-header">프레스티지 — 새 시즌</div>
       <div class="prestige-stat">현재 문스톤: <strong>${gs.moonstone}개</strong></div>
-      <div class="prestige-stat">현재 생산 보너스: <strong>+${gs.moonstone*5}%</strong></div>
-      <div style="font-size:12px;color:var(--amber);margin-bottom:10px;">
-        // 다음 발사 후 재시작하면 문스톤이 누적됩니다
-      </div>
+      <div class="prestige-stat">현재 생산 보너스: <strong>+${gs.moonstone * 5}%</strong></div>
+      <div class="prestige-stat">다음 문스톤 획득: <strong>+${pendingLaunchMs}개</strong></div>
+      <div style="font-size:12px;color:var(--amber);margin-bottom:10px;">// 재시작하면 문스톤이 누적됩니다</div>
+      <button class="btn btn-amber btn-full" id="btn-prestige" onclick="confirmLaunch()">[ 문스톤 획득 후 재시작 ]</button>
     </div>`;
   }
-  document.getElementById('prestige-wrap').innerHTML=prestigeHtml;
+  const prestigeWrap = document.getElementById('prestige-wrap');
+  if (prestigeWrap) prestigeWrap.innerHTML = prestigeHtml;
 }
 
 // ============================================================
-//  RENDER ALL / RENDER TAB
+//  RENDER ALL
 // ============================================================
-function renderTab(idx){
-  if(idx===0) renderProdHub();
-  else if(idx===1) renderResearch();
-  else if(idx===2) renderAssembly();
-  else if(idx===3) renderLaunchControl();
-  else if(idx===4) renderMissionProgress();
+function renderAll() {
+  renderResources();
+  if (activeTab === 'production') renderProductionTab();
+  if (activeTab === 'research')   renderResearchTab();
+  if (activeTab === 'assembly')   renderAssemblyTab();
+  if (activeTab === 'launch')     renderLaunchTab();
+  if (activeTab === 'mission')    renderMissionTab();
+  updateWorldBuildings();
 }
-function renderAll(){
-  renderResourceBar();
-  renderTab(activeTab);
+
+// ============================================================
+//  WORLD BACKGROUND
+// ============================================================
+const WORLD_POSITIONS = {
+  research_lab: 60,  r_and_d: 220,    ops_center: 420,  supply_depot: 600,
+  mine: 820,         extractor: 960,   refinery: 1150,   cryo_plant: 1320,
+  elec_lab: 1530,    fab_plant: 1700,  solar_array: 1880, launch_pad: 2100,
+};
+
+function updateWorldBuildings() {
+  const layer = document.getElementById('buildings-layer');
+  if (!layer) return;
+  layer.innerHTML = '';
+  BUILDINGS.forEach(b => {
+    if ((gs.buildings[b.id] || 0) === 0) return;
+    const x = WORLD_POSITIONS[b.id] || 100;
+    const div = document.createElement('div');
+    div.className = 'world-building ' + b.wbClass;
+    div.style.left = x + 'px';
+
+    if (b.wbClass === 'wb-refinery') {
+      div.innerHTML = '<div class="refinery-tank tall"></div><div class="refinery-tank short"></div>';
+    } else if (b.wbClass === 'wb-research') {
+      div.innerHTML = '<div class="research-windows">'
+        + Array(8).fill(0).map((_, i) => `<div class="research-win${i % 3 === 0 ? ' lit' : ''}"></div>`).join('')
+        + '</div>';
+    } else if (b.wbClass === 'wb-ops') {
+      div.innerHTML = '<div class="ops-windows">'
+        + Array(10).fill(0).map((_, i) => `<div class="ops-win${i % 2 === 0 ? ' lit' : ''}"></div>`).join('')
+        + '</div><div class="ops-sign"></div>';
+    } else if (b.wbClass === 'wb-mine') {
+      div.innerHTML = '<div class="mine-light"></div><div class="conveyor"></div>';
+    } else if (b.wbClass === 'wb-solar') {
+      const count = Math.min(gs.buildings[b.id], 5);
+      div.innerHTML = Array(count).fill(0).map(() => '<div class="solar-pole"></div><div class="solar-panel"></div>').join('');
+    } else if (b.wbClass === 'wb-launchpad') {
+      div.innerHTML = '<div class="lp-gantry"></div><div class="lp-rocket"></div><div class="lp-base"></div>';
+    }
+
+    layer.appendChild(div);
+  });
+}
+
+let worldOffset = 0;
+function animateWorld() {
+  worldOffset = (worldOffset + 0.3) % 1200;
+  const scene = document.getElementById('world-scene');
+  if (scene) scene.style.transform = `translateX(-${worldOffset}px)`;
+  requestAnimationFrame(animateWorld);
+}
+
+// ============================================================
+//  TICK / OFFLINE
+// ============================================================
+function tick() {
+  const now = Date.now();
+  const dt = Math.min((now - gs.lastTick) / 1000, 1);
+  gs.lastTick = now;
+  const prod = getProduction();
+  RESOURCES.forEach(r => { gs.res[r.id] = (gs.res[r.id] || 0) + prod[r.id] * dt; });
+  updateAssemblyJobs(now);
 }
 
 // ============================================================
 //  TITLE SCREEN
 // ============================================================
-const BOOT_LINES=[
-  'MOONIDLE MISSION CONTROL v2.0',
-  'COPYRIGHT (C) PRIMORDIAL STATION DEV',
-  '──────────────────────────────────────',
-  'INITIALIZING HARDWARE...',
-  '  [OK] CPU CORE 0-3',
-  '  [OK] MEMORY 4096MB',
-  '  [OK] DISPLAY PHOSPHOR-GREEN',
-  'LOADING SUBSYSTEMS...',
-  '  [OK] RESOURCE MANAGER',
-  '  [OK] PRODUCTION ENGINE',
-  '  [OK] ROCKET ASSEMBLY',
-  '  [OK] LAUNCH SEQUENCER',
-  '  [OK] SAVE/LOAD (localStorage)',
-  'CHECKING TELEMETRY LINK... NOMINAL',
-  '──────────────────────────────────────',
-  'SYSTEM READY. AWAITING COMMANDER INPUT.',
+const BOOT_LINES = [
+  '> [SYS] MOON IDLE LAUNCH FACILITY — INITIALIZING...',
+  '> [CHK] 저장 데이터 확인 중...',
+  '> [OK]  세이브 시스템 v2 — 정상',
+  '> [CHK] 자원 시스템 로드...',
+  '> [OK]  Fe/LOX/PCB/RP — 확인',
+  '> [CHK] 제조 파이프라인...',
+  '> [OK]  연구소 초기화 완료',
+  '> [CHK] 텔레메트리 시스템...',
+  '> [OK]  모든 시스템 NOMINAL',
+  '> [SYS] 발사 시설 준비 완료.',
 ];
 
-function runBootSequence(cb){
-  const log=document.getElementById('boot-log');
-  log.innerHTML='';
-  BOOT_LINES.forEach((line,i)=>{
-    const span=document.createElement('span');
-    span.className='boot-line';
-    span.textContent=line;
-    span.style.animationDelay=(i*130)+'ms';
-    log.appendChild(span);
+function startTitleSequence() {
+  const log = document.getElementById('boot-log');
+  if (!log) return;
+  log.innerHTML = '';
+  BOOT_LINES.forEach((line, i) => {
+    setTimeout(() => {
+      const span = document.createElement('span');
+      span.className = 'boot-line';
+      span.style.animationDelay = '0s';
+      span.textContent = line;
+      log.appendChild(span);
+      log.scrollTop = log.scrollHeight;
+    }, i * 130);
   });
-  setTimeout(cb, BOOT_LINES.length*130+400);
 }
 
-function updateSaveStrip(){
-  const strip=document.getElementById('save-strip');
-  if(hasSave()){
-    const raw=localStorage.getItem(SAVE_KEY);
-    const save=JSON.parse(raw);
-    const sg=save.gs||{};
-    const ls=save.lastSave?new Date(save.lastSave).toLocaleDateString('ko-KR'):'?';
-    strip.innerHTML=`세이브 발견 — 마지막 저장: <span>${ls}</span>  발사 횟수: <span>${sg.launches||0}</span>회  문스톤: <span>${sg.moonstone||0}</span>개`;
-    document.getElementById('continue-btn').style.display='inline-block';
-  } else {
-    strip.innerHTML='<span>세이브 없음</span>';
-    document.getElementById('continue-btn').style.display='none';
-  }
+function startNewGame() {
+  gs.res = { money:500, metal:0, fuel:0, electronics:0, research:0 };
+  gs.buildings = { ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:1, r_and_d:0, solar_array:0, launch_pad:0 };
+  gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
+  gs.assembly = { selectedQuality:'proto', jobs:[] };
+  gs.upgrades = {};
+  gs.launches = 0;
+  gs.moonstone = 0;
+  gs.history = [];
+  gs.lastTick = Date.now();
+  gs.settings = { sound: true };
+  gs.unlocks = {
+    tab_production: true, tab_research: true, tab_assembly: false,
+    tab_launch: false, tab_mission: false,
+    bld_ops_center: false, bld_supply_depot: false, bld_mine: false,
+    bld_extractor: false, bld_refinery: false, bld_cryo_plant: false,
+    bld_elec_lab: false, bld_fab_plant: false, bld_research_lab: true,
+    bld_r_and_d: false, bld_solar_array: false, bld_launch_pad: false,
+  };
+  prodMult = {}; globalMult = 1; partCostMult = 1;
+  fusionBonus = 0; reliabilityBonus = 0; slotBonus = 0;
+  enterGame();
 }
 
-function startNewGame(){
-  // Reset everything
-  gs.res={money:500,metal:0,fuel:0,electronics:0,research:0};
-  gs.buildings={ops_center:0,supply_depot:0,mine:0,extractor:0,refinery:0,cryo_plant:0,elec_lab:0,fab_plant:0,research_lab:0,r_and_d:0,solar_array:0,launch_pad:0};
-  gs.parts={engine:0,fueltank:0,control:0,hull:0,payload:0};
-  gs.assembly={selectedQuality:'proto',jobs:[]};
-  gs.upgrades={};
-  gs.launches=0;
-  gs.moonstone=0;
-  gs.history=[];
-  gs.lastTick=Date.now();
-  gs.settings={sound:true};
-  prodMult={};
-  globalMult=1;
-  partCostMult=1;
-  fusionBonus=0;
-  reliabilityBonus=0;
-  slotBonus=0;
-  saveGame();
-  launchGame();
+function continueGame() {
+  const ok = loadGame();
+  if (!ok) { startNewGame(); return; }
+  enterGame();
 }
 
-function continueGame(){
-  const ok=loadGame();
-  if(!ok){startNewGame();return;}
-  calcOffline();
-  launchGame();
-}
-
-function openSettings(){
-  const on=gs.settings.sound;
-  gs.settings.sound=!on;
-  notify(`사운드 ${gs.settings.sound?'ON':'OFF'}`);
-  playSfx('sine',640,0.06,0.03,720);
-}
-
-function launchGame(){
-  const ts=document.getElementById('title-screen');
-  ts.classList.add('fade-out');
-  setTimeout(()=>{
-    ts.style.display='none';
-    document.getElementById('app').classList.add('visible');
-    ensureAssemblyState();
+function enterGame() {
+  const ts = document.getElementById('title-screen');
+  if (ts) ts.classList.add('fade-out');
+  setTimeout(() => {
+    if (ts) ts.style.display = 'none';
+    const app = document.getElementById('app');
+    if (app) app.classList.add('visible');
+    calcOffline();
+    renderUnlocks();
     renderAll();
-  },800);
+    setInterval(tick, 200);
+    setInterval(renderAll, 500);
+    setInterval(saveGame, 10000);
+    animateWorld();
+  }, 800);
+}
+
+function toggleSound() {
+  gs.settings.sound = !gs.settings.sound;
+  const btn = document.getElementById('sound-btn');
+  if (btn) btn.textContent = gs.settings.sound ? 'SND:ON' : 'SND:OFF';
+  saveGame();
 }
 
 // ============================================================
 //  INIT
 // ============================================================
-(function init(){
-  runBootSequence(()=>{
-    updateSaveStrip();
+function init() {
+  // Bind title screen buttons
+  const newGameBtn = document.getElementById('new-game-btn');
+  if (newGameBtn) newGameBtn.addEventListener('click', startNewGame);
+
+  const contBtn = document.getElementById('continue-btn');
+  if (contBtn) contBtn.addEventListener('click', continueGame);
+
+  const sndBtn = document.getElementById('sound-btn');
+  if (sndBtn) sndBtn.addEventListener('click', toggleSound);
+
+  const prestigeBtn = document.getElementById('btn-prestige');
+  if (prestigeBtn) prestigeBtn.addEventListener('click', confirmLaunch);
+
+  const contGameBtn = document.getElementById('btn-continue-game');
+  if (contGameBtn) contGameBtn.addEventListener('click', closeLaunchOverlay);
+
+  // Nav tabs
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    t.addEventListener('click', () => switchMainTab(t.dataset.tab));
   });
 
-  // Game loop
-  setInterval(()=>{tick();},200);
-  // Render loop
-  setInterval(()=>{renderAll();},500);
-  // Autosave
-  setInterval(()=>{saveGame();},10000);
-  // Visibility
-  document.addEventListener('visibilitychange',()=>{
-    if(!document.hidden) calcOffline();
-  });
-})();
+  // Boot sequence
+  startTitleSequence();
+
+  // Check for existing save
+  const saved = localStorage.getItem(SAVE_KEY);
+  setTimeout(() => {
+    if (saved) {
+      const contBtnEl = document.getElementById('continue-btn');
+      if (contBtnEl) contBtnEl.style.display = '';
+      try {
+        const d = JSON.parse(saved);
+        const bldTotal = Object.values(d.buildings || {}).reduce((a, b) => a + b, 0);
+        const saveStrip = document.getElementById('save-strip');
+        if (saveStrip) saveStrip.innerHTML =
+          `발사: <span>${d.launches || 0}회</span> &nbsp; 문스톤: <span>${d.moonstone || 0}</span> &nbsp; 시설: <span>${bldTotal}개</span>`;
+      } catch(e) {}
+    }
+  }, 1500);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
 </script>
 </body>
 </html>
