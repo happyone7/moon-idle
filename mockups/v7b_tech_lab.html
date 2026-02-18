@@ -1,0 +1,1892 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOON IDLE — 연구·기술</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  /* =============================================
+     RESET & BASE
+  ============================================= */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg:          #010800;
+    --panel-bg:    #020d04;
+    --green:       #00e676;
+    --green-dim:   #1a5c34;
+    --green-mid:   #00994d;
+    --green-text:  #88cc99;
+    --amber:       #ffab00;
+    --amber-dim:   #7a5100;
+    --red:         #ff1744;
+    --locked:      #1a1f1a;
+    --locked-text: #3a4a3a;
+    --font:        'Share Tech Mono', monospace;
+    --border:      1px solid #1a5c34;
+    --glow:        0 0 6px #00e67680;
+    --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
+    --amber-glow:  0 0 8px #ffab0080;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--green-text);
+    font-family: var(--font);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* =============================================
+     CRT OVERLAYS
+  ============================================= */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.15) 2px,
+      rgba(0, 0, 0, 0.15) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* =============================================
+     ANIMATIONS
+  ============================================= */
+  @keyframes crt-flicker {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.88; }
+    94%  { opacity: 1; }
+    96%  { opacity: 0.92; }
+    97%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes blink {
+    0%, 49%  { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes pulse-amber {
+    0%, 100% { color: var(--amber); text-shadow: var(--amber-glow); }
+    50%      { color: var(--amber-dim); text-shadow: none; }
+  }
+
+  @keyframes progress-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.7; }
+  }
+
+  @keyframes node-available-pulse {
+    0%, 100% { box-shadow: 0 0 4px var(--green-dim); }
+    50%      { box-shadow: 0 0 10px var(--green-mid), 0 0 20px #00994d40; }
+  }
+
+  @keyframes scan-line {
+    0%   { transform: translateY(-100%); opacity: 0.05; }
+    100% { transform: translateY(200%); opacity: 0.05; }
+  }
+
+  /* =============================================
+     MAIN WRAPPER
+  ============================================= */
+  #main-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    animation: crt-flicker 8s infinite;
+  }
+
+  /* =============================================
+     TOP BAR
+  ============================================= */
+  #top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 5px 14px;
+    flex-shrink: 0;
+    box-shadow: var(--glow-strong);
+    z-index: 100;
+  }
+
+  .top-title {
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+  }
+
+  .top-title span {
+    color: var(--green-dim);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .top-stats {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+
+  .stat-label {
+    color: var(--green-dim);
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .stat-value {
+    color: var(--green);
+    text-shadow: var(--glow);
+    font-size: 13px;
+  }
+
+  .stat-value.amber {
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+
+  .top-era {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .era-badge {
+    border: 1px solid var(--green-mid);
+    padding: 2px 8px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    letter-spacing: 2px;
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 13px;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    box-shadow: var(--glow);
+  }
+
+  /* =============================================
+     MAIN TABS
+  ============================================= */
+  #tab-bar {
+    display: flex;
+    background: var(--panel-bg);
+    border-bottom: 1px solid var(--green-dim);
+    flex-shrink: 0;
+    padding: 0 14px;
+  }
+
+  .tab {
+    padding: 6px 18px;
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--green-dim);
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
+    white-space: nowrap;
+  }
+
+  .tab:hover {
+    color: var(--green-text);
+  }
+
+  .tab.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  /* =============================================
+     CONTENT AREA
+  ============================================= */
+  #content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    gap: 0;
+  }
+
+  /* =============================================
+     LEFT PANEL — RESEARCH STATUS (20%)
+  ============================================= */
+  #panel-left {
+    width: 22%;
+    flex-shrink: 0;
+    background: var(--panel-bg);
+    border-right: 1px solid var(--green-dim);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 6px 10px;
+    background: #041208;
+    border-bottom: 1px solid var(--green-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green);
+    text-shadow: var(--glow);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .panel-header::before {
+    content: '>';
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+  }
+
+  .panel-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) transparent;
+  }
+
+  /* Research queue slots */
+  .research-queue-header {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    padding: 4px 2px 6px;
+    border-bottom: 1px solid #0d2016;
+    margin-bottom: 8px;
+  }
+
+  .research-queue-header span {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .active-research-card {
+    border: 1px solid var(--green-dim);
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #010f04;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .active-research-card.amber-card {
+    border-color: var(--amber-dim);
+  }
+
+  .arc-title {
+    font-size: 11px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+  }
+
+  .arc-title.amber {
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+  }
+
+  .arc-sub {
+    font-size: 9px;
+    color: var(--green-dim);
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .progress-bar-wrap {
+    height: 10px;
+    background: #0d2016;
+    border: 1px solid var(--green-dim);
+    margin-bottom: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green-mid), var(--green));
+    transition: width 0.5s;
+    animation: progress-pulse 2s ease-in-out infinite;
+    position: relative;
+  }
+
+  .progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--green);
+    box-shadow: var(--glow-strong);
+  }
+
+  .progress-bar-fill.amber-fill {
+    background: linear-gradient(90deg, var(--amber-dim), var(--amber));
+  }
+
+  .progress-bar-fill.amber-fill::after {
+    background: var(--amber);
+    box-shadow: var(--amber-glow);
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--green-text);
+    margin-bottom: 6px;
+  }
+
+  .progress-label .pct {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .progress-label .pct.amber {
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+  }
+
+  .arc-eta {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 1px;
+  }
+
+  .btn-cancel {
+    margin-top: 6px;
+    padding: 3px 8px;
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 1px;
+    background: transparent;
+    border: 1px solid #3a1010;
+    color: #ff6666;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .btn-cancel:hover {
+    background: #1a0505;
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .empty-slot {
+    border: 1px dashed #1a3020;
+    padding: 10px;
+    text-align: center;
+    color: #1a3020;
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  /* RP Income */
+  .rp-section {
+    margin-top: 12px;
+    border-top: 1px solid #0d2016;
+    padding-top: 10px;
+  }
+
+  .rp-section-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .lab-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--green-text);
+    padding: 2px 0;
+    border-bottom: 1px solid #091608;
+  }
+
+  .lab-item .lab-rate {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .total-rate {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    padding: 6px 0 0;
+    letter-spacing: 1px;
+  }
+
+  /* =============================================
+     CENTER PANEL — TECH TREE (55%)
+  ============================================= */
+  #panel-center {
+    flex: 1;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  #tree-container {
+    flex: 1;
+    overflow: auto;
+    padding: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) transparent;
+    position: relative;
+  }
+
+  /* Tech tree SVG wrapper */
+  #tech-tree-svg-wrap {
+    position: relative;
+    min-width: 900px;
+  }
+
+  /* Branch headers */
+  .branch-headers {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+    min-width: 900px;
+  }
+
+  .branch-header {
+    text-align: center;
+    padding: 4px;
+    border: 1px solid var(--green-dim);
+    background: #041208;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .branch-header.locked-branch {
+    border-color: #1a1f1a;
+    color: var(--locked-text);
+    text-shadow: none;
+  }
+
+  /* The SVG tree */
+  #tree-svg {
+    width: 100%;
+    min-width: 900px;
+    display: block;
+  }
+
+  /* =============================================
+     RIGHT PANEL — TECH DETAIL (25%)
+  ============================================= */
+  #panel-right {
+    width: 25%;
+    flex-shrink: 0;
+    background: var(--panel-bg);
+    border-left: 1px solid var(--green-dim);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .detail-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--green-dim) transparent;
+  }
+
+  /* Default stats panel */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .ov-card {
+    border: 1px solid var(--green-dim);
+    background: #010f04;
+    padding: 8px;
+    text-align: center;
+  }
+
+  .ov-num {
+    font-size: 22px;
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+    line-height: 1.2;
+  }
+
+  .ov-num.amber {
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+  }
+
+  .ov-num.dim {
+    color: var(--green-dim);
+    text-shadow: none;
+  }
+
+  .ov-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    margin-top: 2px;
+  }
+
+  .lunar-target {
+    margin-top: 10px;
+    padding: 8px;
+    border: 1px solid var(--amber-dim);
+    background: #0a0600;
+    text-align: center;
+  }
+
+  .lunar-target .lt-num {
+    font-size: 28px;
+    color: var(--amber);
+    text-shadow: var(--amber-glow);
+    animation: pulse-amber 3s ease-in-out infinite;
+  }
+
+  .lunar-target .lt-label {
+    font-size: 9px;
+    color: var(--amber-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Tech detail display */
+  .detail-hidden { display: none; }
+
+  .detail-tech-id {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+
+  .detail-tech-name {
+    font-size: 14px;
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+    margin-bottom: 2px;
+    letter-spacing: 1px;
+  }
+
+  .detail-tech-en {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .detail-divider {
+    border: none;
+    border-top: 1px solid var(--green-dim);
+    margin: 8px 0;
+  }
+
+  .detail-status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid;
+    margin-bottom: 8px;
+  }
+
+  .status-complete  { color: var(--green);  border-color: var(--green);      background: #011a0a; text-shadow: var(--glow); }
+  .status-progress  { color: var(--amber);  border-color: var(--amber-dim);  background: #0a0700; text-shadow: var(--amber-glow); animation: pulse-amber 2s ease-in-out infinite; }
+  .status-available { color: var(--green);  border-color: var(--green-mid);  background: #010f04; }
+  .status-locked    { color: var(--locked-text); border-color: #2a2f2a; background: var(--locked); }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    padding: 3px 0;
+    border-bottom: 1px solid #091608;
+  }
+
+  .detail-row .dr-key {
+    color: var(--green-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10px;
+  }
+
+  .detail-row .dr-val {
+    color: var(--green-text);
+    text-align: right;
+  }
+
+  .detail-row .dr-val.highlight {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .detail-effects {
+    margin-top: 8px;
+  }
+
+  .effect-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .effect-item {
+    font-size: 11px;
+    color: var(--green-text);
+    padding: 2px 0;
+    padding-left: 10px;
+    position: relative;
+  }
+
+  .effect-item::before {
+    content: '+';
+    position: absolute;
+    left: 0;
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .unlocks-section {
+    margin-top: 8px;
+    padding: 6px;
+    border: 1px solid #0d2016;
+    background: #010f04;
+  }
+
+  .unlocks-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .unlock-item {
+    font-size: 10px;
+    color: var(--green-text);
+    padding: 1px 0 1px 8px;
+    border-left: 2px solid var(--green-dim);
+    margin-bottom: 2px;
+  }
+
+  .btn-research {
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px;
+    font-family: var(--font);
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    background: #011a0a;
+    border: 2px solid var(--green-mid);
+    color: var(--green);
+    cursor: pointer;
+    text-shadow: var(--glow);
+    transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+
+  .btn-research:hover {
+    background: #022d12;
+    border-color: var(--green);
+    box-shadow: var(--glow-strong);
+  }
+
+  .btn-research:active {
+    background: var(--green-dim);
+  }
+
+  .btn-research.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: var(--green-dim);
+  }
+
+  .btn-research.disabled:hover {
+    background: #011a0a;
+    box-shadow: none;
+    border-color: var(--green-dim);
+  }
+
+  .rp-check {
+    text-align: center;
+    font-size: 10px;
+    color: var(--green-text);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  .rp-check .ok { color: var(--green); text-shadow: var(--glow); }
+  .rp-check .fail { color: var(--red); }
+
+  /* =============================================
+     BOTTOM BAR
+  ============================================= */
+  #bottom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel-bg);
+    border-top: 1px solid var(--green-dim);
+    padding: 4px 14px;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 1px;
+  }
+
+  #bottom-bar .bb-item span {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  #bottom-bar .bb-hint {
+    color: var(--amber-dim);
+    animation: pulse-amber 4s ease-in-out infinite;
+  }
+
+  /* =============================================
+     TECH NODE STYLES (via SVG foreignObject / CSS classes applied in JS)
+  ============================================= */
+
+  /* Tooltip on hover */
+  .node-tooltip {
+    position: fixed;
+    background: var(--panel-bg);
+    border: 1px solid var(--green-mid);
+    padding: 6px 10px;
+    font-size: 10px;
+    color: var(--green-text);
+    letter-spacing: 1px;
+    pointer-events: none;
+    z-index: 500;
+    display: none;
+    max-width: 200px;
+    box-shadow: var(--glow);
+  }
+
+  .node-tooltip.visible { display: block; }
+
+  /* Flash feedback when research starts */
+  @keyframes flash-green {
+    0%   { background: var(--green); }
+    100% { background: #011a0a; }
+  }
+
+  .flash-feedback {
+    animation: flash-green 0.4s ease-out;
+  }
+
+  /* SVG node inline styles applied via JS */
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--green-dim); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green-mid); }
+
+</style>
+</head>
+<body>
+
+<div id="main-wrapper">
+
+  <!-- ===== TOP BAR ===== -->
+  <div id="top-bar">
+    <div class="top-title">
+      MOON IDLE <span>—</span> 연구·기술
+      <span class="cursor-blink"></span>
+    </div>
+
+    <div class="top-stats">
+      <div class="stat-item">
+        <div class="stat-label">시대</div>
+        <div class="stat-value">준궤도</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">연구 포인트</div>
+        <div class="stat-value">847 RP</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">획득률</div>
+        <div class="stat-value amber">+8 RP/min</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">연구소</div>
+        <div class="stat-value">2 ACTIVE</div>
+      </div>
+    </div>
+
+    <div class="top-era">
+      <div class="era-badge">PHASE 2</div>
+      <div style="font-size:10px; color:var(--green-dim)">준궤도 시대</div>
+    </div>
+  </div>
+
+  <!-- ===== TABS ===== -->
+  <div id="tab-bar">
+    <button class="tab" onclick="switchTab(this)">○ 생산/자원</button>
+    <button class="tab active" onclick="switchTab(this)">● 연구/기술</button>
+    <button class="tab" onclick="switchTab(this)">○ 로켓 조립</button>
+    <button class="tab" onclick="switchTab(this)">○ 발사 관제</button>
+  </div>
+
+  <!-- ===== CONTENT ===== -->
+  <div id="content">
+
+    <!-- === LEFT PANEL === -->
+    <div id="panel-left">
+      <div class="panel-header">연구 현황</div>
+      <div class="panel-scroll">
+
+        <div class="research-queue-header">연구 중 [<span>2</span>/2 슬롯]</div>
+
+        <!-- Active Research 1 -->
+        <div class="active-research-card" id="arc-s03">
+          <div class="arc-title">S03 CFRP 적층 기술</div>
+          <div class="arc-sub">구조 기술 브랜치</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width:67%"></div>
+          </div>
+          <div class="progress-label">
+            <span>진행률</span>
+            <span class="pct">67%</span>
+          </div>
+          <div class="arc-eta">ETA: <span style="color:var(--green);text-shadow:var(--glow)">47분</span></div>
+          <button class="btn-cancel" onclick="cancelResearch('s03')">◼ 취소</button>
+        </div>
+
+        <!-- Active Research 2 -->
+        <div class="active-research-card amber-card" id="arc-t02">
+          <div class="arc-title amber">T02 삭마 코팅</div>
+          <div class="arc-sub" style="color:var(--amber-dim)">열 관리 브랜치</div>
+          <div class="progress-bar-wrap" style="border-color:var(--amber-dim)">
+            <div class="progress-bar-fill amber-fill" style="width:45%"></div>
+          </div>
+          <div class="progress-label">
+            <span style="color:var(--amber-dim)">진행률</span>
+            <span class="pct amber">45%</span>
+          </div>
+          <div class="arc-eta" style="color:var(--amber-dim)">ETA: <span style="color:var(--amber);text-shadow:var(--amber-glow)">83분</span></div>
+        </div>
+
+        <!-- Empty queue slot -->
+        <div class="empty-slot">
+          빈 슬롯 — 연구 추가 가능<br>
+          <span style="font-size:9px">[트리에서 기술 선택]</span>
+        </div>
+
+        <!-- RP Sources -->
+        <div class="rp-section">
+          <div class="rp-section-title">RP 생산 현황</div>
+          <div class="lab-item">
+            <span>기초 연구소 Lv.2</span>
+            <span class="lab-rate">+5 RP/min</span>
+          </div>
+          <div class="lab-item">
+            <span>추진 연구소 Lv.1</span>
+            <span class="lab-rate">+3 RP/min</span>
+          </div>
+          <div class="total-rate">
+            <span>TOTAL</span>
+            <span>+8 RP/min</span>
+          </div>
+        </div>
+
+        <!-- Consumed resources note -->
+        <div style="margin-top:12px; border-top:1px solid #0d2016; padding-top:8px;">
+          <div class="rp-section-title">소모 중인 자원</div>
+          <div class="lab-item">
+            <span>CFRP 30kg</span>
+            <span style="color:var(--amber);font-size:10px">S03용</span>
+          </div>
+          <div class="lab-item">
+            <span>RP 700</span>
+            <span style="color:var(--amber-dim);font-size:10px">T02용</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- === CENTER PANEL — TECH TREE === -->
+    <div id="panel-center">
+      <div id="tree-container">
+
+        <!-- Branch headers -->
+        <div class="branch-headers">
+          <div class="branch-header">구조 기술</div>
+          <div class="branch-header">추진 기술</div>
+          <div class="branch-header">항전 기술</div>
+          <div class="branch-header">열 관리</div>
+          <div class="branch-header">운용 기술</div>
+          <div class="branch-header locked-branch">달 기술 ???</div>
+        </div>
+
+        <!-- Tech Tree SVG -->
+        <svg id="tree-svg" viewBox="0 0 900 760" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Arrow marker for connections -->
+            <marker id="arr-green" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#1a5c34"/>
+            </marker>
+            <marker id="arr-green-mid" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#00994d"/>
+            </marker>
+            <marker id="arr-amber" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#7a5100"/>
+            </marker>
+            <marker id="arr-locked" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#1a2a1a"/>
+            </marker>
+            <!-- CRT scan line effect on SVG -->
+            <filter id="crt-glow">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="glow-strong">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <!-- Scanline pattern on SVG -->
+            <pattern id="scanlines" x="0" y="0" width="1" height="4" patternUnits="userSpaceOnUse">
+              <rect x="0" y="2" width="1" height="2" fill="rgba(0,0,0,0.12)"/>
+            </pattern>
+          </defs>
+
+          <!-- ======================================================
+               COLUMN X POSITIONS (centers):
+               Col 1 (구조):  75
+               Col 2 (추진): 225
+               Col 3 (항전): 375
+               Col 4 (열):   525
+               Col 5 (운용): 675
+               Col 6 (달):   825
+               Node width: 120, height: 52
+               Node half-w: 60, half-h: 26
+               Row Y positions (centers): R1=50, R2=130, R3=210, R4=290, R5=370, R6=450, R7=530, R8=610, R9=690
+          ====================================================== -->
+
+          <!-- ===================== CONNECTIONS ===================== -->
+          <!-- Struct branch connections -->
+          <line x1="75" y1="76"  x2="75"  y2="104" stroke="#00e676" stroke-width="1.5" marker-end="url(#arr-green-mid)" filter="url(#crt-glow)"/>
+          <line x1="75" y1="156" x2="75"  y2="184" stroke="#00e676" stroke-width="1.5" marker-end="url(#arr-green-mid)" filter="url(#crt-glow)"/>
+          <line x1="75" y1="236" x2="75"  y2="264" stroke="#ffab00" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-amber)"/>
+          <!-- S02+S03 -> S04 (dual prereq) -->
+          <line x1="75" y1="316" x2="75"  y2="344" stroke="#1a5c34" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arr-green)"/>
+          <line x1="75" y1="396" x2="75"  y2="424" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="75" y1="476" x2="75"  y2="504" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="75" y1="556" x2="75"  y2="584" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+
+          <!-- Propulsion connections -->
+          <line x1="225" y1="76"  x2="225" y2="104" stroke="#00e676" stroke-width="1.5" marker-end="url(#arr-green-mid)" filter="url(#crt-glow)"/>
+          <line x1="225" y1="156" x2="225" y2="184" stroke="#ffab00" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-amber)"/>
+          <!-- P02 also -> P05 -->
+          <line x1="225" y1="156" x2="225" y2="264" stroke="#1a5c34" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arr-green)" opacity="0.5"/>
+          <line x1="225" y1="236" x2="225" y2="264" stroke="#1a5c34" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arr-green)"/>
+          <line x1="225" y1="316" x2="225" y2="344" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="225" y1="396" x2="225" y2="424" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="225" y1="476" x2="225" y2="504" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="225" y1="556" x2="225" y2="584" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="225" y1="636" x2="225" y2="664" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+
+          <!-- Avionics connections -->
+          <line x1="375" y1="76"  x2="375" y2="104" stroke="#00e676" stroke-width="1.5" marker-end="url(#arr-green-mid)" filter="url(#crt-glow)"/>
+          <line x1="375" y1="156" x2="375" y2="184" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="375" y1="236" x2="375" y2="264" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="375" y1="316" x2="375" y2="344" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+
+          <!-- Thermal connections -->
+          <line x1="525" y1="76"  x2="525" y2="104" stroke="#ffab00" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#arr-amber)"/>
+          <line x1="525" y1="156" x2="525" y2="184" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="525" y1="236" x2="525" y2="264" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="525" y1="316" x2="525" y2="344" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+
+          <!-- Operations connections -->
+          <line x1="675" y1="76"  x2="675" y2="104" stroke="#00e676" stroke-width="1.5" marker-end="url(#arr-green-mid)" filter="url(#crt-glow)"/>
+          <line x1="675" y1="156" x2="675" y2="184" stroke="#1a5c34" stroke-width="1.5" marker-end="url(#arr-green)"/>
+          <line x1="675" y1="236" x2="675" y2="264" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+          <line x1="675" y1="316" x2="675" y2="344" stroke="#1a2a1a" stroke-width="1" stroke-dasharray="2 4" marker-end="url(#arr-locked)"/>
+
+          <!-- Cross-branch: S02+S03 converge to S04 from side -->
+          <line x1="75" y1="210" x2="60" y2="210" stroke="#ffab00" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
+          <line x1="60" y1="210" x2="60" y2="290" stroke="#ffab00" stroke-width="1" stroke-dasharray="2 3" opacity="0.4"/>
+          <line x1="60" y1="290" x2="15" y2="290" stroke="#ffab00" stroke-width="1" stroke-dasharray="2 3" opacity="0.4" marker-end="url(#arr-amber)"/>
+
+          <!-- ===================== NODES ===================== -->
+
+          <!-- ======= COLUMN 1: 구조 기술 ======= -->
+          <!-- S01 COMPLETE -->
+          <g class="tech-node" data-id="S01" onclick="selectTech('S01')" style="cursor:pointer">
+            <rect x="15" y="24" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="15" y="24" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="75" y="41" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="75" y="56" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="11" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">S01 기초 용접술</text>
+            <text x="125" y="40" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="15" y="24" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- S02 COMPLETE -->
+          <g class="tech-node" data-id="S02" onclick="selectTech('S02')" style="cursor:pointer">
+            <rect x="15" y="104" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="15" y="104" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="75" y="121" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="75" y="136" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="11" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">S02 알루미늄 가공</text>
+            <text x="125" y="120" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="15" y="104" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- S03 IN PROGRESS (67%) -->
+          <g class="tech-node" data-id="S03" onclick="selectTech('S03')" style="cursor:pointer">
+            <rect x="15" y="184" width="120" height="52" fill="#0a0700" stroke="#ffab00" stroke-width="1.5" stroke-dasharray="6 2"/>
+            <text x="75" y="201" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#7a5100" letter-spacing="1">IN PROGRESS ▶</text>
+            <text x="75" y="214" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#ffab00" letter-spacing="1">S03 CFRP 적층</text>
+            <!-- progress bar inside node -->
+            <rect x="19" y="220" width="112" height="6" fill="#1a0a00"/>
+            <rect x="19" y="220" width="75" height="6" fill="#ffab00" opacity="0.8"/>
+            <text x="75" y="231" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ffab00">67%</text>
+            <rect x="15" y="184" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- S04 AVAILABLE -->
+          <g class="tech-node" data-id="S04" onclick="selectTech('S04')" style="cursor:pointer">
+            <rect x="15" y="264" width="120" height="52" fill="#010f04" stroke="#00994d" stroke-width="1.5"/>
+            <rect x="15" y="264" width="120" height="3" fill="#00994d" opacity="0.2"/>
+            <text x="75" y="281" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d" letter-spacing="1">AVAILABLE</text>
+            <text x="75" y="294" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10.5" fill="#88cc99" letter-spacing="1">S04 티타늄 가공</text>
+            <text x="75" y="307" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d">500 RP</text>
+            <rect x="15" y="264" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- S05 LOCKED -->
+          <g class="tech-node" data-id="S05" onclick="selectTech('S05')" style="cursor:pointer">
+            <rect x="15" y="344" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="65" y="368" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="75" y="385" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">S05 구조 경량화 II</text>
+            <rect x="15" y="344" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- S06 LOCKED -->
+          <g class="tech-node" data-id="S06" onclick="selectTech('S06')" style="cursor:pointer">
+            <rect x="15" y="424" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="65" y="448" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="75" y="465" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">S06 복합재 패널</text>
+            <rect x="15" y="424" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- S07 LOCKED -->
+          <g class="tech-node" data-id="S07" onclick="selectTech('S07')" style="cursor:pointer">
+            <rect x="15" y="504" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="65" y="528" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="75" y="545" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#2a3a2a">S07 탄소나노튜브</text>
+            <rect x="15" y="504" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- ======= COLUMN 2: 추진 기술 ======= -->
+          <!-- P01 COMPLETE -->
+          <g class="tech-node" data-id="P01" onclick="selectTech('P01')" style="cursor:pointer">
+            <rect x="165" y="24" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="165" y="24" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="225" y="41" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="225" y="56" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">P01 고압 연소실 I</text>
+            <text x="275" y="40" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="165" y="24" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- P02 COMPLETE -->
+          <g class="tech-node" data-id="P02" onclick="selectTech('P02')" style="cursor:pointer">
+            <rect x="165" y="104" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="165" y="104" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="225" y="121" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="225" y="136" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">P02 터보펌프 기초</text>
+            <text x="275" y="120" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="165" y="104" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- P03 IN PROGRESS (23%) -->
+          <g class="tech-node" data-id="P03" onclick="selectTech('P03')" style="cursor:pointer">
+            <rect x="165" y="184" width="120" height="52" fill="#0a0700" stroke="#ffab00" stroke-width="1.5" stroke-dasharray="6 2"/>
+            <text x="225" y="201" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#7a5100" letter-spacing="1">IN PROGRESS ▶</text>
+            <text x="225" y="214" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#ffab00" letter-spacing="1">P03 재생 냉각 노즐</text>
+            <rect x="169" y="220" width="112" height="6" fill="#1a0a00"/>
+            <rect x="169" y="220" width="26" height="6" fill="#ffab00" opacity="0.8"/>
+            <text x="225" y="231" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ffab00">23%</text>
+            <rect x="165" y="184" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- P04 AVAILABLE -->
+          <g class="tech-node" data-id="P04" onclick="selectTech('P04')" style="cursor:pointer">
+            <rect x="165" y="264" width="120" height="52" fill="#010f04" stroke="#00994d" stroke-width="1.5"/>
+            <rect x="165" y="264" width="120" height="3" fill="#00994d" opacity="0.2"/>
+            <text x="225" y="281" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d" letter-spacing="1">AVAILABLE</text>
+            <text x="225" y="294" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#88cc99" letter-spacing="1">P04 핀치 연소</text>
+            <text x="225" y="307" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d">600 RP</text>
+            <rect x="165" y="264" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- P05 AVAILABLE -->
+          <g class="tech-node" data-id="P05" onclick="selectTech('P05')" style="cursor:pointer">
+            <rect x="165" y="344" width="120" height="52" fill="#010f04" stroke="#00994d" stroke-width="1.5"/>
+            <rect x="165" y="344" width="120" height="3" fill="#00994d" opacity="0.2"/>
+            <text x="225" y="361" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d" letter-spacing="1">AVAILABLE</text>
+            <text x="225" y="374" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#88cc99" letter-spacing="1">P05 스테이지 분리</text>
+            <text x="225" y="387" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d">450 RP</text>
+            <rect x="165" y="344" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- P06 LOCKED -->
+          <g class="tech-node" data-id="P06" onclick="selectTech('P06')" style="cursor:pointer">
+            <rect x="165" y="424" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="215" y="448" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="225" y="465" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">P06 메탄 엔진</text>
+            <rect x="165" y="424" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- P07~10 LOCKED (grouped) -->
+          <g class="tech-node" data-id="P07" onclick="selectTech('P07')" style="cursor:pointer">
+            <rect x="165" y="504" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="215" y="528" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="225" y="545" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#2a3a2a">P07~10 (Phase 4+)</text>
+            <rect x="165" y="504" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- ======= COLUMN 3: 항전 기술 ======= -->
+          <!-- A01 COMPLETE -->
+          <g class="tech-node" data-id="A01" onclick="selectTech('A01')" style="cursor:pointer">
+            <rect x="315" y="24" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="315" y="24" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="375" y="41" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="375" y="56" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">A01 자이로 안정화</text>
+            <text x="425" y="40" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="315" y="24" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- A02 AVAILABLE -->
+          <g class="tech-node" data-id="A02" onclick="selectTech('A02')" style="cursor:pointer">
+            <rect x="315" y="104" width="120" height="52" fill="#010f04" stroke="#00994d" stroke-width="1.5"/>
+            <rect x="315" y="104" width="120" height="3" fill="#00994d" opacity="0.2"/>
+            <text x="375" y="121" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d" letter-spacing="1">AVAILABLE</text>
+            <text x="375" y="134" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#88cc99" letter-spacing="1">A02 관성 항법(INS)</text>
+            <text x="375" y="147" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d">350 RP + 회로기판 5</text>
+            <rect x="315" y="104" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- A03 LOCKED -->
+          <g class="tech-node" data-id="A03" onclick="selectTech('A03')" style="cursor:pointer">
+            <rect x="315" y="184" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="365" y="208" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="375" y="225" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">A03 GPS 보정</text>
+            <rect x="315" y="184" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- A04 LOCKED -->
+          <g class="tech-node" data-id="A04" onclick="selectTech('A04')" style="cursor:pointer">
+            <rect x="315" y="264" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="365" y="288" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="375" y="305" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">A04 자율 비행</text>
+            <rect x="315" y="264" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- ======= COLUMN 4: 열 관리 ======= -->
+          <!-- T01 COMPLETE -->
+          <g class="tech-node" data-id="T01" onclick="selectTech('T01')" style="cursor:pointer">
+            <rect x="465" y="24" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="465" y="24" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="525" y="41" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="525" y="56" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">T01 기초 절열재</text>
+            <text x="575" y="40" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="465" y="24" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- T02 IN PROGRESS (45%) -->
+          <g class="tech-node" data-id="T02" onclick="selectTech('T02')" style="cursor:pointer">
+            <rect x="465" y="104" width="120" height="52" fill="#0a0700" stroke="#ffab00" stroke-width="1.5" stroke-dasharray="6 2"/>
+            <text x="525" y="121" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#7a5100" letter-spacing="1">IN PROGRESS ▶</text>
+            <text x="525" y="134" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#ffab00" letter-spacing="1">T02 삭마 코팅</text>
+            <rect x="469" y="140" width="112" height="6" fill="#1a0a00"/>
+            <rect x="469" y="140" width="50" height="6" fill="#ffab00" opacity="0.8"/>
+            <text x="525" y="151" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#ffab00">45%</text>
+            <rect x="465" y="104" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- T03 LOCKED -->
+          <g class="tech-node" data-id="T03" onclick="selectTech('T03')" style="cursor:pointer">
+            <rect x="465" y="184" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="515" y="208" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="525" y="225" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">T03 능동 냉각</text>
+            <rect x="465" y="184" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- T04 LOCKED -->
+          <g class="tech-node" data-id="T04" onclick="selectTech('T04')" style="cursor:pointer">
+            <rect x="465" y="264" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="515" y="288" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="525" y="305" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">T04 열차폐 타일</text>
+            <rect x="465" y="264" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- ======= COLUMN 5: 운용 기술 ======= -->
+          <!-- O01 COMPLETE -->
+          <g class="tech-node" data-id="O01" onclick="selectTech('O01')" style="cursor:pointer">
+            <rect x="615" y="24" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="615" y="24" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="675" y="41" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="675" y="56" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">O01 발사 자동화 I</text>
+            <text x="725" y="40" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="615" y="24" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- O02 COMPLETE -->
+          <g class="tech-node" data-id="O02" onclick="selectTech('O02')" style="cursor:pointer">
+            <rect x="615" y="104" width="120" height="52" fill="#011a0a" stroke="#00e676" stroke-width="1.5" filter="url(#crt-glow)"/>
+            <rect x="615" y="104" width="120" height="3" fill="#00e676" opacity="0.3"/>
+            <text x="675" y="121" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#1a5c34" letter-spacing="1">COMPLETE</text>
+            <text x="675" y="136" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#00e676" filter="url(#crt-glow)" letter-spacing="1">O02 카운트다운</text>
+            <text x="725" y="120" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="14" fill="#00e676" filter="url(#glow-strong)">✓</text>
+            <rect x="615" y="104" width="120" height="52" fill="url(#scanlines)" opacity="0.5"/>
+          </g>
+
+          <!-- O03 AVAILABLE -->
+          <g class="tech-node" data-id="O03" onclick="selectTech('O03')" style="cursor:pointer">
+            <rect x="615" y="184" width="120" height="52" fill="#010f04" stroke="#00994d" stroke-width="1.5"/>
+            <rect x="615" y="184" width="120" height="3" fill="#00994d" opacity="0.2"/>
+            <text x="675" y="201" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d" letter-spacing="1">AVAILABLE</text>
+            <text x="675" y="214" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="10" fill="#88cc99" letter-spacing="1">O03 낙하산 회수</text>
+            <text x="675" y="227" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#00994d">400 RP</text>
+            <rect x="615" y="184" width="120" height="52" fill="url(#scanlines)" opacity="0.4"/>
+          </g>
+
+          <!-- O04 LOCKED -->
+          <g class="tech-node" data-id="O04" onclick="selectTech('O04')" style="cursor:pointer">
+            <rect x="615" y="264" width="120" height="52" fill="#0a0f0a" stroke="#1a2a1a" stroke-width="1"/>
+            <text x="665" y="288" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="18" fill="#2a3a2a">🔒</text>
+            <text x="675" y="305" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9.5" fill="#2a3a2a">O04 재사용 로켓</text>
+            <rect x="615" y="264" width="120" height="52" fill="url(#scanlines)" opacity="0.3"/>
+          </g>
+
+          <!-- ======= COLUMN 6: 달 기술 (ALL LOCKED) ======= -->
+          <!-- Lunar placeholder box -->
+          <rect x="765" y="24" width="120" height="300" fill="#060908" stroke="#111a11" stroke-width="1" rx="0"/>
+          <text x="825" y="80" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="22" fill="#111a11">???</text>
+          <text x="825" y="110" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#111a11" letter-spacing="1">달 탐사 기술</text>
+          <text x="825" y="126" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="9" fill="#0d1a0d">(Phase 4 필요)</text>
+          <text x="825" y="160" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="28" fill="#0d1a0d">🔒</text>
+          <text x="825" y="200" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#0a120a">L01~L10</text>
+          <text x="825" y="215" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#0a120a">잠김</text>
+          <!-- Lunar sub-node hints -->
+          <rect x="775" y="240" width="100" height="22" fill="#060908" stroke="#0d1a0d" stroke-width="1"/>
+          <text x="825" y="255" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#0a120a">달 착륙선 프레임 🔒</text>
+          <rect x="775" y="270" width="100" height="22" fill="#060908" stroke="#0d1a0d" stroke-width="1"/>
+          <text x="825" y="285" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#0a120a">ISRU 자원 채굴 🔒</text>
+          <rect x="775" y="300" width="100" height="22" fill="#060908" stroke="#0d1a0d" stroke-width="1"/>
+          <text x="825" y="315" text-anchor="middle" font-family="'Share Tech Mono',monospace" font-size="8" fill="#0a120a">달 전진기지 🔒</text>
+
+        </svg>
+
+      </div>
+    </div>
+
+    <!-- === RIGHT PANEL — TECH DETAIL === -->
+    <div id="panel-right">
+      <div class="panel-header">기술 상세</div>
+      <div class="detail-scroll">
+
+        <!-- DEFAULT: overview stats (visible when no tech selected) -->
+        <div id="detail-overview">
+          <div style="font-size:10px; letter-spacing:1px; color:var(--green-dim); margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #0d2016; text-transform:uppercase">
+            > RESEARCH_OVERVIEW.DAT
+          </div>
+
+          <div class="overview-grid">
+            <div class="ov-card">
+              <div class="ov-num">8</div>
+              <div class="ov-label">완료</div>
+            </div>
+            <div class="ov-card">
+              <div class="ov-num amber">2</div>
+              <div class="ov-label">진행 중</div>
+            </div>
+            <div class="ov-card">
+              <div class="ov-num">4</div>
+              <div class="ov-label">해금 가능</div>
+            </div>
+            <div class="ov-card">
+              <div class="ov-num dim">24</div>
+              <div class="ov-label">잠김</div>
+            </div>
+          </div>
+
+          <div class="lunar-target">
+            <div class="lt-num">29</div>
+            <div class="lt-label">달 기술까지 남은 연구</div>
+          </div>
+
+          <div style="margin-top:14px; padding:8px; border:1px solid #0d2016; background:#010f04;">
+            <div style="font-size:9px; letter-spacing:2px; color:var(--green-dim); text-transform:uppercase; margin-bottom:6px">총 연구 소비</div>
+            <div class="detail-row">
+              <span class="dr-key">총 RP 지출</span>
+              <span class="dr-val highlight">1,247 RP</span>
+            </div>
+            <div class="detail-row">
+              <span class="dr-key">완료율</span>
+              <span class="dr-val">21%</span>
+            </div>
+            <div class="detail-row">
+              <span class="dr-key">활성 연구소</span>
+              <span class="dr-val highlight">2개</span>
+            </div>
+          </div>
+
+          <div style="margin-top:10px; font-size:10px; color:var(--green-dim); letter-spacing:1px; border:1px dashed #0d2016; padding:6px; text-align:center;">
+            트리에서 기술을 클릭하면<br>
+            <span style="color:var(--green-text)">상세 정보가 표시됩니다.</span>
+          </div>
+        </div>
+
+        <!-- TECH DETAIL (hidden by default, shown on click) -->
+        <div id="detail-tech" class="detail-hidden">
+          <div class="detail-tech-id" id="dt-id">S04</div>
+          <div class="detail-tech-name" id="dt-name">티타늄 가공</div>
+          <div class="detail-tech-en" id="dt-en">Ti-6Al-4V ALLOY PROCESSING</div>
+
+          <hr class="detail-divider">
+
+          <div class="detail-status-badge" id="dt-status-badge">AVAILABLE</div>
+
+          <div class="detail-row">
+            <span class="dr-key">비용</span>
+            <span class="dr-val highlight" id="dt-cost">—</span>
+          </div>
+          <div class="detail-row">
+            <span class="dr-key">선행 기술</span>
+            <span class="dr-val" id="dt-prereq">—</span>
+          </div>
+          <div class="detail-row" id="dt-eta-row" style="display:none">
+            <span class="dr-key">예상 시간</span>
+            <span class="dr-val" id="dt-eta">—</span>
+          </div>
+
+          <div class="detail-effects" id="dt-effects-wrap">
+            <div class="effect-title">효과</div>
+            <div id="dt-effects"></div>
+          </div>
+
+          <div class="unlocks-section" id="dt-unlocks-wrap" style="display:none">
+            <div class="unlocks-title">해금되는 건물/기능</div>
+            <div id="dt-unlocks"></div>
+          </div>
+
+          <button class="btn-research" id="dt-btn" onclick="startResearch()">▶ 연구 시작</button>
+          <div class="rp-check" id="dt-rp-check"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- end #content -->
+
+  <!-- ===== BOTTOM BAR ===== -->
+  <div id="bottom-bar">
+    <div class="bb-item">RP 수입: <span>+8/min</span></div>
+    <div class="bb-item">총 RP 지출: <span>1,247 RP</span></div>
+    <div class="bb-hint">★ 연구소 업그레이드 시 +5 RP/min 추가 획득 가능</div>
+    <div class="bb-item">완료 기술: <span>8</span> / 38</div>
+  </div>
+
+</div><!-- end #main-wrapper -->
+
+<!-- Tooltip -->
+<div class="node-tooltip" id="tooltip"></div>
+
+<script>
+/* =============================================
+   TECH DATA
+============================================= */
+const TECHS = {
+  S01: {
+    id: 'S01', name: '기초 용접술', en: 'BASIC WELDING',
+    status: 'complete', branch: '구조 기술',
+    cost: '50 RP', prereq: '없음',
+    effects: ['구조 강도 +15%', '기본 로켓 프레임 제작 해금'],
+    unlocks: [],
+    eta: null, rp: 50
+  },
+  S02: {
+    id: 'S02', name: '알루미늄 가공', en: 'AL-7075 PROCESSING',
+    status: 'complete', branch: '구조 기술',
+    cost: '120 RP + Al-7075 50kg', prereq: 'S01 ✓',
+    effects: ['Al-7075 소모량 -20%', '중량 구조부 제작 해금'],
+    unlocks: [],
+    eta: null, rp: 120
+  },
+  S03: {
+    id: 'S03', name: 'CFRP 적층 기술', en: 'CFRP LAMINATION',
+    status: 'progress', branch: '구조 기술', pct: 67,
+    cost: '300 RP + CFRP 30kg', prereq: 'S02 ✓',
+    effects: ['구조 중량 -25%', '1단 탑재량 증가', '고강도 페어링 해금'],
+    unlocks: [],
+    eta: '47분', rp: 300
+  },
+  S04: {
+    id: 'S04', name: '티타늄 가공', en: 'Ti-6Al-4V ALLOY PROCESSING',
+    status: 'available', branch: '구조 기술',
+    cost: '500 RP + Ti-Ore 100kg', prereq: 'S02 ✓ + S03 (진행중)',
+    effects: ['고온 구조물 제작 해금', '엔진 마운트 품질 +30%', 'Ti-6Al-4V 소모량 -15%'],
+    unlocks: ['정밀 기계 가공소', '추진 연구소 Lv.2'],
+    eta: '~2시간 (S03 완료 후)', rp: 500
+  },
+  S05: {
+    id: 'S05', name: '구조 경량화 II', en: 'STRUCTURE LIGHTWEIGHTING II',
+    status: 'locked', branch: '구조 기술',
+    cost: '800 RP', prereq: 'S04 + Phase 3',
+    effects: ['구조 총중량 -35%', '연료 탑재 여유 +8%'],
+    unlocks: [], eta: null, rp: 800
+  },
+  S06: {
+    id: 'S06', name: '복합재 샌드위치 패널', en: 'COMPOSITE SANDWICH PANEL',
+    status: 'locked', branch: '구조 기술',
+    cost: '1,200 RP', prereq: 'S05',
+    effects: ['강성 +50%', '구조 피로 파괴 저항 +40%'],
+    unlocks: [], eta: null, rp: 1200
+  },
+  S07: {
+    id: 'S07', name: '탄소 나노튜브 강화', en: 'CARBON NANOTUBE REINFORCEMENT',
+    status: 'locked', branch: '구조 기술',
+    cost: '2,000 RP', prereq: 'S06 + Phase 4',
+    effects: ['강도 최고 등급 도달', '달 구조물 제작 해금'],
+    unlocks: [], eta: null, rp: 2000
+  },
+
+  P01: {
+    id: 'P01', name: '고압 연소실 I', en: 'HIGH-PRESSURE CHAMBER I',
+    status: 'complete', branch: '추진 기술',
+    cost: '80 RP', prereq: '없음',
+    effects: ['연소 효율 +10%', '기본 엔진 제작 해금'],
+    unlocks: [], eta: null, rp: 80
+  },
+  P02: {
+    id: 'P02', name: '터보펌프 기초', en: 'TURBOPUMP FUNDAMENTALS',
+    status: 'complete', branch: '추진 기술',
+    cost: '150 RP', prereq: 'P01 ✓',
+    effects: ['연료 공급 압력 +25%', '터보펌프 엔진 해금'],
+    unlocks: [], eta: null, rp: 150
+  },
+  P03: {
+    id: 'P03', name: '재생 냉각 노즐', en: 'REGENERATIVE COOLING NOZZLE',
+    status: 'progress', branch: '추진 기술', pct: 23,
+    cost: '400 RP + Inconel-718 20kg', prereq: 'P02 ✓',
+    effects: ['엔진 Isp +12%', '노즐 과열 확률 -30%', '연속 연소 시간 +40%'],
+    unlocks: [],
+    eta: '~3시간 12분', rp: 400
+  },
+  P04: {
+    id: 'P04', name: '핀치 연소 사이클', en: 'PINTLE COMBUSTION CYCLE',
+    status: 'available', branch: '추진 기술',
+    cost: '600 RP', prereq: 'P03 (진행중)',
+    effects: ['추력/중량비 +18%', '스로틀 범위 20~100%', '착륙 역추진 해금'],
+    unlocks: ['재착륙 모듈'],
+    eta: '예상 2시간', rp: 600
+  },
+  P05: {
+    id: 'P05', name: '스테이지 분리 기술', en: 'STAGE SEPARATION',
+    status: 'available', branch: '추진 기술',
+    cost: '450 RP', prereq: 'P02 ✓',
+    effects: ['다단 로켓 조립 해금', '페이로드 효율 +20%', '2단 로켓 미션 해금'],
+    unlocks: ['조립동 Lv.2', '2단 로켓 설계도'],
+    eta: '예상 1시간 30분', rp: 450
+  },
+  P06: {
+    id: 'P06', name: '메탄 엔진', en: 'METHANE ENGINE',
+    status: 'locked', branch: '추진 기술',
+    cost: '1,000 RP', prereq: 'P04 + Phase 3',
+    effects: ['Isp +25% (vs 케로신)', 'ISRU 연료 호환'],
+    unlocks: [], eta: null, rp: 1000
+  },
+  P07: {
+    id: 'P07', name: 'P07~10 (Phase 4+)', en: 'ADVANCED PROPULSION (LOCKED)',
+    status: 'locked', branch: '추진 기술',
+    cost: '???', prereq: 'Phase 4 필요',
+    effects: ['고급 추진 기술 예정'],
+    unlocks: [], eta: null, rp: 9999
+  },
+
+  A01: {
+    id: 'A01', name: '자이로스코프 안정화', en: 'GYROSCOPE STABILIZATION',
+    status: 'complete', branch: '항전 기술',
+    cost: '100 RP', prereq: '없음',
+    effects: ['비행 안정성 +20%', '자세 제어 해금', '실패율 -5%'],
+    unlocks: [], eta: null, rp: 100
+  },
+  A02: {
+    id: 'A02', name: '관성 항법 시스템', en: 'INERTIAL NAVIGATION SYSTEM',
+    status: 'available', branch: '항전 기술',
+    cost: '350 RP + 회로기판 5ea', prereq: 'A01 ✓',
+    effects: ['유도 정밀도 +40%', '실패율 -15%', '목표 궤도 편차 -60%'],
+    unlocks: ['GPS 수신기 (A03 전제)'],
+    eta: '예상 1시간 10분', rp: 350
+  },
+  A03: {
+    id: 'A03', name: 'GPS 보정', en: 'GPS CORRECTION',
+    status: 'locked', branch: '항전 기술',
+    cost: '550 RP', prereq: 'A02 + Phase 3',
+    effects: ['궤도 정밀도 +30%', '재진입 목표점 정확도 +50%'],
+    unlocks: [], eta: null, rp: 550
+  },
+  A04: {
+    id: 'A04', name: '자율 비행', en: 'AUTONOMOUS FLIGHT',
+    status: 'locked', branch: '항전 기술',
+    cost: '900 RP', prereq: 'A03',
+    effects: ['무인 미션 해금', '조종사 없이 발사 가능'],
+    unlocks: [], eta: null, rp: 900
+  },
+
+  T01: {
+    id: 'T01', name: '기초 절열재', en: 'BASIC THERMAL INSULATION',
+    status: 'complete', branch: '열 관리',
+    cost: '90 RP', prereq: '없음',
+    effects: ['엔진 과열 확률 -10%', '단열 코팅 해금'],
+    unlocks: [], eta: null, rp: 90
+  },
+  T02: {
+    id: 'T02', name: '삭마 코팅', en: 'ABLATIVE THERMAL COATING',
+    status: 'progress', branch: '열 관리', pct: 45,
+    cost: '700 RP', prereq: 'T01 ✓',
+    effects: ['재진입 생존율 +35%', '열 차폐 소모 감소', '고속 재진입 허용'],
+    unlocks: [],
+    eta: '83분', rp: 700
+  },
+  T03: {
+    id: 'T03', name: '능동 냉각', en: 'ACTIVE COOLING',
+    status: 'locked', branch: '열 관리',
+    cost: '850 RP', prereq: 'T02 + Phase 3',
+    effects: ['연속 연소 시간 2배', '엔진 수명 +50%'],
+    unlocks: [], eta: null, rp: 850
+  },
+  T04: {
+    id: 'T04', name: '열차폐 타일', en: 'THERMAL PROTECTION TILES',
+    status: 'locked', branch: '열 관리',
+    cost: '1,500 RP', prereq: 'T03',
+    effects: ['완전 재사용 열차폐 해금', '재진입 생존율 +60%'],
+    unlocks: [], eta: null, rp: 1500
+  },
+
+  O01: {
+    id: 'O01', name: '발사 자동화 I', en: 'LAUNCH AUTOMATION I',
+    status: 'complete', branch: '운용 기술',
+    cost: '70 RP', prereq: '없음',
+    effects: ['발사 준비 시간 -20%', '체크리스트 자동화'],
+    unlocks: [], eta: null, rp: 70
+  },
+  O02: {
+    id: 'O02', name: '카운트다운 시스템', en: 'COUNTDOWN SYSTEM',
+    status: 'complete', branch: '운용 기술',
+    cost: '130 RP', prereq: 'O01 ✓',
+    effects: ['발사 신뢰도 +10%', '자동 T-0 시퀀스 해금'],
+    unlocks: [], eta: null, rp: 130
+  },
+  O03: {
+    id: 'O03', name: '낙하산 회수 시스템', en: 'PARACHUTE RECOVERY',
+    status: 'available', branch: '운용 기술',
+    cost: '400 RP', prereq: 'O02 ✓',
+    effects: ['1단 회수 시스템 해금', '로켓 재사용 비용 -40%', '회수 성공률 65%'],
+    unlocks: ['회수 기지 건설', '발사체 재사용 정비소'],
+    eta: '예상 1시간 20분', rp: 400
+  },
+  O04: {
+    id: 'O04', name: '재사용 로켓', en: 'REUSABLE ROCKET',
+    status: 'locked', branch: '운용 기술',
+    cost: '1,100 RP', prereq: 'O03 + Phase 3',
+    effects: ['완전 재사용 발사체 해금', '발사 비용 -60%'],
+    unlocks: [], eta: null, rp: 1100
+  },
+};
+
+const CURRENT_RP = 847;
+let selectedTech = null;
+
+/* =============================================
+   TECH SELECTION & DETAIL PANEL
+============================================= */
+function selectTech(id) {
+  const tech = TECHS[id];
+  if (!tech) return;
+
+  selectedTech = id;
+
+  // Highlight selected node
+  document.querySelectorAll('.tech-node rect:first-child').forEach(r => {
+    r.style.filter = '';
+  });
+
+  // Show detail panel
+  document.getElementById('detail-overview').style.display = 'none';
+  document.getElementById('detail-tech').classList.remove('detail-hidden');
+
+  // Populate fields
+  document.getElementById('dt-id').textContent = tech.id + ' — ' + tech.branch;
+  document.getElementById('dt-name').textContent = tech.name;
+  document.getElementById('dt-en').textContent = tech.en;
+
+  // Status badge
+  const badge = document.getElementById('dt-status-badge');
+  badge.textContent = {
+    complete: '✓ 연구 완료',
+    progress: '▶ 연구 진행중',
+    available: '○ 연구 가능',
+    locked: '🔒 잠금'
+  }[tech.status] || tech.status.toUpperCase();
+  badge.className = 'detail-status-badge status-' + tech.status;
+
+  document.getElementById('dt-cost').textContent = tech.cost;
+  document.getElementById('dt-prereq').textContent = tech.prereq;
+
+  // ETA row
+  const etaRow = document.getElementById('dt-eta-row');
+  if (tech.eta) {
+    etaRow.style.display = 'flex';
+    document.getElementById('dt-eta').textContent = tech.eta;
+  } else {
+    etaRow.style.display = 'none';
+  }
+
+  // Effects
+  const efxEl = document.getElementById('dt-effects');
+  efxEl.innerHTML = '';
+  tech.effects.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'effect-item';
+    div.textContent = e;
+    efxEl.appendChild(div);
+  });
+
+  // Unlocks
+  const unlockWrap = document.getElementById('dt-unlocks-wrap');
+  const unlockEl = document.getElementById('dt-unlocks');
+  if (tech.unlocks && tech.unlocks.length > 0) {
+    unlockWrap.style.display = 'block';
+    unlockEl.innerHTML = '';
+    tech.unlocks.forEach(u => {
+      const div = document.createElement('div');
+      div.className = 'unlock-item';
+      div.textContent = u;
+      unlockEl.appendChild(div);
+    });
+  } else {
+    unlockWrap.style.display = 'none';
+  }
+
+  // Research button
+  const btn = document.getElementById('dt-btn');
+  const rpCheck = document.getElementById('dt-rp-check');
+
+  if (tech.status === 'complete') {
+    btn.textContent = '✓ 이미 완료된 기술';
+    btn.className = 'btn-research disabled';
+    rpCheck.innerHTML = '';
+  } else if (tech.status === 'progress') {
+    btn.textContent = '▶ 연구 진행 중...';
+    btn.className = 'btn-research disabled';
+    rpCheck.innerHTML = '<span style="color:var(--amber)">' + (tech.pct || 0) + '% 완료 — ETA ' + (tech.eta || '?') + '</span>';
+  } else if (tech.status === 'locked') {
+    btn.textContent = '🔒 잠금 해제 불가';
+    btn.className = 'btn-research disabled';
+    rpCheck.innerHTML = '<span style="color:var(--locked-text)">선행 기술 또는 Phase 조건 미충족</span>';
+  } else if (tech.status === 'available') {
+    btn.textContent = '▶ 연구 시작';
+    btn.className = 'btn-research';
+    const canAfford = CURRENT_RP >= tech.rp;
+    const rpNum = tech.rp;
+    rpCheck.innerHTML = 'RP: ' + CURRENT_RP + '/' + rpNum + ' ' +
+      (canAfford ? '<span class="ok">✓ 가능</span>' : '<span class="fail">✗ RP 부족</span>');
+    if (!canAfford) {
+      btn.className = 'btn-research disabled';
+    }
+  }
+}
+
+function startResearch() {
+  const tech = selectedTech ? TECHS[selectedTech] : null;
+  if (!tech || tech.status !== 'available') return;
+
+  const btn = document.getElementById('dt-btn');
+  const orig = btn.textContent;
+  btn.textContent = '⟳ 연구 시작됨!';
+  btn.style.background = '#011a0a';
+  btn.style.borderColor = 'var(--green)';
+  btn.style.boxShadow = 'var(--glow-strong)';
+
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.boxShadow = '';
+  }, 1500);
+}
+
+/* =============================================
+   TAB SWITCHING
+============================================= */
+function switchTab(el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+/* =============================================
+   PROGRESS BAR ANIMATION
+============================================= */
+function animateProgressBars() {
+  // S03 — 67%, count up to simulate
+  const fills = document.querySelectorAll('.progress-bar-fill');
+  fills.forEach(f => {
+    const target = parseFloat(f.style.width);
+    let current = 0;
+    const step = target / 40;
+    const timer = setInterval(() => {
+      current = Math.min(current + step, target);
+      f.style.width = current + '%';
+      if (current >= target) clearInterval(timer);
+    }, 20);
+  });
+}
+
+/* =============================================
+   LIVE CLOCK
+============================================= */
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  // Insert clock display into title area if desired
+}
+
+/* =============================================
+   HOVER EFFECTS ON SVG NODES
+============================================= */
+document.querySelectorAll('.tech-node').forEach(node => {
+  const id = node.getAttribute('data-id');
+  const tech = TECHS[id];
+
+  node.addEventListener('mouseenter', function(e) {
+    if (!tech) return;
+    const rect = node.querySelector('rect');
+    if (rect && tech.status !== 'locked') {
+      rect.style.filter = 'url(#glow-strong)';
+    }
+  });
+
+  node.addEventListener('mouseleave', function() {
+    const rect = node.querySelector('rect');
+    if (rect) rect.style.filter = '';
+  });
+});
+
+/* =============================================
+   RP TICKER — simulates RP increment
+============================================= */
+let currentRP = 847;
+setInterval(() => {
+  currentRP += Math.random() > 0.7 ? 1 : 0; // random slow increment visual
+  // Could update a live RP counter element here
+}, 7500);
+
+/* =============================================
+   ETÀ COUNTDOWN — simulated
+============================================= */
+let eta1Min = 47, eta1Sec = 0;
+let eta2Min = 83, eta2Sec = 0;
+
+setInterval(() => {
+  if (eta1Min === 0 && eta1Sec === 0) return;
+  if (eta1Sec === 0) { eta1Min--; eta1Sec = 59; }
+  else eta1Sec--;
+
+  if (eta2Min === 0 && eta2Sec === 0) return;
+  if (eta2Sec === 0) { eta2Min--; eta2Sec = 59; }
+  else eta2Sec--;
+}, 1000);
+
+/* =============================================
+   INIT
+============================================= */
+animateProgressBars();
+setInterval(updateClock, 1000);
+
+</script>
+</body>
+</html>

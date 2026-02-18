@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOON IDLE — 로켓 조립동 (VAB)</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  /* =============================================
+     RESET & BASE
+  ============================================= */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg:          #010800;
+    --panel-bg:    #020d04;
+    --green:       #00e676;
+    --green-dim:   #1a5c34;
+    --green-mid:   #00994d;
+    --green-dark:  #0a2e14;
+    --amber:       #ffab00;
+    --amber-dim:   #7a5100;
+    --red:         #ff1744;
+    --red-dim:     #5c0a15;
+    --font:        'Share Tech Mono', monospace;
+    --border:      1px solid #1a5c34;
+    --border-dark: 1px solid #0a2e14;
+    --glow:        0 0 6px #00e67680;
+    --glow-strong: 0 0 12px #00e676, 0 0 24px #00e67650;
+    --glow-amber:  0 0 6px #ffab0080;
+    --glow-red:    0 0 6px #ff174480;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* =============================================
+     CRT OVERLAY
+  ============================================= */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.16) 2px,
+      rgba(0, 0, 0, 0.16) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 58%, rgba(0,0,0,0.72) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* =============================================
+     ANIMATIONS
+  ============================================= */
+  @keyframes crt-flicker {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.88; }
+    94%  { opacity: 1; }
+    96%  { opacity: 0.92; }
+    97%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100%{ opacity: 0; }
+  }
+
+  @keyframes pulse-amber {
+    0%, 100% { color: var(--amber); text-shadow: var(--glow-amber); }
+    50%       { color: var(--amber-dim); text-shadow: none; }
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+  }
+
+  @keyframes progress-shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  @keyframes highlight-section {
+    0%   { filter: brightness(1); }
+    30%  { filter: brightness(1.6) drop-shadow(0 0 4px var(--green)); }
+    100% { filter: brightness(1); }
+  }
+
+  /* =============================================
+     MAIN WRAPPER
+  ============================================= */
+  #main-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    animation: crt-flicker 9s infinite;
+  }
+
+  /* =============================================
+     TOP BAR
+  ============================================= */
+  #top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 5px 16px;
+    flex-shrink: 0;
+    box-shadow: var(--glow-strong);
+    z-index: 100;
+    gap: 16px;
+  }
+
+  #top-bar .title {
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-shadow: var(--glow-strong);
+    color: var(--green);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  #top-bar .title span {
+    color: var(--green-mid);
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .top-bar-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .top-bar-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--green-mid);
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  .top-bar-chip .val {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .top-bar-chip .val.amber {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+
+  #clock {
+    font-size: 18px;
+    letter-spacing: 4px;
+    text-shadow: 0 0 10px var(--green);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    box-shadow: var(--glow);
+  }
+
+  /* =============================================
+     NAV TABS
+  ============================================= */
+  #nav-tabs {
+    display: flex;
+    background: #010b03;
+    border-bottom: 2px solid var(--green-dim);
+    flex-shrink: 0;
+    padding: 0 8px;
+  }
+
+  .nav-tab {
+    padding: 6px 18px;
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    background: transparent;
+    border: none;
+    border-right: var(--border-dark);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .nav-tab:first-child { border-left: var(--border-dark); }
+
+  .nav-tab:hover {
+    color: var(--green-mid);
+    background: #030f05;
+  }
+
+  .nav-tab.active {
+    color: var(--green);
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--green);
+    text-shadow: var(--glow);
+    margin-bottom: -2px;
+  }
+
+  .nav-tab .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .nav-tab.active .dot {
+    background: var(--green);
+    box-shadow: var(--glow);
+  }
+
+  /* =============================================
+     COLUMNS
+  ============================================= */
+  #columns {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .col {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--panel-bg);
+  }
+
+  .col-left   { width: 30%; border-right: var(--border); }
+  .col-center { width: 40%; border-right: var(--border); }
+  .col-right  { width: 30%; }
+
+  .col-header {
+    background: #011005;
+    border-bottom: 2px solid var(--green-dim);
+    padding: 4px 12px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+  }
+
+  .col-header::before {
+    content: '//';
+    color: var(--green-mid);
+    font-size: 12px;
+  }
+
+  .col-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+  }
+
+  .col-body::-webkit-scrollbar {
+    width: 4px;
+    background: var(--bg);
+  }
+
+  .col-body::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+
+  /* =============================================
+     SECTION BLOCKS
+  ============================================= */
+  .section {
+    padding: 8px 12px;
+    border-bottom: var(--border);
+  }
+
+  .section:last-child {
+    border-bottom: none;
+  }
+
+  .section-title {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--green-mid);
+    margin-bottom: 6px;
+    padding-bottom: 3px;
+    border-bottom: var(--border-dark);
+    text-transform: uppercase;
+  }
+
+  /* =============================================
+     ROCKET CLASS SELECTOR
+  ============================================= */
+  .class-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    margin-bottom: 4px;
+  }
+
+  .class-btn {
+    padding: 5px 6px;
+    border: 1px solid var(--green-dim);
+    background: var(--bg);
+    color: var(--green-mid);
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    position: relative;
+  }
+
+  .class-btn:hover:not(.locked) {
+    border-color: var(--green);
+    color: var(--green);
+    background: #030f05;
+  }
+
+  .class-btn.active {
+    border-color: var(--green);
+    background: #011a08;
+    color: var(--green);
+    text-shadow: var(--glow);
+    box-shadow: inset 0 0 8px #00e67620;
+  }
+
+  .class-btn.locked {
+    border-color: #0a2e14;
+    color: #1a5c34;
+    cursor: not-allowed;
+    background: #010b03;
+  }
+
+  .class-btn .lock-icon {
+    float: right;
+    font-size: 9px;
+    color: #1a5c34;
+  }
+
+  .class-btn .radio {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+    position: relative;
+  }
+
+  .class-btn.active .radio::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: var(--glow);
+  }
+
+  /* =============================================
+     SPECS TABLE
+  ============================================= */
+  .specs-divider {
+    border: none;
+    border-top: 1px solid var(--green-dim);
+    margin: 6px 0;
+  }
+
+  .specs-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 1px 0;
+    font-size: 11px;
+  }
+
+  .specs-row .label {
+    color: var(--green-mid);
+    font-size: 10px;
+  }
+
+  .specs-row .value {
+    color: var(--green);
+    text-align: right;
+  }
+
+  .specs-row .value.amber {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+  }
+
+  .specs-row .value.red {
+    color: var(--red);
+    text-shadow: var(--glow-red);
+  }
+
+  .double-line {
+    border-top: 2px solid var(--green-dim);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 2px 0;
+    margin: 4px 0;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green-mid);
+    text-align: center;
+  }
+
+  /* =============================================
+     RISK TAGS
+  ============================================= */
+  .risk-tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 6px;
+    background: #1a040a;
+    border: 1px solid #5c0a15;
+    color: var(--red);
+    font-size: 10px;
+    margin-bottom: 3px;
+    animation: pulse-amber 2.5s ease-in-out infinite;
+    animation-name: pulse-red;
+  }
+
+  @keyframes pulse-red {
+    0%, 100% { color: var(--red); border-color: #5c0a15; }
+    50%       { color: #7a0020; border-color: #2a0510; }
+  }
+
+  .risk-tag::before {
+    content: '⚠';
+    font-size: 10px;
+  }
+
+  /* =============================================
+     MATERIAL COST LIST
+  ============================================= */
+  .mat-cost-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    padding: 1px 0;
+    color: var(--green-mid);
+  }
+
+  .mat-cost-row .mat-name {
+    color: var(--green);
+  }
+
+  .mat-cost-row .mat-ok {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .mat-cost-row .mat-warn {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+  }
+
+  /* =============================================
+     CENTER: ROCKET SVG
+  ============================================= */
+  #rocket-schematic-wrap {
+    padding: 8px 12px 4px;
+    display: flex;
+    justify-content: center;
+    border-bottom: var(--border);
+    flex-shrink: 0;
+  }
+
+  #rocket-svg {
+    width: 100%;
+    max-width: 380px;
+    height: 280px;
+  }
+
+  /* =============================================
+     BOM TABLE
+  ============================================= */
+  .bom-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .bom-table th {
+    text-align: left;
+    color: var(--green-mid);
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 3px 4px;
+    border-bottom: 1px solid var(--green-dim);
+    white-space: nowrap;
+  }
+
+  .bom-table td {
+    padding: 3px 4px;
+    vertical-align: middle;
+    border-bottom: var(--border-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bom-table tr:hover td {
+    background: #011a08;
+    cursor: pointer;
+  }
+
+  .bom-table tr.bom-sub td {
+    color: var(--green-mid);
+    font-size: 9px;
+    padding-left: 12px;
+  }
+
+  .bom-table tr.bom-sub:hover td {
+    background: #010e04;
+  }
+
+  .status-ok {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .status-in-progress {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    animation: pulse-amber 2s ease-in-out infinite;
+  }
+
+  .status-pending {
+    color: #1a5c34;
+  }
+
+  .status-missing {
+    color: var(--red);
+    text-shadow: var(--glow-red);
+  }
+
+  /* =============================================
+     PROGRESS BAR
+  ============================================= */
+  .progress-wrap {
+    margin: 6px 0 2px;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    margin-bottom: 3px;
+    color: var(--green-mid);
+  }
+
+  .progress-label .pct {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    font-size: 11px;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 10px;
+    background: #010e04;
+    border: 1px solid var(--green-dim);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00994d, #00e676, #00994d);
+    background-size: 200% 100%;
+    animation: progress-shimmer 2.5s linear infinite;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: white;
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  .progress-tick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--panel-bg);
+  }
+
+  /* =============================================
+     ETA DISPLAY
+  ============================================= */
+  .eta-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: #011005;
+    border: var(--border);
+    margin: 6px 0;
+    font-size: 11px;
+  }
+
+  .eta-display .eta-label {
+    color: var(--green-mid);
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .eta-display .eta-time {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    font-size: 13px;
+    animation: pulse-amber 3s ease-in-out infinite;
+  }
+
+  .eta-display .eta-date {
+    color: var(--green-mid);
+    font-size: 10px;
+    margin-left: auto;
+  }
+
+  /* =============================================
+     RIGHT: PAYLOAD
+  ============================================= */
+  .payload-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--green-dim);
+    margin-bottom: 6px;
+    background: var(--bg);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .payload-option:hover:not(.locked) {
+    background: #011a08;
+    border-color: var(--green);
+  }
+
+  .payload-option.selected {
+    border-color: var(--green);
+    background: #011a08;
+    box-shadow: inset 0 0 10px #00e67615;
+  }
+
+  .payload-option.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: #0a2e14;
+  }
+
+  .payload-radio {
+    width: 12px;
+    height: 12px;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+  }
+
+  .payload-option.selected .payload-radio {
+    border-color: var(--green);
+  }
+
+  .payload-option.selected .payload-radio::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: var(--glow);
+  }
+
+  .payload-name {
+    font-size: 11px;
+    color: var(--green);
+    margin-bottom: 2px;
+  }
+
+  .payload-detail {
+    font-size: 9px;
+    color: var(--green-mid);
+    line-height: 1.4;
+  }
+
+  .payload-reward {
+    color: var(--amber);
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .payload-stars {
+    font-size: 10px;
+    color: var(--amber);
+    letter-spacing: -1px;
+  }
+
+  .payload-lock {
+    font-size: 9px;
+    color: var(--green-dim);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* =============================================
+     LAUNCH WINDOW PANEL
+  ============================================= */
+  .launch-window-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 12px;
+    margin-bottom: 4px;
+  }
+
+  .lw-row {
+    display: flex;
+    flex-direction: column;
+    font-size: 10px;
+  }
+
+  .lw-label {
+    color: var(--green-mid);
+    font-size: 9px;
+    letter-spacing: 1px;
+  }
+
+  .lw-value {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .lw-value.nominal {
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+  }
+
+  /* =============================================
+     LAUNCH HISTORY TABLE
+  ============================================= */
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  .history-table th {
+    text-align: left;
+    color: var(--green-mid);
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 2px 4px;
+    border-bottom: 1px solid var(--green-dim);
+  }
+
+  .history-table td {
+    padding: 3px 4px;
+    border-bottom: var(--border-dark);
+    color: var(--green-mid);
+  }
+
+  .history-table td.id-col {
+    color: var(--green);
+    font-size: 9px;
+  }
+
+  .history-table td.result-fail {
+    color: var(--red);
+    font-size: 9px;
+  }
+
+  .history-table td.result-partial {
+    color: var(--amber);
+    font-size: 9px;
+  }
+
+  .history-table td.result-assembly {
+    color: var(--green-mid);
+    font-size: 9px;
+    animation: pulse-amber 3s infinite;
+    animation-name: pulse-green-sub;
+  }
+
+  @keyframes pulse-green-sub {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* =============================================
+     VAB STATUS CHIPS
+  ============================================= */
+  .vab-status-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .vab-chip {
+    padding: 2px 8px;
+    border: var(--border);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--green-mid);
+    background: var(--bg);
+  }
+
+  .vab-chip.active {
+    border-color: var(--green);
+    color: var(--green);
+    text-shadow: var(--glow);
+    background: #011a08;
+  }
+
+  /* =============================================
+     ACTION BUTTONS
+  ============================================= */
+  .action-btn {
+    display: block;
+    width: 100%;
+    padding: 6px 12px;
+    background: #011a08;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    text-shadow: var(--glow);
+    box-shadow: inset 0 0 8px #00e67610;
+  }
+
+  .action-btn:hover {
+    background: #022e10;
+    box-shadow: var(--glow-strong), inset 0 0 12px #00e67620;
+  }
+
+  .action-btn.secondary {
+    background: var(--bg);
+    border-color: var(--green-dim);
+    color: var(--green-mid);
+    text-shadow: none;
+    box-shadow: none;
+  }
+
+  .action-btn.secondary:hover {
+    border-color: var(--green-mid);
+    color: var(--green);
+  }
+
+  .action-btn.disabled {
+    background: #010b03;
+    border-color: #0a2e14;
+    color: #1a5c34;
+    cursor: not-allowed;
+    text-shadow: none;
+    box-shadow: none;
+  }
+
+  /* =============================================
+     BOTTOM STATUS BAR
+  ============================================= */
+  #bottom-bar {
+    display: flex;
+    align-items: center;
+    background: #010b03;
+    border-top: 2px solid var(--green-dim);
+    padding: 5px 16px;
+    flex-shrink: 0;
+    gap: 20px;
+  }
+
+  .bottom-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    color: var(--green-mid);
+    flex: 1;
+    flex-wrap: wrap;
+  }
+
+  .bottom-status .bstatus-item {
+    display: flex;
+    gap: 4px;
+  }
+
+  .bottom-status .bstatus-val {
+    color: var(--green);
+  }
+
+  .bottom-status .bstatus-sep {
+    color: #0a2e14;
+  }
+
+  .bottom-status .bstatus-val.amber {
+    color: var(--amber);
+    animation: pulse-amber 2s infinite;
+  }
+
+  #bottom-launch-btn {
+    padding: 7px 20px;
+    background: #011a08;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    white-space: nowrap;
+    text-shadow: var(--glow);
+    box-shadow: var(--glow);
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  #bottom-launch-btn:hover {
+    background: #022e10;
+    box-shadow: var(--glow-strong);
+  }
+
+  /* =============================================
+     TOOLTIP
+  ============================================= */
+  .tooltip-host {
+    position: relative;
+  }
+
+  .tooltip-host:hover .tooltip-box {
+    display: block;
+  }
+
+  .tooltip-box {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #010e04;
+    border: 1px solid var(--green-mid);
+    color: var(--green);
+    font-size: 10px;
+    padding: 6px 10px;
+    z-index: 500;
+    white-space: nowrap;
+    box-shadow: var(--glow);
+    min-width: 160px;
+    pointer-events: none;
+  }
+
+  .tooltip-box::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--green-mid);
+  }
+
+  .tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .tooltip-label {
+    color: var(--green-mid);
+  }
+
+  /* =============================================
+     SVG HELPERS
+  ============================================= */
+  .svg-label-line {
+    stroke: #1a5c34;
+    stroke-width: 0.5;
+  }
+
+  .svg-section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    fill: #00994d;
+    letter-spacing: 1px;
+  }
+
+  .svg-section-complete {
+    fill: #00e676;
+    opacity: 0.15;
+    stroke: #00e676;
+    stroke-width: 0.5;
+  }
+
+  .svg-section-progress {
+    fill: #ffab00;
+    opacity: 0.15;
+    stroke: #ffab00;
+    stroke-width: 0.5;
+  }
+
+  .svg-section-pending {
+    fill: #1a5c34;
+    opacity: 0.08;
+    stroke: #1a5c34;
+    stroke-width: 0.5;
+  }
+
+  .svg-highlight {
+    transition: opacity 0.2s;
+  }
+
+  .svg-highlight.lit {
+    opacity: 0.35 !important;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+
+</style>
+</head>
+<body>
+<div id="main-wrapper">
+
+  <!-- ==============================
+       TOP BAR
+  ============================== -->
+  <div id="top-bar">
+    <div class="title">
+      MOON IDLE <span>— 로켓 조립동 (VAB)</span>
+    </div>
+    <div class="top-bar-info">
+      <div class="top-bar-chip">
+        <span>VAB</span>
+        <span class="val">Lv.2</span>
+      </div>
+      <div class="top-bar-chip">|</div>
+      <div class="top-bar-chip">
+        <span>조립 중:</span>
+        <span class="val">BETA mk.2</span>
+      </div>
+      <div class="top-bar-chip">
+        <span class="val amber">(57%)</span>
+      </div>
+      <div class="top-bar-chip">|</div>
+      <div class="top-bar-chip">
+        <span>완료 예정:</span>
+        <span class="val">2시간 14분</span>
+      </div>
+    </div>
+    <div id="clock">D+54 <span id="live-time">--:--:--</span> <span class="cursor-blink"></span></div>
+  </div>
+
+  <!-- ==============================
+       NAV TABS
+  ============================== -->
+  <div id="nav-tabs">
+    <button class="nav-tab" onclick="switchTab(this)"><span class="dot"></span>생산/자원</button>
+    <button class="nav-tab" onclick="switchTab(this)"><span class="dot"></span>연구/기술</button>
+    <button class="nav-tab active" onclick="switchTab(this)"><span class="dot"></span>로켓 조립</button>
+    <button class="nav-tab" onclick="switchTab(this)"><span class="dot"></span>발사 관제</button>
+  </div>
+
+  <!-- ==============================
+       MAIN COLUMNS
+  ============================== -->
+  <div id="columns">
+
+    <!-- ============================
+         LEFT — VEHICLE SELECTION & SPECS
+    ============================ -->
+    <div class="col col-left">
+      <div class="col-header">로켓 클래스 선택</div>
+      <div class="col-body">
+
+        <!-- Class Grid -->
+        <div class="section">
+          <div class="section-title">클래스 선택</div>
+          <div class="class-grid">
+            <button class="class-btn active" onclick="selectClass(this,'NANO')">
+              <span class="radio"></span>NANO
+            </button>
+            <button class="class-btn" onclick="selectClass(this,'SMALL')">
+              <span class="radio"></span>SMALL
+            </button>
+            <button class="class-btn locked" disabled>
+              <span class="radio"></span>MEDIUM<span class="lock-icon">🔒</span>
+            </button>
+            <button class="class-btn locked" disabled>
+              <span class="radio"></span>HEAVY<span class="lock-icon">🔒</span>
+            </button>
+            <button class="class-btn locked" style="grid-column:span 2;" disabled>
+              <span class="radio"></span>SUPER HEAVY &nbsp;&nbsp; — 해금: Phase 3+<span class="lock-icon">🔒</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Current Vehicle ID -->
+        <div class="section">
+          <div class="section-title">현재 기체</div>
+          <div style="font-size:14px; letter-spacing:2px; color:var(--green); text-shadow:var(--glow-strong); margin-bottom:2px;">
+            BETA mk.2
+          </div>
+          <div style="font-size:10px; color:var(--green-mid);">NANO CLASS &nbsp;|&nbsp; 2단</div>
+
+          <div class="double-line" style="margin-top:8px;">════ 기체 중량 명세 ════</div>
+
+          <div class="specs-row"><span class="label">총 중량</span><span class="value">850 kg</span></div>
+          <div class="specs-row"><span class="label">구조체</span><span class="value">406 kg</span></div>
+          <div class="specs-row"><span class="label">추진제</span><span class="value">369 kg</span></div>
+          <div class="specs-row"><span class="label">페이로드</span><span class="value">15 kg (대기과학)</span></div>
+
+          <hr class="specs-divider">
+
+          <div class="specs-row"><span class="label">엔진</span><span class="value" style="font-size:10px;">1× Merlin 초기급</span></div>
+          <div class="specs-row"><span class="label">추력</span><span class="value">18 kN (진공)</span></div>
+          <div class="specs-row"><span class="label">연소 시간</span><span class="value">310 s</span></div>
+          <div class="specs-row"><span class="label">Isp</span><span class="value">285 s</span></div>
+
+          <hr class="specs-divider">
+
+          <div class="specs-row"><span class="label">목표 고도</span><span class="value">100 km</span></div>
+          <div class="specs-row"><span class="label">목표 ΔV</span><span class="value">2,840 m/s</span></div>
+
+          <hr class="specs-divider">
+
+          <div class="specs-row">
+            <span class="label">예상 성공률</span>
+            <span class="value amber">72%</span>
+          </div>
+
+          <div style="margin-top:6px;">
+            <div class="risk-tag">추진 계통 미완성</div>
+            <div class="risk-tag">항전 장비 미탑재</div>
+          </div>
+
+          <hr class="specs-divider">
+
+          <div class="section-title" style="margin-top:4px;">조립 소재 소비</div>
+          <div class="mat-cost-row">
+            <span class="mat-name">Al-7075</span>
+            <span>340 kg</span>
+            <span class="mat-ok">✓</span>
+          </div>
+          <div class="mat-cost-row">
+            <span class="mat-name">Inconel-718</span>
+            <span>46 kg</span>
+            <span class="mat-warn">⚠ 부족</span>
+          </div>
+          <div class="mat-cost-row">
+            <span class="mat-name">LOX</span>
+            <span>180 L</span>
+            <span class="mat-ok">✓</span>
+          </div>
+          <div class="mat-cost-row">
+            <span class="mat-name">RP-1</span>
+            <span>120 L</span>
+            <span class="mat-ok">✓</span>
+          </div>
+          <div class="mat-cost-row">
+            <span class="mat-name">CFRP</span>
+            <span>45 kg</span>
+            <span class="mat-ok">✓</span>
+          </div>
+
+        </div>
+
+      </div>
+    </div><!-- /col-left -->
+
+    <!-- ============================
+         CENTER — SCHEMATIC + BOM
+    ============================ -->
+    <div class="col col-center">
+      <div class="col-header">로켓 도면 &amp; 부품 목록 (BOM)</div>
+      <div class="col-body">
+
+        <!-- SVG Rocket Schematic -->
+        <div id="rocket-schematic-wrap">
+          <svg id="rocket-svg" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="4" stroke="#1a5c34" stroke-width="0.5"/>
+              </pattern>
+            </defs>
+
+            <!-- Background grid -->
+            <line x1="0" y1="0" x2="380" y2="0" stroke="#030f05" stroke-width="0.5"/>
+            <line x1="0" y1="280" x2="380" y2="280" stroke="#030f05" stroke-width="0.5"/>
+
+            <!-- Grid dots -->
+            <g opacity="0.2">
+              <line x1="20" y1="0" x2="20" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="60" y1="0" x2="60" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="100" y1="0" x2="100" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="140" y1="0" x2="140" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="180" y1="0" x2="180" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="220" y1="0" x2="220" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="260" y1="0" x2="260" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="300" y1="0" x2="300" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="340" y1="0" x2="340" y2="280" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="0" y1="40" x2="380" y2="40" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="0" y1="80" x2="380" y2="80" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="0" y1="120" x2="380" y2="120" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="0" y1="160" x2="380" y2="160" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="0" y1="200" x2="380" y2="200" stroke="#1a5c34" stroke-width="0.3"/>
+              <line x1="0" y1="240" x2="380" y2="240" stroke="#1a5c34" stroke-width="0.3"/>
+            </g>
+
+            <!-- ========================
+                 ROCKET BODY (centered at x=155, total height ~250px)
+            ======================== -->
+
+            <!-- PAYLOAD FAIRING (top, Stage 2 nose cone) — COMPLETE -->
+            <!-- Fairing cone shape -->
+            <polygon points="155,14 135,46 175,46" class="svg-section-complete svg-highlight" id="svg-fairing"/>
+            <rect x="135" y="46" width="40" height="18" class="svg-section-complete svg-highlight" id="svg-fairing2"/>
+            <!-- Fairing outline -->
+            <polygon points="155,14 135,46 135,64 175,64 175,46" fill="none" stroke="#00e676" stroke-width="0.8"/>
+            <!-- Star/payload icon inside fairing -->
+            <text x="155" y="42" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#00e676" opacity="0.7">PL</text>
+
+            <!-- STAGE 2 body -->
+            <rect x="140" y="64" width="30" height="38" class="svg-section-pending svg-highlight" id="svg-stage2"/>
+            <rect x="140" y="64" width="30" height="38" fill="none" stroke="#1a5c34" stroke-width="0.8"/>
+            <text x="155" y="86" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#1a5c34">S2</text>
+            <!-- Stage 2 propellant mini bars -->
+            <rect x="144" y="70" width="8" height="3" fill="#1a5c34" opacity="0.5" rx="0"/>
+            <rect x="153" y="70" width="8" height="3" fill="#1a5c34" opacity="0.5" rx="0"/>
+            <text x="148" y="78" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="5" fill="#1a5c34">LOX</text>
+            <text x="157" y="78" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="5" fill="#1a5c34">RP1</text>
+
+            <!-- Stage 2 engine nozzle (small) -->
+            <polygon points="147,102 163,102 160,112 150,112" class="svg-section-pending" id="svg-s2-engine"/>
+            <polygon points="147,102 163,102 160,112 150,112" fill="none" stroke="#1a5c34" stroke-width="0.7"/>
+
+            <!-- INTERSTAGE — COMPLETE -->
+            <rect x="133" y="114" width="44" height="12" class="svg-section-complete svg-highlight" id="svg-interstage"/>
+            <rect x="133" y="114" width="44" height="12" fill="none" stroke="#00e676" stroke-width="0.8"/>
+            <!-- Hatch pattern on interstage -->
+            <rect x="133" y="114" width="44" height="12" fill="url(#hatch)" opacity="0.4"/>
+            <text x="155" y="123" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00e676">INTERSTAGE</text>
+
+            <!-- STAGE 1 LOX TANK — COMPLETE -->
+            <rect x="130" y="126" width="50" height="50" class="svg-section-complete svg-highlight" id="svg-lox"/>
+            <rect x="130" y="126" width="50" height="50" fill="none" stroke="#00e676" stroke-width="0.8"/>
+            <!-- LOX fill level (full) -->
+            <rect x="132" y="128" width="46" height="46" fill="#00e67610"/>
+            <rect x="132" y="128" width="46" height="46" fill="#00e67618"/>
+            <text x="155" y="148" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#00e676">LOX</text>
+            <text x="155" y="158" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00994d">180L</text>
+            <!-- Fill level line -->
+            <line x1="132" y1="172" x2="178" y2="172" stroke="#00e676" stroke-width="0.5" opacity="0.4"/>
+
+            <!-- STAGE 1 RP-1 TANK — COMPLETE -->
+            <rect x="130" y="176" width="50" height="36" class="svg-section-complete svg-highlight" id="svg-rp1"/>
+            <rect x="130" y="176" width="50" height="36" fill="none" stroke="#00e676" stroke-width="0.8"/>
+            <rect x="132" y="178" width="46" height="32" fill="#00e67610"/>
+            <text x="155" y="194" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#00e676">RP-1</text>
+            <text x="155" y="204" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#00994d">120L</text>
+
+            <!-- ENGINE ASSEMBLY — IN PROGRESS (AMBER) -->
+            <polygon points="130,212 180,212 188,228 122,228" class="svg-section-progress svg-highlight" id="svg-engine"/>
+            <polygon points="130,212 180,212 188,228 122,228" fill="none" stroke="#ffab00" stroke-width="0.8"/>
+            <!-- Nozzle extension -->
+            <polygon points="140,228 170,228 165,248 145,248" class="svg-section-progress"/>
+            <polygon points="140,228 170,228 165,248 145,248" fill="none" stroke="#ffab00" stroke-width="0.7"/>
+            <!-- Engine label -->
+            <text x="155" y="222" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="6" fill="#ffab00">ENGINE</text>
+            <!-- Turbopump indicators -->
+            <circle cx="140" cy="220" r="3" fill="none" stroke="#ffab00" stroke-width="0.6"/>
+            <circle cx="170" cy="220" r="3" fill="none" stroke="#ffab00" stroke-width="0.6"/>
+
+            <!-- Exhaust flame (animated) -->
+            <g id="exhaust" opacity="0.3">
+              <ellipse cx="155" cy="256" rx="8" ry="6" fill="#ffab00"/>
+              <ellipse cx="155" cy="262" rx="5" ry="4" fill="#ff6d00" opacity="0.7"/>
+            </g>
+
+            <!-- ======================
+                 FINS
+            ====================== -->
+            <polygon points="122,228 110,248 130,236" fill="#00e67615" stroke="#00e676" stroke-width="0.6"/>
+            <polygon points="188,228 200,248 180,236" fill="#00e67615" stroke="#00e676" stroke-width="0.6"/>
+
+            <!-- ======================
+                 CALLOUT LINES (right side labels)
+            ====================== -->
+            <!-- Fairing callout -->
+            <line x1="175" y1="30" x2="215" y2="22" class="svg-label-line"/>
+            <text x="218" y="25" class="svg-section-label">PAYLOAD / FAIRING</text>
+
+            <!-- Stage 2 callout -->
+            <line x1="170" y1="82" x2="215" y2="74" class="svg-label-line"/>
+            <text x="218" y="77" class="svg-section-label">STAGE 2 (대기)</text>
+
+            <!-- Interstage callout -->
+            <line x1="177" y1="120" x2="215" y2="115" class="svg-label-line"/>
+            <text x="218" y="118" class="svg-section-label">INTERSTAGE ✓</text>
+
+            <!-- LOX callout -->
+            <line x1="180" y1="151" x2="215" y2="148" class="svg-label-line"/>
+            <text x="218" y="151" class="svg-section-label">LOX TANK ✓</text>
+
+            <!-- RP-1 callout -->
+            <line x1="180" y1="194" x2="215" y2="191" class="svg-label-line"/>
+            <text x="218" y="194" class="svg-section-label">RP-1 TANK ✓</text>
+
+            <!-- Engine callout (amber) -->
+            <line x1="188" y1="220" x2="215" y2="225" class="svg-label-line" stroke="#ffab00"/>
+            <text x="218" y="228" class="svg-section-label" fill="#ffab00">ENGINE ▶57%</text>
+
+            <!-- ======================
+                 LEFT SIDE LABELS (dimensions)
+            ====================== -->
+            <!-- Height dimension line -->
+            <line x1="118" y1="14" x2="118" y2="248" stroke="#0a2e14" stroke-width="0.5"/>
+            <line x1="114" y1="14" x2="122" y2="14" stroke="#0a2e14" stroke-width="0.5"/>
+            <line x1="114" y1="248" x2="122" y2="248" stroke="#0a2e14" stroke-width="0.5"/>
+            <text x="105" y="135" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14" transform="rotate(-90,105,135)">~8.4m EST</text>
+
+            <!-- Width dimension for S1 -->
+            <line x1="130" y1="270" x2="180" y2="270" stroke="#0a2e14" stroke-width="0.5"/>
+            <line x1="130" y1="267" x2="130" y2="273" stroke="#0a2e14" stroke-width="0.5"/>
+            <line x1="180" y1="267" x2="180" y2="273" stroke="#0a2e14" stroke-width="0.5"/>
+            <text x="155" y="279" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14">0.4m Ø</text>
+
+            <!-- Title bar -->
+            <text x="8" y="14" font-family="Share Tech Mono,monospace" font-size="8" fill="#1a5c34" letter-spacing="1">BETA mk.2 — NANO CLASS — 2STAGE</text>
+            <text x="8" y="24" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14" letter-spacing="0.5">REV.C — 조립 57% — D+54</text>
+
+            <!-- Scale bar -->
+            <line x1="8" y1="270" x2="58" y2="270" stroke="#0a2e14" stroke-width="0.8"/>
+            <line x1="8" y1="267" x2="8" y2="273" stroke="#0a2e14" stroke-width="0.8"/>
+            <line x1="58" y1="267" x2="58" y2="273" stroke="#0a2e14" stroke-width="0.8"/>
+            <text x="33" y="279" text-anchor="middle" font-family="Share Tech Mono,monospace" font-size="7" fill="#0a2e14">1m</text>
+
+          </svg>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="section">
+          <div class="progress-wrap">
+            <div class="progress-label">
+              <span>조립 진행률</span>
+              <span class="pct">57%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:57%;"></div>
+              <div class="progress-tick" style="left:25%;"></div>
+              <div class="progress-tick" style="left:50%;"></div>
+              <div class="progress-tick" style="left:75%;"></div>
+            </div>
+          </div>
+          <div class="eta-display">
+            <div>
+              <div class="eta-label">완료 예정</div>
+              <div class="eta-time">2시간 14분</div>
+            </div>
+            <div style="margin-left:auto; text-align:right;">
+              <div class="eta-label">도착 기준</div>
+              <div class="eta-date">D+54 &nbsp;14:32</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOM Table -->
+        <div class="section" style="padding-bottom:0;">
+          <div class="section-title">BOM — BETA mk.2 부품 목록</div>
+          <table class="bom-table" id="bom-table">
+            <thead>
+              <tr>
+                <th style="width:32%;">부품명</th>
+                <th style="width:18%;">소재</th>
+                <th style="width:14%;">필요량</th>
+                <th style="width:14%;">보유</th>
+                <th style="width:22%;">상태</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="tooltip-host" data-svg="svg-fairing,svg-fairing2" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td>기체 구조 링 ×8</td>
+                <td>Al-7075</td>
+                <td>240kg</td>
+                <td>240kg</td>
+                <td class="status-ok">✓ 완료</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">소재</span><span>Al-7075 (항공 알루미늄)</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">강도</span><span>572 MPa</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">가공</span><span>CNC 밀링 완료</span></div>
+                </td>
+              </tr>
+              <tr class="tooltip-host" data-svg="svg-lox" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td>LOX 탱크 쉘</td>
+                <td>Al-2219</td>
+                <td>80kg</td>
+                <td>80kg</td>
+                <td class="status-ok">✓ 완료</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">소재</span><span>Al-2219 (극저온용)</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">용량</span><span>180L</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">내압</span><span>3.2 bar</span></div>
+                </td>
+              </tr>
+              <tr class="tooltip-host" data-svg="svg-rp1" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td>RP-1 탱크 쉘</td>
+                <td>Al-2219</td>
+                <td>60kg</td>
+                <td>60kg</td>
+                <td class="status-ok">✓ 완료</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">소재</span><span>Al-2219</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">용량</span><span>120L</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">내압</span><span>2.8 bar</span></div>
+                </td>
+              </tr>
+              <tr class="tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()" style="background:#0a1c00;">
+                <td style="color:var(--amber);">추진 어셈블리</td>
+                <td>Inconel-718</td>
+                <td>34kg</td>
+                <td>34kg</td>
+                <td class="status-in-progress">▶ 57%</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">소재</span><span>Inconel-718 (니켈합금)</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">내열</span><span>1,300°C</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">예상완료</span><span>2h 14m</span></div>
+                </td>
+              </tr>
+              <tr class="bom-sub tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td>└ 연소실</td>
+                <td>Inconel-718</td>
+                <td>18kg</td>
+                <td>18kg</td>
+                <td class="status-ok">✓</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">챔버압</span><span>60 bar</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">목 직경</span><span>42mm</span></div>
+                </td>
+              </tr>
+              <tr class="bom-sub tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td>└ 터보펌프 LOX</td>
+                <td>Ti-6Al-4V</td>
+                <td>8kg</td>
+                <td>8kg</td>
+                <td class="status-ok">✓</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">소재</span><span>Ti-6Al-4V</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">RPM</span><span>36,000</span></div>
+                </td>
+              </tr>
+              <tr class="bom-sub tooltip-host" data-svg="svg-engine" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()" style="background:#1a040a10;">
+                <td style="color:var(--red);">└ 터보펌프 RP-1</td>
+                <td>Ti-6Al-4V</td>
+                <td>8kg</td>
+                <td style="color:var(--red);">0kg</td>
+                <td class="status-missing">✗ 대기</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">상태</span><span style="color:var(--red);">소재 미확보</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">획득</span><span>Ti 제련 필요</span></div>
+                </td>
+              </tr>
+              <tr class="tooltip-host" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td style="color:var(--green-mid);">항전 장비</td>
+                <td>Circuit Bd.</td>
+                <td>5ea</td>
+                <td style="color:var(--red);">0ea</td>
+                <td class="status-missing">✗ 대기</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">필요</span><span>회로기판 5ea</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">획득</span><span>연구소 Lv.2 제작</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">영향</span><span style="color:var(--red);">미탑재 시 실패율+40%</span></div>
+                </td>
+              </tr>
+              <tr class="tooltip-host" data-svg="svg-interstage" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td>인터스테이지</td>
+                <td>CFRP</td>
+                <td>45kg</td>
+                <td>45kg</td>
+                <td class="status-ok">✓ 완료</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">소재</span><span>탄소섬유 강화플라스틱</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">강도/중량</span><span>최상</span></div>
+                </td>
+              </tr>
+              <tr class="tooltip-host" data-svg="svg-fairing,svg-fairing2" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td>페이로드 페어링</td>
+                <td>Al-7075</td>
+                <td>28kg</td>
+                <td>28kg</td>
+                <td class="status-ok">✓ 완료</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">직경</span><span>0.4m</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">분리</span><span>폭발 볼트식</span></div>
+                </td>
+              </tr>
+              <tr class="tooltip-host" data-svg="svg-s2-engine,svg-stage2" onmouseenter="highlightSvg(this)" onmouseleave="unhighlightSvg()">
+                <td style="color:var(--green-mid);">2단 엔진 어셈블리</td>
+                <td>Inconel-718</td>
+                <td>12kg</td>
+                <td style="color:var(--red);">0kg</td>
+                <td class="status-missing">✗ 대기</td>
+                <td class="tooltip-box">
+                  <div class="tooltip-row"><span class="tooltip-label">추력</span><span>2.2 kN (진공)</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">Isp</span><span>310 s</span></div>
+                  <div class="tooltip-row"><span class="tooltip-label">상태</span><span style="color:var(--red);">소재 부족</span></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div><!-- /col-center -->
+
+    <!-- ============================
+         RIGHT — PAYLOAD + LAUNCH WINDOW
+    ============================ -->
+    <div class="col col-right">
+      <div class="col-header">페이로드 &amp; 발사 창</div>
+      <div class="col-body">
+
+        <!-- Payload Selection -->
+        <div class="section">
+          <div class="section-title">페이로드 선택</div>
+
+          <div class="payload-option selected" onclick="selectPayload(this)">
+            <div class="payload-radio"></div>
+            <div>
+              <div class="payload-name">대기 과학 탑재체</div>
+              <div class="payload-detail">Science Instruments &nbsp;|&nbsp; 15 kg</div>
+              <div class="payload-stars">★★☆☆☆</div>
+              <div class="payload-reward">완료 시: +300 RP</div>
+            </div>
+          </div>
+
+          <div class="payload-option locked">
+            <div class="payload-radio"></div>
+            <div>
+              <div class="payload-name">기술 검증 위성</div>
+              <div class="payload-detail">CubeSat &nbsp;|&nbsp; 5 kg</div>
+              <div class="payload-stars">★★★☆☆</div>
+            </div>
+            <div class="payload-lock">[LOCKED]</div>
+          </div>
+
+          <div class="payload-option locked">
+            <div class="payload-radio"></div>
+            <div>
+              <div class="payload-name">통신 위성</div>
+              <div class="payload-detail">Phase 3 필요 &nbsp;|&nbsp; 12 kg</div>
+              <div class="payload-stars">★★★★☆</div>
+            </div>
+            <div class="payload-lock">[Phase 3]</div>
+          </div>
+        </div>
+
+        <!-- Launch Window -->
+        <div class="section">
+          <div class="section-title">발사 창 (Launch Window)</div>
+
+          <div style="font-size:10px; color:var(--green-mid); margin-bottom:6px;">
+            다음 최적 창: <span style="color:var(--green); text-shadow:var(--glow);">D+54 &nbsp;08:00</span>
+          </div>
+
+          <div class="launch-window-grid">
+            <div class="lw-row">
+              <span class="lw-label">고도각</span>
+              <span class="lw-value">84.2°</span>
+            </div>
+            <div class="lw-row">
+              <span class="lw-label">날씨</span>
+              <span class="lw-value nominal">NOMINAL</span>
+            </div>
+            <div class="lw-row">
+              <span class="lw-label">바람</span>
+              <span class="lw-value">12 kt ✓</span>
+            </div>
+            <div class="lw-row">
+              <span class="lw-label">야간 발사</span>
+              <span class="lw-value">YES</span>
+            </div>
+          </div>
+
+          <div style="padding:4px 0; border-top:var(--border-dark); margin-top:4px;">
+            <div style="font-size:9px; color:var(--green-mid); letter-spacing:1px; margin-bottom:3px;">예상 비행 프로파일</div>
+            <div class="specs-row"><span class="label">T+000s</span><span class="value" style="font-size:10px;">점화 / 리프트오프</span></div>
+            <div class="specs-row"><span class="label">T+072s</span><span class="value" style="font-size:10px;">MAX-Q (최대 동압)</span></div>
+            <div class="specs-row"><span class="label">T+145s</span><span class="value" style="font-size:10px;">MECO + 단 분리</span></div>
+            <div class="specs-row"><span class="label">T+220s</span><span class="value" style="font-size:10px;">페어링 분리</span></div>
+            <div class="specs-row"><span class="label">T+310s</span><span class="value" style="font-size:10px;">페이로드 배치</span></div>
+          </div>
+        </div>
+
+        <!-- Launch History -->
+        <div class="section">
+          <div class="section-title">발사 기록</div>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>기체</th>
+                <th>도달고도</th>
+                <th>결과</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="id-col">ML-001</td>
+                <td>Alpha mk.1</td>
+                <td>2.3 km</td>
+                <td class="result-fail">실패</td>
+              </tr>
+              <tr>
+                <td class="id-col">ML-002</td>
+                <td>Alpha mk.2</td>
+                <td>12.7 km</td>
+                <td class="result-fail">실패</td>
+              </tr>
+              <tr>
+                <td class="id-col">ML-003</td>
+                <td>Beta mk.1</td>
+                <td>89.4 km</td>
+                <td class="result-partial">준성공</td>
+              </tr>
+              <tr>
+                <td class="id-col">ML-004</td>
+                <td>Beta mk.2</td>
+                <td>——</td>
+                <td class="result-assembly">조립중</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- VAB Status -->
+        <div class="section">
+          <div class="section-title">VAB 현황</div>
+          <div class="vab-status-row">
+            <div class="vab-chip active">VAB Lv.2</div>
+            <div class="vab-chip active">슬롯 1/2</div>
+            <div class="vab-chip">연구소 Lv.2</div>
+          </div>
+          <div class="specs-row" style="margin-bottom:4px;">
+            <span class="label" style="font-size:9px;">연구소 Lv.2 보너스</span>
+            <span class="value" style="font-size:10px; color:var(--green);">+8% 속도</span>
+          </div>
+
+          <button class="action-btn secondary" style="margin-bottom:6px;" onclick="alert('새 기체 조립을 시작합니다 (Nano class). 소재를 확인하세요.')">
+            [+] 새 기체 조립 시작
+          </button>
+          <button class="action-btn disabled" disabled title="SMALL CLASS — Phase 3 필요">
+            [LOCKED] SMALL CLASS 조립
+          </button>
+        </div>
+
+      </div>
+    </div><!-- /col-right -->
+
+  </div><!-- /columns -->
+
+  <!-- ==============================
+       BOTTOM STATUS BAR
+  ============================== -->
+  <div id="bottom-bar">
+    <div class="bottom-status">
+      <div class="bstatus-item">
+        <span>조립:</span>
+        <span class="bstatus-val">BETA mk.2</span>
+      </div>
+      <span class="bstatus-sep">|</span>
+      <div class="bstatus-item">
+        <span>클래스:</span>
+        <span class="bstatus-val">NANO 2단</span>
+      </div>
+      <span class="bstatus-sep">|</span>
+      <div class="bstatus-item">
+        <span>진행:</span>
+        <span class="bstatus-val amber">57%</span>
+      </div>
+      <span class="bstatus-sep">|</span>
+      <div class="bstatus-item">
+        <span>예상 성공률:</span>
+        <span class="bstatus-val amber">72%</span>
+      </div>
+      <span class="bstatus-sep">|</span>
+      <div class="bstatus-item">
+        <span>미완: </span>
+        <span class="bstatus-val" style="color:var(--red);">RP-1 터보펌프, 항전, 2단엔진</span>
+      </div>
+    </div>
+    <button id="bottom-launch-btn" onclick="onLaunchPrepClick()">
+      ▶ 조립 완료 후 발사 준비 이동
+    </button>
+  </div>
+
+</div><!-- /main-wrapper -->
+
+<script>
+  /* ============================================
+     LIVE CLOCK
+  ============================================ */
+  function updateClock() {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    const el = document.getElementById('live-time');
+    if (el) el.textContent = hh + ':' + mm + ':' + ss;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ============================================
+     TAB SWITCHING
+  ============================================ */
+  function switchTab(btn) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  /* ============================================
+     ROCKET CLASS SELECTOR
+  ============================================ */
+  function selectClass(btn, cls) {
+    if (btn.classList.contains('locked')) return;
+    document.querySelectorAll('.class-btn:not(.locked)').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  /* ============================================
+     PAYLOAD SELECTOR
+  ============================================ */
+  function selectPayload(el) {
+    if (el.classList.contains('locked')) return;
+    document.querySelectorAll('.payload-option:not(.locked)').forEach(p => p.classList.remove('selected'));
+    el.classList.add('selected');
+  }
+
+  /* ============================================
+     SVG HIGHLIGHT ON BOM HOVER
+  ============================================ */
+  function highlightSvg(row) {
+    clearSvgHighlights();
+    const ids = row.getAttribute('data-svg');
+    if (!ids) return;
+    ids.split(',').forEach(id => {
+      const el = document.getElementById(id.trim());
+      if (el) el.classList.add('lit');
+    });
+  }
+
+  function unhighlightSvg() {
+    clearSvgHighlights();
+  }
+
+  function clearSvgHighlights() {
+    document.querySelectorAll('.svg-highlight.lit').forEach(el => el.classList.remove('lit'));
+  }
+
+  /* ============================================
+     EXHAUST ANIMATION
+  ============================================ */
+  (function animateExhaust() {
+    const ex = document.getElementById('exhaust');
+    if (!ex) return;
+    let t = 0;
+    setInterval(() => {
+      t += 0.12;
+      const opacity = 0.15 + 0.2 * Math.abs(Math.sin(t));
+      const scale = 1 + 0.15 * Math.sin(t * 1.3);
+      ex.style.opacity = opacity;
+      ex.style.transform = `scaleY(${scale})`;
+    }, 60);
+  })();
+
+  /* ============================================
+     PROGRESS BAR ANIMATION ON LOAD
+  ============================================ */
+  window.addEventListener('DOMContentLoaded', () => {
+    const fill = document.querySelector('.progress-fill');
+    if (fill) {
+      fill.style.width = '0%';
+      setTimeout(() => {
+        fill.style.transition = 'width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        fill.style.width = '57%';
+      }, 300);
+    }
+  });
+
+  /* ============================================
+     LAUNCH PREP BUTTON
+  ============================================ */
+  function onLaunchPrepClick() {
+    const pct = 57;
+    if (pct < 100) {
+      alert(
+        '[VAB — 조립 미완성]\n\n' +
+        '현재 조립 진행률: 57%\n' +
+        '미완성 항목:\n' +
+        '  - 터보펌프 RP-1 (소재 부족)\n' +
+        '  - 항전 장비 (0/5 ea)\n' +
+        '  - 2단 엔진 어셈블리\n\n' +
+        '조립 완료 후 발사 준비 단계로 이동 가능합니다.\n' +
+        '예상 완료: 2시간 14분 후'
+      );
+    }
+  }
+
+  /* ============================================
+     BOM ROW — KEYBOARD / ARIA
+  ============================================ */
+  document.querySelectorAll('#bom-table tbody tr').forEach(tr => {
+    tr.setAttribute('tabindex', '0');
+    tr.setAttribute('role', 'row');
+    tr.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        highlightSvg(tr);
+        setTimeout(() => unhighlightSvg(), 1500);
+      }
+    });
+  });
+</script>
+</body>
+</html>

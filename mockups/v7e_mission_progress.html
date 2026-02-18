@@ -1,0 +1,2934 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOON IDLE — MISSION PROGRESS</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  /* ==============================================
+     RESET & BASE
+  ============================================== */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg:           #010800;
+    --panel-bg:     #020d04;
+    --green:        #00e676;
+    --green-dim:    #1a5c34;
+    --green-mid:    #00994d;
+    --green-dark:   #021508;
+    --amber:        #ffab00;
+    --amber-dim:    #7a5100;
+    --red:          #ff1744;
+    --red-dim:      #5c0015;
+    --locked-color: #1a3a20;
+    --locked-text:  #2a5c35;
+    --font:         'Share Tech Mono', monospace;
+    --border:       1px solid #1a5c34;
+    --border-dim:   1px solid #0a2e14;
+    --glow:         0 0 6px #00e67680;
+    --glow-strong:  0 0 12px #00e676, 0 0 24px #00e67650;
+    --glow-amber:   0 0 8px #ffab0080;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  /* ==============================================
+     CRT OVERLAY
+  ============================================== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.17) 2px,
+      rgba(0,0,0,0.17) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ==============================================
+     KEYFRAMES
+  ============================================== */
+  @keyframes crt-flicker {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.87; }
+    94%  { opacity: 1; }
+    96%  { opacity: 0.91; }
+    97%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes blink {
+    0%, 49%  { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes pulse-amber {
+    0%, 100% { color: var(--amber); text-shadow: var(--glow-amber); }
+    50%      { color: #7a5100; text-shadow: none; }
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+  }
+
+  @keyframes scan-move {
+    0%   { background-position: 0 0; }
+    100% { background-position: 0 80px; }
+  }
+
+  @keyframes phase-progress-fill {
+    from { width: 0%; }
+    to   { width: var(--target-width); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes progress-pulse {
+    0%, 100% { box-shadow: 0 0 4px var(--amber); }
+    50%      { box-shadow: 0 0 12px var(--amber), 0 0 20px #ffab0050; }
+  }
+
+  /* ==============================================
+     MAIN WRAPPER
+  ============================================== */
+  #main-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    animation: crt-flicker 9s infinite;
+  }
+
+  /* ==============================================
+     TOP BAR
+  ============================================== */
+  #top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel-bg);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 6px 16px;
+    flex-shrink: 0;
+    box-shadow: var(--glow-strong);
+    z-index: 100;
+    gap: 16px;
+  }
+
+  #top-bar .title-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #top-bar .title {
+    font-size: 15px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: var(--glow-strong);
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  #top-bar .title-sep {
+    color: var(--green-dim);
+    font-size: 13px;
+  }
+
+  #top-bar .screen-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--green-mid);
+    text-shadow: var(--glow);
+    white-space: nowrap;
+  }
+
+  #top-bar .status-chips {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+  }
+
+  .chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--green-mid);
+  }
+
+  .chip .chip-label {
+    color: #2a7a4a;
+  }
+
+  .chip .chip-val {
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  .chip .chip-val.amber {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    animation: pulse-amber 2.5s ease-in-out infinite;
+  }
+
+  #top-bar .clock {
+    font-size: 18px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--green);
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--green);
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+    box-shadow: var(--glow);
+  }
+
+  /* ==============================================
+     MAIN NAV TABS
+  ============================================== */
+  #nav-tabs {
+    display: flex;
+    background: #010d03;
+    border-bottom: 2px solid var(--green-dim);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .nav-tab {
+    padding: 7px 22px;
+    font-family: var(--font);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    background: transparent;
+    border: none;
+    border-right: var(--border);
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    white-space: nowrap;
+  }
+
+  .nav-tab:hover {
+    color: var(--green-mid);
+    background: #010f05;
+  }
+
+  .nav-tab.active {
+    color: var(--green);
+    background: var(--panel-bg);
+    text-shadow: var(--glow);
+    border-bottom: 2px solid var(--green);
+    margin-bottom: -2px;
+  }
+
+  .nav-tab.mission-tab {
+    margin-left: auto;
+    border-right: none;
+    border-left: var(--border);
+    color: var(--amber-dim);
+  }
+
+  .nav-tab.mission-tab.active {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    border-bottom: 2px solid var(--amber);
+  }
+
+  /* ==============================================
+     CONTENT AREA
+  ============================================== */
+  #content-area {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .screen.active {
+    display: flex;
+  }
+
+  /* ==============================================
+     MISSION SCREEN SUB-TABS
+  ============================================== */
+  #mission-sub-tabs {
+    display: flex;
+    background: #010a02;
+    border-bottom: var(--border);
+    flex-shrink: 0;
+    padding: 0 16px;
+  }
+
+  .sub-tab {
+    padding: 5px 16px;
+    font-family: var(--font);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green-dim);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .sub-tab:hover { color: var(--green-mid); }
+
+  .sub-tab.active {
+    color: var(--green);
+    border-bottom-color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  /* ==============================================
+     SUB-SCREEN
+  ============================================== */
+  .sub-screen {
+    display: none;
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+    animation: fadeIn 0.2s ease;
+  }
+
+  .sub-screen.active {
+    display: flex;
+  }
+
+  /* ==============================================
+     진행 단계 — PHASE TIMELINE
+  ============================================== */
+  #phases-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* PHASE TIMELINE STRIP */
+  #timeline-zone {
+    flex-shrink: 0;
+    background: #010d03;
+    border-bottom: 2px solid var(--green-dim);
+    padding: 14px 24px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #timeline-zone .zone-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--green-dim);
+    margin-bottom: 10px;
+  }
+
+  /* Timeline row */
+  #timeline-row {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 80px;
+  }
+
+  .phase-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--green-dim);
+    position: relative;
+  }
+
+  .phase-connector.complete {
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  .phase-connector.partial {
+    background: linear-gradient(to right, var(--green) 60%, var(--green-dim) 60%);
+  }
+
+  .phase-connector.locked {
+    background: #0a1e0e;
+  }
+
+  .phase-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    gap: 0;
+  }
+
+  .phase-dot {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--green-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    background: var(--bg);
+    position: relative;
+    z-index: 2;
+    transition: transform 0.15s;
+  }
+
+  .phase-node:hover .phase-dot {
+    transform: scale(1.1);
+  }
+
+  .phase-dot.complete {
+    border-color: var(--green);
+    background: #010f05;
+    box-shadow: var(--glow-strong);
+    color: var(--green);
+    text-shadow: var(--glow-strong);
+  }
+
+  .phase-dot.in-progress {
+    border-color: var(--amber);
+    background: #0a0500;
+    box-shadow: 0 0 10px var(--amber), 0 0 20px #ffab0060;
+    color: var(--amber);
+    animation: progress-pulse 2s ease-in-out infinite;
+  }
+
+  .phase-dot.locked {
+    border-color: #0a2010;
+    background: #010800;
+    color: #1a3a20;
+  }
+
+  .phase-info {
+    position: absolute;
+    top: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .phase-name {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .phase-name.complete { color: var(--green); text-shadow: var(--glow); }
+  .phase-name.in-progress { color: var(--amber); text-shadow: var(--glow-amber); }
+  .phase-name.locked { color: var(--locked-text); }
+
+  .phase-status-text {
+    font-size: 9px;
+    letter-spacing: 1px;
+    display: block;
+  }
+
+  .phase-status-text.complete { color: var(--green-mid); }
+  .phase-status-text.in-progress { color: #7a5100; }
+  .phase-status-text.locked { color: #1a3a20; }
+
+  .phase-sub {
+    font-size: 8px;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    display: block;
+  }
+
+  .phase-sub.complete { color: #2a7a4a; }
+  .phase-sub.in-progress { color: var(--amber-dim); }
+  .phase-sub.locked { color: #0f2514; }
+
+  /* Progress bar inside timeline */
+  .phase-mini-progress {
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+  }
+
+  .phase-mini-bar {
+    width: 100%;
+    height: 3px;
+    background: #0a2010;
+    position: relative;
+  }
+
+  .phase-mini-fill {
+    height: 100%;
+    background: var(--amber);
+    box-shadow: 0 0 4px var(--amber);
+    width: 60%;
+    animation: phase-progress-fill 1.5s ease-out;
+  }
+
+  /* ==============================================
+     MIDDLE ZONE — 2 columns
+  ============================================== */
+  #mid-zone {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* LEFT — Current Phase Detail */
+  #phase-detail-col {
+    width: 44%;
+    border-right: 2px solid var(--green-dim);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #phase-detail-col .col-header {
+    background: var(--green-dark);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 5px 12px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green-mid);
+    flex-shrink: 0;
+  }
+
+  #phase-detail-col .col-header::before {
+    content: '// ';
+    color: var(--green-dim);
+  }
+
+  #phase-detail-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  #phase-detail-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  #phase-detail-scroll::-webkit-scrollbar-track {
+    background: #010a02;
+  }
+  #phase-detail-scroll::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+
+  /* Phase 2 main card */
+  .phase-card {
+    border: 1px solid var(--green-dim);
+    background: #010e03;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .phase-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 14px,
+      rgba(0, 230, 118, 0.015) 14px,
+      rgba(0, 230, 118, 0.015) 15px
+    );
+    pointer-events: none;
+  }
+
+  .phase-card.active-phase {
+    border-color: var(--amber);
+    box-shadow: 0 0 12px #ffab0040, inset 0 0 20px #ffab0010;
+  }
+
+  .phase-card.completed-phase {
+    border-color: var(--green-dim);
+    opacity: 0.75;
+  }
+
+  .phase-card-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .phase-card.active-phase .phase-card-header {
+    border-color: var(--amber-dim);
+    background: #0a0500;
+  }
+
+  .phase-card.completed-phase .phase-card-header {
+    border-color: var(--green-dim);
+    background: #010f05;
+  }
+
+  .phase-card-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .phase-card.active-phase .phase-card-title { color: var(--amber); text-shadow: var(--glow-amber); }
+  .phase-card.completed-phase .phase-card-title { color: var(--green); text-shadow: var(--glow); }
+
+  .phase-card-badge {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    padding: 2px 7px;
+    border: 1px solid;
+  }
+
+  .phase-card.active-phase .phase-card-badge {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: #1a0a00;
+  }
+
+  .phase-card.completed-phase .phase-card-badge {
+    border-color: var(--green);
+    color: var(--green);
+    background: #010f05;
+  }
+
+  .phase-card-body {
+    padding: 10px 12px;
+  }
+
+  .phase-subtitle {
+    font-size: 11px;
+    color: var(--green-dim);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  /* Altitude progress within phase card */
+  .altitude-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 6px;
+  }
+
+  .altitude-current {
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    line-height: 1;
+  }
+
+  .altitude-unit {
+    font-size: 11px;
+    color: var(--amber-dim);
+    margin-left: 4px;
+  }
+
+  .altitude-target {
+    font-size: 11px;
+    color: var(--green-dim);
+    text-align: right;
+  }
+
+  .altitude-target span {
+    display: block;
+    font-size: 9px;
+    color: #1a5c34;
+  }
+
+  .progress-bar-wrap {
+    width: 100%;
+    height: 10px;
+    background: #040f06;
+    border: 1px solid #0a2e14;
+    margin-bottom: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--amber);
+    box-shadow: 0 0 8px var(--amber);
+    transition: width 1.5s ease-out;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: #fff;
+    opacity: 0.7;
+  }
+
+  .progress-fill.green-fill {
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--green-dim);
+    margin-bottom: 10px;
+  }
+
+  .progress-label .pct {
+    color: var(--amber);
+  }
+
+  /* Condition checklist */
+  .check-list {
+    list-style: none;
+    margin: 8px 0;
+  }
+
+  .check-list li {
+    font-size: 11px;
+    padding: 3px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border-bottom: 1px solid #060e07;
+  }
+
+  .check-list li:last-child { border-bottom: none; }
+
+  .check-icon {
+    flex-shrink: 0;
+    width: 14px;
+  }
+
+  .check-icon.done { color: var(--green); text-shadow: var(--glow); }
+  .check-icon.fail { color: var(--red); }
+  .check-icon.warn { color: var(--amber); animation: pulse-amber 2s ease-in-out infinite; }
+
+  .check-text.done { color: var(--green-mid); }
+  .check-text.fail { color: #4a3030; }
+
+  /* Phase requirement list */
+  .req-list {
+    list-style: none;
+    margin-top: 6px;
+  }
+
+  .req-list li {
+    font-size: 10px;
+    color: var(--red);
+    padding: 2px 0;
+    padding-left: 14px;
+    position: relative;
+  }
+
+  .req-list li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: var(--red);
+  }
+
+  .req-list li .sub-val {
+    color: #5c2020;
+    margin-top: 1px;
+    display: block;
+    padding-left: 8px;
+    font-size: 9px;
+  }
+
+  /* Compact completed phase card */
+  .phase-card-compact {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    border: 1px solid var(--green-dim);
+    background: #010d03;
+    margin-bottom: 6px;
+    opacity: 0.65;
+    font-size: 11px;
+  }
+
+  .phase-card-compact .compact-title {
+    color: var(--green);
+    letter-spacing: 1.5px;
+  }
+
+  .phase-card-compact .compact-date {
+    color: var(--green-dim);
+    font-size: 9px;
+  }
+
+  .phase-card-compact .compact-check {
+    color: var(--green);
+    text-shadow: var(--glow);
+    font-size: 13px;
+  }
+
+  .compact-bonus-list {
+    font-size: 9px;
+    color: #2a7a4a;
+    margin-top: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Divider label */
+  .section-divider {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--green-dim);
+    margin: 12px 0 6px;
+    border-bottom: 1px solid #0a1e0e;
+    padding-bottom: 3px;
+  }
+
+  /* ==============================================
+     RIGHT — MILESTONE TRACKER
+  ============================================== */
+  #milestone-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #milestone-col .col-header {
+    background: var(--green-dark);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 5px 12px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--green-mid);
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #milestone-col .col-header::before {
+    content: '// ';
+    color: var(--green-dim);
+  }
+
+  .milestone-count {
+    font-size: 9px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+  }
+
+  #milestone-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  #milestone-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  #milestone-scroll::-webkit-scrollbar-track {
+    background: #010a02;
+  }
+  #milestone-scroll::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+
+  .milestone-phase-header {
+    font-size: 9px;
+    letter-spacing: 3px;
+    padding: 4px 6px;
+    color: var(--green-dim);
+    background: #010d03;
+    border: 1px solid #0a1e0e;
+    margin-bottom: 4px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .milestone-phase-header:first-child { margin-top: 0; }
+
+  .milestone-phase-header .ph-badge {
+    font-size: 8px;
+    padding: 1px 6px;
+    border: 1px solid;
+  }
+
+  .milestone-phase-header .ph-badge.done {
+    border-color: var(--green);
+    color: var(--green);
+    background: #010f05;
+  }
+
+  .milestone-phase-header .ph-badge.active {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: #0a0500;
+  }
+
+  .milestone-phase-header .ph-badge.locked {
+    border-color: var(--locked-color);
+    color: var(--locked-text);
+    background: transparent;
+  }
+
+  /* Milestone item */
+  .ms-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 6px;
+    border: 1px solid #0a1e0e;
+    background: #010a02;
+    margin-bottom: 3px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+  }
+
+  .ms-item:hover {
+    background: #020f04;
+    border-color: var(--green-dim);
+  }
+
+  .ms-item.ms-complete {
+    border-color: #0d3520;
+    background: #010c03;
+  }
+
+  .ms-item.ms-next {
+    border-color: var(--amber-dim);
+    background: #050200;
+    box-shadow: 0 0 6px #ffab0030;
+  }
+
+  .ms-item.ms-locked {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .ms-item.ms-locked:hover {
+    background: #010a02;
+    border-color: #0a1e0e;
+  }
+
+  .ms-icon {
+    font-size: 14px;
+    flex-shrink: 0;
+    width: 18px;
+    text-align: center;
+    margin-top: 1px;
+  }
+
+  .ms-icon.done { filter: drop-shadow(0 0 4px var(--green)); }
+
+  .ms-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ms-name {
+    font-size: 11px;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ms-item.ms-complete .ms-name { color: var(--green); }
+  .ms-item.ms-next .ms-name { color: var(--amber); text-shadow: var(--glow-amber); }
+  .ms-item.ms-available .ms-name { color: var(--green-mid); }
+  .ms-item.ms-locked .ms-name { color: var(--locked-text); }
+
+  .ms-cond {
+    font-size: 9px;
+    color: var(--green-dim);
+    margin-top: 1px;
+  }
+
+  .ms-item.ms-locked .ms-cond { color: #1a3a20; }
+
+  /* Progress mini-bar for near milestones */
+  .ms-mini-progress {
+    margin-top: 4px;
+  }
+
+  .ms-mini-bar {
+    width: 100%;
+    height: 4px;
+    background: #040f06;
+    border: 1px solid #0a1e0e;
+  }
+
+  .ms-mini-fill {
+    height: 100%;
+    background: var(--amber);
+    box-shadow: 0 0 4px var(--amber);
+  }
+
+  .ms-mini-label {
+    font-size: 8px;
+    color: var(--amber-dim);
+    margin-top: 2px;
+  }
+
+  .ms-right {
+    text-align: right;
+    flex-shrink: 0;
+    min-width: 60px;
+  }
+
+  .ms-date {
+    font-size: 9px;
+    color: var(--green-dim);
+  }
+
+  .ms-reward {
+    font-size: 9px;
+    color: var(--green-mid);
+  }
+
+  .ms-item.ms-next .ms-reward {
+    color: var(--amber);
+  }
+
+  /* ==============================================
+     STATS STRIP (bottom)
+  ============================================== */
+  #stats-strip {
+    flex-shrink: 0;
+    background: #010d03;
+    border-top: 2px solid var(--green-dim);
+    padding: 5px 16px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    overflow: hidden;
+  }
+
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 14px;
+    border-right: 1px solid #0a2e14;
+  }
+
+  .stat-item:first-child { padding-left: 0; }
+  .stat-item:last-child { border-right: none; }
+
+  .stat-label {
+    color: #2a7a4a;
+    white-space: nowrap;
+  }
+
+  .stat-value {
+    color: var(--green);
+    text-shadow: var(--glow);
+    white-space: nowrap;
+  }
+
+  .stat-value.amber {
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+  }
+
+  /* ==============================================
+     PLACEHOLDER SCREENS (other main tabs)
+  ============================================== */
+  .placeholder-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: var(--green-dim);
+    font-size: 12px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .placeholder-screen .ph-icon {
+    font-size: 32px;
+    opacity: 0.4;
+  }
+
+  .placeholder-screen .ph-label {
+    opacity: 0.5;
+  }
+
+  /* ==============================================
+     MILESTONE FULL-GRID SUB-SCREEN
+  ============================================== */
+  #milestone-grid-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  #milestone-grid-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  #milestone-grid-scroll::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+
+  .ms-grid-phase-block {
+    border: 1px solid #0a1e0e;
+    background: #010a02;
+  }
+
+  .ms-grid-phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 14px;
+    background: #010e03;
+    border-bottom: 1px solid #0a1e0e;
+  }
+
+  .ms-grid-phase-title {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    color: var(--green);
+  }
+
+  .ms-grid-phase-title.amber { color: var(--amber); text-shadow: var(--glow-amber); }
+  .ms-grid-phase-title.locked { color: var(--locked-text); }
+
+  .ms-grid-phase-count {
+    font-size: 9px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+  }
+
+  .ms-grid-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .ms-card {
+    border: 1px solid #0a1e0e;
+    background: #010c03;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .ms-card:hover { background: #020f04; border-color: var(--green-dim); }
+
+  .ms-card.card-complete { border-color: #1a5c34; }
+  .ms-card.card-next { border-color: var(--amber-dim); box-shadow: 0 0 8px #ffab0020; }
+  .ms-card.card-locked { opacity: 0.35; cursor: default; }
+  .ms-card.card-locked:hover { background: #010c03; border-color: #0a1e0e; }
+
+  .ms-card-name {
+    font-size: 11px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .ms-card.card-complete .ms-card-name { color: var(--green); }
+  .ms-card.card-next .ms-card-name { color: var(--amber); text-shadow: var(--glow-amber); }
+  .ms-card.card-locked .ms-card-name { color: var(--locked-text); }
+  .ms-card.card-available .ms-card-name { color: var(--green-mid); }
+
+  .ms-card-cond {
+    font-size: 9px;
+    color: var(--green-dim);
+    margin-bottom: 5px;
+  }
+
+  .ms-card.card-locked .ms-card-cond { color: #1a3a20; }
+
+  .ms-card-reward {
+    font-size: 9px;
+    padding: 2px 6px;
+    display: inline-block;
+    border: 1px solid;
+    letter-spacing: 1px;
+  }
+
+  .ms-card.card-complete .ms-card-reward {
+    border-color: var(--green-dim);
+    color: var(--green-mid);
+  }
+
+  .ms-card.card-next .ms-card-reward {
+    border-color: var(--amber-dim);
+    color: var(--amber-dim);
+  }
+
+  .ms-card.card-locked .ms-card-reward {
+    border-color: #0a1e0e;
+    color: #1a3a20;
+  }
+
+  .ms-card-date {
+    font-size: 9px;
+    color: var(--green-dim);
+    margin-top: 4px;
+  }
+
+  .ms-card-progress {
+    margin-top: 5px;
+  }
+
+  .ms-card-bar {
+    width: 100%;
+    height: 5px;
+    background: #040f06;
+    border: 1px solid #0a2010;
+    margin-bottom: 2px;
+  }
+
+  .ms-card-bar-fill {
+    height: 100%;
+    background: var(--amber);
+    box-shadow: 0 0 4px var(--amber);
+  }
+
+  .ms-card-bar-label {
+    font-size: 8px;
+    color: var(--amber-dim);
+  }
+
+  /* ==============================================
+     ACHIEVEMENT SUB-SCREEN
+  ============================================== */
+  #achievement-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+    align-content: start;
+  }
+
+  #achievement-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  #achievement-scroll::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+
+  .ach-card {
+    border: 1px solid #0a1e0e;
+    background: #010c03;
+    padding: 10px 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .ach-card.earned {
+    border-color: #1a5c34;
+    background: #010f04;
+    box-shadow: inset 0 0 10px #00e67610;
+  }
+
+  .ach-card.locked {
+    opacity: 0.45;
+  }
+
+  .ach-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0 6px var(--amber));
+  }
+
+  .ach-card.locked .ach-icon {
+    filter: none;
+    opacity: 0.4;
+  }
+
+  .ach-body { flex: 1; }
+
+  .ach-name {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    margin-bottom: 3px;
+  }
+
+  .ach-card.earned .ach-name { color: var(--amber); text-shadow: var(--glow-amber); }
+  .ach-card.locked .ach-name { color: var(--locked-text); }
+
+  .ach-desc {
+    font-size: 10px;
+    color: var(--green-dim);
+    margin-bottom: 5px;
+  }
+
+  .ach-card.locked .ach-desc { color: #1a3a20; }
+
+  .ach-date {
+    font-size: 9px;
+    color: var(--green-mid);
+  }
+
+  .ach-card.locked .ach-date {
+    color: #1a3a20;
+  }
+
+  /* ==============================================
+     PRESTIGE SUB-SCREEN
+  ============================================== */
+  #prestige-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #prestige-content::-webkit-scrollbar {
+    width: 4px;
+  }
+  #prestige-content::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+
+  .prestige-header-card {
+    border: 2px solid var(--green-dim);
+    background: #010e03;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .prestige-title {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-shadow: var(--glow);
+    margin-bottom: 4px;
+  }
+
+  .prestige-subtitle {
+    font-size: 10px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+  }
+
+  .prestige-season-badge {
+    border: 2px solid var(--amber);
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+    padding: 8px 16px;
+    font-size: 18px;
+    letter-spacing: 3px;
+    box-shadow: 0 0 12px #ffab0030;
+  }
+
+  .prestige-blocked-notice {
+    border: 1px solid var(--red-dim);
+    background: #05010a;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #703030;
+  }
+
+  .prestige-blocked-notice .notice-icon {
+    color: var(--red);
+    font-size: 16px;
+    flex-shrink: 0;
+    animation: pulse-green 2s ease-in-out infinite;
+  }
+
+  .prestige-blocked-cond {
+    color: var(--red);
+    font-size: 10px;
+    margin-top: 3px;
+    letter-spacing: 1px;
+  }
+
+  .prestige-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .prestige-list-card {
+    border: 1px solid #0a1e0e;
+    background: #010a02;
+  }
+
+  .prestige-list-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #0a1e0e;
+    font-size: 10px;
+    letter-spacing: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .prestige-list-header.reset-header { color: var(--red); }
+  .prestige-list-header.keep-header { color: var(--green); text-shadow: var(--glow); }
+
+  .prestige-list-body {
+    padding: 8px 12px;
+    list-style: none;
+  }
+
+  .prestige-list-body li {
+    font-size: 10px;
+    padding: 3px 0;
+    border-bottom: 1px solid #06100a;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .prestige-list-body li:last-child { border-bottom: none; }
+
+  .prestige-list-body.reset-list li { color: #703030; }
+  .prestige-list-body.reset-list li::before { content: '✗'; color: var(--red); }
+
+  .prestige-list-body.keep-list li { color: var(--green-mid); }
+  .prestige-list-body.keep-list li::before { content: '✓'; color: var(--green); }
+
+  /* Prestige star tree */
+  .star-tree-card {
+    border: 1px solid #0a1e0e;
+    background: #010a02;
+  }
+
+  .star-tree-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #0a1e0e;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--amber);
+    text-shadow: var(--glow-amber);
+  }
+
+  .star-tree-body {
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .star-slot {
+    width: 60px;
+    height: 60px;
+    border: 2px solid #0a2010;
+    background: #010800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 2px;
+    cursor: not-allowed;
+    position: relative;
+  }
+
+  .star-slot .slot-icon {
+    font-size: 20px;
+    color: #1a3a20;
+  }
+
+  .star-slot .slot-label {
+    font-size: 7px;
+    color: #1a3a20;
+    letter-spacing: 1px;
+  }
+
+  .star-connector {
+    width: 24px;
+    height: 2px;
+    background: #0a2010;
+  }
+
+  /* History block */
+  .prestige-history-card {
+    border: 1px solid #0a1e0e;
+    background: #010a02;
+  }
+
+  .history-header {
+    padding: 6px 12px;
+    border-bottom: 1px solid #0a1e0e;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+  }
+
+  .history-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 12px;
+    font-size: 10px;
+    border-bottom: 1px solid #060e07;
+  }
+
+  .history-row:last-child { border-bottom: none; }
+
+  .history-row .h-season { color: var(--green); letter-spacing: 2px; }
+  .history-row .h-start { color: var(--green-dim); }
+  .history-row .h-status {
+    font-size: 9px;
+    color: var(--amber);
+    border: 1px solid var(--amber-dim);
+    padding: 1px 6px;
+    letter-spacing: 1px;
+  }
+
+  /* ==============================================
+     MODAL
+  ============================================== */
+  #modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #modal-overlay.open {
+    display: flex;
+  }
+
+  #modal-box {
+    background: var(--panel-bg);
+    border: 2px solid var(--green-dim);
+    box-shadow: var(--glow-strong), 0 0 40px rgba(0,0,0,0.9);
+    width: 480px;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    animation: fadeIn 0.2s ease;
+  }
+
+  #modal-box::-webkit-scrollbar {
+    width: 4px;
+  }
+  #modal-box::-webkit-scrollbar-thumb {
+    background: var(--green-dim);
+  }
+
+  #modal-header {
+    background: var(--green-dark);
+    border-bottom: 2px solid var(--green-dim);
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+  }
+
+  #modal-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--green);
+    text-shadow: var(--glow);
+  }
+
+  #modal-close {
+    background: transparent;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    font-family: var(--font);
+    font-size: 11px;
+    padding: 2px 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: background 0.15s;
+  }
+
+  #modal-close:hover {
+    background: #0a3020;
+  }
+
+  #modal-body {
+    padding: 14px;
+  }
+
+  .modal-field {
+    margin-bottom: 10px;
+  }
+
+  .modal-field-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--green-dim);
+    margin-bottom: 3px;
+  }
+
+  .modal-field-value {
+    font-size: 11px;
+    color: var(--green);
+    padding-left: 8px;
+  }
+
+  .modal-field-value.amber { color: var(--amber); text-shadow: var(--glow-amber); }
+  .modal-field-value.red { color: var(--red); }
+
+  .modal-divider {
+    border: none;
+    border-top: 1px solid #0a2e14;
+    margin: 10px 0;
+  }
+</style>
+</head>
+<body>
+<div id="main-wrapper">
+
+  <!-- ============================================================
+       TOP BAR
+  ============================================================ -->
+  <div id="top-bar">
+    <div class="title-block">
+      <span class="title">MOON IDLE</span>
+      <span class="title-sep">—</span>
+      <span class="screen-label">임무 현황</span>
+    </div>
+
+    <div class="status-chips">
+      <div class="chip">
+        <span class="chip-label">SEASON</span>
+        <span class="chip-val">01</span>
+      </div>
+      <div class="chip">
+        <span class="chip-label">ERA</span>
+        <span class="chip-val amber">준궤도 (60%)</span>
+      </div>
+      <div class="chip">
+        <span class="chip-label">DAY</span>
+        <span class="chip-val">D+52</span>
+      </div>
+      <div class="chip">
+        <span class="chip-label">ALTITUDE.MAX</span>
+        <span class="chip-val">89.4km</span>
+      </div>
+    </div>
+
+    <div class="clock" id="clock">00:00:00 <span class="cursor-blink"></span></div>
+  </div>
+
+  <!-- ============================================================
+       MAIN NAV TABS
+  ============================================================ -->
+  <div id="nav-tabs">
+    <button class="nav-tab" onclick="switchMainTab('production')">○ 생산/자원</button>
+    <button class="nav-tab" onclick="switchMainTab('research')">○ 연구/기술</button>
+    <button class="nav-tab" onclick="switchMainTab('assembly')">○ 로켓 조립</button>
+    <button class="nav-tab" onclick="switchMainTab('launch')">○ 발사 관제</button>
+    <button class="nav-tab mission-tab active" onclick="switchMainTab('mission')">▶ 임무 현황</button>
+  </div>
+
+  <!-- ============================================================
+       CONTENT AREA
+  ============================================================ -->
+  <div id="content-area">
+
+    <!-- PLACEHOLDER SCREENS -->
+    <div class="screen placeholder-screen" id="screen-production">
+      <div class="ph-icon">⚙</div>
+      <div class="ph-label">생산/자원 화면</div>
+    </div>
+    <div class="screen placeholder-screen" id="screen-research">
+      <div class="ph-icon">🔬</div>
+      <div class="ph-label">연구/기술 화면</div>
+    </div>
+    <div class="screen placeholder-screen" id="screen-assembly">
+      <div class="ph-icon">🚀</div>
+      <div class="ph-label">로켓 조립 화면</div>
+    </div>
+    <div class="screen placeholder-screen" id="screen-launch">
+      <div class="ph-icon">📡</div>
+      <div class="ph-label">발사 관제 화면</div>
+    </div>
+
+    <!-- ========================================================
+         MISSION PROGRESS SCREEN
+    ======================================================== -->
+    <div class="screen active" id="screen-mission" style="flex-direction: column;">
+
+      <!-- Sub-tabs -->
+      <div id="mission-sub-tabs">
+        <button class="sub-tab active" onclick="switchSubTab('phases')">● 진행 단계</button>
+        <button class="sub-tab" onclick="switchSubTab('milestones')">○ 마일스톤</button>
+        <button class="sub-tab" onclick="switchSubTab('achievements')">○ 업적</button>
+        <button class="sub-tab" onclick="switchSubTab('prestige')">○ 프레스티지</button>
+      </div>
+
+      <!-- ======================================================
+           SUB-SCREEN: 진행 단계
+      ====================================================== -->
+      <div class="sub-screen active" id="subscreen-phases" style="flex-direction: column; flex: 1; overflow: hidden;">
+
+        <!-- PHASE TIMELINE ZONE -->
+        <div id="timeline-zone">
+          <div class="zone-label">// PHASE PROGRESSION TIMELINE</div>
+          <div id="timeline-row">
+
+            <!-- Phase 1 -->
+            <div class="phase-node" onclick="showPhaseModal(1)" title="Phase 1: 프로토타입 에라">
+              <div class="phase-dot complete">✓</div>
+              <div class="phase-info">
+                <span class="phase-name complete">프로토타입 에라</span>
+                <span class="phase-status-text complete">COMPLETE</span>
+                <span class="phase-sub complete">D+07 ~ D+35</span>
+              </div>
+            </div>
+
+            <div class="phase-connector complete"></div>
+
+            <!-- Phase 2 -->
+            <div class="phase-node" onclick="showPhaseModal(2)" title="Phase 2: 준궤도 에라">
+              <div class="phase-dot in-progress">▶</div>
+              <div class="phase-info">
+                <span class="phase-name in-progress">준궤도 에라</span>
+                <span class="phase-status-text in-progress">IN PROGRESS ▶</span>
+                <span class="phase-sub in-progress">89.4km / 100km</span>
+                <div class="phase-mini-progress">
+                  <div class="phase-mini-bar">
+                    <div class="phase-mini-fill"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="phase-connector partial"></div>
+
+            <!-- Phase 3 -->
+            <div class="phase-node" onclick="showPhaseModal(3)" title="Phase 3: 궤도 에라">
+              <div class="phase-dot locked">🔒</div>
+              <div class="phase-info">
+                <span class="phase-name locked">궤도 에라</span>
+                <span class="phase-status-text locked">LOCKED</span>
+                <span class="phase-sub locked">100km 달성 필요</span>
+              </div>
+            </div>
+
+            <div class="phase-connector locked"></div>
+
+            <!-- Phase 4 -->
+            <div class="phase-node" onclick="showPhaseModal(4)" title="Phase 4: 시스루나 에라">
+              <div class="phase-dot locked">🔒</div>
+              <div class="phase-info">
+                <span class="phase-name locked">시스루나 에라</span>
+                <span class="phase-status-text locked">LOCKED</span>
+                <span class="phase-sub locked">달 궤적 계산 기술 필요</span>
+              </div>
+            </div>
+
+            <div class="phase-connector locked"></div>
+
+            <!-- Phase 5 -->
+            <div class="phase-node" onclick="showPhaseModal(5)" title="Phase 5: 달 표면 에라">
+              <div class="phase-dot locked">🔒</div>
+              <div class="phase-info">
+                <span class="phase-name locked">달 표면 에라</span>
+                <span class="phase-status-text locked">LOCKED</span>
+                <span class="phase-sub locked">ISRU 기초 기술 필요</span>
+              </div>
+            </div>
+
+          </div><!-- #timeline-row -->
+        </div><!-- #timeline-zone -->
+
+        <!-- MIDDLE ZONE -->
+        <div id="mid-zone">
+
+          <!-- LEFT: Phase Detail -->
+          <div id="phase-detail-col">
+            <div class="col-header">현재 에라 상세</div>
+            <div id="phase-detail-scroll">
+
+              <!-- ACTIVE PHASE 2 CARD -->
+              <div class="phase-card active-phase">
+                <div class="phase-card-header">
+                  <span class="phase-card-title">PHASE 2: 준궤도 에라</span>
+                  <span class="phase-card-badge">IN PROGRESS</span>
+                </div>
+                <div class="phase-card-body">
+                  <div class="phase-subtitle">"카르만 선을 넘어라"</div>
+
+                  <!-- Altitude display -->
+                  <div class="altitude-display">
+                    <div>
+                      <span class="altitude-current">89.4<span class="altitude-unit">km</span></span>
+                    </div>
+                    <div class="altitude-target">
+                      목표: <strong>100km</strong>
+                      <span>Kármán Line</span>
+                      <span style="color: var(--amber-dim);">잔여 10.6km</span>
+                    </div>
+                  </div>
+
+                  <!-- Progress bar -->
+                  <div class="progress-bar-wrap">
+                    <div class="progress-fill" style="width: 60%;"></div>
+                  </div>
+                  <div class="progress-label">
+                    <span>에라 진행</span>
+                    <span class="pct">60%</span>
+                  </div>
+
+                  <!-- Phase 2 conditions -->
+                  <div class="section-divider">에라 조건</div>
+                  <ul class="check-list">
+                    <li>
+                      <span class="check-icon done">[✓]</span>
+                      <span class="check-text done">알루미늄 생산 안정화</span>
+                    </li>
+                    <li>
+                      <span class="check-icon done">[✓]</span>
+                      <span class="check-text done">첫 카르만선 시도 완료 (89.4km 준성공)</span>
+                    </li>
+                    <li>
+                      <span class="check-icon fail">[✗]</span>
+                      <span class="check-text fail">카르만선 100km 달성 (미완)</span>
+                    </li>
+                    <li>
+                      <span class="check-icon fail">[✗]</span>
+                      <span class="check-text fail">터보펌프 사이클 연구 완료 (미완)</span>
+                    </li>
+                  </ul>
+
+                  <!-- Phase 3 entry conditions -->
+                  <div class="section-divider" style="color: var(--red); border-color: var(--red-dim);">Phase 3 진입 조건 미달</div>
+                  <ul class="req-list">
+                    <li>100km 달성 필요 (현재 89.4km)</li>
+                    <li>터보펌프 사이클 연구 필요</li>
+                    <li>
+                      자금 ₩50,000,000 필요
+                      <span class="sub-val">현재: ₩2,847,000 (5.7%)</span>
+                    </li>
+                  </ul>
+
+                  <!-- Mini fund progress -->
+                  <div style="margin-top: 8px;">
+                    <div class="progress-bar-wrap" style="height: 6px;">
+                      <div class="progress-fill" style="width: 5.7%; background: var(--red); box-shadow: 0 0 6px var(--red);"></div>
+                    </div>
+                    <div class="progress-label" style="margin-bottom: 0;">
+                      <span style="color: #703030;">자금 달성도</span>
+                      <span style="color: var(--red);">5.7%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- COMPLETED PHASE 1 COMPACT CARD -->
+              <div class="section-divider">완료된 에라</div>
+
+              <div class="phase-card completed-phase" style="margin-bottom: 0;">
+                <div class="phase-card-header">
+                  <span class="phase-card-title">PHASE 1: 프로토타입 에라</span>
+                  <span class="phase-card-badge">COMPLETE ✓</span>
+                </div>
+                <div class="phase-card-body">
+                  <div style="font-size: 10px; color: var(--green-dim); margin-bottom: 6px; letter-spacing: 1px;">
+                    "첫 발사대에서 하늘로" — D+07 ~ D+35
+                  </div>
+                  <div style="font-size: 10px; color: var(--green-mid); margin-bottom: 4px; letter-spacing: 1px;">최고 달성 고도</div>
+                  <div style="display: flex; gap: 16px; margin-bottom: 8px;">
+                    <div>
+                      <div style="font-size: 18px; color: var(--green); text-shadow: var(--glow); letter-spacing: 2px;">39km</div>
+                      <div style="font-size: 9px; color: var(--green-dim);">Felix Line</div>
+                    </div>
+                    <div>
+                      <div style="font-size: 18px; color: var(--green); text-shadow: var(--glow); letter-spacing: 2px;">10km</div>
+                      <div style="font-size: 9px; color: var(--green-dim);">공식 달성</div>
+                    </div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--green-dim); margin-bottom: 4px; letter-spacing: 1px;">획득 보너스</div>
+                  <ul style="list-style: none; font-size: 10px; color: var(--green-mid);">
+                    <li style="padding: 1px 0;">● 구조 강도 +10%</li>
+                    <li style="padding: 1px 0;">● 기초 연구속도 +5%</li>
+                  </ul>
+                </div>
+              </div>
+
+            </div><!-- phase-detail-scroll -->
+          </div><!-- phase-detail-col -->
+
+          <!-- RIGHT: Milestone Tracker -->
+          <div id="milestone-col">
+            <div class="col-header">
+              마일스톤 트래커
+              <span class="milestone-count">7 / 25 달성</span>
+            </div>
+            <div id="milestone-scroll">
+
+              <!-- Phase 1 milestones -->
+              <div class="milestone-phase-header">
+                <span>PHASE 1: 프로토타입 에라</span>
+                <span class="ph-badge done">5/5 완료</span>
+              </div>
+
+              <div class="ms-item ms-complete" onclick="showMilestoneModal('first-ignition')">
+                <span class="ms-icon done">✓</span>
+                <div class="ms-body">
+                  <div class="ms-name">First Ignition</div>
+                  <div class="ms-cond">첫 엔진 점화 성공</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-date">D+07</div>
+                  <div class="ms-reward">RP +50</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-complete" onclick="showMilestoneModal('1km-club')">
+                <span class="ms-icon done">✓</span>
+                <div class="ms-body">
+                  <div class="ms-name">1km Club</div>
+                  <div class="ms-cond">고도 1km 돌파</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-date">D+07</div>
+                  <div class="ms-reward">RP +75</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-complete" onclick="showMilestoneModal('boundary-pusher')">
+                <span class="ms-icon done">✓</span>
+                <div class="ms-body">
+                  <div class="ms-name">Boundary Pusher</div>
+                  <div class="ms-cond">고도 10km 돌파</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-date">D+14</div>
+                  <div class="ms-reward">RP +100</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-complete" onclick="showMilestoneModal('stratosphere')">
+                <span class="ms-icon done">✓</span>
+                <div class="ms-body">
+                  <div class="ms-name">Stratosphere</div>
+                  <div class="ms-cond">고도 20km 돌파 (성층권)</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-date">D+18</div>
+                  <div class="ms-reward">RP +150</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-complete" onclick="showMilestoneModal('felix-line')">
+                <span class="ms-icon done">✓</span>
+                <div class="ms-body">
+                  <div class="ms-name">Felix Line</div>
+                  <div class="ms-cond">고도 39km 돌파 (펠릭스 라인)</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-date">D+25</div>
+                  <div class="ms-reward">RP +200</div>
+                </div>
+              </div>
+
+              <!-- Phase 2 milestones -->
+              <div class="milestone-phase-header">
+                <span>PHASE 2: 준궤도 에라</span>
+                <span class="ph-badge active">2/5 진행 중</span>
+              </div>
+
+              <div class="ms-item ms-complete" onclick="showMilestoneModal('mesosphere')">
+                <span class="ms-icon done">✓</span>
+                <div class="ms-body">
+                  <div class="ms-name">Mesosphere Entry</div>
+                  <div class="ms-cond">고도 50km 돌파 (중간권)</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-date">D+35</div>
+                  <div class="ms-reward">RP +300</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-complete" onclick="showMilestoneModal('weather-eye')">
+                <span class="ms-icon done">✓</span>
+                <div class="ms-body">
+                  <div class="ms-name">Weather Eye</div>
+                  <div class="ms-cond">200km 궤도 준성공 인정</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-date">D+35</div>
+                  <div class="ms-reward">RP +250</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-next" onclick="showMilestoneModal('karman-line')">
+                <span class="ms-icon" style="color: var(--amber);">▶</span>
+                <div class="ms-body">
+                  <div class="ms-name">Kármán Line</div>
+                  <div class="ms-cond">고도 정확히 100km 돌파</div>
+                  <div class="ms-mini-progress">
+                    <div class="ms-mini-bar">
+                      <div class="ms-mini-fill" style="width: 89.4%;"></div>
+                    </div>
+                    <div class="ms-mini-label">89.4 / 100km</div>
+                  </div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-reward">RP +500</div>
+                  <div style="font-size: 8px; color: var(--amber-dim); margin-top: 2px;">다음 목표</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-available" onclick="showMilestoneModal('tourist-alt')">
+                <span class="ms-icon" style="color: var(--green-dim);">○</span>
+                <div class="ms-body">
+                  <div class="ms-name">Tourist Altitude</div>
+                  <div class="ms-cond">고도 120km 달성 (우주관광 고도)</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-reward">RP +400</div>
+                </div>
+              </div>
+
+              <div class="ms-item ms-available" onclick="showMilestoneModal('suborbital-return')">
+                <span class="ms-icon" style="color: var(--green-dim);">○</span>
+                <div class="ms-body">
+                  <div class="ms-name">Suborbital Return</div>
+                  <div class="ms-cond">준궤도 비행 후 회수 성공</div>
+                </div>
+                <div class="ms-right">
+                  <div class="ms-reward">RP +600</div>
+                </div>
+              </div>
+
+              <!-- Phase 3-5 milestones (locked) -->
+              <div class="milestone-phase-header">
+                <span>PHASE 3: 궤도 에라</span>
+                <span class="ph-badge locked">0/5 잠금</span>
+              </div>
+
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">First Orbit</div>
+                  <div class="ms-cond">LEO 궤도 진입 성공</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +1000</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Orbital Decay</div>
+                  <div class="ms-cond">궤도 유지 3회전 성공</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +800</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Deorbit Master</div>
+                  <div class="ms-cond">정밀 재진입 및 회수</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +1200</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Payload Delivery</div>
+                  <div class="ms-cond">위성 탑재체 LEO 투입</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +1500</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Rendezvous</div>
+                  <div class="ms-cond">궤도 랑데부 성공</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +2000</div></div>
+              </div>
+
+              <div class="milestone-phase-header">
+                <span>PHASE 4: 시스루나 에라</span>
+                <span class="ph-badge locked">0/5 잠금</span>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Lunar Transfer</div>
+                  <div class="ms-cond">달 전이 궤도 진입</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +3000</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Lunar Flyby</div>
+                  <div class="ms-cond">달 플라이바이 완료</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +3500</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Lunar Orbit</div>
+                  <div class="ms-cond">달 궤도 진입 및 유지</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +5000</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Far Side</div>
+                  <div class="ms-cond">달 뒷면 탐사 완료</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +4000</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Cislunar Return</div>
+                  <div class="ms-cond">지구-달 왕복 성공</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +6000</div></div>
+              </div>
+
+              <div class="milestone-phase-header">
+                <span>PHASE 5: 달 표면 에라</span>
+                <span class="ph-badge locked">0/5 잠금</span>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Touchdown</div>
+                  <div class="ms-cond">달 착륙 성공 (첫 터치다운)</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +10000</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Surface Sample</div>
+                  <div class="ms-cond">달 표면 샘플 채취</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +8000</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">ISRU Pioneer</div>
+                  <div class="ms-cond">현지 자원 활용 성공</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +12000</div></div>
+              </div>
+              <div class="ms-item ms-locked">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name">Lunar Base Alpha</div>
+                  <div class="ms-cond">달 기지 건설 완료</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward">RP +20000</div></div>
+              </div>
+              <div class="ms-item ms-locked" style="border-color: #1a3a20;">
+                <span class="ms-icon">🔒</span>
+                <div class="ms-body">
+                  <div class="ms-name" style="color: #2a5c35; font-size: 12px; letter-spacing: 2px;">인류의 도약</div>
+                  <div class="ms-cond" style="color: #1a3a20;">달 정착지 운용 개시 — 최종 마일스톤</div>
+                </div>
+                <div class="ms-right"><div class="ms-reward" style="color: #2a5c35; border-color: #1a3a20;">RP +50000</div></div>
+              </div>
+
+            </div><!-- #milestone-scroll -->
+          </div><!-- #milestone-col -->
+
+        </div><!-- #mid-zone -->
+
+        <!-- STATS STRIP -->
+        <div id="stats-strip">
+          <div class="stat-item">
+            <span class="stat-label">총 발사 시도</span>
+            <span class="stat-value">3회</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">최고 고도</span>
+            <span class="stat-value amber">89.4km</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">총 비행시간</span>
+            <span class="stat-value">847s</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">획득 RP</span>
+            <span class="stat-value">2,094</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">소모 자금</span>
+            <span class="stat-value">₩3.2M</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">현재 시즌</span>
+            <span class="stat-value">1</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">프레스티지</span>
+            <span class="stat-value">0회</span>
+          </div>
+          <div class="stat-item" style="margin-left: auto; border-right: none; border-left: 1px solid #0a2e14;">
+            <span class="stat-label">자동관리자</span>
+            <span class="stat-value">3명 활성</span>
+          </div>
+          <div class="stat-item" style="border-right: none;">
+            <span class="stat-label">오프라인 효율</span>
+            <span class="stat-value">70%</span>
+          </div>
+        </div>
+
+      </div><!-- subscreen-phases -->
+
+      <!-- ======================================================
+           SUB-SCREEN: 마일스톤 (full grid)
+      ====================================================== -->
+      <div class="sub-screen" id="subscreen-milestones">
+        <div id="milestone-grid-scroll">
+
+          <!-- Phase 1 Block -->
+          <div class="ms-grid-phase-block">
+            <div class="ms-grid-phase-header">
+              <span class="ms-grid-phase-title">PHASE 1: 프로토타입 에라</span>
+              <span class="ms-grid-phase-count">5 / 5 완료</span>
+            </div>
+            <div class="ms-grid-cards">
+
+              <div class="ms-card card-complete" onclick="showMilestoneModal('first-ignition')">
+                <div class="ms-card-name">First Ignition</div>
+                <div class="ms-card-cond">첫 엔진 점화 성공</div>
+                <span class="ms-card-reward">RP +50</span>
+                <div class="ms-card-date">달성: D+07</div>
+              </div>
+
+              <div class="ms-card card-complete" onclick="showMilestoneModal('1km-club')">
+                <div class="ms-card-name">1km Club</div>
+                <div class="ms-card-cond">고도 1km 돌파</div>
+                <span class="ms-card-reward">RP +75</span>
+                <div class="ms-card-date">달성: D+07</div>
+              </div>
+
+              <div class="ms-card card-complete" onclick="showMilestoneModal('boundary-pusher')">
+                <div class="ms-card-name">Boundary Pusher</div>
+                <div class="ms-card-cond">고도 10km 돌파</div>
+                <span class="ms-card-reward">RP +100 · 철광석 자동화 해금</span>
+                <div class="ms-card-date">달성: D+14</div>
+              </div>
+
+              <div class="ms-card card-complete" onclick="showMilestoneModal('stratosphere')">
+                <div class="ms-card-name">Stratosphere</div>
+                <div class="ms-card-cond">고도 20km (성층권)</div>
+                <span class="ms-card-reward">RP +150</span>
+                <div class="ms-card-date">달성: D+18</div>
+              </div>
+
+              <div class="ms-card card-complete" onclick="showMilestoneModal('felix-line')">
+                <div class="ms-card-name">Felix Line</div>
+                <div class="ms-card-cond">고도 39km (펠릭스 라인)</div>
+                <span class="ms-card-reward">RP +200 · VAB Lv.2 해금</span>
+                <div class="ms-card-date">달성: D+25</div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Phase 2 Block -->
+          <div class="ms-grid-phase-block">
+            <div class="ms-grid-phase-header">
+              <span class="ms-grid-phase-title amber">PHASE 2: 준궤도 에라</span>
+              <span class="ms-grid-phase-count">2 / 5 진행 중</span>
+            </div>
+            <div class="ms-grid-cards">
+
+              <div class="ms-card card-complete" onclick="showMilestoneModal('mesosphere')">
+                <div class="ms-card-name">Mesosphere Entry</div>
+                <div class="ms-card-cond">고도 50km (중간권)</div>
+                <span class="ms-card-reward">RP +300</span>
+                <div class="ms-card-date">달성: D+35</div>
+              </div>
+
+              <div class="ms-card card-complete" onclick="showMilestoneModal('weather-eye')">
+                <div class="ms-card-name">Weather Eye</div>
+                <div class="ms-card-cond">200km 준성공 인정</div>
+                <span class="ms-card-reward">RP +250</span>
+                <div class="ms-card-date">달성: D+35</div>
+              </div>
+
+              <div class="ms-card card-next" onclick="showMilestoneModal('karman-line')">
+                <div class="ms-card-name">Kármán Line</div>
+                <div class="ms-card-cond">고도 정확히 100km 돌파</div>
+                <span class="ms-card-reward">RP +500</span>
+                <div class="ms-card-progress">
+                  <div class="ms-card-bar">
+                    <div class="ms-card-bar-fill" style="width: 89.4%;"></div>
+                  </div>
+                  <div class="ms-card-bar-label">89.4 / 100km</div>
+                </div>
+              </div>
+
+              <div class="ms-card card-available" onclick="showMilestoneModal('tourist-alt')">
+                <div class="ms-card-name">Tourist Altitude</div>
+                <div class="ms-card-cond">고도 120km (우주관광 고도)</div>
+                <span class="ms-card-reward">RP +400</span>
+              </div>
+
+              <div class="ms-card card-available" onclick="showMilestoneModal('suborbital-return')">
+                <div class="ms-card-name">Suborbital Return</div>
+                <div class="ms-card-cond">준궤도 비행 후 회수 성공</div>
+                <span class="ms-card-reward">RP +600</span>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Phase 3 Block -->
+          <div class="ms-grid-phase-block">
+            <div class="ms-grid-phase-header">
+              <span class="ms-grid-phase-title locked">PHASE 3: 궤도 에라</span>
+              <span class="ms-grid-phase-count">0 / 5 잠금</span>
+            </div>
+            <div class="ms-grid-cards">
+              <div class="ms-card card-locked"><div class="ms-card-name">First Orbit</div><div class="ms-card-cond">LEO 궤도 진입 성공</div><span class="ms-card-reward">RP +1000</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Orbital Decay</div><div class="ms-card-cond">궤도 유지 3회전</div><span class="ms-card-reward">RP +800</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Deorbit Master</div><div class="ms-card-cond">정밀 재진입 및 회수</div><span class="ms-card-reward">RP +1200</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Payload Delivery</div><div class="ms-card-cond">위성 탑재체 LEO 투입</div><span class="ms-card-reward">RP +1500</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Rendezvous</div><div class="ms-card-cond">궤도 랑데부 성공</div><span class="ms-card-reward">RP +2000</span></div>
+            </div>
+          </div>
+
+          <!-- Phase 4 Block -->
+          <div class="ms-grid-phase-block">
+            <div class="ms-grid-phase-header">
+              <span class="ms-grid-phase-title locked">PHASE 4: 시스루나 에라</span>
+              <span class="ms-grid-phase-count">0 / 5 잠금</span>
+            </div>
+            <div class="ms-grid-cards">
+              <div class="ms-card card-locked"><div class="ms-card-name">Lunar Transfer</div><div class="ms-card-cond">달 전이 궤도 진입</div><span class="ms-card-reward">RP +3000</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Lunar Flyby</div><div class="ms-card-cond">달 플라이바이 완료</div><span class="ms-card-reward">RP +3500</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Lunar Orbit</div><div class="ms-card-cond">달 궤도 진입 및 유지</div><span class="ms-card-reward">RP +5000</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Far Side</div><div class="ms-card-cond">달 뒷면 탐사</div><span class="ms-card-reward">RP +4000</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Cislunar Return</div><div class="ms-card-cond">지구-달 왕복 성공</div><span class="ms-card-reward">RP +6000</span></div>
+            </div>
+          </div>
+
+          <!-- Phase 5 Block -->
+          <div class="ms-grid-phase-block">
+            <div class="ms-grid-phase-header">
+              <span class="ms-grid-phase-title locked">PHASE 5: 달 표면 에라</span>
+              <span class="ms-grid-phase-count">0 / 5 잠금</span>
+            </div>
+            <div class="ms-grid-cards">
+              <div class="ms-card card-locked"><div class="ms-card-name">Touchdown</div><div class="ms-card-cond">달 착륙 성공</div><span class="ms-card-reward">RP +10000</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Surface Sample</div><div class="ms-card-cond">달 표면 샘플 채취</div><span class="ms-card-reward">RP +8000</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">ISRU Pioneer</div><div class="ms-card-cond">현지 자원 활용 성공</div><span class="ms-card-reward">RP +12000</span></div>
+              <div class="ms-card card-locked"><div class="ms-card-name">Lunar Base Alpha</div><div class="ms-card-cond">달 기지 건설 완료</div><span class="ms-card-reward">RP +20000</span></div>
+              <div class="ms-card card-locked" style="border-color: #1a3a20;"><div class="ms-card-name" style="color: #2a5c35; letter-spacing: 2px;">인류의 도약</div><div class="ms-card-cond" style="color: #1a3a20;">달 정착지 운용 개시 — 최종</div><span class="ms-card-reward" style="border-color: #1a3a20; color: #2a5c35;">RP +50000</span></div>
+            </div>
+          </div>
+
+        </div><!-- milestone-grid-scroll -->
+      </div><!-- subscreen-milestones -->
+
+      <!-- ======================================================
+           SUB-SCREEN: 업적
+      ====================================================== -->
+      <div class="sub-screen" id="subscreen-achievements">
+        <div id="achievement-scroll">
+
+          <!-- Earned -->
+          <div class="ach-card earned" onclick="showAchModal('learn-from-failure')">
+            <div class="ach-icon">🏆</div>
+            <div class="ach-body">
+              <div class="ach-name">"실패에서 배운다"</div>
+              <div class="ach-desc">5번 실패 후 첫 준성공 — 포기하지 않는 자에게 주어지는 훈장</div>
+              <div class="ach-date">달성: D+35</div>
+            </div>
+          </div>
+
+          <div class="ach-card earned" onclick="showAchModal('stratosphere-conqueror')">
+            <div class="ach-icon">🏆</div>
+            <div class="ach-body">
+              <div class="ach-name">"성층권 정복자"</div>
+              <div class="ach-desc">Felix Line 39km 달성 — 성층권 너머를 바라본 개척자</div>
+              <div class="ach-date">달성: D+25</div>
+            </div>
+          </div>
+
+          <div class="ach-card earned" onclick="showAchModal('data-collector')">
+            <div class="ach-icon">🏆</div>
+            <div class="ach-body">
+              <div class="ach-name">"데이터 수집가"</div>
+              <div class="ach-desc">발사 데이터 10 units 획득 — 모든 실패는 데이터다</div>
+              <div class="ach-date">달성: D+40</div>
+            </div>
+          </div>
+
+          <!-- Locked -->
+          <div class="ach-card locked" onclick="showAchModal('karman-club')">
+            <div class="ach-icon" style="font-size: 20px; opacity: 0.4;">☆</div>
+            <div class="ach-body">
+              <div class="ach-name">"카르만 클럽"</div>
+              <div class="ach-desc">100km 달성 — 공식적으로 우주에 도달하다</div>
+              <div class="ach-date">미달성 — 진행: 89.4 / 100km</div>
+            </div>
+          </div>
+
+          <div class="ach-card locked">
+            <div class="ach-icon" style="font-size: 20px; opacity: 0.4;">☆</div>
+            <div class="ach-body">
+              <div class="ach-name">"궤도 엔지니어"</div>
+              <div class="ach-desc">첫 LEO 궤도 달성</div>
+              <div class="ach-date">미달성 — Phase 3 필요</div>
+            </div>
+          </div>
+
+          <div class="ach-card locked">
+            <div class="ach-icon" style="font-size: 20px; opacity: 0.4;">☆</div>
+            <div class="ach-body">
+              <div class="ach-name">"달 여행자"</div>
+              <div class="ach-desc">달 궤도 진입 달성</div>
+              <div class="ach-date">미달성 — Phase 4 필요</div>
+            </div>
+          </div>
+
+          <div class="ach-card locked" style="border-color: #1a3a20; grid-column: 1 / -1;">
+            <div class="ach-icon" style="font-size: 24px; opacity: 0.35;">☆</div>
+            <div class="ach-body">
+              <div class="ach-name" style="font-size: 14px; letter-spacing: 3px; color: #2a5c35;">"인류의 도약"</div>
+              <div class="ach-desc" style="color: #1a3a20;">달 착륙 성공 — 게임 최종 업적. 인류 역사의 페이지를 바꾸다.</div>
+              <div class="ach-date" style="color: #1a3a20;">미달성 — Phase 5 달성 필요</div>
+            </div>
+          </div>
+
+        </div><!-- achievement-scroll -->
+      </div><!-- subscreen-achievements -->
+
+      <!-- ======================================================
+           SUB-SCREEN: 프레스티지
+      ====================================================== -->
+      <div class="sub-screen" id="subscreen-prestige">
+        <div id="prestige-content">
+
+          <!-- Header Card -->
+          <div class="prestige-header-card">
+            <div>
+              <div class="prestige-title">새 발사 시즌</div>
+              <div class="prestige-subtitle">PRESTIGE SYSTEM — 새로운 시즌으로 더 강해지다</div>
+            </div>
+            <div class="prestige-season-badge">SEASON 1</div>
+          </div>
+
+          <!-- Blocked Notice -->
+          <div class="prestige-blocked-notice">
+            <span class="notice-icon">⚠</span>
+            <div>
+              <div>프레스티지 잠금 — 다음 조건 미달성</div>
+              <div class="prestige-blocked-cond">▶ 카르만선 100km 달성 필요 (현재 89.4km)</div>
+            </div>
+          </div>
+
+          <!-- Reset vs Keep -->
+          <div class="prestige-two-col">
+            <div class="prestige-list-card">
+              <div class="prestige-list-header reset-header">
+                ✗ 프레스티지 시 초기화
+              </div>
+              <ul class="prestige-list-body reset-list">
+                <li>모든 자원 (광물, 추진제 등)</li>
+                <li>생산 시설 (광산, 정제소 등)</li>
+                <li>로켓 부품 재고</li>
+                <li>현재 자금 (₩2,847,000)</li>
+                <li>조립 진행 상황</li>
+                <li>자동화 관리자 슬롯 (재구매 필요)</li>
+              </ul>
+            </div>
+            <div class="prestige-list-card">
+              <div class="prestige-list-header keep-header">
+                ✓ 프레스티지 시 보존
+              </div>
+              <ul class="prestige-list-body keep-list">
+                <li>기술 트리 전체 (연구 완료 항목)</li>
+                <li>발사 데이터 (현재 수집량 유지)</li>
+                <li>명성 포인트 (RP)</li>
+                <li>마일스톤 달성 기록</li>
+                <li>업적 보관함</li>
+                <li>프레스티지 보너스 트리 선택</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Star Tree -->
+          <div class="star-tree-card">
+            <div class="star-tree-header">
+              ☆ 프레스티지 보너스 트리 — Season 1 (미선택)
+            </div>
+            <div class="star-tree-body">
+              <div class="star-slot">
+                <span class="slot-icon">☆</span>
+                <span class="slot-label">SLOT 1</span>
+              </div>
+              <div class="star-connector"></div>
+              <div class="star-slot">
+                <span class="slot-icon">☆</span>
+                <span class="slot-label">SLOT 2</span>
+              </div>
+              <div class="star-connector"></div>
+              <div class="star-slot">
+                <span class="slot-icon">☆</span>
+                <span class="slot-label">SLOT 3</span>
+              </div>
+              <div class="star-connector"></div>
+              <div class="star-slot">
+                <span class="slot-icon">☆</span>
+                <span class="slot-label">SLOT 4</span>
+              </div>
+              <div class="star-connector"></div>
+              <div class="star-slot">
+                <span class="slot-icon">☆</span>
+                <span class="slot-label">SLOT 5</span>
+              </div>
+            </div>
+            <div style="padding: 0 16px 12px; font-size: 9px; color: #1a3a20; letter-spacing: 1.5px; text-align: center;">
+              카르만선 달성 후 첫 프레스티지 시 보너스 선택 가능
+            </div>
+          </div>
+
+          <!-- Season History -->
+          <div class="prestige-history-card">
+            <div class="history-header">발사 시즌 기록</div>
+            <div class="history-row">
+              <span class="h-season">SEASON 1</span>
+              <span class="h-start">시작: D+00 (현재 진행 중)</span>
+              <span class="h-status">진행 중</span>
+            </div>
+          </div>
+
+        </div><!-- prestige-content -->
+      </div><!-- subscreen-prestige -->
+
+    </div><!-- screen-mission -->
+
+  </div><!-- content-area -->
+
+</div><!-- main-wrapper -->
+
+<!-- ============================================================
+     MODAL
+============================================================ -->
+<div id="modal-overlay" onclick="closeModal(event)">
+  <div id="modal-box">
+    <div id="modal-header">
+      <span id="modal-title">MILESTONE DETAIL</span>
+      <button id="modal-close" onclick="closeModalBtn()">[ CLOSE ]</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+  // ============================================================
+  //   CLOCK
+  // ============================================================
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const s = String(now.getSeconds()).padStart(2,'0');
+    const el = document.getElementById('clock');
+    // preserve cursor blink element
+    el.childNodes[0].textContent = `${h}:${m}:${s} `;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ============================================================
+  //   MAIN TAB SWITCHING
+  // ============================================================
+  function switchMainTab(tabId) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+    event.currentTarget.classList.add('active');
+    const screen = document.getElementById('screen-' + tabId);
+    if (screen) {
+      screen.classList.add('active');
+      if (tabId === 'mission') screen.style.display = 'flex';
+    }
+  }
+
+  // ============================================================
+  //   SUB-TAB SWITCHING
+  // ============================================================
+  function switchSubTab(subId) {
+    document.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sub-screen').forEach(s => s.classList.remove('active'));
+
+    event.currentTarget.classList.add('active');
+    event.currentTarget.textContent = event.currentTarget.textContent.replace('○','●');
+    document.querySelectorAll('.sub-tab').forEach(t => {
+      if (!t.classList.contains('active')) {
+        t.textContent = t.textContent.replace('●','○');
+      }
+    });
+
+    const ss = document.getElementById('subscreen-' + subId);
+    if (ss) ss.classList.add('active');
+  }
+
+  // ============================================================
+  //   MILESTONE DATA
+  // ============================================================
+  const milestoneData = {
+    'first-ignition': {
+      name: 'First Ignition',
+      phase: 'Phase 1: 프로토타입 에라',
+      condition: '첫 엔진 점화 성공',
+      status: 'COMPLETE',
+      date: 'D+07',
+      reward: 'RP +50',
+      desc: '최초의 엔진 점화. 모든 위대한 여정의 첫 불꽃.'
+    },
+    '1km-club': {
+      name: '1km Club',
+      phase: 'Phase 1: 프로토타입 에라',
+      condition: '고도 1km 돌파',
+      status: 'COMPLETE',
+      date: 'D+07',
+      reward: 'RP +75',
+      desc: '지상 1km. 작지만 의미있는 첫 번째 고도 기록.'
+    },
+    'boundary-pusher': {
+      name: 'Boundary Pusher',
+      phase: 'Phase 1: 프로토타입 에라',
+      condition: '고도 10km 돌파',
+      status: 'COMPLETE',
+      date: 'D+14',
+      reward: 'RP +100 + 철광석 자동화 해금',
+      desc: '대류권과 성층권의 경계. 민간 항공기의 순항 고도를 돌파했다.'
+    },
+    'stratosphere': {
+      name: 'Stratosphere',
+      phase: 'Phase 1: 프로토타입 에라',
+      condition: '고도 20km 돌파',
+      status: 'COMPLETE',
+      date: 'D+18',
+      reward: 'RP +150',
+      desc: '성층권 깊숙이. 오존층이 여기 있다.'
+    },
+    'felix-line': {
+      name: 'Felix Line',
+      phase: 'Phase 1: 프로토타입 에라',
+      condition: '고도 39km 돌파 (펠릭스 라인)',
+      status: 'COMPLETE',
+      date: 'D+25',
+      reward: 'RP +200 + VAB Lv.2 해금',
+      desc: 'Felix Baumgartner가 스카이다이빙한 고도. 지구의 곡률이 보이기 시작한다.'
+    },
+    'mesosphere': {
+      name: 'Mesosphere Entry',
+      phase: 'Phase 2: 준궤도 에라',
+      condition: '고도 50km 돌파',
+      status: 'COMPLETE',
+      date: 'D+35',
+      reward: 'RP +300',
+      desc: '중간권 진입. 대기권의 중간 지점을 돌파했다.'
+    },
+    'weather-eye': {
+      name: 'Weather Eye',
+      phase: 'Phase 2: 준궤도 에라',
+      condition: '200km 궤도 준성공 인정',
+      status: 'COMPLETE',
+      date: 'D+35',
+      reward: 'RP +250',
+      desc: '기상 위성 고도까지 도달하는 궤적 달성. 준성공으로 인정.'
+    },
+    'karman-line': {
+      name: 'Kármán Line',
+      phase: 'Phase 2: 준궤도 에라',
+      condition: '고도 정확히 100km 돌파',
+      status: 'IN PROGRESS — 89.4 / 100km',
+      date: '미달성',
+      reward: 'RP +500',
+      desc: '국제 항공 연맹이 정의한 우주의 공식 경계선. 이 선을 넘으면 공식적으로 우주 비행사.'
+    },
+    'tourist-alt': {
+      name: 'Tourist Altitude',
+      phase: 'Phase 2: 준궤도 에라',
+      condition: '고도 120km 달성',
+      status: 'LOCKED — 카르만선 달성 후 해금',
+      date: '미달성',
+      reward: 'RP +400',
+      desc: 'Blue Origin의 우주 관광 고도. 카르만선을 넘어야 도전 가능.'
+    },
+    'suborbital-return': {
+      name: 'Suborbital Return',
+      phase: 'Phase 2: 준궤도 에라',
+      condition: '준궤도 비행 후 회수 성공',
+      status: 'LOCKED',
+      date: '미달성',
+      reward: 'RP +600',
+      desc: '발사한 로켓을 온전히 회수하는 것. 재사용 로켓의 첫 걸음.'
+    }
+  };
+
+  // ============================================================
+  //   MILESTONE MODAL
+  // ============================================================
+  function showMilestoneModal(id) {
+    const d = milestoneData[id];
+    if (!d) return;
+
+    const isComplete = d.status === 'COMPLETE';
+    const isInProgress = d.status.startsWith('IN PROGRESS');
+
+    document.getElementById('modal-title').textContent = '// MILESTONE: ' + d.name.toUpperCase();
+
+    const statusColor = isComplete ? 'var(--green)' : isInProgress ? 'var(--amber)' : 'var(--locked-text)';
+
+    document.getElementById('modal-body').innerHTML = `
+      <div class="modal-field">
+        <div class="modal-field-label">PHASE</div>
+        <div class="modal-field-value">${d.phase}</div>
+      </div>
+      <hr class="modal-divider">
+      <div class="modal-field">
+        <div class="modal-field-label">달성 조건</div>
+        <div class="modal-field-value">${d.condition}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">상태</div>
+        <div class="modal-field-value" style="color: ${statusColor}; text-shadow: ${isComplete ? 'var(--glow)' : isInProgress ? 'var(--glow-amber)' : 'none'};">${d.status}</div>
+      </div>
+      ${isComplete ? `<div class="modal-field"><div class="modal-field-label">달성일</div><div class="modal-field-value amber">${d.date}</div></div>` : ''}
+      <hr class="modal-divider">
+      <div class="modal-field">
+        <div class="modal-field-label">보상</div>
+        <div class="modal-field-value amber">${d.reward}</div>
+      </div>
+      <hr class="modal-divider">
+      <div class="modal-field">
+        <div class="modal-field-label">설명</div>
+        <div class="modal-field-value" style="color: var(--green-mid); line-height: 1.7;">${d.desc}</div>
+      </div>
+    `;
+
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  // ============================================================
+  //   PHASE MODAL
+  // ============================================================
+  const phaseData = {
+    1: {
+      name: 'Phase 1: 프로토타입 에라',
+      status: 'COMPLETE',
+      period: 'D+07 ~ D+35',
+      maxAlt: '39km (Felix Line)',
+      bonuses: ['구조 강도 +10%', '기초 연구속도 +5%'],
+      milestones: '5 / 5',
+      notes: '프로토타입 로켓으로 성층권 돌파에 성공한 에라. 모든 기초 기술의 토대가 마련되었다.'
+    },
+    2: {
+      name: 'Phase 2: 준궤도 에라',
+      status: 'IN PROGRESS (60%)',
+      period: 'D+35 ~ 진행 중',
+      maxAlt: '89.4km (목표: 100km)',
+      bonuses: ['미완료 — 카르만선 달성 시 해금 예정'],
+      milestones: '2 / 5',
+      notes: '카르만선 100km 돌파를 목표로 하는 에라. 89.4km 준성공을 달성했으나 아직 공식 우주 경계를 넘지 못했다.'
+    },
+    3: {
+      name: 'Phase 3: 궤도 에라',
+      status: 'LOCKED',
+      period: '미진입',
+      maxAlt: '—',
+      bonuses: ['잠금 해제 후 확인 가능'],
+      milestones: '0 / 5',
+      notes: '진입 조건: 카르만선 100km + 터보펌프 사이클 연구 + ₩50,000,000'
+    },
+    4: {
+      name: 'Phase 4: 시스루나 에라',
+      status: 'LOCKED',
+      period: '미진입',
+      maxAlt: '—',
+      bonuses: ['잠금 해제 후 확인 가능'],
+      milestones: '0 / 5',
+      notes: '진입 조건: Phase 3 완료 + 달 궤적 계산 기술 + 명성 500'
+    },
+    5: {
+      name: 'Phase 5: 달 표면 에라',
+      status: 'LOCKED',
+      period: '미진입',
+      maxAlt: '—',
+      bonuses: ['잠금 해제 후 확인 가능'],
+      milestones: '0 / 5',
+      notes: '진입 조건: Phase 4 완료 + ISRU 기초 기술. 게임의 최종 목표.'
+    }
+  };
+
+  function showPhaseModal(id) {
+    const d = phaseData[id];
+    if (!d) return;
+
+    const isComplete = d.status === 'COMPLETE';
+    const isInProgress = d.status.startsWith('IN PROGRESS');
+    const statusColor = isComplete ? 'var(--green)' : isInProgress ? 'var(--amber)' : 'var(--locked-text)';
+
+    document.getElementById('modal-title').textContent = '// ' + d.name.toUpperCase();
+    document.getElementById('modal-body').innerHTML = `
+      <div class="modal-field">
+        <div class="modal-field-label">상태</div>
+        <div class="modal-field-value" style="color: ${statusColor}">${d.status}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">기간</div>
+        <div class="modal-field-value">${d.period}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">최고 고도</div>
+        <div class="modal-field-value amber">${d.maxAlt}</div>
+      </div>
+      <hr class="modal-divider">
+      <div class="modal-field">
+        <div class="modal-field-label">마일스톤</div>
+        <div class="modal-field-value">${d.milestones}</div>
+      </div>
+      <div class="modal-field">
+        <div class="modal-field-label">에라 보너스</div>
+        <div class="modal-field-value" style="color: var(--green-mid);">${d.bonuses.join('<br>')}</div>
+      </div>
+      <hr class="modal-divider">
+      <div class="modal-field">
+        <div class="modal-field-label">설명</div>
+        <div class="modal-field-value" style="color: var(--green-mid); line-height: 1.7;">${d.notes}</div>
+      </div>
+    `;
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  // ============================================================
+  //   ACHIEVEMENT MODAL
+  // ============================================================
+  function showAchModal(id) {
+    // Simple acknowledgement modal
+    document.getElementById('modal-title').textContent = '// ACHIEVEMENT DETAIL';
+    document.getElementById('modal-body').innerHTML = `
+      <div class="modal-field">
+        <div class="modal-field-label">상태</div>
+        <div class="modal-field-value" style="color: var(--amber); text-shadow: var(--glow-amber);">ACHIEVEMENT DATA LOADED</div>
+      </div>
+    `;
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  // ============================================================
+  //   MODAL CLOSE
+  // ============================================================
+  function closeModal(e) {
+    if (e.target === document.getElementById('modal-overlay')) {
+      document.getElementById('modal-overlay').classList.remove('open');
+    }
+  }
+
+  function closeModalBtn() {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+
+  // ============================================================
+  //   PHASE TIMELINE TOOLTIP (hover)
+  // ============================================================
+  document.querySelectorAll('.phase-node').forEach(node => {
+    node.addEventListener('mouseenter', () => {
+      node.querySelector('.phase-dot').style.transform = 'scale(1.12)';
+    });
+    node.addEventListener('mouseleave', () => {
+      node.querySelector('.phase-dot').style.transform = '';
+    });
+  });
+
+  // ============================================================
+  //   PROGRESS BAR ANIMATION ON LOAD
+  // ============================================================
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.querySelectorAll('.progress-fill').forEach(bar => {
+        const target = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(() => { bar.style.width = target; }, 100);
+      });
+    }, 300);
+  });
+</script>
+</body>
+</html>
