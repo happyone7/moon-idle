@@ -22,7 +22,7 @@ Use this skill when multiple agents work in parallel and only QA-passed branches
 Use:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/agent-workflow/setup-agent-worktrees.ps1 -SprintBranch sprint/1
+powershell -ExecutionPolicy Bypass -File scripts/agent-workflow/setup-agent-worktrees.ps1 -SprintBranch sprint/1 -WorktreeRoot ..\worktrees
 ```
 
 ## QA Gate Merge
@@ -32,7 +32,7 @@ Only merge to sprint after QA report has PASS marker.
 Use:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts/agent-workflow/qa-merge-gate.ps1 -SprintBranch sprint/1 -DevBranch dev/programmer -QaReportPath qa/dev-programmer.txt
+powershell -ExecutionPolicy Bypass -File scripts/agent-workflow/qa-merge-gate.ps1 -SprintBranch sprint/1 -DevBranch dev/programmer -QaReportPath qa/dev-programmer.txt -AllowUntracked
 ```
 
 ## QA Report Format

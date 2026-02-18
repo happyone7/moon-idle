@@ -4,10 +4,12 @@ param(
   [string]$DevBranch,
   [string]$QaReportPath,
   [string]$RequireMarker = "QA_RESULT=PASS",
+  [switch]$AllowUntracked,
   [switch]$Push
 )
 
 $ErrorActionPreference = "Stop"
+$PSNativeCommandUseErrorActionPreference = $false
 
 if (-not $SprintBranch -or -not $DevBranch -or -not $QaReportPath) {
   throw "Required: -SprintBranch -DevBranch -QaReportPath"
@@ -15,7 +17,11 @@ if (-not $SprintBranch -or -not $DevBranch -or -not $QaReportPath) {
 
 git -C $RepoRoot rev-parse --is-inside-work-tree | Out-Null
 
-$dirty = git -C $RepoRoot status --porcelain
+$statusArgs = @("status", "--porcelain")
+if ($AllowUntracked) {
+  $statusArgs += "--untracked-files=no"
+}
+$dirty = git -C $RepoRoot @statusArgs
 if ($dirty) {
   throw "Working tree is not clean. Commit/stash-like changes are not allowed for merge gate."
 }
@@ -31,13 +37,13 @@ if ($qaText -notmatch [regex]::Escape($RequireMarker)) {
 
 git -C $RepoRoot fetch --all --prune
 
-$sprintExists = git -C $RepoRoot rev-parse --verify $SprintBranch 2>$null
-if (-not $sprintExists) {
+git -C $RepoRoot show-ref --verify --quiet ("refs/heads/" + $SprintBranch)
+if ($LASTEXITCODE -ne 0) {
   throw "Sprint branch not found: $SprintBranch"
 }
 
-$devExists = git -C $RepoRoot rev-parse --verify $DevBranch 2>$null
-if (-not $devExists) {
+git -C $RepoRoot show-ref --verify --quiet ("refs/heads/" + $DevBranch)
+if ($LASTEXITCODE -ne 0) {
   throw "Dev branch not found: $DevBranch"
 }
 
