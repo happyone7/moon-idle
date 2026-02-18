@@ -6,7 +6,16 @@
 <title>MOON IDLE — 달 탐사 로켓 제작소</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-  /* ===== DESIGN TOKENS ===== */
+  /* ===== DESIGN TOKENS (v7a 목업 기준 색상 시스템) =====
+   *  --bg         #010800  배경 (거의 검정)
+   *  --panel-bg   #020d04  패널 배경
+   *  --green      #00e676  메인 그린: 활성 텍스트·테두리·버튼·건물 기본색
+   *  --green-dim  #1a5c34  어두운 그린: 비활성 테두리·섹션 헤더·스크롤바
+   *  --green-mid  #00994d  중간 그린: 서브 텍스트·생산 레이트·시스템 메시지
+   *  --amber      #ffab00  앰버: 돈(money)·경고·에너지·프레스티지
+   *  --red        #ff1744  레드: 에러·크리티컬·자원 부족
+   *  --white      #c8ffd4  밝은 그린-화이트: 강조 텍스트·건물명·헤더 수치
+   * ===================================================== */
   :root {
     --bg: #010800;
     --panel-bg: #020d04;
@@ -15,6 +24,7 @@
     --green-mid: #00994d;
     --amber: #ffab00;
     --red: #ff1744;
+    --white: #c8ffd4;
     --font: 'Share Tech Mono', monospace;
     --border: 1px solid #1a5c34;
     --glow: 0 0 6px #00e67680;
@@ -195,6 +205,15 @@
   .title-btn.primary {
     border-color: var(--green);
     text-shadow: var(--glow);
+  }
+
+  @keyframes title-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; pointer-events: none; }
+  }
+  .fade-out {
+    animation: title-fade-out 0.8s ease forwards;
+    pointer-events: none;
   }
 
   /* ===========================
@@ -1555,7 +1574,7 @@
     padding: 7px 12px;
     font-size: 14px;
     border-bottom: 1px solid #1a5c34;
-    color: #c8ffd4;
+    color: var(--white);
   }
   .bov-row { padding: 4px 12px; color: #00994d; font-size: 12px; }
   .bov-row span { color: #00e676; }
@@ -1761,10 +1780,12 @@
     <div class="bov-hd" id="bov-hd">건물명</div>
     <div class="bov-row" id="bov-cnt"></div>
     <div class="bov-row" id="bov-prod"></div>
+    <div class="bov-row" id="bov-workers" style="display:none"></div>
     <div class="bov-row" id="bov-cost"></div>
     <div class="bov-sep"></div>
+    <div class="bov-btns" id="bov-worker-btns" style="display:none;gap:4px;padding:4px 10px 2px;"></div>
     <div class="bov-btns">
-      <button class="bov-btn" id="bov-buy">[ 구매 ]</button>
+      <button class="bov-btn" id="bov-buy">[ 건물 추가 ]</button>
       <button class="bov-btn" onclick="closeBldOv()">[닫기]</button>
     </div>
   </div>

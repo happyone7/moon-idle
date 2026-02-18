@@ -47,6 +47,23 @@ function renderUnlocks() {
 
 
 // ============================================================
+//  AUTO UNLOCK (tick마다 호출 — 조건 달성 시 자동 해금)
+// ============================================================
+function checkAutoUnlocks() {
+  let changed = false;
+
+  // 연구소 구매 → 연구 탭 해금
+  if (!gs.unlocks.tab_research && (gs.buildings.research_lab || 0) >= 1) {
+    gs.unlocks.tab_research = true;
+    changed = true;
+    notify('[ 연구소 완공 ] 연구 탭 해금!', 'amber');
+  }
+
+  if (changed) renderUnlocks();
+}
+
+
+// ============================================================
 //  NOTIFICATIONS
 // ============================================================
 function notify(msg, type='') {

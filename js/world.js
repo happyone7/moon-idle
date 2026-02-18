@@ -57,24 +57,47 @@ function openBldOv(bld, el) {
 
   // Production rate line
   let prodLine = '';
+  const assigned = (gs.assignments && gs.assignments[bld.id]) || 0;
   if (bld.produces !== 'bonus') {
-    const prod = getProduction();
-    const rate = bld.baseRate * cnt * (prodMult[bld.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
-    prodLine = `${bld.produces} +${fmtDec(rate, 2)}/s`;
+    const rate = bld.baseRate * assigned * (prodMult[bld.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    prodLine = assigned > 0 ? `${bld.produces} +${fmtDec(rate, 2)}/s` : '인원 미배치';
   } else {
     prodLine = bld.id === 'solar_array' ? `전체 생산 +${cnt * 10}%` : `발사 슬롯 +${cnt}`;
   }
 
   const ovEl = document.getElementById('bld-ov');
   if (!ovEl) return;
+
   document.getElementById('bov-hd').textContent = `${bld.icon} ${bld.name}  ×${cnt}`;
   document.getElementById('bov-cnt').innerHTML = `설명: <span>${bld.desc}</span>`;
   document.getElementById('bov-prod').innerHTML = `생산: <span>${prodLine}</span>`;
-  document.getElementById('bov-cost').innerHTML = `비용: <span style="color:${affordable ? '#00e676' : '#ff1744'}">${costStr}</span>`;
+  document.getElementById('bov-cost').innerHTML = `비용: <span style="color:${affordable ? 'var(--green)' : 'var(--red)'}">${costStr}</span>`;
+
+  // Worker assignment row (생산 건물만)
+  const workerRow = document.getElementById('bov-workers');
+  if (workerRow && bld.produces !== 'bonus') {
+    const avail = getAvailableWorkers();
+    workerRow.style.display = 'block';
+    workerRow.innerHTML = `인원: <span>${assigned}명 배치 (여유 ${avail}명)</span>`;
+  } else if (workerRow) {
+    workerRow.style.display = 'none';
+  }
+
+  // Worker assignment buttons
+  const wBtns = document.getElementById('bov-worker-btns');
+  if (wBtns && bld.produces !== 'bonus') {
+    const avail = getAvailableWorkers();
+    wBtns.style.display = 'flex';
+    wBtns.innerHTML = `
+      <button class="bov-btn${avail <= 0 ? ' disabled' : ''}" onclick="assignWorker('${bld.id}')">+ 배치</button>
+      <button class="bov-btn amber${assigned <= 0 ? ' disabled' : ''}" onclick="unassignWorker('${bld.id}')">- 철수</button>`;
+  } else if (wBtns) {
+    wBtns.style.display = 'none';
+  }
 
   const buyBtn = document.getElementById('bov-buy');
   if (buyBtn) {
-    buyBtn.textContent = affordable ? '[ 구매 ]' : '[ 자원 부족 ]';
+    buyBtn.textContent = affordable ? '[ 건물 추가 ]' : '[ 자원 부족 ]';
     buyBtn.className = affordable ? 'bov-btn' : 'bov-btn disabled';
     buyBtn.onclick = () => { buyBuilding(bld.id); };
   }
@@ -92,6 +115,38 @@ function openBldOv(bld, el) {
   ovEl.style.display = 'block';
 }
 
+// ─── WORKER ASSIGNMENT ───────────────────────────────────────
+function assignWorker(bldId) {
+  if (!gs.assignments) gs.assignments = {};
+  const bld = BUILDINGS.find(b => b.id === bldId);
+  if (!bld) return;
+  const cnt = gs.buildings[bldId] || 0;
+  const assigned = gs.assignments[bldId] || 0;
+  if (cnt === 0) { notify('건물이 없습니다', 'red'); return; }
+  if (getAvailableWorkers() <= 0) { notify('여유 인원 없음', 'red'); return; }
+  if (assigned >= cnt) { notify('건물 수용 한도 초과', 'amber'); return; }
+  gs.assignments[bldId] = assigned + 1;
+  notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
+  // 오버레이 갱신
+  const el = document.querySelector('.world-building.' + bld.wbClass);
+  if (el) openBldOv(bld, el);
+  renderAll();
+}
+
+function unassignWorker(bldId) {
+  if (!gs.assignments || !gs.assignments[bldId]) { notify('배치된 인원 없음', 'amber'); return; }
+  const bld = BUILDINGS.find(b => b.id === bldId);
+  gs.assignments[bldId] = Math.max(0, gs.assignments[bldId] - 1);
+  if (gs.assignments[bldId] === 0) delete gs.assignments[bldId];
+  if (bld) notify(`${bld.icon} ${bld.name} — 인원 철수`);
+  // 오버레이 갱신
+  if (bld) {
+    const el = document.querySelector('.world-building.' + bld.wbClass);
+    if (el) openBldOv(bld, el);
+  }
+  renderAll();
+}
+
 function scheduleBldOvClose() {
   _bldOvTimer = setTimeout(() => {
     const ov = document.getElementById('bld-ov');
@@ -105,28 +160,36 @@ function closeBldOv() {
 }
 
 // ─── DRAG SCROLL INIT ────────────────────────────────────────
+// document 레벨에서 이벤트 캡처 — #app(z-index:10)이 world-bg(z-index:1)를 덮는 문제 우회
 function initWorldDrag() {
   const wb = document.getElementById('world-bg');
   if (!wb) return;
   let drag = false, dragX = 0, dragSL = 0;
-  wb.addEventListener('mousedown', e => {
+
+  document.addEventListener('mousedown', e => {
+    const r = wb.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
     if (e.target.closest('.world-building')) return;
     drag = true;
     dragX = e.pageX - wb.offsetLeft;
     dragSL = wb.scrollLeft;
     wb.style.cursor = 'grabbing';
   });
+
   document.addEventListener('mouseup', () => {
     drag = false;
     if (wb) wb.style.cursor = 'grab';
   });
-  wb.addEventListener('mousemove', e => {
+
+  document.addEventListener('mousemove', e => {
     if (!drag) return;
     e.preventDefault();
     wb.scrollLeft = dragSL - (e.pageX - wb.offsetLeft - dragX) * 1.3;
   });
+
   // Close overlay on escape
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBldOv(); });
+
   // Overlay hover: keep open
   const bldOv = document.getElementById('bld-ov');
   if (bldOv) {
