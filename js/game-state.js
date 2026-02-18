@@ -3,7 +3,8 @@
 // ============================================================
 let gs = {
   res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
+  buildings: { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0, housing:0 },
+  bldLevels: {},   // { buildingId: upgradeCount }
   workers: 1,          // 총 인원
   assignments: {},     // { buildingId: workerCount }
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
@@ -33,6 +34,7 @@ let gs = {
     bld_r_and_d: false,
     bld_solar_array: false,
     bld_launch_pad: false,
+    bld_housing: true,  // 주거 시설 처음부터 해금
   },
 };
 let prodMult = {};
@@ -93,6 +95,40 @@ function ensureAssemblyState() {
   if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
 }
 
+// ─── BUILDING LEVEL SYSTEM ─────────────────────────────────
+function getBldLevel(bid) {
+  return (gs.bldLevels && gs.bldLevels[bid]) || 0;
+}
+
+function getBldProdMult(bid) {
+  return 1 + getBldLevel(bid) * 0.5;  // Lv0=1× Lv1=1.5× Lv2=2× ...
+}
+
+function getBldUpgradeCost(bid) {
+  const lv = getBldLevel(bid);
+  return {
+    money: Math.floor(300 * Math.pow(2.0, lv)),
+    metal: Math.floor(80 * Math.pow(1.6, lv)),
+  };
+}
+
+function upgBuilding(bid) {
+  const bld = BUILDINGS.find(b => b.id === bid);
+  if (!bld) return;
+  if ((gs.buildings[bid] || 0) === 0) { notify('건물 없음', 'red'); return; }
+  const cost = getBldUpgradeCost(bid);
+  if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
+  spend(cost);
+  if (!gs.bldLevels) gs.bldLevels = {};
+  gs.bldLevels[bid] = (gs.bldLevels[bid] || 0) + 1;
+  notify(`${bld.icon} ${bld.name} Lv.${gs.bldLevels[bid] + 1} 업그레이드 완료`);
+  playSfx('triangle', 520, 0.1, 0.04, 780);
+  // 오버레이 갱신
+  const el = document.querySelector('.world-bld[data-bid="' + bid + '"]');
+  if (el) openBldOv(bld, el);
+  renderAll();
+}
+
 function getMoonstoneMult() { return 1 + gs.moonstone * 0.05; }
 
 function getSolarBonus() { return 1 + gs.buildings.solar_array * 0.1; }
@@ -128,7 +164,7 @@ function getProduction() {
     // 생산량은 배치된 인원(assignments) 기반
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
     if (assigned === 0) return;
-    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id);
     prod[b.produces] += rate;
   });
   return prod;
@@ -268,6 +304,7 @@ function loadGame() {
     gs.assembly = saved.assembly || { selectedQuality:'proto', jobs:[] };
     gs.settings = saved.settings || { sound: true };
     gs.lastTick = saved.lastTick || Date.now();
+    gs.bldLevels = saved.bldLevels || {};
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
@@ -288,6 +325,7 @@ function loadGame() {
       bld_r_and_d: false,
       bld_solar_array: false,
       bld_launch_pad: false,
+      bld_housing: true,
     };
     gs.unlocks = Object.assign({}, defaultUnlocks, saved.unlocks || {});
 

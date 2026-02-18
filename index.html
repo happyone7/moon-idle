@@ -351,6 +351,37 @@ body::after {
 .ts { color: var(--green-dim); margin: 0 20px; }
 
 /* ===========================
+   ASCII WORLD BUILDINGS
+   =========================== */
+.world-bld {
+  position: absolute;
+  bottom: 0;
+  font-family: var(--font);
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--green-dim);
+  white-space: pre;
+  cursor: pointer;
+  user-select: none;
+  padding: 0;
+  text-shadow: 0 0 4px rgba(0,230,118,0.25);
+  transition: color 0.12s, text-shadow 0.12s;
+}
+.world-bld:hover { color: var(--green); text-shadow: 0 0 8px #00e67680; }
+.world-bld.active-bld { color: var(--green); text-shadow: 0 0 8px #00e67680; }
+
+/* Worker dots */
+.wkr {
+  position: absolute;
+  color: var(--green);
+  font-size: 11px;
+  line-height: 1;
+  text-shadow: 0 0 5px var(--green);
+  bottom: 6px;
+  pointer-events: none;
+}
+
+/* ===========================
    BUILDING HOVER OVERLAY
    =========================== */
 #bld-ov {
@@ -543,6 +574,18 @@ body::after {
     </div>
   </div>
 
+  <!-- ══ NAV TABS (topbar 바로 아래) ══ -->
+  <div id="nav-tabs">
+    <button class="nav-tab active" id="nav-tab-production" data-tab="production">생산 허브</button>
+    <button class="nav-tab" id="nav-tab-research" data-tab="research">연구소</button>
+    <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" style="display:none">조립동</button>
+    <button class="nav-tab" id="nav-tab-launch" data-tab="launch" style="display:none">발사 통제</button>
+    <button class="nav-tab" id="nav-tab-mission" data-tab="mission" style="display:none">미션 현황</button>
+  </div>
+
+  <!-- ══ OFFLINE BANNER ══ -->
+  <div id="offline-banner"></div>
+
   <!-- ══ MAIN ROW ══ -->
   <div id="main">
 
@@ -565,18 +608,6 @@ body::after {
           <div id="workers-layer"></div>
         </div>
       </div>
-
-      <!-- NAV TABS -->
-      <div id="nav-tabs">
-        <button class="nav-tab active" id="nav-tab-production" data-tab="production">생산 허브</button>
-        <button class="nav-tab" id="nav-tab-research" data-tab="research">연구소</button>
-        <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" style="display:none">조립동</button>
-        <button class="nav-tab" id="nav-tab-launch" data-tab="launch" style="display:none">발사 통제</button>
-        <button class="nav-tab" id="nav-tab-mission" data-tab="mission" style="display:none">미션 현황</button>
-      </div>
-
-      <!-- OFFLINE BANNER -->
-      <div id="offline-banner"></div>
 
       <!-- TAB CONTENT AREA -->
       <div id="tab-area">
@@ -749,10 +780,13 @@ body::after {
   <div class="bov-row" id="bov-prod"></div>
   <div class="bov-row" id="bov-workers" style="display:none"></div>
   <div class="bov-row" id="bov-cost"></div>
+  <div class="bov-row" id="bov-level" style="display:none"></div>
+  <div class="bov-row" id="bov-upg-cost" style="display:none"></div>
   <div class="bov-sep"></div>
   <div class="bov-btns" id="bov-worker-btns" style="display:none;gap:4px;padding:4px 10px 2px;"></div>
   <div class="bov-btns">
     <button class="bov-btn" id="bov-buy">[ 건물 추가 ]</button>
+    <button class="bov-btn amber" id="bov-upg" style="display:none">[ 업그레이드 ]</button>
     <button class="bov-btn" onclick="closeBldOv()">[닫기]</button>
   </div>
 </div>

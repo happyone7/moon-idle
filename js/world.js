@@ -1,11 +1,112 @@
 // ============================================================
-//  WORLD BACKGROUND — js/world.js
+//  WORLD — js/world.js
 // ============================================================
 const WORLD_POSITIONS = {
-  research_lab: 60,  r_and_d: 220,    ops_center: 420,  supply_depot: 600,
-  mine: 820,         extractor: 960,   refinery: 1150,   cryo_plant: 1320,
-  elec_lab: 1530,    fab_plant: 1700,  solar_array: 1880, launch_pad: 2100,
+  housing: 30,      research_lab: 240, r_and_d: 410,
+  ops_center: 590,  supply_depot: 780, mine: 990,
+  extractor: 1130,  refinery: 1320,   cryo_plant: 1500,
+  elec_lab: 1700,   fab_plant: 1870,  solar_array: 2060,
+  launch_pad: 2270,
 };
+
+// ─── ASCII BUILDING ART ─────────────────────────────────────
+function _bldAscii(bld) {
+  switch (bld.wbClass) {
+
+    case 'wb-housing':
+      return (
+        '╔═══════════╗\n' +
+        '║  HOUSING  ║\n' +
+        '║ □□ □□ □□  ║\n' +
+        '║ □□ □□ □□  ║\n' +
+        '╚═══════════╝\n' +
+        '  █████████'
+      );
+
+    case 'wb-ops': {
+      const lbl = bld.id === 'ops_center' ? 'OPS CTR  ' : 'SUPPLY D ';
+      return (
+        '╔══════════╗\n' +
+        '║ ' + lbl + '║\n' +
+        '║ ■□■□■□■  ║\n' +
+        '║ □■□■□■□  ║\n' +
+        '╚══════════╝\n' +
+        '  ████████'
+      );
+    }
+
+    case 'wb-mine':
+      return (
+        '     ╔═══╗\n' +
+        '     ║ ▓ ║\n' +
+        '╔════╩═══╩════╗\n' +
+        '║   ▒▒▒▒▒▒▒   ║\n' +
+        '╚═════════════╝\n' +
+        '    ███████████'
+      );
+
+    case 'wb-refinery':
+      return (
+        ' ╔═╗  ╔══╗\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ╚═╝  ╚══╝\n' +
+        '███████████'
+      );
+
+    case 'wb-eleclab':
+      return (
+        '╔══════════╗\n' +
+        '║ PCB  LAB ║\n' +
+        '║▒░▒░▒░▒░▒║\n' +
+        '║░▒░▒░▒░▒░║\n' +
+        '╚══════════╝\n' +
+        '  ████████'
+      );
+
+    case 'wb-research':
+      return (
+        '╔════════════╗\n' +
+        '║  RESEARCH  ║\n' +
+        '║ ■□■□■□■□   ║\n' +
+        '║ □■□■□■□■   ║\n' +
+        '╠════════════╣\n' +
+        '╚════════════╝\n' +
+        '   ██████████'
+      );
+
+    case 'wb-solar':
+      return (
+        ' ╔╗    ╔╗\n' +
+        ' ╠╣    ╠╣\n' +
+        ' ╚╝    ╚╝\n' +
+        '  │     │\n' +
+        '  │     │\n' +
+        ' ████████'
+      );
+
+    case 'wb-launchpad':
+      return (
+        '      /▲\\\n' +
+        '     / ▓ \\\n' +
+        '    /  ▓  \\\n' +
+        '   ╔═══════╗\n' +
+        '   ║ [PAD] ║\n' +
+        '──╚═════════╝──'
+      );
+
+    default: {
+      const ic = (bld.icon || '[??]').slice(0, 5).padEnd(5);
+      return (
+        '╔═══════╗\n' +
+        '║ ' + ic + ' ║\n' +
+        '╚═══════╝\n' +
+        '  █████'
+      );
+    }
+  }
+}
 
 function updateWorldBuildings() {
   const layer = document.getElementById('buildings-layer');
@@ -14,34 +115,15 @@ function updateWorldBuildings() {
   BUILDINGS.forEach(b => {
     if ((gs.buildings[b.id] || 0) === 0) return;
     const x = WORLD_POSITIONS[b.id] || 100;
-    const div = document.createElement('div');
-    div.className = 'world-building ' + b.wbClass;
-    div.style.left = x + 'px';
+    const pre = document.createElement('pre');
+    pre.className = 'world-bld';
+    pre.dataset.bid = b.id;
+    pre.style.left = x + 'px';
+    pre.textContent = _bldAscii(b);
 
-    if (b.wbClass === 'wb-refinery') {
-      div.innerHTML = '<div class="refinery-tank tall"></div><div class="refinery-tank short"></div>';
-    } else if (b.wbClass === 'wb-research') {
-      div.innerHTML = '<div class="research-windows">'
-        + Array(8).fill(0).map((_, i) => `<div class="research-win${i % 3 === 0 ? ' lit' : ''}"></div>`).join('')
-        + '</div>';
-    } else if (b.wbClass === 'wb-ops') {
-      div.innerHTML = '<div class="ops-windows">'
-        + Array(10).fill(0).map((_, i) => `<div class="ops-win${i % 2 === 0 ? ' lit' : ''}"></div>`).join('')
-        + '</div><div class="ops-sign"></div>';
-    } else if (b.wbClass === 'wb-mine') {
-      div.innerHTML = '<div class="mine-light"></div><div class="conveyor"></div>';
-    } else if (b.wbClass === 'wb-solar') {
-      const count = Math.min(gs.buildings[b.id], 5);
-      div.innerHTML = Array(count).fill(0).map(() => '<div class="solar-pole"></div><div class="solar-panel"></div>').join('');
-    } else if (b.wbClass === 'wb-launchpad') {
-      div.innerHTML = '<div class="lp-gantry"></div><div class="lp-rocket"></div><div class="lp-base"></div>';
-    }
-
-    // Hover events for building overlay
-    div.addEventListener('mouseenter', () => openBldOv(b, div));
-    div.addEventListener('mouseleave', () => scheduleBldOvClose());
-
-    layer.appendChild(div);
+    pre.addEventListener('mouseenter', () => openBldOv(b, pre));
+    pre.addEventListener('mouseleave', () => scheduleBldOvClose());
+    layer.appendChild(pre);
   });
 }
 
@@ -59,10 +141,16 @@ function openBldOv(bld, el) {
   let prodLine = '';
   const assigned = (gs.assignments && gs.assignments[bld.id]) || 0;
   if (bld.produces !== 'bonus') {
-    const rate = bld.baseRate * assigned * (prodMult[bld.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    const rate = bld.baseRate * assigned * (prodMult[bld.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id);
     prodLine = assigned > 0 ? `${bld.produces} +${fmtDec(rate, 2)}/s` : '인원 미배치';
+  } else if (bld.id === 'solar_array') {
+    prodLine = `전체 생산 +${cnt * 10}%`;
+  } else if (bld.id === 'launch_pad') {
+    prodLine = `발사 슬롯 +${cnt}`;
+  } else if (bld.id === 'housing') {
+    prodLine = `인원 +${cnt}명 확보됨`;
   } else {
-    prodLine = bld.id === 'solar_array' ? `전체 생산 +${cnt * 10}%` : `발사 슬롯 +${cnt}`;
+    prodLine = bld.desc;
   }
 
   const ovEl = document.getElementById('bld-ov');
@@ -71,7 +159,7 @@ function openBldOv(bld, el) {
   document.getElementById('bov-hd').textContent = `${bld.icon} ${bld.name}  ×${cnt}`;
   document.getElementById('bov-cnt').innerHTML = `설명: <span>${bld.desc}</span>`;
   document.getElementById('bov-prod').innerHTML = `생산: <span>${prodLine}</span>`;
-  document.getElementById('bov-cost').innerHTML = `비용: <span style="color:${affordable ? 'var(--green)' : 'var(--red)'}">${costStr}</span>`;
+  document.getElementById('bov-cost').innerHTML = `다음 건설: <span style="color:${affordable ? 'var(--green)' : 'var(--red)'}">${costStr}</span>`;
 
   // Worker assignment row (생산 건물만)
   const workerRow = document.getElementById('bov-workers');
@@ -83,14 +171,42 @@ function openBldOv(bld, el) {
     workerRow.style.display = 'none';
   }
 
-  // Worker assignment buttons
+  // Building level + upgrade (생산 건물이 1개 이상 있을 때만)
+  const lvRow = document.getElementById('bov-level');
+  const upgCostRow = document.getElementById('bov-upg-cost');
+  const upgBtn = document.getElementById('bov-upg');
+  if (cnt > 0 && bld.produces !== 'bonus') {
+    const lv = getBldLevel(bld.id);
+    const mult = getBldProdMult(bld.id);
+    if (lvRow) {
+      lvRow.style.display = 'block';
+      lvRow.innerHTML = `레벨: <span>Lv.${lv + 1}  (+${Math.round((mult - 1) * 100)}% 생산)</span>`;
+    }
+    const upgCost = getBldUpgradeCost(bld.id);
+    const upgAfford = canAfford(upgCost);
+    if (upgCostRow) {
+      upgCostRow.style.display = 'block';
+      upgCostRow.innerHTML = `업그레이드: <span style="color:${upgAfford ? 'var(--green)' : 'var(--red)'}">${getCostStr(upgCost)}</span>`;
+    }
+    if (upgBtn) {
+      upgBtn.style.display = '';
+      upgBtn.className = 'bov-btn amber' + (upgAfford ? '' : ' disabled');
+      upgBtn.onclick = () => upgBuilding(bld.id);
+    }
+  } else {
+    if (lvRow) lvRow.style.display = 'none';
+    if (upgCostRow) upgCostRow.style.display = 'none';
+    if (upgBtn) upgBtn.style.display = 'none';
+  }
+
+  // Worker assignment buttons (생산 건물만)
   const wBtns = document.getElementById('bov-worker-btns');
   if (wBtns && bld.produces !== 'bonus') {
     const avail = getAvailableWorkers();
     wBtns.style.display = 'flex';
-    wBtns.innerHTML = `
-      <button class="bov-btn${avail <= 0 ? ' disabled' : ''}" onclick="assignWorker('${bld.id}')">+ 배치</button>
-      <button class="bov-btn amber${assigned <= 0 ? ' disabled' : ''}" onclick="unassignWorker('${bld.id}')">- 철수</button>`;
+    wBtns.innerHTML =
+      `<button class="bov-btn${avail <= 0 ? ' disabled' : ''}" onclick="assignWorker('${bld.id}')">+ 배치</button>` +
+      `<button class="bov-btn amber${assigned <= 0 ? ' disabled' : ''}" onclick="unassignWorker('${bld.id}')">- 철수</button>`;
   } else if (wBtns) {
     wBtns.style.display = 'none';
   }
@@ -102,9 +218,9 @@ function openBldOv(bld, el) {
     buyBtn.onclick = () => { buyBuilding(bld.id); };
   }
 
-  // Position overlay above the building
+  // Position overlay above building
   const r = el.getBoundingClientRect();
-  const ovW = 280, ovH = 160;
+  const ovW = 290, ovH = 220;
   let lx = r.left - 10;
   let ty = r.top - ovH - 8;
   if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
@@ -127,9 +243,8 @@ function assignWorker(bldId) {
   if (assigned >= cnt) { notify('건물 수용 한도 초과', 'amber'); return; }
   gs.assignments[bldId] = assigned + 1;
   notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
-  // 오버레이 갱신
-  const el = document.querySelector('.world-building.' + bld.wbClass);
-  if (el) openBldOv(bld, el);
+  const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+  if (pre) openBldOv(bld, pre);
   renderAll();
 }
 
@@ -139,10 +254,9 @@ function unassignWorker(bldId) {
   gs.assignments[bldId] = Math.max(0, gs.assignments[bldId] - 1);
   if (gs.assignments[bldId] === 0) delete gs.assignments[bldId];
   if (bld) notify(`${bld.icon} ${bld.name} — 인원 철수`);
-  // 오버레이 갱신
   if (bld) {
-    const el = document.querySelector('.world-building.' + bld.wbClass);
-    if (el) openBldOv(bld, el);
+    const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+    if (pre) openBldOv(bld, pre);
   }
   renderAll();
 }
@@ -159,8 +273,43 @@ function closeBldOv() {
   if (ov) ov.style.display = 'none';
 }
 
+// ─── WORKER DOTS ─────────────────────────────────────────────
+let _workerDots = [];
+
+function syncWorkerDots() {
+  const layer = document.getElementById('workers-layer');
+  if (!layer) return;
+  const total = gs.workers || 1;
+
+  // Remove excess dots
+  while (_workerDots.length > total) {
+    const d = _workerDots.pop();
+    if (d.el && d.el.parentNode) d.el.parentNode.removeChild(d.el);
+  }
+
+  // Add missing dots
+  while (_workerDots.length < total) {
+    const el = document.createElement('span');
+    el.className = 'wkr';
+    el.textContent = '●';
+    const x = 80 + Math.random() * 2600;
+    el.style.left = Math.round(x) + 'px';
+    layer.appendChild(el);
+    const spd = 0.2 + Math.random() * 0.4;
+    _workerDots.push({ el, x, vx: Math.random() < 0.5 ? spd : -spd });
+  }
+}
+
+function _tickWorkers() {
+  _workerDots.forEach(d => {
+    d.x += d.vx;
+    if (d.x < 20)   { d.x = 20;   d.vx =  Math.abs(d.vx) * (0.85 + Math.random() * 0.3); }
+    if (d.x > 3100) { d.x = 3100; d.vx = -Math.abs(d.vx) * (0.85 + Math.random() * 0.3); }
+    d.el.style.left = Math.round(d.x) + 'px';
+  });
+}
+
 // ─── DRAG SCROLL INIT ────────────────────────────────────────
-// document 레벨에서 이벤트 캡처 — #app(z-index:10)이 world-bg(z-index:1)를 덮는 문제 우회
 function initWorldDrag() {
   const wb = document.getElementById('world-bg');
   if (!wb) return;
@@ -169,7 +318,7 @@ function initWorldDrag() {
   document.addEventListener('mousedown', e => {
     const r = wb.getBoundingClientRect();
     if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
-    if (e.target.closest('.world-building')) return;
+    if (e.target.closest('.world-bld')) return;
     drag = true;
     dragX = e.pageX - wb.offsetLeft;
     dragSL = wb.scrollLeft;
@@ -187,13 +336,15 @@ function initWorldDrag() {
     wb.scrollLeft = dragSL - (e.pageX - wb.offsetLeft - dragX) * 1.3;
   });
 
-  // Close overlay on escape
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBldOv(); });
 
-  // Overlay hover: keep open
   const bldOv = document.getElementById('bld-ov');
   if (bldOv) {
     bldOv.addEventListener('mouseenter', () => clearTimeout(_bldOvTimer));
     bldOv.addEventListener('mouseleave', closeBldOv);
   }
+
+  // Worker dot animation loop
+  setInterval(_tickWorkers, 80);
+  syncWorkerDots();
 }
