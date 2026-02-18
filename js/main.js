@@ -18,17 +18,37 @@ function switchMainTab(tabId) {
 // ============================================================
 function renderResources() {
   const prod = getProduction();
-  let html = '';
-  RESOURCES.forEach(r => {
-    const rate = prod[r.id] || 0;
-    const rateStr = rate > 0.001 ? ` <span class="rate">(+${fmtDec(rate, 1)}/s)</span>` : '';
-    html += `<div class="res-cell" style="color:${r.color}">${r.symbol}: <strong>${fmt(gs.res[r.id] || 0)}</strong>${rateStr}</div>`;
-  });
-  if (gs.moonstone > 0) {
-    html += `<div class="res-cell ms" id="ms-display" style="color:var(--amber)">MS: <strong>${gs.moonstone}</strong></div>`;
+
+  // Left panel update
+  const rlInner = document.getElementById('rl-inner');
+  if (rlInner) {
+    const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
+    let html = '';
+    RESOURCES.forEach(r => {
+      const val = gs.res[r.id] || 0;
+      const rate = prod[r.id] || 0;
+      const max = RES_MAX[r.id] || 10000;
+      const pct = Math.min(100, (val / max) * 100);
+      const isAmber = r.id === 'money';
+      html += `<div class="rl-item">
+        <div class="rl-label">${r.symbol} ${r.name}</div>
+        <div class="rl-val" style="color:${r.color}">${fmt(val)}</div>
+        ${rate > 0.001 ? `<div class="rl-rate">+${fmtDec(rate, 2)}/s</div>` : ''}
+        <div class="rl-bar"><div class="rl-bar-fill${isAmber ? ' amber' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
+      </div>`;
+    });
+    rlInner.innerHTML = html;
   }
-  const el = document.getElementById('res-bar-inner');
-  if (el) el.innerHTML = html;
+  const rlMs = document.getElementById('rl-ms-box');
+  if (rlMs) {
+    if (gs.moonstone > 0) {
+      rlMs.innerHTML = `<div class="rl-ms-row"><div class="rl-ms-label">&#9670; MOONSTONE</div><div class="rl-ms-val">${gs.moonstone}</div></div>`;
+    } else {
+      rlMs.innerHTML = '';
+    }
+  }
+
+  // Update sound button
   const sndBtn = document.getElementById('sound-btn');
   if (sndBtn) {
     sndBtn.textContent = gs.settings.sound ? 'SND:ON' : 'SND:OFF';
@@ -120,6 +140,12 @@ function enterGame() {
     if (ts) ts.style.display = 'none';
     const app = document.getElementById('app');
     if (app) app.classList.add('visible');
+    const rl = document.getElementById('res-left');
+    if (rl) rl.classList.add('visible');
+    if (typeof initWorldDrag === 'function') initWorldDrag();
+    if (typeof BGM !== 'undefined' && gs.settings.sound) {
+      setTimeout(() => BGM.start(0), 1200);
+    }
     calcOffline();
     renderUnlocks();
     renderAll();
@@ -132,6 +158,10 @@ function enterGame() {
 
 function toggleSound() {
   gs.settings.sound = !gs.settings.sound;
+  if (typeof BGM !== 'undefined') {
+    if (gs.settings.sound) BGM.start();
+    else BGM.stop();
+  }
   const btn = document.getElementById('sound-btn');
   if (btn) btn.textContent = gs.settings.sound ? 'SND:ON' : 'SND:OFF';
   saveGame();
