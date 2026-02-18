@@ -18,6 +18,7 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 - web-accessibility-uiux: WCAG-oriented web game accessibility and UX quality checks. (file: .agent/skills/web-accessibility-uiux/SKILL.md)
 - telemetry-analytics: Event/metric taxonomy, dashboards, and balancing analytics workflow. (file: .agent/skills/telemetry-analytics/SKILL.md)
 - web-to-exe-steam-deploy: Package a web game to Windows EXE and upload builds to SteamPipe. (file: .agent/skills/web-to-exe-steam-deploy/SKILL.md)
+- web-agent-worktree-qa-flow: Multi-agent git worktree setup and QA-pass merge gate workflow for web projects. (file: .agent/skills/web-agent-worktree-qa-flow/SKILL.md)
 - moonidle-agent-skill-standards: Quality standards for creating/modifying agents and skills. (file: .claude/skills/moonidle-agent-skill-standards/SKILL.md)
 - moonidle-build-deploy: Build/deploy workflow for Unity + SteamCMD pipelines. (file: .claude/skills/moonidle-build-deploy/SKILL.md)
 - moonidle-dev-protocol: Team development protocol (git rules, prefab/scene ownership). (file: .claude/skills/moonidle-dev-protocol/SKILL.md)
