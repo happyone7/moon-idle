@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle Mockup - Xenon Works</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700;800&family=Michroma&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#060714;
+      --panel:#11122acc;
+      --panel2:#1c1f3fcc;
+      --line:#a67bff;
+      --line2:#5ff4ea;
+      --txt:#ecf1ff;
+      --muted:#bdc6e7;
+      --ok:#4ff1a6;
+      --warn:#ffbb54;
+      --bad:#ff727d;
+      --frame:url("./assets/moonidle_panel_frame.svg");
+      --frameAlt:url("./assets/moonidle_panel_border_dark.svg");
+      --btn-primary:url("./assets/moonidle_btn_primary.svg");
+      --btn-secondary:url("./assets/moonidle_btn_secondary.svg");
+      --btn-warn:url("./assets/moonidle_btn_warn.svg");
+    }
+    *{box-sizing:border-box}
+    html,body{min-height:100%;}
+    body{margin:0;font-family:"Lexend","Malgun Gothic",sans-serif;color:var(--txt);overflow-x:hidden;background:var(--bg)}
+
+    .nebula{position:fixed;inset:0;z-index:-3;background:
+      radial-gradient(circle at 8% 8%,#a77fff45,transparent 52%),
+      radial-gradient(circle at 90% 25%,#5cfff15a,transparent 42%),
+      radial-gradient(circle at 52% 118%,#3b7cff53,transparent 45%),
+      linear-gradient(170deg,#060915 0,#08112a 48%,#04080f 100%);
+    }
+    .nebula::before{content:"";position:absolute;inset:0;background:
+      linear-gradient(#fff2 1px,transparent 1px),linear-gradient(90deg,#fff2 1px,transparent 1px);background-size:56px 56px;opacity:.1;animation:tileDrift 44s linear infinite}
+
+    .grain{position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.06;background:repeating-linear-gradient(0deg,#fff1 0 1px,transparent 1px 4px);mix-blend-mode:screen;animation:flicker .13s steps(2,end) infinite}
+    .scan{position:fixed;inset:0;z-index:-2;pointer-events:none;background:linear-gradient(180deg,transparent 48%,#66f7ff17 50%,transparent 52%);transform:translateY(-100%);animation:scan 8s linear infinite}
+
+    .scene{max-width:1460px;margin:0 auto;padding:14px}
+    .hudTop{display:flex;justify-content:space-between;align-items:center;border:1px solid #98a0ff58;border-radius:16px;padding:10px 12px;background:linear-gradient(180deg,#1d2346e3,#13193be5),var(--frame);background-size:250px 250px,cover;box-shadow:inset 0 1px 0 #fff3,0 12px 26px #0009}
+    .hudTop h1{margin:0;font-family:"Michroma",sans-serif;letter-spacing:1.3px;font-size:1.15rem;color:#f4f6ff;text-transform:uppercase}
+    .hudTop .sub{font-size:.76rem;color:var(--muted)}
+    .badge{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .badge span{font-size:.74rem;border:1px solid #a5a4ff50;border-radius:999px;padding:4px 9px;background:#8f90df1a}
+    .badge .danger{border-color:#ff9ea5;color:#ffd6db;background:#ff687a22}
+
+    .layout{margin-top:12px;display:grid;grid-template-columns:318px 1.1fr 388px;gap:10px}
+    .panel{border:1px solid #8c92ff48;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,var(--panel),var(--panel2)),var(--frameAlt);background-size:cover,220px 220px;box-shadow:0 8px 24px #0009,inset 0 1px 0 #fff4;position:relative}
+
+    .panelHeader{display:flex;justify-content:space-between;align-items:center;padding:10px 11px 8px;border-bottom:1px solid #ffffff20;font-family:"Michroma",sans-serif;letter-spacing:.7px;font-size:.8rem;color:#95e0ff}
+    .panelHeader small{font-size:.63rem;color:var(--muted)}
+
+    .leftCol{padding:10px;display:grid;gap:8px}
+    .tile{border:1px solid #ffffff22;border-radius:10px;padding:8px;background:#ffffff0a}
+    .tile .line{display:flex;justify-content:space-between;gap:10px}
+    .tile .name{font-size:.79rem}
+    .tile .val{font-family:"Michroma",sans-serif;font-size:.9rem}
+    .tile .meta{font-size:.7rem;color:var(--muted);margin-top:3px}
+
+    .center{min-height:690px}
+    .hero{position:relative;height:252px;border-bottom:1px solid #a9a4ff35;overflow:hidden}
+    .hero::before{content:"";position:absolute;inset:0;background:
+      linear-gradient(180deg, #0f1d49d6 0, #101d50d2 54%, #07112dd4 100%),
+      url("./assets/moonidle_hangar_bg_lab_xenon.svg") center/cover no-repeat;
+      filter:saturate(.7) contrast(1.12) brightness(.5);
+    }
+    .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(130deg,transparent,#09153d 45%,transparent)}
+    .heroInner{position:absolute;left:12px;right:12px;bottom:12px;z-index:2;padding:10px;border-left:3px solid var(--line2);background:linear-gradient(90deg,#11234acc 0,transparent 100%)}
+    .heroInner h2{margin:0 0 4px;font-family:"Michroma",sans-serif;font-size:1.18rem;letter-spacing:.8px}
+    .heroInner p{margin:0;font-size:.8rem;line-height:1.42;color:#d5e2ff}
+
+    .activity{margin:10px;border:1px solid #8c8eff2a;border-radius:10px;padding:8px;background:#0d1334a8}
+    .activity li{list-style:none;font-size:.77rem;margin-bottom:4px;color:#dce7ff}
+
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:0 10px}
+    .stat{border:1px solid #ffffff2b;border-radius:10px;padding:8px;background:linear-gradient(180deg,#fff1 0,#fff0 100%)}
+    .stat b{display:block;font-family:"Michroma",sans-serif;color:#9df7ff;font-size:.98rem}
+    .stat span{color:var(--muted);font-size:.65rem}
+
+    .nodes{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+    .node{border:1px solid #fff4;background:#ffffff08;border-radius:10px;padding:8px;display:flex;flex-direction:column;justify-content:space-between;min-height:124px}
+    .node h3{margin:0 0 4px;font-size:.84rem;font-family:"Michroma",sans-serif}
+    .node p{font-size:.72rem;color:var(--muted);line-height:1.38;}
+    .node .btn{margin-top:8px;border:none;border-radius:8px;padding:7px 8px;background:var(--btn-primary);background-size:100% 100%;background-repeat:no-repeat;background-position:center;font-family:inherit;color:#fff;text-align:left;cursor:pointer}
+    .node .btn.alt{background:var(--btn-secondary)}
+    .node .btn.warn{background:var(--btn-warn)}
+
+    .right{display:grid;grid-template-rows:auto auto 1fr auto auto;gap:8px}
+    .status{margin:10px;border:1px solid #ffffff23;border-radius:10px;padding:9px;background:#ffffff06}
+    .status .r{display:flex;justify-content:space-between;font-size:.8rem}
+    .status .r + .r{margin-top:5px}
+
+    .slots{padding:0 10px}
+    .slot{padding:8px;border:1px solid #ffffff28;border-radius:10px;background:#ffffff08;margin-bottom:8px;position:relative;overflow:hidden}
+    .slot::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#97f9f51a,transparent 45%);opacity:0;transition:.2s}
+    .slot.active::after{opacity:1}
+    .slot .r{display:flex;justify-content:space-between;font-size:.8rem}
+    .meter{height:6px;border-radius:999px;background:#ffffff17;margin-top:6px;overflow:hidden}
+    .meter .bar{height:100%;width:55%;background:linear-gradient(90deg,var(--line2),var(--warn));animation:meterPulse 2.8s ease-in-out infinite}
+    .miniCam{margin:0 10px;border:1px solid #ffffff22;border-radius:10px;height:132px;background:url("./assets/moonidle_cam_feed_lab_xenon.svg") center/cover no-repeat;filter:brightness(.56) contrast(1.08);position:relative}
+    .miniCam:after{content:"XENO CAM // LAB DECK";position:absolute;left:8px;top:8px;color:#d2e7ff;font-size:.72rem;font-family:"Michroma",sans-serif}
+
+    .audio{margin:0 10px;border:1px solid #ffffff26;border-radius:10px;padding:8px;background:#ffffff08}
+    .audio label{font-size:.72rem;color:var(--muted);display:block;margin-bottom:4px}
+    audio{width:100%;height:28px}
+    .startBtn{margin:0 10px 8px;border:0;border-radius:10px;padding:11px 12px;font-family:"Michroma",sans-serif;letter-spacing:.7px;background:var(--btn-warn);background-size:100% 100%;background-repeat:no-repeat;background-position:center;width:calc(100% - 20px);color:#fff;}
+
+    .footerNote{margin:0 10px 0;padding:7px 8px;border:1px dashed #b08bff44;border-radius:8px;color:#c6d5ff;background:#ffffff05;font-size:.67rem}
+    .footerNote strong{color:#d6b8ff}
+
+    @media (max-width:1180px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.nodes{grid-template-columns:1fr}}
+    @media (max-width:760px){.hudTop{flex-direction:column;align-items:flex-start}.hudTop h1{font-size:1.02rem}}
+
+    @keyframes tileDrift{0%{background-position:0 0,0 0}100%{background-position:56px 56px,-56px -56px}}
+    @keyframes flicker{0%,90%{opacity:.04}92%,94%{opacity:.08}100%{opacity:.03}}
+    @keyframes scan{to{transform:translateY(100%)}}
+    @keyframes meterPulse{0%{width:44%}50%{width:64%}100%{width:55%}}
+  </style>
+</head>
+<body>
+  <div class="nebula"></div>
+  <div class="scan"></div>
+  <div class="grain"></div>
+
+  <main class="scene">
+    <section class="hudTop">
+      <div>
+        <h1>MoonIdle // Xenon Works</h1>
+        <div class="sub">우주연구소 시뮬레이션형 인터페이스 · 게임화된 미션 전개</div>
+      </div>
+      <div class="badge">
+        <span>Moonstone 126</span><span>운영일 03:18</span><span class="danger">오차율 4.7%</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <aside class="panel">
+        <div class="panelHeader">RESOURCE ARRAY <small>생산 버스</small></div>
+        <div class="leftCol">
+          <div class="tile">
+            <div class="line"><span class="name">Moonstone</span><span class="val">2.41M</span></div>
+            <div class="meta"><span>+15.8K/s</span><span>Mine Cluster A-12</span></div>
+          </div>
+          <div class="tile">
+            <div class="line"><span class="name">액체 산소</span><span class="val">802K</span></div>
+            <div class="meta"><span>+8.7K/s</span><span>냉각 정제 라인</span></div>
+          </div>
+          <div class="tile">
+            <div class="line"><span class="name">연료 촉매제</span><span class="val">193K</span></div>
+            <div class="meta"><span>+2.6K/s</span><span>엔진 라인 B</span></div>
+          </div>
+          <div class="tile">
+            <div class="line"><span class="name">컴퓨팅</span><span class="val">101K</span></div>
+            <div class="meta"><span>+1.2K/s</span><span>오토파일럿 팜</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="panel center">
+        <div class="panelHeader">MISSION DECK <small>발사 미션 제어 / 과학 실험</small></div>
+        <div class="hero">
+          <div class="heroInner">
+            <h2>재사용형 궤도 플랫폼 설계</h2>
+            <p>초기 발사체를 1~2시간 내로 제작해 바로 실전 배치하고, 성공률이 높아질수록 대기열 슬롯과 로켓 품질이 기하급수적으로 성장합니다.</p>
+          </div>
+        </div>
+
+        <div class="activity">
+          <ul>
+            <li>활성화된 보정: Block-I 회수율이 44%로 증가, 비상 차단 프로토콜 적용</li>
+            <li>엔진 정비 점검에서 열 분산 효율 +12%, 가열시간 8% 감소</li>
+            <li>다음 단계 조건: 2단 가속기 연구 완료 시 페이로드 +2.4T</li>
+          </ul>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><b>9.48 km/s</b><span>Δv</span></div>
+          <div class="stat"><b>1.61</b><span>TWR</span></div>
+          <div class="stat"><b>93.1%</b><span>신뢰도</span></div>
+          <div class="stat"><b>51%</b><span>품질</span></div>
+        </div>
+
+        <div class="nodes">
+          <div class="node">
+            <div>
+              <h3>고압 산소 펌프</h3>
+              <p>점화 구간 과열 위험을 줄이고 이륙 준비 시간을 단축합니다.</p>
+            </div>
+            <button class="btn">구매: Moonstone 1.6M / 촉매 260K</button>
+          </div>
+          <div class="node">
+            <h3>AI 점검 체인</h3>
+            <p>센서 이상 징후를 자동 판정하고 조기 보수 루틴으로 실패 확률을 낮춥니다.</p>
+            <button class="btn">구매: Moonstone 180K</button>
+          </div>
+          <div class="node">
+            <h3>착륙 하우징</h3>
+            <p>충돌 흡수 구조를 강화하여 재사용 횟수와 수리 비용 효율을 개선합니다.</p>
+            <button class="btn">구매: Moonstone 90K</button>
+          </div>
+          <div class="node">
+            <h3>복합 차폐재</h3>
+            <p>온도 편차 제어와 추진선 효율을 동시에 상승시켜 안전율에 기여합니다.</p>
+            <button class="btn alt">구매: Moonstone 520K / Moonstone 72K</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <div class="panelHeader">LAUNCH CONTROL <small>슬롯 운영</small></div>
+        <div class="status">
+          <div class="r"><span>우선 과제</span><span>Moonstone Heavy</span></div>
+          <div class="r"><span>다음 발사</span><span>4h 00m</span></div>
+          <div class="r"><span>연료 보너스</span><span>+37%</span></div>
+          <div class="r"><span>안전율</span><span style="color:var(--ok)">93.1%</span></div>
+        </div>
+
+        <div class="slots">
+          <div class="slot active">
+            <div class="r"><span>슬롯 1 · Block-I</span><span class="chip" style="font-size:.64rem;border:1px solid #83e9ff38;padding:2px 8px;border-radius:999px;">진행 14m 08s</span></div>
+            <div class="meter"><div class="bar"></div></div>
+          </div>
+          <div class="slot">
+            <div class="r"><span>슬롯 2 · Moonstone Heavy</span><span style="font-size:.64rem;border:1px solid #8df6ff4a;border-radius:999px;padding:2px 8px;color:#a0f1fd">발사 대기</span></div>
+            <button class="btn">대기열 등록</button>
+          </div>
+          <div class="slot">
+            <div class="r"><span>슬롯 3</span><span style="font-size:.64rem;border:1px solid #ffffff40;border-radius:999px;padding:2px 8px;color:#b4c2e3">연구 잠금 해제 필요</span></div>
+            <button class="btn alt">설비 확장</button>
+          </div>
+        </div>
+
+        <div class="miniCam"></div>
+
+        <div class="audio">
+          <label>BGM (로컬)</label>
+          <audio controls loop>
+            <source src="./assets/moonidle_industrial_bgm_v1.wav" type="audio/wav" />
+          </audio>
+        </div>
+        <button class="startBtn">브리핑 완료 후 단계 업그레이드</button>
+        <div class="footerNote"><strong>참고:</strong> 이 시안은 게임 느낌을 강화한 목업이며, 다음 단계에서 실제 수치 연산·연결 상태·퀘스트 이벤트로 통합됩니다.</div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
+
+

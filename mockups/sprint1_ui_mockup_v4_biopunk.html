@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>MoonIdle v4 — BIOPUNK</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;800&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050d04;--p1:#0b1a09;--p2:#081405;
+  --lime:#39ff14;--limedim:#1a8a08;--limemut:#0d4404;
+  --yellow:#ffee00;--ora:#ff8c00;--red:#ff2244;
+  --txt:#b8ffaa;--mut:#3a6a30;--dim:#1a3318;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--txt);font-family:'Exo 2',sans-serif;font-size:13px;min-height:100vh;overflow-x:hidden;}
+
+/* Organic cellular background */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 80px 60px at 15% 25%,#1a3a0a11,transparent),
+    radial-gradient(ellipse 60px 80px at 75% 60%,#0a2a0811,transparent),
+    radial-gradient(ellipse 100px 50px at 45% 85%,#1a4a0a0a,transparent);
+  pointer-events:none;
+}
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;
+  background:repeating-conic-gradient(from 0deg at 50% 50%, #39ff1404 0deg 30deg, transparent 30deg 60deg);
+  background-size:80px 80px;pointer-events:none;opacity:.3;
+}
+
+.shell{position:relative;z-index:1;max-width:1500px;margin:0 auto;padding:10px 12px 24px;}
+
+/* TOP */
+.topbar{
+  background:var(--p1);
+  border:1px solid var(--limemut);
+  border-radius:20px;
+  padding:10px 18px;
+  display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 0 30px #39ff1408,inset 0 1px 0 #39ff1415;
+}
+.brand{font-size:2rem;font-weight:800;color:var(--lime);letter-spacing:2px;text-shadow:0 0 20px #39ff1488,0 0 40px #39ff1433;}
+.brand-sub{font-size:0.65rem;color:var(--mut);font-weight:300;letter-spacing:2px;margin-top:1px;}
+.top-stats{display:flex;gap:12px;}
+.stat-chip{
+  background:var(--p2);
+  border:1px solid var(--limemut);
+  border-radius:20px;
+  padding:5px 12px;
+  font-size:0.7rem;
+  display:flex;align-items:center;gap:6px;
+}
+.stat-chip .ico{font-size:0.9rem;}
+.stat-chip .val{color:var(--lime);font-weight:600;}
+.stat-chip.warn .val{color:var(--ora);}
+.stat-chip.crit .val{color:var(--red);animation:pulse 1s ease-in-out infinite;}
+
+/* RESOURCES */
+.res-row{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:8px;}
+.res{
+  background:var(--p1);
+  border:1px solid var(--limemut);
+  border-radius:12px;
+  padding:8px 9px;
+  position:relative;
+  overflow:hidden;
+  transition:border-color .2s;
+}
+.res:hover{border-color:var(--limedim);}
+.res::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,#39ff1408,transparent 60%);}
+.res.crit{border-color:#ff440033;}
+.res.crit::before{background:radial-gradient(circle at 50% 0%,#ff440008,transparent 60%);}
+.res-ico{font-size:1.2rem;display:block;text-align:center;margin-bottom:3px;}
+.res-name{font-size:0.58rem;color:var(--mut);text-align:center;letter-spacing:1px;}
+.res-val{font-family:'Share Tech Mono',monospace;font-size:1.05rem;color:var(--lime);text-align:center;font-weight:600;text-shadow:0 0 8px #39ff1444;margin:2px 0;}
+.res.crit .res-val{color:var(--ora);}
+.res-rate{font-size:0.6rem;color:var(--limedim);text-align:center;}
+
+/* LAYOUT */
+.main{display:grid;grid-template-columns:240px 1fr 260px;gap:8px;margin-top:8px;}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:6px;}
+
+.panel{
+  background:var(--p1);
+  border:1px solid var(--limemut);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 4px 16px #00000044;
+}
+.ph{
+  padding:8px 12px;
+  border-bottom:1px solid var(--limemut);
+  display:flex;justify-content:space-between;align-items:center;
+  background:var(--p2);
+}
+.ph-t{font-weight:600;font-size:0.78rem;color:var(--lime);letter-spacing:1.5px;}
+.ph-tag{font-size:0.6rem;color:var(--mut);border:1px solid var(--limemut);border-radius:20px;padding:1px 7px;}
+.ph-tag.live{border-color:var(--limedim);color:var(--lime);animation:pulse 1.5s ease-in-out infinite;}
+
+/* FAC LIST */
+.fac-list{padding:8px;}
+.fac-item{
+  border:1px solid var(--dim);
+  border-radius:10px;
+  padding:7px 9px;
+  margin-bottom:5px;
+  background:var(--p2);
+  display:flex;align-items:center;gap:8px;
+  cursor:pointer;transition:border-color .15s;
+}
+.fac-item:hover{border-color:var(--limemut);}
+.fac-item:last-child{margin-bottom:0;}
+.fac-art-sm{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.fac-info{flex:1;min-width:0;}
+.fac-name{font-size:0.75rem;color:var(--txt);font-weight:600;}
+.fac-out{font-size:0.62rem;color:var(--limedim);margin-top:1px;}
+.fac-lv{font-size:0.6rem;color:var(--mut);border:1px solid var(--dim);border-radius:8px;padding:1px 5px;flex-shrink:0;}
+.fac-lv.hi{border-color:var(--limedim);color:var(--lime);}
+
+/* PROG BAR (bio-style) */
+.bprog{height:4px;border-radius:99px;background:#1a3318;margin-top:4px;overflow:hidden;}
+.bprog-b{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--limedim),var(--lime));box-shadow:0 0 6px #39ff1444;animation:bpa 2.5s ease-in-out infinite alternate;}
+
+/* CENTER */
+.center{display:flex;flex-direction:column;gap:6px;}
+
+/* MISSION HERO */
+.hero{
+  background:var(--p1);
+  border:1px solid var(--limemut);
+  border-radius:14px;
+  padding:16px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:180px;height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle,#39ff1408,transparent 70%);
+}
+.hero-tag{font-size:0.6rem;color:var(--lime);letter-spacing:3px;font-weight:600;margin-bottom:6px;}
+.hero-title{font-size:1.3rem;font-weight:800;color:var(--txt);letter-spacing:0.5px;margin-bottom:6px;}
+.hero-body{font-size:0.72rem;color:var(--mut);line-height:1.65;font-weight:300;}
+
+/* KPIs */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px;}
+.kpi{
+  background:var(--p2);
+  border:1px solid var(--dim);
+  border-radius:10px;
+  padding:7px 9px;
+}
+.kpi-l{font-size:0.58rem;color:var(--mut);letter-spacing:1px;font-weight:600;}
+.kpi-v{font-family:'Share Tech Mono',monospace;font-size:1.1rem;color:var(--lime);text-shadow:0 0 6px #39ff1433;margin-top:1px;}
+.kpi.ok .kpi-v{color:var(--lime);}
+.kpi.hot .kpi-v{color:var(--ora);}
+
+/* TECH TREE (bio-themed) */
+.tech-section{
+  background:var(--p1);
+  border:1px solid var(--limemut);
+  border-radius:14px;
+  padding:12px 14px;
+  flex:1;
+}
+.tech-hd{font-weight:600;font-size:0.72rem;color:var(--lime);letter-spacing:2px;margin-bottom:10px;}
+.tech-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.tech{
+  background:var(--p2);
+  border:1px solid var(--dim);
+  border-radius:12px;
+  padding:9px;
+  transition:border-color .15s;
+}
+.tech:hover{border-color:var(--limemut);}
+.tech.done{border-color:var(--limedim);}
+.tech.locked{opacity:.4;}
+.tech-badge{font-size:0.58rem;color:var(--mut);letter-spacing:1.5px;margin-bottom:3px;font-weight:600;}
+.tech-name{font-size:0.78rem;color:var(--txt);font-weight:600;margin-bottom:4px;}
+.tech.done .tech-name{color:var(--lime);}
+.tech-desc{font-size:0.66rem;color:var(--mut);line-height:1.45;font-weight:300;margin-bottom:6px;}
+.btn{
+  width:100%;padding:5px 8px;
+  border:1px solid var(--limemut);
+  border-radius:8px;
+  background:transparent;
+  color:var(--lime);
+  font-family:'Exo 2',sans-serif;
+  font-size:0.65rem;font-weight:600;
+  letter-spacing:1px;cursor:pointer;
+  transition:background .15s;
+}
+.btn:hover{background:#39ff1412;}
+.btn.done{border-color:var(--limedim);color:var(--limedim);}
+.btn.d{border-color:var(--dim);color:var(--dim);cursor:not-allowed;}
+
+/* RIGHT: ROCKET + LAUNCH */
+.right{display:flex;flex-direction:column;gap:6px;}
+
+.rocket-block{
+  background:var(--p1);
+  border:1px solid var(--limemut);
+  border-radius:14px;
+  padding:14px;
+  text-align:center;
+}
+.rocket-lbl{font-size:0.6rem;color:var(--mut);letter-spacing:2px;font-weight:600;margin-bottom:8px;}
+.rocket-name{font-size:1.1rem;font-weight:800;color:var(--lime);text-shadow:0 0 10px #39ff1455;margin-top:8px;letter-spacing:2px;}
+.rocket-spec{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:6px;font-size:0.62rem;text-align:left;}
+.spec-l{color:var(--mut);}.spec-v{color:var(--txt);margin-left:3px;font-weight:600;}
+
+.queue-block{
+  background:var(--p1);
+  border:1px solid var(--limemut);
+  border-radius:14px;
+  overflow:hidden;
+}
+.slot{border-bottom:1px solid var(--dim);padding:8px 12px;}
+.slot:last-child{border-bottom:none;}
+.slot-r{display:flex;justify-content:space-between;align-items:center;}
+.slot-n{font-size:0.73rem;color:var(--txt);font-weight:600;}
+.stag{font-size:0.6rem;padding:2px 7px;border:1px solid var(--dim);border-radius:20px;color:var(--mut);}
+.stag.run{border-color:var(--limedim);color:var(--lime);animation:pulse 1.4s ease-in-out infinite;}
+.stag.ok{border-color:var(--lime);color:var(--lime);}
+
+.launch-block{
+  background:linear-gradient(135deg,#0a1f06,#060f04);
+  border:1px solid var(--limedim);
+  border-radius:14px;
+  padding:14px;
+  text-align:center;
+  box-shadow:0 0 24px #39ff1408;
+}
+.cdown-lbl{font-size:0.6rem;color:var(--mut);letter-spacing:2px;font-weight:600;margin-bottom:4px;}
+.cdown{font-family:'Share Tech Mono',monospace;font-size:2.2rem;color:var(--lime);text-shadow:0 0 20px #39ff1477;letter-spacing:5px;animation:pulse 1.2s ease-in-out infinite;}
+.cdown-meta{font-size:0.63rem;color:var(--mut);margin:5px 0 10px;}
+.btn-launch{
+  width:100%;padding:11px;
+  background:transparent;
+  border:2px solid var(--lime);
+  border-radius:10px;
+  color:var(--lime);
+  font-family:'Exo 2',sans-serif;
+  font-size:0.9rem;font-weight:800;
+  letter-spacing:3px;cursor:pointer;
+  text-shadow:0 0 8px #39ff1455;
+  transition:all .15s;
+}
+.btn-launch:hover{background:#39ff1415;box-shadow:0 0 20px #39ff1433;}
+
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+@keyframes bpa{from{width:40%;}to{width:66%;}}
+
+@media(max-width:1100px){.main{grid-template-columns:1fr;}.res-row{grid-template-columns:repeat(4,1fr);}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="topbar">
+  <div>
+    <div class="brand">MOONIDLE</div>
+    <div class="brand-sub">BIOPUNK LABORATORY · LUNA GENESIS v0.4</div>
+  </div>
+  <div class="top-stats">
+    <div class="stat-chip"><span class="ico">⬡</span><span>문스톤</span><span class="val">126</span></div>
+    <div class="stat-chip"><span class="ico">🕐</span><span>운영일</span><span class="val">03:18</span></div>
+    <div class="stat-chip warn"><span class="ico">⚠</span><span>효율</span><span class="val">97.2%</span></div>
+    <div class="stat-chip"><span class="ico">🚀</span><span>발사</span><span class="val">4회</span></div>
+  </div>
+</header>
+
+<section class="res-row">
+  <div class="res"><span class="res-ico">🪨</span><div class="res-name">철 (Fe)</div><div class="res-val">3.2M</div><div class="res-rate">+24K/s</div></div>
+  <div class="res"><span class="res-ico">🔶</span><div class="res-name">구리 (Cu)</div><div class="res-val">1.8M</div><div class="res-rate">+11K/s</div></div>
+  <div class="res crit"><span class="res-ico">🔷</span><div class="res-name">알루미늄</div><div class="res-val">640K</div><div class="res-rate" style="color:var(--ora);">+4K/s ⚠</div></div>
+  <div class="res"><span class="res-ico">⚙</span><div class="res-name">티타늄 (Ti)</div><div class="res-val">82K</div><div class="res-rate">+1.2K/s</div></div>
+  <div class="res"><span class="res-ico">💧</span><div class="res-name">액체 산소</div><div class="res-val">802K</div><div class="res-rate">+8.7K/s</div></div>
+  <div class="res"><span class="res-ico">💨</span><div class="res-name">수소 (H₂)</div><div class="res-val">291K</div><div class="res-rate">+3.1K/s</div></div>
+  <div class="res crit"><span class="res-ico">🔥</span><div class="res-name">연료 촉매제</div><div class="res-val">193K</div><div class="res-rate" style="color:var(--ora);">+2.6K/s ⚠</div></div>
+  <div class="res"><span class="res-ico">🧬</span><div class="res-name">연구 포인트</div><div class="res-val">4.1K</div><div class="res-rate">+18/s</div></div>
+</section>
+
+<div class="main">
+  <!-- LEFT SIDEBAR: FACILITIES -->
+  <div class="sidebar">
+    <div class="panel">
+      <div class="ph"><span class="ph-t">생산시설</span><span class="ph-tag live">운영 중</span></div>
+      <div class="fac-list">
+        <div class="fac-item">
+          <div class="fac-art-sm">
+            <svg viewBox="0 0 8 8" width="36" height="36" style="image-rendering:pixelated;shape-rendering:crispEdges">
+              <rect x="0" y="6" width="8" height="2" fill="#0f1a0a"/><rect x="1" y="3" width="6" height="3" fill="#1a2a10"/>
+              <rect x="0" y="2" width="8" height="1" fill="#2a3a18"/><rect x="1" y="4" width="2" height="2" fill="#336633"/>
+              <rect x="5" y="4" width="2" height="2" fill="#336633"/><rect x="1" y="4" width="1" height="1" fill="#66aa66"/>
+              <rect x="3" y="5" width="2" height="2" fill="#44aa22"/>
+            </svg>
+          </div>
+          <div class="fac-info">
+            <div class="fac-name">철광산 A-12</div>
+            <div class="fac-out">+24K Fe/s</div>
+            <div class="bprog"><div class="bprog-b" style="width:75%"></div></div>
+          </div>
+          <div class="fac-lv hi">Lv.3</div>
+        </div>
+        <div class="fac-item">
+          <div class="fac-art-sm">
+            <svg viewBox="0 0 8 8" width="36" height="36" style="image-rendering:pixelated;shape-rendering:crispEdges">
+              <rect x="0" y="6" width="8" height="2" fill="#0f1a0a"/><rect x="1" y="3" width="6" height="3" fill="#1a1f10"/>
+              <rect x="0" y="2" width="8" height="1" fill="#2a2a18"/><rect x="1" y="4" width="2" height="2" fill="#aa6600"/>
+              <rect x="5" y="4" width="2" height="2" fill="#aa6600"/><rect x="3" y="5" width="2" height="2" fill="#774400"/>
+            </svg>
+          </div>
+          <div class="fac-info">
+            <div class="fac-name">구리 광산 B-04</div>
+            <div class="fac-out">+11K Cu/s</div>
+            <div class="bprog"><div class="bprog-b" style="width:50%"></div></div>
+          </div>
+          <div class="fac-lv">Lv.2</div>
+        </div>
+        <div class="fac-item">
+          <div class="fac-art-sm">
+            <svg viewBox="0 0 8 8" width="36" height="36" style="image-rendering:pixelated;shape-rendering:crispEdges">
+              <rect x="0" y="7" width="8" height="1" fill="#0a0a0f"/><rect x="2" y="3" width="4" height="4" fill="#0d1520"/>
+              <rect x="1" y="3" width="1" height="3" fill="#1a2a44"/><rect x="6" y="3" width="1" height="3" fill="#1a2a44"/>
+              <rect x="3" y="1" width="2" height="2" fill="#2244aa"/><rect x="3" y="3" width="2" height="3" fill="#4488cc"/>
+              <rect x="3" y="3" width="1" height="1" fill="#88bbff"/>
+            </svg>
+          </div>
+          <div class="fac-info">
+            <div class="fac-name">산소 정제기</div>
+            <div class="fac-out">+8.7K LOX/s</div>
+            <div class="bprog"><div class="bprog-b" style="width:60%"></div></div>
+          </div>
+          <div class="fac-lv">Lv.2</div>
+        </div>
+        <div class="fac-item">
+          <div class="fac-art-sm">
+            <svg viewBox="0 0 8 8" width="36" height="36" style="image-rendering:pixelated;shape-rendering:crispEdges">
+              <rect x="0" y="6" width="8" height="2" fill="#0a0f00"/><rect x="1" y="3" width="6" height="3" fill="#111a00"/>
+              <rect x="0" y="2" width="8" height="1" fill="#222a00"/><rect x="2" y="3" width="4" height="2" fill="#336600"/>
+              <rect x="2" y="3" width="2" height="1" fill="#66aa00"/><rect x="3" y="5" width="2" height="2" fill="#44aa22"/>
+            </svg>
+          </div>
+          <div class="fac-info">
+            <div class="fac-name">기초 연구소</div>
+            <div class="fac-out">+18 연구/s</div>
+            <div class="bprog"><div class="bprog-b" style="width:40%"></div></div>
+          </div>
+          <div class="fac-lv">Lv.2</div>
+        </div>
+        <div class="fac-item" style="opacity:.45;border-color:#2a1500;">
+          <div class="fac-art-sm" style="font-size:1.4rem;color:#1a3a10;">🔒</div>
+          <div class="fac-info">
+            <div class="fac-name" style="color:var(--mut);">핵 반응로</div>
+            <div class="fac-out">Ti 500K + 연구 8K 필요</div>
+          </div>
+          <div class="fac-lv" style="border-color:#1a3310;color:#1a3310;">잠금</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: MISSION + TECH -->
+  <div class="center">
+    <div class="hero">
+      <div class="hero-tag">● ACTIVE MISSION</div>
+      <div class="hero-title">Block-I 재사용 로켓 — 1차 발사 준비</div>
+      <div class="hero-body">자원 동역학과 생산 라인을 최적화하여 발사 간격을 기하급수적으로 단축하세요. 각 단계의 과학 계산치와 오차율이 실시간으로 반영됩니다.</div>
+      <div class="kpi-row">
+        <div class="kpi ok"><div class="kpi-l">Δv</div><div class="kpi-v">9.48</div></div>
+        <div class="kpi ok"><div class="kpi-l">TWR</div><div class="kpi-v">1.61</div></div>
+        <div class="kpi ok"><div class="kpi-l">신뢰성</div><div class="kpi-v">93%</div></div>
+        <div class="kpi hot"><div class="kpi-l">품질</div><div class="kpi-v">51%</div></div>
+      </div>
+    </div>
+
+    <div class="tech-section">
+      <div class="tech-hd">🔬 연구 · 기술 트리</div>
+      <div class="tech-grid">
+        <div class="tech done"><div class="tech-badge">TIER-1 ✓</div><div class="tech-name">기초 연소 이론</div><div class="tech-desc">엔진 효율 +15%</div><button class="btn done">완료</button></div>
+        <div class="tech done"><div class="tech-badge">TIER-1 ✓</div><div class="tech-name">경량 합금 구조</div><div class="tech-desc">Al 소비 -20%</div><button class="btn done">완료</button></div>
+        <div class="tech"><div class="tech-badge">TIER-2</div><div class="tech-name">고압 산소 펌프</div><div class="tech-desc">점화 대기시간 단축, TWR +0.2</div><button class="btn">연구 시작</button></div>
+        <div class="tech"><div class="tech-badge">TIER-2</div><div class="tech-name">AI 안전점검</div><div class="tech-desc">점검 시간 50% 절감</div><button class="btn">연구 시작</button></div>
+        <div class="tech"><div class="tech-badge">TIER-2</div><div class="tech-name">리브 하우징</div><div class="tech-desc">착륙 충격 -15%, 회수율 ↑</div><button class="btn">연구 시작</button></div>
+        <div class="tech locked"><div class="tech-badge">TIER-3 🔒</div><div class="tech-name">핵추진 2단</div><div class="tech-desc">Δv +1.2km/s</div><button class="btn d">잠금</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: ROCKET + LAUNCH -->
+  <div class="right">
+    <div class="rocket-block">
+      <div class="rocket-lbl">// VEHICLE STATUS</div>
+      <svg viewBox="0 0 9 14" width="63" height="98" style="image-rendering:pixelated;shape-rendering:crispEdges">
+        <rect x="4" y="0" width="1" height="1" fill="#b8ffaa"/>
+        <rect x="3" y="1" width="3" height="1" fill="#88dd88"/>
+        <rect x="2" y="2" width="5" height="1" fill="#66bb66"/>
+        <rect x="2" y="3" width="5" height="5" fill="#44aa44"/>
+        <rect x="3" y="4" width="3" height="2" fill="#1a4a2a"/>
+        <rect x="3" y="4" width="1" height="1" fill="#88ffaa"/>
+        <rect x="1" y="7" width="1" height="2" fill="#22aa22"/>
+        <rect x="7" y="7" width="1" height="2" fill="#22aa22"/>
+        <rect x="3" y="8" width="3" height="1" fill="#1a6600"/>
+        <rect x="3" y="9" width="1" height="1" fill="#33ff33"/>
+        <rect x="5" y="9" width="1" height="1" fill="#33ff33"/>
+        <rect x="4" y="10" width="1" height="1" fill="#88ff88"/>
+        <rect x="3" y="11" width="3" height="1" fill="#39ff14"/>
+        <rect x="4" y="12" width="1" height="2" fill="#66ff44"/>
+      </svg>
+      <div class="rocket-name">BLOCK-I</div>
+      <div class="rocket-spec">
+        <span><span class="spec-l">엔진</span><span class="spec-v">MERLIN</span></span>
+        <span><span class="spec-l">페이로드</span><span class="spec-v">4.8T</span></span>
+        <span><span class="spec-l">회수</span><span class="spec-v">가능</span></span>
+        <span><span class="spec-l">연료</span><span class="spec-v">RP-1/LOX</span></span>
+      </div>
+    </div>
+
+    <div class="queue-block">
+      <div class="ph"><span class="ph-t">발사 대기열</span></div>
+      <div class="slot"><div class="slot-r"><span class="slot-n">슬롯 1 · Block-I</span><span class="stag run">진행 중</span></div><div class="bprog" style="margin-top:5px;"><div class="bprog-b" style="width:62%"></div></div></div>
+      <div class="slot"><div class="slot-r"><span class="slot-n">슬롯 2 · Heavy</span><span class="stag ok">준비 완료</span></div><button class="btn" style="margin-top:6px;font-size:0.65rem;border-radius:8px;">발사 등록</button></div>
+      <div class="slot"><div class="slot-r"><span class="slot-n">슬롯 3</span><span class="stag">잠금</span></div></div>
+    </div>
+
+    <div class="launch-block">
+      <div class="cdown-lbl">NEXT LAUNCH WINDOW</div>
+      <div class="cdown">04:00:00</div>
+      <div class="cdown-meta">안전율 93.1% · 가속 보너스 +37%</div>
+      <button class="btn-launch">INITIATE LAUNCH</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

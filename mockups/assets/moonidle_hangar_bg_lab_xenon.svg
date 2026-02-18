@@ -1,0 +1,45 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b1430"/>
+      <stop offset="55%" stop-color="#171e46"/>
+      <stop offset="100%" stop-color="#0e1642"/>
+    </linearGradient>
+    <radialGradient id="core" cx="48%" cy="14%" r="50%">
+      <stop offset="0%" stop-color="#a07eff55"/>
+      <stop offset="100%" stop-color="#a07eff00"/>
+    </radialGradient>
+    <linearGradient id="l" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#95d5ff33"/>
+      <stop offset="100%" stop-color="#95d5ff03"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#base)"/>
+  <rect width="1920" height="1080" fill="url(#core)"/>
+  <g fill="none" stroke="#b9a2ff55" stroke-width="2">
+    <rect x="180" y="130" width="1560" height="310" rx="24"/>
+    <line x1="180" y1="385" x2="1740" y2="385"/>
+    <line x1="340" y1="510" x2="1580" y2="510"/>
+    <line x1="340" y1="650" x2="1580" y2="650"/>
+    <line x1="340" y1="830" x2="1580" y2="830"/>
+  </g>
+  <g stroke="#b9a2ff77" stroke-width="2" fill="none">
+    <path d="M250 700 C430 620 610 760 790 700 S1170 630 1330 700 S1630 760 1750 690"/>
+    <path d="M250 910 C520 840 700 930 980 900 S1380 850 1650 920"/>
+  </g>
+  <g fill="#d8beff80" opacity="0.95">
+    <rect x="320" y="210" width="130" height="130" rx="10"/>
+    <rect x="600" y="210" width="130" height="130" rx="10"/>
+    <rect x="960" y="210" width="190" height="130" rx="10"/>
+    <rect x="1290" y="210" width="130" height="130" rx="10"/>
+    <rect x="1700" y="220" width="120" height="120" rx="10"/>
+  </g>
+  <g fill="#9fb2ff" opacity="0.45">
+    <circle cx="250" cy="820" r="9"/>
+    <circle cx="470" cy="690" r="11"/>
+    <circle cx="720" cy="880" r="9"/>
+    <circle cx="1180" cy="740" r="12"/>
+    <circle cx="1530" cy="900" r="10"/>
+  </g>
+  <rect width="1920" height="1080" fill="url(#l)"/>
+</svg>

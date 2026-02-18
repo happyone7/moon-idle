@@ -1,0 +1,188 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle Mockup - Quantum Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Rajdhani:wght@500;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#050a12;
+      --bg-grad:linear-gradient(180deg,#040912 0,#061327 44%,#081a33 100%);
+      --line:#7affff;
+      --accent:#46e7ff;
+      --accent2:#7dff9a;
+      --bad:#ff6f7c;
+      --panel:#0b1930cc;
+      --panel2:#152744cc;
+      --text:#e6f6ff;
+      --muted:#96b8d8;
+      --frame:url("./assets/moonidle_panel_border_dark.svg");
+      --frame2:url("./assets/moonidle_panel_border_dark.svg");
+      --btn-primary:url("./assets/moonidle_btn_primary.svg");
+      --btn-secondary:url("./assets/moonidle_btn_secondary.svg");
+      --btn-warn:url("./assets/moonidle_btn_warn.svg");
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;color:var(--text);font-family:"Rajdhani",sans-serif;background:var(--bg);overflow-x:hidden}
+    .bg{position:fixed;inset:0;z-index:-3;background:
+      radial-gradient(circle at 75% -10%,#3ef7ff44 0,#0000 55%),
+      radial-gradient(circle at -8% 32%,#7effa822 0,#0000 62%),
+      var(--bg-grad)
+    }
+    .bg::before{
+      content:"";position:absolute;inset:0;background-image:linear-gradient(#fff2 1px,transparent 1px),linear-gradient(90deg,#fff2 1px,transparent 1px);background-size:52px 52px;opacity:.08;animation:bgmove 24s linear infinite;
+    }
+    .line{position:fixed;inset:0;pointer-events:none;z-index:-1;background:linear-gradient(180deg,transparent 47%,#2ef8dc18 50%,transparent 53%);transform:translateY(-100%);animation:scan 9s linear infinite}
+    .grain{position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.07;background:repeating-linear-gradient(0deg,#fff2 0 1px,transparent 1px 4px);mix-blend-mode:screen;animation:flicker .14s steps(2,end) infinite}
+    .scanline{position:fixed;inset:0;background:linear-gradient(90deg,#00f5ff14,#ffffff00,#00f5ff10);mix-blend-mode:screen;opacity:.09;pointer-events:none}
+
+    .app{max-width:1460px;margin:0 auto;padding:12px}
+    .top{border:1px solid #6be7ff66;border-radius:14px;padding:10px 12px;background:linear-gradient(180deg,#143257d5,#0f2747ce),var(--frame);background-size:cover,240px 240px;display:flex;justify-content:space-between;align-items:center;gap:10px;box-shadow:0 10px 24px #0008,inset 0 1px 0 #fff2}
+    .top h1{margin:0;font-family:"Audiowide",sans-serif;font-size:1.18rem;letter-spacing:1.1px;color:#f3fcff;text-transform:uppercase}
+    .top small{display:block;color:var(--muted);font-size:.78rem}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .chips .c{font-size:.76rem;padding:4px 9px;border-radius:999px;border:1px solid #8cefff66;background:#5fdbff17}
+    .chips .c.alert{border-color:#ff8093;color:#ffd2d5;background:#ff7b7d24}
+
+    .grid{margin-top:12px;display:grid;grid-template-columns:320px 1fr 390px;gap:10px}
+    .panel{border:1px solid #5fd8ff42;border-radius:14px;overflow:hidden;background:linear-gradient(180deg,var(--panel),var(--panel2)),var(--frame2);background-size:cover,220px 220px;box-shadow:inset 0 1px 0 #fff3,0 10px 24px #0009}
+    .panel::after{content:"";position:absolute;inset:8px;border:1px solid #9bf7ff22;opacity:.35;pointer-events:none;border-radius:10px}
+    .head{position:relative;padding:10px 11px 8px;border-bottom:1px solid #ffffff22;font-family:"Audiowide",sans-serif;display:flex;justify-content:space-between;align-items:center;color:var(--accent);font-size:.82rem}
+    .head small{color:#9bd8f4;font-family:"Rajdhani",sans-serif;letter-spacing:.4px;font-size:.66rem}
+    .section{padding:10px;display:grid;gap:8px}
+    .item{border:1px solid #ffffff20;border-radius:10px;padding:8px;background:#ffffff08}
+    .item .line{display:flex;justify-content:space-between;gap:10px}
+    .item .k{font-size:.8rem}.item .v{font-size:.9rem;font-family:"Audiowide",sans-serif}
+    .item .sub{font-size:.7rem;color:var(--muted)}
+
+    .right{display:grid;grid-template-rows:auto auto 1fr auto auto;gap:8px}
+    .hud{margin:10px;border:1px solid #ffffff24;border-radius:10px;padding:9px;background:#ffffff07}
+    .hud .r{display:flex;justify-content:space-between;font-size:.8rem}
+    .hud .r + .r{margin-top:5px}
+
+    .center{min-height:690px}
+    .hero{position:relative;height:250px;border-bottom:1px solid #5ff2ff44;overflow:hidden}
+    .hero .bgimg{position:absolute;inset:0;background:
+      linear-gradient(180deg,#07112ed9 0,#082042d2 52%,#041028d8 100%),
+      url("./assets/moonidle_hangar_bg_lab_quantum.svg") center/cover no-repeat;
+      filter:saturate(1.12) contrast(1.05) brightness(.52)
+    }
+    .hero::after{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent,#0f234f77 48%,#0f234f00);}
+    .hero .txt{position:absolute;left:12px;right:12px;bottom:12px;z-index:2;padding:10px;border-left:3px solid var(--accent);background:linear-gradient(90deg,#041a3acc 0,transparent 100%)}
+    .hero h2{margin:0 0 4px;font-size:1.2rem;font-family:"Audiowide",sans-serif}
+    .hero p{margin:0;font-size:.8rem;line-height:1.44;color:#cfe8ff}
+
+    .console{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;padding:10px}
+    .stat{border:1px solid #ffffff23;border-radius:10px;padding:7px;background:#ffffff08}
+    .stat .n{font-family:"Audiowide",sans-serif;font-size:.95rem;color:#a2ffcc}
+    .stat .l{font-size:.65rem;color:#afd1ea;margin-top:3px}
+
+    .stack{padding:0 10px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .card{border:1px solid #ffffff2a;border-radius:10px;padding:8px;background:#ffffff06;display:flex;flex-direction:column;justify-content:space-between;min-height:128px}
+    .card h3{margin:0 0 4px;font-size:.84rem;font-family:"Audiowide",sans-serif}
+    .card p{margin:0;color:var(--muted);font-size:.72rem;line-height:1.38}
+
+    .queue{padding:0 10px}
+    .q{padding:8px;border:1px solid #ffffff25;border-radius:10px;margin-bottom:8px;background:#ffffff07}
+    .q .r{display:flex;justify-content:space-between;font-size:.8rem}
+    .bar{height:6px;border-radius:999px;background:#ffffff18;margin-top:6px;overflow:hidden}
+    .bar .fill{height:100%;width:62%;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:load 2.8s ease-in-out infinite}
+
+    .btn{font:inherit;border:none;border-radius:8px;padding:7px 8px;color:#fff;background:var(--btn-primary);background-size:100% 100%;background-repeat:no-repeat;background-position:center;text-align:left;cursor:pointer;margin-top:7px}
+    .btn2{background:var(--btn-secondary);background-size:100% 100%;background-repeat:no-repeat;background-position:center}
+
+    .cam{margin:0 10px;height:132px;border:1px solid #ffffff1f;border-radius:10px;background:url("./assets/moonidle_hub_cam_lab_quantum.svg") center/cover no-repeat;filter:brightness(.5) contrast(1.05) saturate(.82);position:relative}
+    .cam:after{content:"LAB FEED // TEST ARRAY";position:absolute;left:9px;top:7px;color:#a7dffb;font-size:.72rem;font-family:"Audiowide",sans-serif}
+    .cta{margin:0 10px 8px;padding:10px;border-radius:10px;width:calc(100% - 20px);background:var(--btn-warn);background-size:100% 100%;background-repeat:no-repeat;background-position:center;color:#fff;font-family:"Audiowide",sans-serif;letter-spacing:.7px;box-shadow:inset 0 0 0 1px #96f5ff63}
+    .audio{margin:0 10px;border:1px solid #ffffff20;border-radius:10px;padding:9px;background:#ffffff07}
+    .audio label{font-size:.72rem;color:#b1cee9}
+    audio{width:100%;height:28px}
+
+    @media (max-width:1180px){.grid{grid-template-columns:1fr}.console{grid-template-columns:1fr 1fr}.stack{grid-template-columns:1fr}}
+    @media (max-width:760px){.top{flex-direction:column;align-items:flex-start}}
+
+    @keyframes scan{to{transform:translateY(100%)}}
+    @keyframes flicker{0%,92%{opacity:.03}94%,95%{opacity:.08}100%{opacity:.02}}
+    @keyframes bgmove{0%{background-position:0 0,0 0}100%{background-position:52px 52px,-52px -52px}}
+    @keyframes load{0%{width:44%}50%{width:68%}100%{width:62%}}
+  </style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="line"></div>
+  <div class="scanline"></div>
+  <div class="grain"></div>
+
+  <main class="app">
+    <header class="top">
+      <div>
+        <h1>MoonIdle // Quantum Lab</h1>
+        <small>우주 연구소 운영 UI : 과학자용 터치다운 스타일 HUD</small>
+      </div>
+      <div class="chips">
+        <span class="c">Moonstone 126</span>
+        <span class="c">운영일 03:18</span>
+        <span class="c alert">안전률 96.9%</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <section class="panel">
+        <div class="head">RESOURCES <small>원료 생산 라인</small></div>
+        <div class="section">
+          <article class="item"><div class="line"><span class="k">Moonstone</span><span class="v">2.41M</span></div><div class="sub">광산 A-12</div></article>
+          <article class="item"><div class="line"><span class="k">액체 산소</span><span class="v">802K</span></div><div class="sub">+8.7K/s</div></article>
+          <article class="item"><div class="line"><span class="k">연료 촉매제</span><span class="v">193K</span></div><div class="sub">+2.6K/s</div></article>
+          <article class="item"><div class="line"><span class="k">컴퓨팅</span><span class="v">101K</span></div><div class="sub">오토파일럿 팜</div></article>
+        </div>
+      </section>
+
+      <section class="panel center">
+        <div class="head">MISSION CONTROL <small>연구 미션 / 출격 대시보드</small></div>
+        <div class="hero">
+          <div class="bgimg"></div>
+          <div class="txt">
+            <h2>1~2시간 내 초기 로켓 완성 체인</h2>
+            <p>슬롯 1개로 시작해 정밀 정렬·회수 기술·탑재체 연구를 진행하면 고급 발사 슬롯으로 확장됩니다. 과학 수치 기반 밸런스가 게임 핵심 루프를 만듭니다.</p>
+          </div>
+        </div>
+        <div class="console">
+          <article class="stat"><div class="n">9.48 km/s</div><div class="l">Delta-v</div></article>
+          <article class="stat"><div class="n">1.61</div><div class="l">TWR</div></article>
+          <article class="stat"><div class="n">93.1%</div><div class="l">신뢰도</div></article>
+          <article class="stat"><div class="n">51%</div><div class="l">품질</div></article>
+        </div>
+        <div class="stack">
+          <article class="card"><h3>산소 터빈 업스핀</h3><p>점화 초반의 연료 기화 손실을 낮추고 발사 준비 시간을 줄입니다.</p><button class="btn">비용: Moonstone 1.6M / 촉매 260K</button></article>
+          <article class="card"><h3>AI 고장예측 코어</h3><p>센서 이상 패턴을 조기 탐지해 재시작 횟수와 정지 대기시간 감소.</p><button class="btn2">비용: Moonstone 180K</button></article>
+          <article class="card"><h3>리브 하우징</h3><p>충격을 분산해 회수 성공률을 높이고 재사용 제한을 완화합니다.</p><button class="btn">비용: Moonstone 90K</button></article>
+          <article class="card"><h3>차폐 복합체</h3><p>열 편차 감소로 미션 안정성과 파손 복구 주기를 개선합니다.</p><button class="btn2">비용: Moonstone 520K / Moonstone 72K</button></article>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <div class="head">LAUNCH FLOW <small>슬롯 큐 / 대기열</small></div>
+        <div class="hud">
+          <div class="r"><span>우선 과제</span><span>Moonstone Heavy</span></div>
+          <div class="r"><span>다음 발사</span><span>4h 00m</span></div>
+          <div class="r"><span>가속 보너스</span><span>+37%</span></div>
+          <div class="r"><span>안전율</span><span style="color:var(--accent2)">93.1%</span></div>
+        </div>
+        <div class="queue">
+          <div class="q"><div class="r"><span>슬롯 1 · Block-I</span><span style="color:#9ef2ff">진행 중</span></div><div class="bar"><div class="fill"></div></div></div>
+          <div class="q"><div class="r"><span>슬롯 2 · Moonstone Heavy</span><span style="color:var(--accent2)">준비 완료</span></div><button class="btn">발사 큐 투입</button></div>
+          <div class="q"><div class="r"><span>슬롯 3 · 연구형</span><span style="color:#a9bfd6">잠금 해제 대기</span></div><button class="btn2">조립 시설 확장</button></div>
+        </div>
+        <div class="cam"></div>
+        <div class="audio"><label>BGM (로컬)</label><audio controls loop><source src="./assets/moonidle_industrial_bgm_v1.wav" type="audio/wav" /></audio></div>
+        <button class="cta">오늘의 점검 패스 후 다음 업그레이드 실행</button>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
+
+

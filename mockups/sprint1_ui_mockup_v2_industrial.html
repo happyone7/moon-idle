@@ -15,11 +15,11 @@
       --bg: #04070f;
       --panel: #0a1326cc;
       --panel2: #111e34cc;
-      --panel-frame: url("./assets/ui_panel_frame.svg");
-      --panel-frame-dark: url("./assets/ui_panel_border_dark.svg");
-      --btn-primary: url("./assets/ui_btn_primary.svg");
-      --btn-secondary: url("./assets/ui_btn_secondary.svg");
-      --btn-warn: url("./assets/ui_btn_warn.svg");
+      --panel-frame: url("./assets/moonidle_panel_frame.svg");
+      --panel-frame-dark: url("./assets/moonidle_panel_border_dark.svg");
+      --btn-primary: url("./assets/moonidle_btn_primary.svg");
+      --btn-secondary: url("./assets/moonidle_btn_secondary.svg");
+      --btn-warn: url("./assets/moonidle_btn_warn.svg");
       --line: #5ec3ff44;
       --line-hot: #ff8f62aa;
       --cyan: #6ed0ff;
@@ -261,7 +261,7 @@
       inset: 0;
       background:
         linear-gradient(180deg, #0c1636d2 0%, #07162ed8 54%, #040f24d9 100%),
-        url("./assets/Concept_TitleScreen_v2_00001_.png") center/cover no-repeat;
+        url("./assets/moonidle_hangar_bg_industrial.svg") center/cover no-repeat;
       filter: saturate(.74) contrast(1.06) brightness(.56);
       animation: heroFloat 15s ease-in-out infinite;
       transform-origin: center;
@@ -385,11 +385,10 @@
       border-radius: 9px;
       padding: 7px 8px;
       color: #fff;
-      background:
-        linear-gradient(135deg, #0da282, #2ac8a1),
-        var(--btn-primary);
+      background: var(--btn-primary);
+      background-size: 100% 100%;
       background-repeat: no-repeat;
-      background-size: cover;
+      background-position: center;
       box-shadow: inset 0 0 0 1px #9de4ff35;
       font-size: .72rem;
       text-shadow: 0 1px 0 #0008;
@@ -398,16 +397,14 @@
 
     .btn.secondary {
       border-color: #4fc4ee66;
-      background:
-        linear-gradient(135deg, #23536f, #288fd8),
-        var(--btn-secondary);
+      background: var(--btn-secondary);
+      background-size: 100% 100%;
     }
 
     .btn.warn {
       border-color: #ff895a7a;
-      background:
-        linear-gradient(135deg, #a84a2a, #f9734d),
-        var(--btn-warn);
+      background: var(--btn-warn);
+      background-size: 100% 100%;
     }
 
     .right {
@@ -499,7 +496,7 @@
       border: 1px solid #ffffff1f;
       border-radius: 10px;
       height: 140px;
-      background: url("./assets/Concept_HubScreen_v2_00001_.png") center/cover no-repeat;
+      background: url("./assets/moonidle_hub_cam_industrial.svg") center/cover no-repeat;
       filter: saturate(.75) contrast(1.02) brightness(.53);
       position: relative;
       overflow: hidden;
@@ -545,15 +542,14 @@
       border-radius: 10px;
       width: calc(100% - 20px);
       padding: 11px 12px;
-      color: #1f1f1f;
+      color: #fff;
       font-family: "Orbitron", sans-serif;
       font-size: .86rem;
       letter-spacing: .7px;
-      background:
-        linear-gradient(135deg, #ff915f, #ffd26e),
-        var(--btn-warn);
-      background-size: cover;
+      background: var(--btn-warn);
+      background-size: 100% 100%;
       background-repeat: no-repeat;
+      background-position: center;
       cursor: pointer;
       box-shadow: inset 0 0 0 1px #ffd1a35f;
     }
@@ -799,14 +795,14 @@
               <span>슬롯 2 · Moonstone Heavy</span>
               <span class="tag" style="color: var(--teal); border-color:#5fe2ad66">발사 준비 완료</span>
             </div>
-            <button class="btn warn" style="margin-top:8px;">발사 대기열 등록</button>
+            <button class="btn warn">발사 대기열 등록</button>
           </article>
           <article class="slot">
             <div class="row">
               <span>슬롯 3</span>
               <span class="tag" style="color: var(--muted)">잠금 해제 필요</span>
             </div>
-            <button class="btn secondary" style="margin-top:8px;">조합 설비 확장</button>
+            <button class="btn secondary">조합 설비 확장</button>
           </article>
         </div>
 
@@ -828,3 +824,5 @@
   </main>
 </body>
 </html>
+
+
