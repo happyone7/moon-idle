@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MoonIdle v3 — AMBER COMMAND</title>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:      #060401;
+  --panel:   #0d0800;
+  --deep:    #050300;
+  --border:  #6b3a00;
+  --hot:     #ff6600;
+  --amber:   #ffaa22;
+  --gold:    #ffdd55;
+  --orange:  #ff7700;
+  --green:   #44cc55;
+  --red:     #cc3300;
+  --muted:   #7a4f10;
+  --txt:     #ffcc88;
+  --dim:     #3a2200;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--amber);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Dot-matrix background */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image: radial-gradient(circle, #ff880009 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+}
+
+/* Warm glow from top */
+body::after {
+  content: '';
+  position: fixed;
+  top: -30%; left: 50%;
+  transform: translateX(-50%);
+  width: 70vw; height: 50vh;
+  background: radial-gradient(ellipse, #ff880007, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+.shell {
+  position: relative; z-index: 1;
+  max-width: 1420px;
+  margin: 0 auto;
+  padding: 10px 12px 24px;
+}
+
+/* ── TOP BAR ── */
+.topbar {
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--amber);
+  background: var(--panel);
+  padding: 10px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 0 24px #ff880008 inset, 0 4px 16px #00000088;
+}
+
+.brand-block { display: flex; flex-direction: column; gap: 2px; }
+
+.brand {
+  font-family: 'VT323', monospace;
+  font-size: 1.9rem;
+  color: var(--gold);
+  letter-spacing: 4px;
+  text-shadow: 0 0 16px #ffdd5566, 0 0 40px #ffaa2233;
+  line-height: 1;
+}
+
+.brand-sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.topbar-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 6px;
+}
+
+.mission-tag {
+  font-size: 0.68rem;
+  color: var(--orange);
+  letter-spacing: 2px;
+  animation: blink 1.4s step-end infinite;
+}
+
+.topbar-stats {
+  display: flex; gap: 16px;
+  font-size: 0.72rem; color: var(--txt);
+}
+
+.topbar-stats .s { color: var(--muted); }
+.topbar-stats .v { color: var(--amber); margin-left: 4px; }
+.topbar-stats .warn .v { color: var(--orange); }
+
+/* ── RESOURCE ROW ── */
+.res-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.res {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--amber);
+  background: var(--panel);
+  padding: 8px 10px;
+  position: relative;
+}
+
+.res::after {
+  content: '';
+  position: absolute; top: 0; right: 0;
+  width: 32px; height: 1px;
+  background: var(--amber);
+  opacity: 0.3;
+}
+
+.res-ico { font-size: 1rem; margin-bottom: 2px; display: block; }
+.res-name { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+
+.res-val {
+  font-family: 'VT323', monospace;
+  font-size: 1.8rem; line-height: 1;
+  color: var(--gold);
+  text-shadow: 0 0 10px #ffdd5544;
+  margin: 1px 0;
+}
+
+.res-rate { font-size: 0.67rem; color: var(--green); }
+.res-rate.neg { color: var(--red); }
+.res.crit { border-left-color: var(--orange); }
+.res.crit .res-val { color: var(--orange); text-shadow: 0 0 10px #ff770055; }
+
+/* ── MAIN GRID ── */
+.main {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* ── PANELS ── */
+.panel {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: flex; flex-direction: column;
+}
+
+.ph {
+  border-bottom: 1px solid var(--border);
+  padding: 7px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--deep);
+}
+
+.ph-title {
+  font-family: 'VT323', monospace;
+  font-size: 1.1rem; color: var(--amber);
+  letter-spacing: 2px;
+}
+
+.ph-tag {
+  font-size: 0.62rem; color: var(--muted);
+  border: 1px solid var(--dim);
+  padding: 2px 6px;
+  letter-spacing: 1px;
+}
+
+.ph-tag.live {
+  border-color: var(--orange);
+  color: var(--orange);
+  animation: blink 1.2s step-end infinite;
+}
+
+/* ── MISSION BLOCK ── */
+.mission-block {
+  margin: 10px 12px;
+  border: 1px dashed var(--border);
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #110800, #090400);
+  position: relative;
+}
+
+.mission-block::before {
+  content: '[ ACTIVE MISSION ]';
+  position: absolute; top: -8px; left: 12px;
+  background: var(--panel);
+  padding: 0 6px;
+  font-size: 0.62rem; color: var(--muted);
+  letter-spacing: 2px;
+}
+
+.mission-title {
+  font-family: 'VT323', monospace;
+  font-size: 1.45rem; color: var(--gold);
+  letter-spacing: 1px;
+  text-shadow: 0 0 12px #ffcc3333;
+}
+
+.mission-body {
+  margin-top: 6px;
+  font-size: 0.71rem; color: var(--txt);
+  line-height: 1.6;
+}
+
+/* ── KPI ROW ── */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 0 12px;
+  border: 1px solid var(--border);
+}
+
+.kpi {
+  padding: 7px 10px;
+  border-right: 1px solid var(--border);
+  background: var(--deep);
+}
+
+.kpi:last-child { border-right: none; }
+.kpi-lbl { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+.kpi-v {
+  font-family: 'VT323', monospace;
+  font-size: 1.5rem; color: var(--amber);
+  text-shadow: 0 0 6px #ffaa2244;
+  line-height: 1.1;
+}
+
+.kpi.ok .kpi-v { color: var(--green); text-shadow: 0 0 6px #44cc5544; }
+.kpi.hot .kpi-v { color: var(--orange); animation: blink 1.8s step-end infinite; }
+
+/* ── UPGRADE GRID ── */
+.upg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 8px 12px;
+}
+
+.upg {
+  border: 1px solid var(--border);
+  padding: 10px;
+  background: var(--deep);
+  display: flex; flex-direction: column; gap: 5px;
+}
+
+.upg-name { font-size: 0.8rem; color: var(--gold); }
+.upg-desc { font-size: 0.68rem; color: var(--txt); line-height: 1.45; flex: 1; }
+.upg-cost {
+  font-size: 0.64rem; color: var(--muted);
+  border-top: 1px solid var(--dim);
+  padding-top: 5px;
+}
+
+.btn {
+  display: block; width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--amber);
+  background: transparent;
+  color: var(--amber);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.68rem; letter-spacing: 1px;
+  cursor: pointer; text-align: center;
+  transition: background 0.1s, box-shadow 0.1s;
+}
+
+.btn:hover {
+  background: #ffaa2215;
+  box-shadow: 0 0 8px #ffaa2222;
+}
+
+.btn.g { border-color: var(--green); color: var(--green); }
+.btn.o { border-color: var(--orange); color: var(--orange); }
+.btn.d { border-color: var(--dim); color: var(--dim); cursor: not-allowed; }
+
+/* ── EVENT LOG ── */
+.log {
+  margin: 6px 12px 10px;
+  border: 1px solid var(--border);
+  background: var(--deep);
+  height: 88px; overflow: hidden;
+}
+
+.log-hd {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 2px;
+  background: #040200;
+}
+
+.log ul {
+  list-style: none; padding: 5px 8px;
+  display: grid; gap: 2px;
+  font-size: 0.67rem; color: #8a6030;
+}
+
+.log li::before { content: '> '; color: var(--dim); }
+.log li.ok::before { content: '+ '; color: var(--green); }
+.log li.warn::before { content: '! '; color: var(--orange); }
+.log li.sys::before { content: '# '; color: var(--muted); }
+
+/* ── RIGHT COLUMN ── */
+.right { display: flex; flex-direction: column; gap: 6px; }
+
+/* Rocket visual */
+.rocket-vis {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 14px 12px;
+  text-align: center;
+  position: relative;
+}
+
+.rocket-vis::before {
+  content: '[ VEHICLE STATUS ]';
+  display: block;
+  font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 2px; margin-bottom: 8px;
+}
+
+.rocket-art {
+  font-family: 'VT323', monospace;
+  font-size: 0.9rem; line-height: 1.3;
+  color: var(--amber);
+  text-shadow: 0 0 10px #ffaa2244;
+  letter-spacing: 3px;
+  display: inline-block;
+  text-align: left;
+}
+
+.rocket-name {
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem; color: var(--gold);
+  letter-spacing: 3px; margin-top: 6px;
+  text-shadow: 0 0 8px #ffdd5533;
+}
+
+.rocket-spec {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 4px; margin-top: 8px;
+}
+
+.spec { font-size: 0.65rem; }
+.spec .sl { color: var(--muted); }
+.spec .sv { color: var(--txt); margin-left: 4px; }
+
+/* ── SLOTS ── */
+.slots { border: 1px solid var(--border); background: var(--panel); }
+
+.slot {
+  border-bottom: 1px solid var(--border);
+  padding: 8px 12px;
+}
+
+.slot:last-child { border-bottom: none; }
+
+.slot-row {
+  display: flex; justify-content: space-between;
+  align-items: center; font-size: 0.73rem;
+}
+
+.slot-name { color: var(--txt); }
+
+.slot-tag {
+  font-size: 0.6rem; padding: 2px 6px;
+  border: 1px solid var(--dim); color: var(--muted);
+  letter-spacing: 1px;
+}
+
+.slot-tag.run { border-color: var(--orange); color: var(--orange); animation: blink 1.6s step-end infinite; }
+.slot-tag.ok  { border-color: var(--green); color: var(--green); }
+.slot-tag.lck { border-color: var(--dim); color: #2a1500; }
+
+.prog {
+  height: 3px; background: #1a0a00;
+  margin-top: 6px; overflow: hidden;
+}
+
+.prog-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #662200, var(--orange), var(--gold));
+  box-shadow: 0 0 8px #ff660055;
+  animation: pbAnim 3.2s ease-in-out infinite alternate;
+}
+
+/* ── LAUNCH BLOCK ── */
+.launch {
+  border: 1px solid var(--hot);
+  background: var(--deep);
+  padding: 14px 12px;
+  text-align: center;
+  box-shadow: 0 0 20px #ff440008 inset;
+}
+
+.launch-lbl {
+  font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.countdown {
+  font-family: 'VT323', monospace;
+  font-size: 2.6rem; color: var(--orange);
+  text-shadow: 0 0 20px #ff660077, 0 0 40px #ff440033;
+  letter-spacing: 6px; line-height: 1;
+  animation: blink 0.9s step-end infinite;
+}
+
+.launch-meta {
+  font-size: 0.65rem; color: var(--muted);
+  margin: 6px 0 10px; letter-spacing: 1px;
+}
+
+.btn-launch {
+  width: 100%; padding: 12px;
+  border: 2px solid var(--hot);
+  background: transparent;
+  color: var(--hot);
+  font-family: 'VT323', monospace;
+  font-size: 1.5rem; letter-spacing: 4px;
+  cursor: pointer;
+  text-shadow: 0 0 10px #ff660055;
+  transition: all 0.15s;
+}
+
+.btn-launch:hover {
+  background: #ff440018;
+  box-shadow: 0 0 24px #ff440033;
+}
+
+/* ── PRESTIGE ── */
+.prestige {
+  border: 1px dashed var(--dim);
+  background: var(--panel);
+  padding: 10px 12px;
+}
+
+.prestige-hd {
+  font-family: 'VT323', monospace;
+  font-size: 1rem; color: var(--gold);
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+
+.prestige p { font-size: 0.68rem; color: var(--muted); line-height: 1.55; }
+
+/* ── FOOTER ── */
+.footer {
+  margin-top: 6px;
+  border: 1px dashed var(--dim);
+  padding: 7px 12px;
+  font-size: 0.65rem; color: var(--dim);
+  letter-spacing: 1px;
+  display: flex; justify-content: space-between;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  49% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+@keyframes pbAnim {
+  from { width: 44%; }
+  to   { width: 70%; }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 960px) {
+  .main { grid-template-columns: 1fr; }
+  .res-row { grid-template-columns: 1fr 1fr; }
+  .kpi-row { grid-template-columns: 1fr 1fr; }
+  .upg-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand">MOONIDLE</div>
+      <div class="brand-sub">달 탐사 로켓 제작소 // AMBER COMMAND v0.3</div>
+    </div>
+    <div class="topbar-right">
+      <div class="mission-tag">● MISSION ACTIVE — BLOCK-I LAUNCH PREP</div>
+      <div class="topbar-stats">
+        <span><span class="s">MOONSTONE</span><span class="v">126</span></span>
+        <span><span class="s">DAY</span><span class="v">03:18</span></span>
+        <span class="warn"><span class="s">EFFICIENCY</span><span class="v">97.2%</span></span>
+        <span><span class="s">LAUNCHES</span><span class="v">4</span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- RESOURCE ROW -->
+  <section class="res-row">
+    <div class="res">
+      <span class="res-ico">⬡</span>
+      <div class="res-name">금속 원석</div>
+      <div class="res-val">2.41M</div>
+      <div class="res-rate">+15.8K/s ↑</div>
+    </div>
+    <div class="res">
+      <span class="res-ico">◈</span>
+      <div class="res-name">액체 산소</div>
+      <div class="res-val">802K</div>
+      <div class="res-rate">+8.7K/s ↑</div>
+    </div>
+    <div class="res crit">
+      <span class="res-ico">▲</span>
+      <div class="res-name">연료 촉매제</div>
+      <div class="res-val">193K</div>
+      <div class="res-rate neg">+2.6K/s ⚠</div>
+    </div>
+    <div class="res">
+      <span class="res-ico">✦</span>
+      <div class="res-name">컴퓨팅 파워</div>
+      <div class="res-val">101K</div>
+      <div class="res-rate">+1.2K/s ↑</div>
+    </div>
+  </section>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT: MISSION + UPGRADES -->
+    <div class="panel">
+      <div class="ph">
+        <span class="ph-title">MISSION CONTROL</span>
+        <span class="ph-tag live">LIVE</span>
+      </div>
+
+      <div class="mission-block">
+        <div class="mission-title">재사용형 화물 로켓 Block-I — 1차 발사 준비</div>
+        <div class="mission-body">
+          플레이어는 초기 1~2시간 안에 기본 로켓을 완성합니다. 자원 동역학과
+          생산 라인을 최적화하여 발사 간격을 기하급수적으로 단축하세요.
+          각 단계의 과학 계산치와 오차율이 수치로 반영됩니다.
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi">
+          <div class="kpi-lbl">Δv</div>
+          <div class="kpi-v">9.48 km/s</div>
+        </div>
+        <div class="kpi ok">
+          <div class="kpi-lbl">TWR</div>
+          <div class="kpi-v">1.61</div>
+        </div>
+        <div class="kpi ok">
+          <div class="kpi-lbl">신뢰성</div>
+          <div class="kpi-v">93.1%</div>
+        </div>
+        <div class="kpi hot">
+          <div class="kpi-lbl">품질 지수</div>
+          <div class="kpi-v">51%</div>
+        </div>
+      </div>
+
+      <div class="upg-grid">
+        <div class="upg">
+          <div class="upg-name">고압 산소 펌프 증설</div>
+          <div class="upg-desc">펌프 토출량 증가로 점화 구간 과열을 줄이고 대기시간을 단축합니다.</div>
+          <div class="upg-cost">COST: 금속 1.6M + 촉매제 260K</div>
+          <button class="btn">[ 구매 ]</button>
+        </div>
+        <div class="upg">
+          <div class="upg-name">AI 안전점검 모듈</div>
+          <div class="upg-desc">진동·온도 이상 징후 탐지 — 점검 시간 50% 절감.</div>
+          <div class="upg-cost">COST: 금속 180K</div>
+          <button class="btn g">[ 구매 ]</button>
+        </div>
+        <div class="upg">
+          <div class="upg-name">리브 하우징 강화</div>
+          <div class="upg-desc">착륙 충격 15% 감소, 회수 성공률 가속.</div>
+          <div class="upg-cost">COST: 금속 90K</div>
+          <button class="btn">[ 구매 ]</button>
+        </div>
+        <div class="upg">
+          <div class="upg-name">차폐 복합 재질</div>
+          <div class="upg-desc">추진제 효율 +10%, 연소실 온도 편차 저감.</div>
+          <div class="upg-cost">COST: 금속 520K + 산소 72K</div>
+          <button class="btn d">[ 잠금 ]</button>
+        </div>
+      </div>
+
+      <div class="log">
+        <div class="log-hd">// TELEMETRY LOG</div>
+        <ul>
+          <li class="ok">엔진 회수 확률 18% → 44% 상향 완료</li>
+          <li class="warn">촉매제 재고 임계치 도달 — 정제 라인 증설 권장</li>
+          <li class="sys">점화 안정성 98.4% 유지 중</li>
+          <li>오토파일럿 시뮬레이션 배치 7 완료</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- RIGHT: ROCKET + SLOTS + LAUNCH -->
+    <div class="right">
+
+      <div class="rocket-vis">
+        <pre class="rocket-art">
+    /\
+   /  \
+  / △△ \
+ /======\
+ |      |
+ | IDLE |
+ |      |
+ \======/
+  ||  ||
+  ~~  ~~</pre>
+        <div class="rocket-name">BLOCK-I</div>
+        <div class="rocket-spec">
+          <div class="spec"><span class="sl">엔진</span><span class="sv">MERLIN-1C</span></div>
+          <div class="spec"><span class="sl">페이로드</span><span class="sv">4.8T</span></div>
+          <div class="spec"><span class="sl">회수</span><span class="sv">가능</span></div>
+          <div class="spec"><span class="sl">연료</span><span class="sv">RP-1/LOX</span></div>
+        </div>
+      </div>
+
+      <div class="slots panel">
+        <div class="ph">
+          <span class="ph-title">LAUNCH QUEUE</span>
+          <span class="ph-tag">SLOT 2/3</span>
+        </div>
+
+        <div class="slot">
+          <div class="slot-row">
+            <span class="slot-name">슬롯 1 · Block-I</span>
+            <span class="slot-tag run">RUNNING</span>
+          </div>
+          <div class="prog"><div class="prog-bar"></div></div>
+          <div style="font-size:0.62rem; color:var(--muted); margin-top:4px;">진행: 14m 08s / 예상 완료: 22m</div>
+        </div>
+
+        <div class="slot">
+          <div class="slot-row">
+            <span class="slot-name">슬롯 2 · Moonstone Heavy</span>
+            <span class="slot-tag ok">READY</span>
+          </div>
+          <button class="btn o" style="margin-top:7px; font-size:0.65rem;">[ 발사 대기열 등록 ]</button>
+        </div>
+
+        <div class="slot">
+          <div class="slot-row">
+            <span class="slot-name">슬롯 3 — 잠금</span>
+            <span class="slot-tag lck">LOCKED</span>
+          </div>
+          <button class="btn d" style="margin-top:7px; font-size:0.65rem;">[ 조합 설비 확장 필요 ]</button>
+        </div>
+      </div>
+
+      <div class="launch">
+        <div class="launch-lbl">NEXT LAUNCH WINDOW</div>
+        <div class="countdown">04:00:00</div>
+        <div class="launch-meta">Moonstone Heavy · 안전율 93.1% · 가속 보너스 +37%</div>
+        <button class="btn-launch">[ INITIATE LAUNCH SEQUENCE ]</button>
+      </div>
+
+      <div class="prestige panel">
+        <div class="ph">
+          <span class="ph-title">PRESTIGE</span>
+          <span class="ph-tag">MOONSTONE</span>
+        </div>
+        <div style="padding:10px 12px;">
+          <div class="prestige-hd">◈ 달 탐사 성공 시</div>
+          <p>문스톤을 획득해 영구적인 생산 보너스를 얻습니다.<br/>
+          현재 예상 획득량: <span style="color:var(--gold)">+3 Moonstone</span></p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>MOONIDLE v0.3-ALPHA // AMBER COMMAND BUILD // SPRINT-1 MOCKUP</span>
+    <span>SAVE: localStorage v2 // OFFLINE: MAX 8H</span>
+  </div>
+
+</div>
+</body>
+</html>

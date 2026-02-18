@@ -1,38 +1,34 @@
-# Soulspire - Unity Steam Game Project
+# MoonIdle - 달 탐사 로켓 제작소
 
 ## 프로젝트 개요
-다크 판타지 타워 디펜스 (로그라이트) 게임. Unity 2D로 개발, Steam에 배포.
+달에 가기 위한 로켓을 조립하는 방치형(Idle) 웹게임. 바닐라 HTML/CSS/JS로 개발, Steam(Electron EXE) 배포 예정.
 
 ## 기술 스택
-- **엔진**: Unity 2022.3 LTS
-- **언어**: C#
-- **플랫폼**: Steam (Windows 빌드)
-- **Steam SDK**: Steamworks.NET (현재 DISABLESTEAMWORKS 심볼로 비활성)
+- **언어**: HTML5 / CSS3 / JavaScript (ES6+, 바닐라, 외부 라이브러리 없음)
+- **플랫폼**: 웹 브라우저 + Steam (Electron EXE 래핑 예정)
+- **저장**: localStorage (saveVersion v2, 마이그레이션 체인 적용)
+- **배포**: GitHub Pages (웹) / SteamPipe (EXE)
 
 ## 프로젝트 구조
-- `Assets/Project/Scripts/` - 게임 로직 (Core, Tower, Node, Data, UI, Audio)
-- `Assets/Project/Scenes/` - 게임 씬 (GameScene.unity)
-- `Assets/Project/ScriptableObjects/` - SO 데이터 (Towers, Nodes, Stages, Waves, Skills)
-- `Assets/Art/` - 스프라이트, UI, VFX, 오디오 에셋
-- `Assets/Editor/` - 에디터 도구 (BuildScript 등)
-- `SteamBuild/scripts/` - Steam VDF 빌드 설정
-- `SteamBuild/content/` - 빌드 결과물 (gitignore)
+- `index.html` - 게임 전체 (단일 파일, 모든 로직 포함)
+- `mockups/` - UI 목업 HTML, ComfyUI 워크플로우, 컨셉 에셋
 - `Docs/` - 기획 문서, 스프린트 진행 현황, DevPD 지침서
-- `.claude/agents/` - 에이전트 정의 (8개 팀장)
-- `.claude/prompts/skills/` - 스킬 정의 (5개)
+- `.claude/agents/` - 에이전트 정의
+- `.agent/skills/` - 스킬 정의
+- `.worktrees/` - 팀장별 git worktree (dev/*)
+- `qa/` - QA 리포트 파일
+- `scripts/` - 워크트리/QA 자동화 스크립트
 
 ## Steam 정보
-- **게임 이름**: Soulspire
-- **App ID**: 4426340
-- **Depot ID**: 4426341
+- **게임 이름**: MoonIdle
+- **App ID**: 미정
+- **플랫폼**: Windows (Electron EXE)
 - **Steam 계정**: shatterbone7
-- **Partner ID**: 377547
-- **Launch Option**: Soulspire.exe
 
 ## MCP 서버
-- **mcp-unity**: Unity Editor 제어 (포트 8080, CoplayDev/unity-mcp v9.4.4)
+- **mcp-unity**: 웹 프로젝트에서 재활용 (포트 8080, 프로토콜 참조용)
 - **comfy-ui-builder**: ComfyUI 이미지/오디오 생성
-- **playwright**: 웹 자동화
+- **playwright**: 웹 자동화 / E2E 테스트
 - **Notion**: 업무 카드/문서 관리
 
 ---
@@ -109,15 +105,15 @@ main                    ← 릴리스/배포 (Steam 빌드 기준)
 6. dev/build (빌드 설정 — 최종)
 
 ### 팀장별 Git Author (커밋 시 필수 사용)
-- 기획: `--author="GameDesigner <game-designer@soulspire.dev>"`
-- 프로그래밍: `--author="GameplayProgrammer <gameplay-programmer@soulspire.dev>"`
-- QA: `--author="QAEngineer <qa-engineer@soulspire.dev>"`
-- UI: `--author="UIDeveloper <ui-developer@soulspire.dev>"`
-- TA: `--author="TechnicalArtist <technical-artist@soulspire.dev>"`
-- 사운드: `--author="SoundDirector <sound-director@soulspire.dev>"`
-- 빌더: `--author="BuildEngineer <build-engineer@soulspire.dev>"`
-- PM: `--author="ProjectManager <project-manager@soulspire.dev>"`
-- 개발PD: `--author="DevPD <dev-pd@soulspire.dev>"`
+- 기획: `--author="GameDesigner <game-designer@moonidle.dev>"`
+- 프로그래밍: `--author="GameplayProgrammer <gameplay-programmer@moonidle.dev>"`
+- QA: `--author="QAEngineer <qa-engineer@moonidle.dev>"`
+- UI: `--author="UIDeveloper <ui-developer@moonidle.dev>"`
+- TA: `--author="TechnicalArtist <technical-artist@moonidle.dev>"`
+- 사운드: `--author="SoundDirector <sound-director@moonidle.dev>"`
+- 빌더: `--author="BuildEngineer <build-engineer@moonidle.dev>"`
+- PM: `--author="ProjectManager <project-manager@moonidle.dev>"`
+- 개발PD: `--author="DevPD <dev-pd@moonidle.dev>"`
 
 ### 커밋 규칙
 - 커밋 메시지는 **한글**로 작성
@@ -128,31 +124,30 @@ main                    ← 릴리스/배포 (Steam 빌드 기준)
 ### Git Worktree
 에이전트별 독립 워킹 디렉토리. 각 팀장이 자기 워크트리에서 동시 작업 가능:
 ```
-C:\UnityProjects\Soulspire\              ← 메인 (Unity 에디터 연결, sprint/N)
-C:\UnityProjects\wt-dev-programmer\      ← dev/programmer
-C:\UnityProjects\wt-dev-ui\              ← dev/ui
-C:\UnityProjects\wt-dev-ta\              ← dev/ta
-C:\UnityProjects\wt-dev-game-designer\   ← dev/game-designer
-C:\UnityProjects\wt-dev-sound\           ← dev/sound
-C:\UnityProjects\wt-dev-build\           ← dev/build
+primordial-station/                      ← 메인 (sprint/N)
+primordial-station/.worktrees/wt-dev-programmer\  ← dev/programmer
+primordial-station/.worktrees/wt-dev-ui\          ← dev/ui
+primordial-station/.worktrees/wt-dev-design\      ← dev/design
+primordial-station/.worktrees/wt-dev-qa\          ← dev/qa
+primordial-station/.worktrees/wt-dev-sound\       ← dev/sound
+primordial-station/.worktrees/wt-dev-build\       ← dev/build
 ```
 
 #### 워크트리 작업 원칙
 - **단독 작업**: 자기 워크트리(wt-dev-*)에서 dev/* 브랜치로 직접 편집+커밋. 브랜치 전환 불필요
 - **크로스팀 기능**: 자기 워크트리에서 `git checkout feature/*`로 전환 후 작업 → 끝나면 `git checkout dev/*`로 복귀
-- **Unity MCP 작업** (씬, 컴포넌트, 플레이모드): 메인 프로젝트(Soulspire/)에서만 수행
-- **Unity MCP 전환 프로토콜**: 커밋 → checkout → refresh_unity → read_console → 작업 → 커밋
-- **Unity MCP 우선순위**: QA 검증 > 프로그래밍(씬 수정) > UI(프리팹 확인) > 기타
+- **Playwright 작업**: 메인 프로젝트에서 수행 (index.html 참조)
+- **메인 파일**: index.html은 단일 파일이므로 동시 편집 충돌 주의 — 팀 간 편집 순서 조율 필요
 
 ---
 
-## 씬/프리팹 정책
-- 프리팹/씬 관리 절차는 `soulspire-dev-protocol` 스킬의 `references/prefab-protocol.md` 참조
-- **씬 직접 수정**: 프로그래밍팀장만 (매니저, 게임 로직 오브젝트)
-- **UI 수정**: UI팀장이 프리팹 파일 수정 (씬 터치 불필요)
-- **프리팹 추출(씬→프리팹 전환)**: UI팀장이 수행, 완료 후 프로그래밍팀장에게 참조 재연결 확인 요청
-- **TA/사운드**: 에셋 파일만 수정 (씬/프리팹 직접 수정 금지)
-- 씬 수정이 필요하면 개발PD에게 보고 후 순서 조율
+## index.html 편집 정책
+- **단일 파일 구조**: 모든 게임 로직이 index.html 한 파일에 있음 — 충돌 위험 인지
+- **프로그래밍팀장**: 게임 로직(JS) 및 상태 관리 코드 담당
+- **UI팀장**: CSS 스타일, HTML 구조(탭/패널 레이아웃) 담당
+- **TA**: 에셋 파일(mockups/, 이미지, SVG)만 수정 — index.html 직접 수정 금지
+- **편집 순서**: 프로그래밍팀장 작업 완료 후 UI팀장이 이어서 작업 (동시 편집 금지)
+- index.html 수정이 필요하면 개발PD에게 보고 후 순서 조율
 
 ---
 
@@ -167,16 +162,16 @@ C:\UnityProjects\wt-dev-build\           ← dev/build
 ---
 
 ## 빌드/배포 정책
-- 빌드 절차는 `soulspire-build-deploy` 스킬 참조
+- 빌드 절차는 `moonidle-build-deploy` 스킬 참조
 - **프로토타입 기간: 빌드 전 반드시 총괄PD 승인 필요**
-- **로컬 직접 복사 테스트 통과 후에만 Steam 업로드 진행**
+- **로컬 브라우저 테스트 통과 후에만 GitHub Pages / Steam 업로드 진행**
 
 ---
 
 ## QA 정책
-- QA 운영 절차는 `soulspire-qa-ops` 스킬 참조
+- QA 운영 절차는 `moonidle-qa-ops` 스킬 참조
 - **sprint 브랜치 머지는 QA팀장만 가능** (QA 통과 필수)
-- **빌드 전 BAT 필수** (1건이라도 실패 시 빌드 금지)
+- **빌드 전 Playwright 스모크 테스트 필수** (1건이라도 실패 시 빌드 금지)
 
 ---
 
@@ -211,5 +206,6 @@ C:\UnityProjects\wt-dev-build\           ← dev/build
 ---
 
 ## 중요 교훈
-- **UPM 패키지에는 반드시 .meta 파일 필요**: Unity는 .meta 없이 asmdef, .cs 인식 불가
-- 새 패키지 생성 시 모든 파일/폴더에 .meta 파일 생성 필수 (GUID 32자 hex)
+- **index.html 동시 편집 금지**: 단일 파일 구조이므로 팀 간 편집 순서 반드시 조율
+- **localStorage 마이그레이션**: saveVersion 확인 후 체인 실행 — 버전 건너뜀 금지
+- **Playwright 테스트**: 브라우저에서 직접 열기(`file://`)로 실행, 서버 불필요
