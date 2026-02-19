@@ -363,17 +363,62 @@ function playLaunchSfx() {
 // ============================================================
 //  SAVE / LOAD
 // ============================================================
-const SAVE_KEY = 'moonIdle_v2';
+const SAVE_PREFIX     = 'moonIdle_slot_';
+const LEGACY_SAVE_KEY = 'moonIdle_v2';
+const MAX_SAVE_SLOTS  = 3;
+let currentSaveSlot   = 1;
+
+/** 레거시 단일 세이브(moonIdle_v2)를 슬롯1로 마이그레이션 (슬롯1이 비어있을 때만) */
+function migrateLegacySave() {
+  const legacy = localStorage.getItem(LEGACY_SAVE_KEY);
+  if (!legacy) return false;
+  if (localStorage.getItem(SAVE_PREFIX + '1')) return false; // 슬롯1 이미 점유
+  try {
+    localStorage.setItem(SAVE_PREFIX + '1', legacy);
+    localStorage.removeItem(LEGACY_SAVE_KEY);
+    return true;
+  } catch(e) { return false; }
+}
+
+/** 전체 슬롯 메타데이터 조회 (빈 슬롯도 포함) */
+function getSaveSlots() {
+  const slots = [];
+  for (let i = 1; i <= MAX_SAVE_SLOTS; i++) {
+    const raw = localStorage.getItem(SAVE_PREFIX + i);
+    if (raw) {
+      try {
+        const d = JSON.parse(raw);
+        const bldTotal = Object.values(d.buildings || {}).reduce((a, b) => a + b, 0);
+        slots.push({
+          slot: i, empty: false,
+          launches: d.launches || 0,
+          moonstone: d.moonstone || 0,
+          buildings: bldTotal,
+          lastTick: d.lastTick || 0,
+        });
+      } catch(e) { slots.push({ slot: i, empty: true }); }
+    } else {
+      slots.push({ slot: i, empty: true });
+    }
+  }
+  return slots;
+}
+
+/** 특정 슬롯 삭제 */
+function deleteSlot(slot) {
+  localStorage.removeItem(SAVE_PREFIX + slot);
+}
 
 function saveGame() {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(gs));
+    localStorage.setItem(SAVE_PREFIX + currentSaveSlot, JSON.stringify(gs));
   } catch(e) {}
 }
 
-function loadGame() {
+function loadGame(slot) {
+  if (slot !== undefined) currentSaveSlot = slot;
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const raw = localStorage.getItem(SAVE_PREFIX + currentSaveSlot);
     if (!raw) return false;
     const saved = JSON.parse(raw);
 

@@ -113,7 +113,8 @@ function startTitleSequence() {
   });
 }
 
-function startNewGame() {
+function startNewGame(slot) {
+  currentSaveSlot = slot || 1;
   gs.res = { money:0, metal:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:0, ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.workers = 1;  // 건물 구매마다 자동 +1
@@ -143,10 +144,94 @@ function startNewGame() {
   enterGame();
 }
 
-function continueGame() {
-  const ok = loadGame();
-  if (!ok) { startNewGame(); return; }
+function continueGame(slot) {
+  const ok = loadGame(slot);
+  if (!ok) { startNewGame(slot || 1); return; }
   enterGame();
+}
+
+
+// ============================================================
+//  SAVE SLOT MODAL
+// ============================================================
+function openSaveSlotModal(mode) {
+  const modal = document.getElementById('save-slot-modal');
+  if (!modal) return;
+  _renderSlotModal(modal, mode);
+  modal.style.display = 'flex';
+}
+
+function closeSaveSlotModal() {
+  const modal = document.getElementById('save-slot-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function _renderSlotModal(modal, mode) {
+  const slots = getSaveSlots();
+  const title = mode === 'new' ? '새 게임 — 슬롯 선택' : '이어하기 — 슬롯 선택';
+  let slotsHtml = '';
+  slots.forEach(s => {
+    if (s.empty) {
+      if (mode === 'new') {
+        slotsHtml += `<div class="ssm-slot ssm-empty" onclick="doNewGameInSlot(${s.slot})">
+          <div class="ssm-slot-num">SLOT ${s.slot}</div>
+          <div class="ssm-slot-info">— 비어 있음 —</div>
+          <div class="ssm-slot-action">[ 새 게임 시작 ]</div>
+        </div>`;
+      } else {
+        slotsHtml += `<div class="ssm-slot ssm-empty ssm-disabled">
+          <div class="ssm-slot-num">SLOT ${s.slot}</div>
+          <div class="ssm-slot-info">— 비어 있음 —</div>
+        </div>`;
+      }
+    } else {
+      const date = new Date(s.lastTick).toLocaleDateString('ko-KR');
+      if (mode === 'new') {
+        slotsHtml += `<div class="ssm-slot ssm-occupied" onclick="confirmNewInSlot(${s.slot})">
+          <div class="ssm-slot-num">SLOT ${s.slot}</div>
+          <div class="ssm-slot-info">발사 ${s.launches}회 &nbsp;|&nbsp; ◆ ${s.moonstone} &nbsp;|&nbsp; 시설 ${s.buildings}개</div>
+          <div class="ssm-slot-date">${date}</div>
+          <div class="ssm-slot-action ssm-warn">[ 덮어쓰기 — 클릭 확인 ]</div>
+        </div>`;
+      } else {
+        slotsHtml += `<div class="ssm-slot ssm-occupied" onclick="doLoadSlot(${s.slot})">
+          <div class="ssm-slot-num">SLOT ${s.slot}</div>
+          <div class="ssm-slot-info">발사 ${s.launches}회 &nbsp;|&nbsp; ◆ ${s.moonstone} &nbsp;|&nbsp; 시설 ${s.buildings}개</div>
+          <div class="ssm-slot-date">${date}</div>
+          <div class="ssm-slot-action">[ 불러오기 ]</div>
+        </div>`;
+      }
+    }
+  });
+  modal.innerHTML = `<div class="ssm-box">
+    <div class="ssm-title">${title}</div>
+    <div class="ssm-slots">${slotsHtml}</div>
+    <button class="ssm-cancel" onclick="closeSaveSlotModal()">[ 취소 ]</button>
+  </div>`;
+}
+
+function confirmNewInSlot(slot) {
+  const modal = document.getElementById('save-slot-modal');
+  if (!modal) return;
+  modal.innerHTML = `<div class="ssm-box">
+    <div class="ssm-title ssm-warn-title">슬롯 ${slot} 덮어쓰기?</div>
+    <div class="ssm-confirm-text">슬롯 ${slot}의 기존 데이터가 삭제됩니다.<br>이 작업은 되돌릴 수 없습니다.</div>
+    <div class="ssm-confirm-btns">
+      <button class="ssm-btn ssm-btn-warn" onclick="doNewGameInSlot(${slot})">[ 덮어쓰기 ]</button>
+      <button class="ssm-btn" onclick="openSaveSlotModal('new')">[ 취소 ]</button>
+    </div>
+  </div>`;
+}
+
+function doNewGameInSlot(slot) {
+  deleteSlot(slot);
+  closeSaveSlotModal();
+  startNewGame(slot);
+}
+
+function doLoadSlot(slot) {
+  closeSaveSlotModal();
+  continueGame(slot);
 }
 
 function enterGame() {
@@ -189,10 +274,10 @@ function toggleSound() {
 function init() {
   // Bind title screen buttons
   const newGameBtn = document.getElementById('new-game-btn');
-  if (newGameBtn) newGameBtn.addEventListener('click', startNewGame);
+  if (newGameBtn) newGameBtn.addEventListener('click', () => openSaveSlotModal('new'));
 
   const contBtn = document.getElementById('continue-btn');
-  if (contBtn) contBtn.addEventListener('click', continueGame);
+  if (contBtn) contBtn.addEventListener('click', () => openSaveSlotModal('continue'));
 
   const sndBtn = document.getElementById('sound-btn');
   if (sndBtn) sndBtn.addEventListener('click', toggleSound);
@@ -211,19 +296,24 @@ function init() {
   // Boot sequence
   startTitleSequence();
 
-  // Check for existing save
-  const saved = localStorage.getItem(SAVE_KEY);
+  // Check for existing saves (migrate legacy save first)
+  migrateLegacySave();
+  const allSlots = getSaveSlots();
+  const occupied = allSlots.filter(s => !s.empty);
   setTimeout(() => {
-    if (saved) {
+    if (occupied.length > 0) {
       const contBtnEl = document.getElementById('continue-btn');
       if (contBtnEl) contBtnEl.style.display = '';
-      try {
-        const d = JSON.parse(saved);
-        const bldTotal = Object.values(d.buildings || {}).reduce((a, b) => a + b, 0);
-        const saveStrip = document.getElementById('save-strip');
-        if (saveStrip) saveStrip.innerHTML =
-          `발사: <span>${d.launches || 0}회</span> &nbsp; 문스톤: <span>${d.moonstone || 0}</span> &nbsp; 시설: <span>${bldTotal}개</span>`;
-      } catch(e) {}
+    }
+    const saveStrip = document.getElementById('save-strip');
+    if (saveStrip) {
+      if (occupied.length > 0) {
+        const totalLaunches = occupied.reduce((a, s) => a + s.launches, 0);
+        const totalMs = occupied.reduce((a, s) => a + s.moonstone, 0);
+        saveStrip.innerHTML = `저장 슬롯 ${occupied.length}개 &nbsp;|&nbsp; 발사: <span>${totalLaunches}회</span> &nbsp; 문스톤: <span>${totalMs}</span>`;
+      } else {
+        saveStrip.textContent = '// 저장 데이터 없음';
+      }
     }
   }, 1500);
 }
