@@ -139,6 +139,8 @@ body::after {
    APP WRAPPER
    =========================== */
 #app {
+  position: relative;
+  z-index: 10;
   display: none;
   flex-direction: column;
   height: 100vh;
@@ -211,28 +213,42 @@ body::after {
 .rl-ms-val { color: var(--amber); font-size: 16px; font-weight: bold; }
 
 /* ===========================
-   WORLD WRAPPER
+   WORLD WRAPPER (tab-area만 포함)
    =========================== */
 #ww { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
 
 /* ===========================
-   WORLD (drag-scroll) — INLINE FLEX, NOT FIXED
+   WORLD — 고정 전체화면 배경 레이어
    =========================== */
 #world-bg {
-  height: 240px;
-  flex-shrink: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
   overflow-x: auto;
   overflow-y: hidden;
-  cursor: grab;
   background: linear-gradient(to bottom, #000d03 0%, #011205 38%, #010900 65%, var(--bg) 100%);
+  /* 기본: 비생산 탭에서는 흐릿하게 */
+  opacity: 0.15;
+  filter: blur(2px) brightness(0.5);
+  transition: opacity 0.5s, filter 0.5s;
+  pointer-events: none;
 }
-#world-bg:active { cursor: grabbing; }
+/* 생산 탭에서는 선명하게 + 드래그 가능 */
+body.tab-production #world-bg {
+  opacity: 0.5;
+  filter: none;
+  pointer-events: auto;
+  cursor: grab;
+}
+body.tab-production #world-bg:active { cursor: grabbing; }
 #world-bg::-webkit-scrollbar { height: 6px; }
 #world-bg::-webkit-scrollbar-track { background: #010800; border-top: 1px solid var(--green-dim); }
 #world-bg::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
 
 #world-scene {
-  position: relative;
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 3200px;
   height: 220px;
 }
@@ -283,7 +299,9 @@ body::after {
   background: var(--panel-bg);
 }
 .nav-tab {
-  flex: 1;
+  flex: 0 0 auto;
+  min-width: 90px;
+  padding: 9px 18px;
   background: none;
   border: none;
   border-bottom: 3px solid transparent;
@@ -291,7 +309,6 @@ body::after {
   font-family: var(--font);
   font-size: 13px;
   letter-spacing: 1px;
-  padding: 9px 6px;
   cursor: pointer;
   text-transform: uppercase;
   transition: all 0.15s;
@@ -798,6 +815,18 @@ body::after {
 <div id="save-slot-modal"></div>
 
 <!-- ===========================
+     WORLD BACKGROUND (fixed, z-index 0 — renders behind everything)
+     =========================== -->
+<div id="world-bg">
+  <div id="world-scene">
+    <div id="sky-layer"></div>
+    <div id="buildings-layer"></div>
+    <div id="ground-line"></div>
+    <div id="workers-layer"></div>
+  </div>
+</div>
+
+<!-- ===========================
      APP (flex column, hidden until game starts)
      =========================== -->
 <div id="app">
@@ -845,18 +874,8 @@ body::after {
       <div id="rl-ms-box"></div>
     </div>
 
-    <!-- ── WORLD WRAPPER ── -->
+    <!-- ── CENTER (tab area) ── -->
     <div id="ww">
-
-      <!-- WORLD (drag-scroll, inline in flex flow — solves z-index issue) -->
-      <div id="world-bg">
-        <div id="world-scene">
-          <div id="sky-layer"></div>
-          <div id="buildings-layer"></div>
-          <div id="ground-line"></div>
-          <div id="workers-layer"></div>
-        </div>
-      </div>
 
       <!-- TAB CONTENT AREA -->
       <div id="tab-area">

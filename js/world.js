@@ -786,6 +786,7 @@ function initWorldDrag() {
   let drag = false, dragX = 0, dragSL = 0;
 
   document.addEventListener('mousedown', e => {
+    if (!document.body.classList.contains('tab-production')) return;
     const r = wb.getBoundingClientRect();
     if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
     if (e.target.closest('.world-bld')) return;
