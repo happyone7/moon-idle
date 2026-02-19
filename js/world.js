@@ -2,26 +2,16 @@
 //  WORLD — js/world.js
 // ============================================================
 const WORLD_POSITIONS = {
-  housing: 30,      research_lab: 240, r_and_d: 410,
-  ops_center: 590,  supply_depot: 780, mine: 990,
-  extractor: 1130,  refinery: 1320,   cryo_plant: 1500,
-  elec_lab: 1700,   fab_plant: 1870,  solar_array: 2060,
-  launch_pad: 2270,
+  research_lab: 30,  r_and_d: 230,
+  ops_center: 440,   supply_depot: 630, mine: 850,
+  extractor: 1010,   refinery: 1200,   cryo_plant: 1390,
+  elec_lab: 1590,    fab_plant: 1760,  solar_array: 1950,
+  launch_pad: 2150,
 };
 
 // ─── ASCII BUILDING ART ─────────────────────────────────────
 function _bldAscii(bld) {
   switch (bld.wbClass) {
-
-    case 'wb-housing':
-      return (
-        '╔═══════════╗\n' +
-        '║  HOUSING  ║\n' +
-        '║ □□ □□ □□  ║\n' +
-        '║ □□ □□ □□  ║\n' +
-        '╚═══════════╝\n' +
-        '  █████████'
-      );
 
     case 'wb-ops': {
       const lbl = bld.id === 'ops_center' ? 'OPS CTR  ' : 'SUPPLY D ';
@@ -147,8 +137,6 @@ function openBldOv(bld, el) {
     prodLine = `전체 생산 +${cnt * 10}%`;
   } else if (bld.id === 'launch_pad') {
     prodLine = `발사 슬롯 +${cnt}`;
-  } else if (bld.id === 'housing') {
-    prodLine = `인원 +${cnt}명 확보됨`;
   } else {
     prodLine = bld.desc;
   }

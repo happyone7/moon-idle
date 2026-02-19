@@ -3,7 +3,7 @@
 // ============================================================
 let gs = {
   res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0, housing:0 },
+  buildings: { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldLevels: {},   // { buildingId: upgradeCount }
   workers: 1,          // 총 인원
   assignments: {},     // { buildingId: workerCount }
@@ -34,7 +34,6 @@ let gs = {
     bld_r_and_d: false,
     bld_solar_array: false,
     bld_launch_pad: false,
-    bld_housing: true,  // 주거 시설 처음부터 해금
   },
 };
 let prodMult = {};
@@ -325,7 +324,6 @@ function loadGame() {
       bld_r_and_d: false,
       bld_solar_array: false,
       bld_launch_pad: false,
-      bld_housing: true,
     };
     gs.unlocks = Object.assign({}, defaultUnlocks, saved.unlocks || {});
 
