@@ -17,37 +17,117 @@ const ADDON_POSITIONS = {
   launch_pad: 2870,
 };
 
-// ─── ASCII BUILDING ART (upgrade-aware, no double-width chars) ───
-function _bldAscii(bld) {
+// ─── ASCII BUILDING ART (upgrade-aware, cnt-aware height, no double-width chars) ───
+// cnt: 현재 건물 개수. 단계별로 더 높은/넓은 아트를 반환.
+// 높이 단계: 1-2=기본, 3-5=중간, 6-9=대형, 10+=거대형
+function _bldHeightTier(cnt) {
+  if (cnt >= 10) return 3; // 거대형
+  if (cnt >= 6)  return 2; // 대형
+  if (cnt >= 3)  return 1; // 중간
+  return 0;                // 기본
+}
+
+function _bldAscii(bld, cnt) {
+  cnt = cnt || 1;
+  const tier = _bldHeightTier(cnt);
   const bu = gs.bldUpgrades || {};
   switch (bld.wbClass) {
 
     case 'wb-housing':
-      if (bu.hsg_township) return (
-        '╔═══════╗\n' +
-        '║ ▓▓▓▓  ║\n' +
-        '║ ▓▓▓▓  ║\n' +
-        '╠═══════╣\n' +
-        '║ ▒▒▒▒  ║\n' +
-        '║ ▒▒▒▒  ║\n' +
-        '╠═══════╣\n' +
-        '║TWNSHIP║\n' +
-        '╚═══════╝\n' +
-        ' ███████'
-      );
-      if (bu.hsg_welfare) return (
-        '╔═══════════╗\n' +
-        '║  HOUSING  ║\n' +
-        '║ ▓▓ ▓▓ ▓▓  ║\n' +
-        '║ ▓▓ ▓▓ ▓▓  ║\n' +
-        '║ ▓▓ ▓▓ ▓▓  ║\n' +
-        '╚═══════════╝\n' +
-        '  █████████'
-      );
-      if (bu.hsg_dorm) return (
+      if (bu.hsg_township) {
+        if (tier >= 2) return (
+          '╔═══════╗\n' +
+          '║ ▓▓▓▓  ║\n' +
+          '╠═══════╣\n' +
+          '║ ▓▓▓▓  ║\n' +
+          '╠═══════╣\n' +
+          '║ ▒▒▒▒  ║\n' +
+          '║ ▒▒▒▒  ║\n' +
+          '╠═══════╣\n' +
+          '║ ▒▒▒▒  ║\n' +
+          '╠═══════╣\n' +
+          '║TWNSHIP║\n' +
+          '╚═══════╝\n' +
+          ' ███████'
+        );
+        return (
+          '╔═══════╗\n' +
+          '║ ▓▓▓▓  ║\n' +
+          '║ ▓▓▓▓  ║\n' +
+          '╠═══════╣\n' +
+          '║ ▒▒▒▒  ║\n' +
+          '║ ▒▒▒▒  ║\n' +
+          '╠═══════╣\n' +
+          '║TWNSHIP║\n' +
+          '╚═══════╝\n' +
+          ' ███████'
+        );
+      }
+      if (bu.hsg_welfare) {
+        if (tier >= 2) return (
+          '╔═══════════╗\n' +
+          '║  HOUSING  ║\n' +
+          '║ ▓▓ ▓▓ ▓▓  ║\n' +
+          '╠═══════════╣\n' +
+          '║ ▓▓ ▓▓ ▓▓  ║\n' +
+          '║ ▓▓ ▓▓ ▓▓  ║\n' +
+          '╚═══════════╝\n' +
+          '  █████████'
+        );
+        return (
+          '╔═══════════╗\n' +
+          '║  HOUSING  ║\n' +
+          '║ ▓▓ ▓▓ ▓▓  ║\n' +
+          '║ ▓▓ ▓▓ ▓▓  ║\n' +
+          '║ ▓▓ ▓▓ ▓▓  ║\n' +
+          '╚═══════════╝\n' +
+          '  █████████'
+        );
+      }
+      if (bu.hsg_dorm) {
+        if (tier >= 2) return (
+          '╔═══════════╗\n' +
+          '║  HOUSING  ║\n' +
+          '║ ▒▒ ▒▒ ▒▒  ║\n' +
+          '╠═══════════╣\n' +
+          '║ ▒▒ ▒▒ ▒▒  ║\n' +
+          '║ ░░ ░░ ░░  ║\n' +
+          '╚═══════════╝\n' +
+          '  █████████'
+        );
+        return (
+          '╔═══════════╗\n' +
+          '║  HOUSING  ║\n' +
+          '║ ▒▒ ▒▒ ▒▒  ║\n' +
+          '║ ▒▒ ▒▒ ▒▒  ║\n' +
+          '║ ░░ ░░ ░░  ║\n' +
+          '╚═══════════╝\n' +
+          '  █████████'
+        );
+      }
+      if (tier >= 3) return (
         '╔═══════════╗\n' +
         '║  HOUSING  ║\n' +
         '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '╠═══════════╣\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '╠═══════════╣\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '╚═══════════╝\n' +
+        '  █████████'
+      );
+      if (tier >= 2) return (
+        '╔═══════════╗\n' +
+        '║  HOUSING  ║\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '╠═══════════╣\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '╚═══════════╝\n' +
+        '  █████████'
+      );
+      if (tier >= 1) return (
+        '╔═══════════╗\n' +
+        '║  HOUSING  ║\n' +
         '║ ▒▒ ▒▒ ▒▒  ║\n' +
         '║ ░░ ░░ ░░  ║\n' +
         '╚═══════════╝\n' +
@@ -64,31 +144,86 @@ function _bldAscii(bld) {
 
     case 'wb-ops': {
       const isOps = bld.id === 'ops_center';
-      if (isOps && bu.ops_premium) return (
-        '╔══════════╗\n' +
-        '║ PREMIUM  ║\n' +
-        '║ ▓▓▓▓▓▓▓▓ ║\n' +
-        '║ ░ VIP ░  ║\n' +
-        '╚══════════╝\n' +
-        ' ██████████'
-      );
-      if (isOps && bu.ops_24h) return (
-        '╔══════════╗\n' +
-        '║ OPS CTR  ║\n' +
-        '║ ▓▓▓▓▓▓▓▓ ║\n' +
-        '║ ░░ 24H ░░║\n' +
-        '╚══════════╝\n' +
-        ' ██████████'
-      );
-      if (isOps && bu.ops_sales) return (
-        '╔══════════╗\n' +
-        '║ OPS CTR  ║\n' +
-        '║ ▓▓░▓▓░▓▓ ║\n' +
-        '║ ░▓▓░▓▓░▓ ║\n' +
-        '╚══════════╝\n' +
-        ' ██████████'
-      );
+      if (isOps && bu.ops_premium) {
+        if (tier >= 2) return (
+          '╔══════════╗\n' +
+          '║ PREMIUM  ║\n' +
+          '║ ▓▓▓▓▓▓▓▓ ║\n' +
+          '╠══════════╣\n' +
+          '║ ▓▓▓▓▓▓▓▓ ║\n' +
+          '║ ░ VIP ░  ║\n' +
+          '╚══════════╝\n' +
+          ' ██████████'
+        );
+        return (
+          '╔══════════╗\n' +
+          '║ PREMIUM  ║\n' +
+          '║ ▓▓▓▓▓▓▓▓ ║\n' +
+          '║ ░ VIP ░  ║\n' +
+          '╚══════════╝\n' +
+          ' ██████████'
+        );
+      }
+      if (isOps && bu.ops_24h) {
+        if (tier >= 2) return (
+          '╔══════════╗\n' +
+          '║ OPS CTR  ║\n' +
+          '║ ▓▓▓▓▓▓▓▓ ║\n' +
+          '╠══════════╣\n' +
+          '║ ▓▓▓▓▓▓▓▓ ║\n' +
+          '║ ░░ 24H ░░║\n' +
+          '╚══════════╝\n' +
+          ' ██████████'
+        );
+        return (
+          '╔══════════╗\n' +
+          '║ OPS CTR  ║\n' +
+          '║ ▓▓▓▓▓▓▓▓ ║\n' +
+          '║ ░░ 24H ░░║\n' +
+          '╚══════════╝\n' +
+          ' ██████████'
+        );
+      }
+      if (isOps && bu.ops_sales) {
+        if (tier >= 2) return (
+          '╔══════════╗\n' +
+          '║ OPS CTR  ║\n' +
+          '║ ▓▓░▓▓░▓▓ ║\n' +
+          '╠══════════╣\n' +
+          '║ ░▓▓░▓▓░▓ ║\n' +
+          '╚══════════╝\n' +
+          ' ██████████'
+        );
+        return (
+          '╔══════════╗\n' +
+          '║ OPS CTR  ║\n' +
+          '║ ▓▓░▓▓░▓▓ ║\n' +
+          '║ ░▓▓░▓▓░▓ ║\n' +
+          '╚══════════╝\n' +
+          ' ██████████'
+        );
+      }
       const lbl = isOps ? 'OPS CTR  ' : 'SUPPLY D ';
+      if (tier >= 3) return (
+        '╔══════════╗\n' +
+        '║ ' + lbl + '║\n' +
+        '║ ▓░▓░▓░▓  ║\n' +
+        '╠══════════╣\n' +
+        '║ ░▓░▓░▓░  ║\n' +
+        '╠══════════╣\n' +
+        '║ ▓░▓░▓░▓  ║\n' +
+        '╚══════════╝\n' +
+        '  ████████'
+      );
+      if (tier >= 1) return (
+        '╔══════════╗\n' +
+        '║ ' + lbl + '║\n' +
+        '║ ▓░▓░▓░▓  ║\n' +
+        '╠══════════╣\n' +
+        '║ ░▓░▓░▓░  ║\n' +
+        '╚══════════╝\n' +
+        '  ████████'
+      );
       return (
         '╔══════════╗\n' +
         '║ ' + lbl + '║\n' +
@@ -101,19 +236,61 @@ function _bldAscii(bld) {
 
     case 'wb-mine': {
       const isExt = bld.id === 'extractor';
-      if (!isExt && bu.mine_robot) return (
+      if (!isExt && bu.mine_robot) {
+        if (tier >= 2) return (
+          '     ╔═══╗\n' +
+          '     ║▓▓▓║\n' +
+          '     ║▓▓▓║\n' +
+          '╔════╩═══╩════╗\n' +
+          '║  ▓ ROBOT ▓  ║\n' +
+          '╠═════════════╣\n' +
+          '╚═════════════╝\n' +
+          '    ███████████'
+        );
+        return (
+          '     ╔═══╗\n' +
+          '     ║▓▓▓║\n' +
+          '╔════╩═══╩════╗\n' +
+          '║  ▓ ROBOT ▓  ║\n' +
+          '╚═════════════╝\n' +
+          '    ███████████'
+        );
+      }
+      if (!isExt && bu.mine_deep) {
+        if (tier >= 2) return (
+          '     ╔═══╗\n' +
+          '     ║▓▓▓║\n' +
+          '     ║▓▓▓║\n' +
+          '╔════╩═══╩════╗\n' +
+          '║  ▓▒▒▒▒▒▒▓  ║\n' +
+          '╚═════════════╝\n' +
+          '    ███████████'
+        );
+        return (
+          '     ╔═══╗\n' +
+          '     ║▓▓▓║\n' +
+          '╔════╩═══╩════╗\n' +
+          '║  ▓▒▒▒▒▒▒▓  ║\n' +
+          '╚═════════════╝\n' +
+          '    ███████████'
+        );
+      }
+      if (tier >= 3) return (
         '     ╔═══╗\n' +
-        '     ║▓▓▓║\n' +
+        '     ║ ▓ ║\n' +
+        '     ║ ▓ ║\n' +
         '╔════╩═══╩════╗\n' +
-        '║  ▓ ROBOT ▓  ║\n' +
+        '║   ▒▒▒▒▒▒▒   ║\n' +
+        '╠═════════════╣\n' +
         '╚═════════════╝\n' +
         '    ███████████'
       );
-      if (!isExt && bu.mine_deep) return (
+      if (tier >= 1) return (
         '     ╔═══╗\n' +
-        '     ║▓▓▓║\n' +
+        '     ║ ▓ ║\n' +
         '╔════╩═══╩════╗\n' +
-        '║  ▓▒▒▒▒▒▒▓  ║\n' +
+        '║   ▒▒▒▒▒▒▒   ║\n' +
+        '╠═════════════╣\n' +
         '╚═════════════╝\n' +
         '    ███████████'
       );
@@ -128,6 +305,25 @@ function _bldAscii(bld) {
     }
 
     case 'wb-refinery':
+      if (tier >= 3) return (
+        ' ╔═╗  ╔══╗\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ╠═╣  ╠══╣\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ╚═╝  ╚══╝\n' +
+        '███████████'
+      );
+      if (tier >= 1) return (
+        ' ╔═╗  ╔══╗\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ╠═╣  ╠══╣\n' +
+        ' ║▓║  ║▓▓║\n' +
+        ' ╚═╝  ╚══╝\n' +
+        '███████████'
+      );
       return (
         ' ╔═╗  ╔══╗\n' +
         ' ║▓║  ║▓▓║\n' +
@@ -138,6 +334,26 @@ function _bldAscii(bld) {
       );
 
     case 'wb-eleclab':
+      if (tier >= 3) return (
+        '╔══════════╗\n' +
+        '║ PCB  LAB ║\n' +
+        '║▒░▒░▒░▒░▒║\n' +
+        '╠══════════╣\n' +
+        '║░▒░▒░▒░▒░║\n' +
+        '╠══════════╣\n' +
+        '║▒░▒░▒░▒░▒║\n' +
+        '╚══════════╝\n' +
+        '  ████████'
+      );
+      if (tier >= 1) return (
+        '╔══════════╗\n' +
+        '║ PCB  LAB ║\n' +
+        '║▒░▒░▒░▒░▒║\n' +
+        '╠══════════╣\n' +
+        '║░▒░▒░▒░▒░║\n' +
+        '╚══════════╝\n' +
+        '  ████████'
+      );
       return (
         '╔══════════╗\n' +
         '║ PCB  LAB ║\n' +
@@ -149,22 +365,67 @@ function _bldAscii(bld) {
 
     case 'wb-research': {
       const isRnd = bld.id === 'r_and_d';
-      if (!isRnd && bu.rsh_super) return (
+      if (!isRnd && bu.rsh_super) {
+        if (tier >= 2) return (
+          '╔════════════╗\n' +
+          '║ SUPER-LAB  ║\n' +
+          '║ ▓▓░░░░▓▓   ║\n' +
+          '╠════════════╣\n' +
+          '║ ░▓▓▓▓▓░    ║\n' +
+          '╠════════════╣\n' +
+          '║ [CPU-9000] ║\n' +
+          '╚════════════╝\n' +
+          '   ██████████'
+        );
+        return (
+          '╔════════════╗\n' +
+          '║ SUPER-LAB  ║\n' +
+          '║ ▓▓░░░░▓▓   ║\n' +
+          '║ ░▓▓▓▓▓░    ║\n' +
+          '╠════════════╣\n' +
+          '║ [CPU-9000] ║\n' +
+          '╚════════════╝\n' +
+          '   ██████████'
+        );
+      }
+      if (!isRnd && bu.rsh_cross) {
+        if (tier >= 2) return (
+          '╔════════════╗\n' +
+          '║  RESEARCH  ║\n' +
+          '║ ▓▓▓░▓▓▓░▓▓ ║\n' +
+          '╠════════════╣\n' +
+          '║ ░▓▓▓░▓▓▓░▓ ║\n' +
+          '╠════════════╣\n' +
+          '╚════════════╝\n' +
+          '   ██████████'
+        );
+        return (
+          '╔════════════╗\n' +
+          '║  RESEARCH  ║\n' +
+          '║ ▓▓▓░▓▓▓░▓▓ ║\n' +
+          '║ ░▓▓▓░▓▓▓░▓ ║\n' +
+          '╠════════════╣\n' +
+          '╚════════════╝\n' +
+          '   ██████████'
+        );
+      }
+      if (tier >= 3) return (
         '╔════════════╗\n' +
-        '║ SUPER-LAB  ║\n' +
-        '║ ▓▓░░░░▓▓   ║\n' +
-        '║ ░▓▓▓▓▓░    ║\n' +
+        '║  RESEARCH  ║\n' +
+        '║ ▓░▓░▓░▓░   ║\n' +
         '╠════════════╣\n' +
-        '║ [CPU-9000] ║\n' +
+        '║ ░▓░▓░▓░▓   ║\n' +
+        '╠════════════╣\n' +
+        '║ ▓░▓░▓░▓░   ║\n' +
         '╚════════════╝\n' +
         '   ██████████'
       );
-      if (!isRnd && bu.rsh_cross) return (
+      if (tier >= 1) return (
         '╔════════════╗\n' +
         '║  RESEARCH  ║\n' +
-        '║ ▓▓▓░▓▓▓░▓▓ ║\n' +
-        '║ ░▓▓▓░▓▓▓░▓ ║\n' +
+        '║ ▓░▓░▓░▓░   ║\n' +
         '╠════════════╣\n' +
+        '║ ░▓░▓░▓░▓   ║\n' +
         '╚════════════╝\n' +
         '   ██████████'
       );
@@ -180,21 +441,49 @@ function _bldAscii(bld) {
     }
 
     case 'wb-solar':
-      if (bu.sol_tracker) return (
-        ' ╔╗ -- ╔╗\n' +
-        ' ╠╣    ╠╣\n' +
-        ' ╚╝    ╚╝\n' +
-        '  │     │\n' +
-        '  │     │\n' +
-        ' ████████'
-      );
-      if (bu.sol_hieff) return (
-        ' ╔╗    ╔╗\n' +
-        ' ╠╣▓   ╠╣▓\n' +
-        ' ╚╝    ╚╝\n' +
-        '  │     │\n' +
-        '  │     │\n' +
-        ' ████████'
+      if (bu.sol_tracker) {
+        if (tier >= 2) return (
+          ' ╔╗ -- ╔╗ -- ╔╗\n' +
+          ' ╠╣    ╠╣    ╠╣\n' +
+          ' ╚╝    ╚╝    ╚╝\n' +
+          '  │     │     │\n' +
+          '  │     │     │\n' +
+          ' ████████████'
+        );
+        return (
+          ' ╔╗ -- ╔╗\n' +
+          ' ╠╣    ╠╣\n' +
+          ' ╚╝    ╚╝\n' +
+          '  │     │\n' +
+          '  │     │\n' +
+          ' ████████'
+        );
+      }
+      if (bu.sol_hieff) {
+        if (tier >= 2) return (
+          ' ╔╗    ╔╗    ╔╗\n' +
+          ' ╠╣▓   ╠╣▓   ╠╣▓\n' +
+          ' ╚╝    ╚╝    ╚╝\n' +
+          '  │     │     │\n' +
+          '  │     │     │\n' +
+          ' ████████████'
+        );
+        return (
+          ' ╔╗    ╔╗\n' +
+          ' ╠╣▓   ╠╣▓\n' +
+          ' ╚╝    ╚╝\n' +
+          '  │     │\n' +
+          '  │     │\n' +
+          ' ████████'
+        );
+      }
+      if (tier >= 3) return (
+        ' ╔╗    ╔╗    ╔╗\n' +
+        ' ╠╣    ╠╣    ╠╣\n' +
+        ' ╚╝    ╚╝    ╚╝\n' +
+        '  │     │     │\n' +
+        '  │     │     │\n' +
+        ' ████████████'
       );
       return (
         ' ╔╗    ╔╗\n' +
@@ -206,20 +495,60 @@ function _bldAscii(bld) {
       );
 
     case 'wb-launchpad':
-      if (bu.pad_fuelfeed) return (
-        '      /▲╲\n' +
-        '     /▓▓▓╲\n' +
-        '    /══▓══╲\n' +
+      if (bu.pad_fuelfeed) {
+        if (tier >= 2) return (
+          '        *\n' +
+          '      /▲▲╲\n' +
+          '     /▓▓▓▓╲\n' +
+          '    /══▓▓══╲\n' +
+          '   ╔═════════╗\n' +
+          '   ║ [PAD++] ║\n' +
+          '──╚═══════════╝──'
+        );
+        return (
+          '      /▲╲\n' +
+          '     /▓▓▓╲\n' +
+          '    /══▓══╲\n' +
+          '   ╔═══════╗\n' +
+          '   ║[PAD+] ║\n' +
+          '──╚═════════╝──'
+        );
+      }
+      if (bu.pad_reinforce) {
+        if (tier >= 2) return (
+          '        *\n' +
+          '      /▲▲╲\n' +
+          '     / ▓▓ ╲\n' +
+          '    /══▓══╲\n' +
+          '   ╔═══════╗\n' +
+          '   ║[R-PAD]║\n' +
+          '──╚═════════╝──'
+        );
+        return (
+          '      /▲╲\n' +
+          '     / ▓ ╲\n' +
+          '    /══▓══╲\n' +
+          '   ╔═══════╗\n' +
+          '   ║[R-PAD]║\n' +
+          '──╚═════════╝──'
+        );
+      }
+      if (tier >= 3) return (
+        '        *\n' +
+        '       /▲╲\n' +
+        '      / ▓ ╲\n' +
+        '     /  ▓  ╲\n' +
+        '    /   ▓   ╲\n' +
         '   ╔═══════╗\n' +
-        '   ║[PAD+] ║\n' +
+        '   ║ [PAD] ║\n' +
         '──╚═════════╝──'
       );
-      if (bu.pad_reinforce) return (
+      if (tier >= 1) return (
         '      /▲╲\n' +
         '     / ▓ ╲\n' +
-        '    /══▓══╲\n' +
+        '    /  ▓  ╲\n' +
         '   ╔═══════╗\n' +
-        '   ║[R-PAD]║\n' +
+        '   ║ [PAD] ║\n' +
         '──╚═════════╝──'
       );
       return (
@@ -366,7 +695,7 @@ function updateWorldBuildings() {
     }
     pre.dataset.bid = b.id;
     pre.style.left = x + 'px';
-    pre.textContent = cnt === 0 ? _scaffoldAscii() : _bldAscii(b);
+    pre.textContent = cnt === 0 ? _scaffoldAscii() : _bldAscii(b, cnt);
 
     if (cnt > 0) {
       pre.addEventListener('mouseenter', () => {
@@ -792,6 +1121,14 @@ function assignWorker(bldId) {
   notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (pre) openBldOv(bld, pre);
+  // 플로팅 숫자: 인원 배치 피드백
+  if (typeof spawnFloatNum === 'function') {
+    const _pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+    if (_pre) {
+      const r = _pre.getBoundingClientRect();
+      spawnFloatNum('+인원', 'money', r.left + r.width / 2, r.top);
+    }
+  }
   renderAll();
 }
 
@@ -1009,4 +1346,39 @@ function initWorldDrag() {
 
   setInterval(_tickWorkers, 80);
   syncWorkerDots();
+}
+
+// ─── 플로팅 숫자 스폰 ─────────────────────────────────────────
+// text: 표시 문자열, type: CSS 클래스 (money/metal/fuel/elec/research/ms)
+// x, y: 화면 좌표 (clientX/clientY 기준)
+function spawnFloatNum(text, type, x, y) {
+  const el = document.createElement('div');
+  el.className = 'float-num' + (type ? ' ' + type : '');
+  el.textContent = text;
+  // 약간의 랜덤 좌우 흔들림으로 겹침 방지
+  el.style.left = (x + (Math.random() - 0.5) * 40) + 'px';
+  el.style.top  = (y - 10) + 'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// ─── ASCII 파티클 버스트 ──────────────────────────────────────
+// x, y: 화면 좌표, count: 파티클 개수, color: CSS 색상 문자열(선택)
+const _PARTICLE_CHARS = ['*', '+', '·', '○', '◆', '#', '▪'];
+function spawnAsciiParticles(x, y, count, color) {
+  const n = count || 6;
+  for (let i = 0; i < n; i++) {
+    const el = document.createElement('div');
+    el.className = 'ascii-particle';
+    el.textContent = _PARTICLE_CHARS[Math.floor(Math.random() * _PARTICLE_CHARS.length)];
+    const angle = (Math.PI * 2 / n) * i + Math.random() * 0.5;
+    const dist  = 30 + Math.random() * 50;
+    el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle) * dist - 20 + 'px');
+    el.style.left = x + 'px';
+    el.style.top  = y + 'px';
+    if (color) el.style.color = color;
+    document.body.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
 }
