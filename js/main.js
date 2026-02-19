@@ -112,13 +112,14 @@ function renderResources() {
 // ============================================================
 function renderAll() {
   renderResources();
-  if (activeTab === 'production') renderProductionTab();
+  if (activeTab === 'production') { renderProductionTab(); if (typeof renderMissionGoal === 'function') renderMissionGoal(); }
   if (activeTab === 'research')   renderResearchTab();
   if (activeTab === 'assembly')   renderAssemblyTab();
   if (activeTab === 'launch')     renderLaunchTab();
   if (activeTab === 'mission')    renderMissionTab();
   if (activeTab === 'automation') renderAutomationTab();
   updateWorldBuildings();
+  if (typeof renderMilestonePanel === 'function') renderMilestonePanel();
   // document.title 동적 업데이트
   _updateDocTitle();
 }

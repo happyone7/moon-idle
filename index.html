@@ -1102,6 +1102,33 @@ body.tab-launch #rp { display: none; }
   letter-spacing: 3px; cursor: pointer; transition: all 0.15s;
 }
 .ofr-confirm-btn:hover { border-color: var(--green); text-shadow: var(--glow); background: rgba(0,230,118,0.05); }
+
+/* ── Milestone Panel ── */
+#milestone-panel { margin-top: 8px; padding-top: 6px; border-top: 1px solid #0a1a0a; }
+.ml-hd { font-size: 10px; color: var(--green-dim); letter-spacing: 2px; margin-bottom: 4px; }
+.ml-count { color: var(--green-mid); }
+.ml-row { display: flex; align-items: flex-start; gap: 5px; padding: 3px 0; border-bottom: 1px solid #0a1a0a; opacity: 0.6; }
+.ml-row.ml-done { opacity: 1; }
+.ml-chk { font-size: 10px; color: var(--green-dim); min-width: 10px; padding-top: 1px; }
+.ml-row.ml-done .ml-chk { color: var(--green); }
+.ml-body { display: flex; flex-direction: column; gap: 1px; flex: 1; text-align: left; }
+.ml-name { font-size: 10px; color: var(--white); }
+.ml-row.ml-done .ml-name { color: var(--green); }
+.ml-desc { font-size: 9px; color: var(--text-muted); }
+.ml-reward { font-size: 9px; color: var(--amber-dim); }
+.ml-reward.ml-reward-done { color: var(--green-dim); }
+
+/* ── Mission Goal Panel ── */
+#mission-goal { margin-top: 8px; padding-top: 6px; border-top: 1px solid #0a1a0a; }
+.mg-rocket-wrap { text-align: center; margin-bottom: 5px; }
+.mg-rocket-label { font-size: 9px; color: var(--green-dim); letter-spacing: 2px; }
+.mg-rocket { font-size: 9px; color: var(--green); line-height: 1.3; text-shadow: var(--glow); display: inline-block; text-align: left; }
+.mg-title { font-size: 10px; color: var(--amber); letter-spacing: 1px; margin-bottom: 4px; }
+.mg-bar-row { display: flex; align-items: center; gap: 3px; font-size: 9px; margin-bottom: 2px; }
+.mg-bar-lbl { color: var(--green-dim); min-width: 40px; }
+.mg-bar-val { color: var(--green); font-size: 8px; flex: 1; }
+.mg-bar-cnt { color: var(--green-mid); min-width: 28px; text-align: right; }
+.mg-next { font-size: 9px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -1199,6 +1226,8 @@ body.tab-launch #rp { display: none; }
             <div class="bld-list-hd">건물 리스트</div>
             <div id="prod-status"></div>
             <div id="bld-grid"></div>
+            <div id="mission-goal"></div>
+            <div id="milestone-panel"></div>
           </div>
         </div>
 
@@ -1443,6 +1472,7 @@ setInterval(function() {
 <script src="js/tabs/launch.js"></script>
 <script src="js/tabs/mission.js"></script>
 <script src="js/tabs/automation.js"></script>
+<script src="js/milestones.js"></script>
 <script src="js/audio-bgm.js"></script>
 <script src="js/main.js"></script>
 </body>

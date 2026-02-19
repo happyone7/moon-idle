@@ -103,6 +103,9 @@ function checkAutoUnlocks() {
   }
 
   if (changed) renderUnlocks();
+
+  // 마일스톤 체크
+  if (typeof checkMilestones === 'function') checkMilestones();
 }
 
 

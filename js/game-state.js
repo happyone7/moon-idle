@@ -15,6 +15,7 @@ let gs = {
   upgrades: {},
   msUpgrades: {},
   autoEnabled: {},
+  milestones: {},
   launches: 0,
   moonstone: 0,
   history: [],
@@ -262,7 +263,8 @@ function getProduction() {
     // 생산량은 배치된 인원(assignments) 기반
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
     if (assigned === 0) return;
-    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id);
+    const msBonus = typeof getMilestoneProdBonus === 'function' ? getMilestoneProdBonus() : 1;
+    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id) * msBonus;
     prod[b.produces] += rate;
   });
   // Add RP bonus from tech hub addon
@@ -305,7 +307,9 @@ function getRocketScience(qualityId) {
 function getMoonstoneReward(qualityId) {
   const sci = getRocketScience(qualityId);
   const q = getQuality(qualityId);
-  return Math.max(1, Math.floor((sci.altitude / 20) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / 4));
+  const base = Math.max(1, Math.floor((sci.altitude / 20) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / 4));
+  const mult = typeof getMilestoneMsBonus === 'function' ? getMilestoneMsBonus() : 1;
+  return Math.floor(base * mult);
 }
 
 function getCostStr(cost) {
@@ -461,6 +465,7 @@ function loadGame(slot) {
     gs.addonUpgrades = saved.addonUpgrades || {};
     gs.msUpgrades = saved.msUpgrades || {};
     gs.autoEnabled = saved.autoEnabled || {};
+    gs.milestones  = saved.milestones  || {};
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {

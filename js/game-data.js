@@ -211,3 +211,57 @@ const AUTOMATION_UPGRADES = [
   { id:'auto_assemble',       name:'조립 자동 재시작',            icon:'[AS1]', cost:{moonstone:15}, req:'auto_parts_hull',  tier:1, desc:'빈 슬롯이 있고 모든 파트가 준비된 경우 즉시 조립을 자동으로 시작.' },
   { id:'auto_launch',         name:'발사 자동 실행',              icon:'[AS2]', cost:{moonstone:20}, req:'auto_assemble',    tier:2, desc:'조립 완료 즉시 자동으로 발사를 실행. 발사 오버레이 없이 바로 처리.' },
 ];
+
+// ============================================================
+//  MILESTONES — 달성 조건 + 영구 보상
+// ============================================================
+const MILESTONES = [
+  {
+    id:   'first_mine',
+    name: '첫 금속 생산',
+    icon: '[MIN]',
+    desc: '철광석 채굴기 1개 건설',
+    reward: 'RP +5 즉시 지급',
+    check: gs => (gs.buildings && gs.buildings.mine || 0) >= 1,
+  },
+  {
+    id:   'all_parts',
+    name: '로켓 설계도 완성',
+    icon: '[◆5]',
+    desc: '5종 로켓 부품 전부 제작',
+    reward: '조립 시간 -10% 영구',
+    check: gs => typeof PARTS !== 'undefined' && PARTS.every(p => gs.parts && gs.parts[p.id]),
+  },
+  {
+    id:   'orbit_200',
+    name: '궤도 돌입',
+    icon: '[ORB]',
+    desc: '발사 고도 200km 이상 달성',
+    reward: '문스톤 +5 즉시 지급',
+    check: gs => Array.isArray(gs.history) && gs.history.some(h => (h.altitude || 0) >= 200),
+  },
+  {
+    id:   'ten_launches',
+    name: '달 탐사 시작',
+    icon: '[10x]',
+    desc: '누적 발사 10회',
+    reward: '전체 생산 +10% 영구',
+    check: gs => (gs.launches || 0) >= 10,
+  },
+  {
+    id:   'all_buildings',
+    name: '산업 단지 완성',
+    icon: '[IND]',
+    desc: '모든 건물 종류 1개씩 보유',
+    reward: '인원 상한 +2 영구',
+    check: gs => typeof BUILDINGS !== 'undefined' && BUILDINGS.every(b => (gs.buildings && gs.buildings[b.id] || 0) >= 1),
+  },
+  {
+    id:   'elite_launch',
+    name: 'ELITE 클래스 발사',
+    icon: '[★]',
+    desc: 'ELITE-MK4 품질로 첫 발사',
+    reward: '문스톤 획득량 +20% 영구',
+    check: gs => Array.isArray(gs.history) && gs.history.some(h => h.qualityId === 'elite'),
+  },
+];
