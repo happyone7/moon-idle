@@ -454,7 +454,6 @@ function loadGame(slot) {
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
-      tab_rocket: true,
       tab_production: true,
       tab_research: true,
       tab_assembly: false,

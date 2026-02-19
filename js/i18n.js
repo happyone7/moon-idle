@@ -90,6 +90,23 @@ const I18N = {
     stat_moonstone: 'Moonstone',
     stat_bonus:     'Production Bonus',
 
+    // LC GO/NO-GO checklist
+    chk_pad:        'Launch Pad Structure',
+    chk_prop:       'Propellant Load',
+    chk_veh:        'Vehicle Assembly',
+    chk_nav:        'Navigation System',
+    chk_eng:        'Engine Systems',
+    chk_wx:         'Weather Conditions',
+    chk_ok:         '// All Systems Nominal',
+    chk_ng:         '// Pre-Launch Check Required',
+
+    // LC failure modes
+    fail_engine:    'Engine Shutdown',
+    fail_gyro:      'Gyro Malfunction',
+    fail_maxq:      'MaxQ Overpressure',
+    fail_lox:       'LOX Cutoff',
+    fail_guidance:  'Guidance System',
+
     // LC sbar labels
     lc_dv:          'Δv (km/s)',
     lc_rel:         'Reliability',
@@ -192,6 +209,23 @@ const I18N = {
     stat_max_alt:   '최고 고도',
     stat_moonstone: '문스톤 보유',
     stat_bonus:     '생산 보너스',
+
+    // LC GO/NO-GO checklist
+    chk_pad:        '발사대 구조',
+    chk_prop:       '추진제 주입',
+    chk_veh:        '기체 조립',
+    chk_nav:        '항법 장치',
+    chk_eng:        '엔진 계통',
+    chk_wx:         '기상 조건',
+    chk_ok:         '// 전 계통 이상 없음',
+    chk_ng:         '// 발사 전 확인 필요',
+
+    // LC failure modes
+    fail_engine:    '엔진 정지',
+    fail_gyro:      '자이로 오작동',
+    fail_maxq:      'MaxQ 과부하',
+    fail_lox:       'LOX 차단',
+    fail_guidance:  '유도 계통',
 
     lc_dv:          'Δv (km/s)',
     lc_rel:         '신뢰도',

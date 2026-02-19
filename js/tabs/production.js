@@ -112,20 +112,6 @@ function renderProductionTab() {
 </div>`;
   });
   const bldGrid = document.getElementById('bld-grid');
-  if (bldGrid) {
-    bldGrid.innerHTML = cardsHtml;
-    // 건물 행 hover → 업그레이드/인원 오버레이
-    bldGrid.querySelectorAll('.bld-row').forEach(row => {
-      const bid = row.dataset.bid;
-      const bData = BUILDINGS.find(b => b.id === bid);
-      if (!bData) return;
-      row.addEventListener('mouseenter', () => {
-        if (typeof openBldOv === 'function') openBldOv(bData, row);
-      });
-      row.addEventListener('mouseleave', () => {
-        if (typeof scheduleBldOvClose === 'function') scheduleBldOvClose();
-      });
-    });
-  }
+  if (bldGrid) bldGrid.innerHTML = cardsHtml;
 }
 
