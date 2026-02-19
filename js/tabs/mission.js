@@ -82,6 +82,7 @@ function buyMsUpgrade(id) {
 // ============================================================
 function confirmLaunch() {
   gs.moonstone += pendingLaunchMs;
+  pendingLaunchMs = 0;  // closeLaunchOverlay 이중 지급 방지
   const savedMs        = gs.msUpgrades || {};
   const savedMoonstone = gs.moonstone;
   const savedLaunches  = gs.launches;
@@ -127,8 +128,15 @@ function confirmLaunch() {
 }
 
 function closeLaunchOverlay() {
+  // 문스톤 실제 지급 (pendingLaunchMs에 저장된 값)
+  if (pendingLaunchMs > 0) {
+    gs.moonstone += pendingLaunchMs;
+    pendingLaunchMs = 0;
+  }
   const overlay = document.getElementById('launch-overlay');
   if (overlay) overlay.classList.remove('show');
+  saveGame();
+  renderAll();
 }
 
 

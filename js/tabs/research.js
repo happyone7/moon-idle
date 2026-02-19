@@ -27,6 +27,7 @@ const TIER_GROUPS = [
   { label: 'TIER-3  //  고급 공학',    nodes: ['automation', 'rocket_eng', 'reliability', 'lightweight'] },
   { label: 'TIER-4  //  우주 공학',    nodes: ['fusion', 'multipad', 'launch_ctrl'] },
   { label: 'TIER-5  //  임무 시스템',  nodes: ['mission_sys'] },
+  { label: 'TIER-6  //  자동화 확장',  nodes: ['auto_worker_assign', 'auto_assemble_restart'] },
 ];
 
 function buyUpgrade(uid) {
@@ -47,7 +48,6 @@ function buyUpgrade(uid) {
 // ============================================================
 //  RENDER: RESEARCH TAB v2 — horizontal card tree + detail panel
 // ============================================================
-let selectedTechId = null;
 
 function selectTech2(uid) {
   selectedTechId = uid;
@@ -142,7 +142,7 @@ function renderResearchTab() {
     const cnt = gs.buildings[b.id] || 0;
     if (cnt === 0) return;
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
-    const rate = b.baseRate * assigned * (prodMult.research || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    const rate = b.baseRate * assigned * (prodMult.research || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id);
     rpSourcesHtml += `<div class="rsh-src-row">
       <span>${b.icon} ${b.name} ×${cnt}</span>
       <span>+${fmtDec(rate, 2)}/s</span>
