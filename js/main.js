@@ -180,6 +180,7 @@ function startNewGame(slot) {
   gs.assignments = {};
   gs._prodHubVisited = false;
   gs.bldLevels = {};
+  gs.bldSlotLevels = {};
   gs.bldUpgrades = {};
   gs.addons = {};
   gs.addonUpgrades = {};

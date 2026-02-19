@@ -379,7 +379,7 @@ function updateWorldBuildings() {
 
 // ─── SLOT UPGRADE HELPERS ─────────────────────────────────────
 function _getBldSlotCost(bld) {
-  const level = (gs.bldLevels && gs.bldLevels[bld.id]) || 0;
+  const level = (gs.bldSlotLevels && gs.bldSlotLevels[bld.id]) || 0;
   return { money: 500 * 2 * (level + 1) };
 }
 
@@ -390,9 +390,9 @@ function buyBldSlotUpgrade(bldId) {
   const cost = _getBldSlotCost(bld);
   if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
   spend(cost);
-  if (!gs.bldLevels) gs.bldLevels = {};
-  gs.bldLevels[bldId] = (gs.bldLevels[bldId] || 0) + 1;
-  notify(`${bld.icon} ${bld.name} — 슬롯 +1 (현재 ${gs.buildings[bldId] + gs.bldLevels[bldId]}슬롯)`);
+  if (!gs.bldSlotLevels) gs.bldSlotLevels = {};
+  gs.bldSlotLevels[bldId] = (gs.bldSlotLevels[bldId] || 0) + 1;
+  notify(`${bld.icon} ${bld.name} — 슬롯 +1 (현재 ${gs.buildings[bldId] + gs.bldSlotLevels[bldId]}슬롯)`);
   playSfx('triangle', 580, 0.09, 0.04, 820);
   _triggerUpgradeAnim(bldId);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
@@ -420,7 +420,7 @@ function openBldOv(bld, el) {
 
   // ── 슬롯 업그레이드 (생산 건물만, 보너스 건물 제외) ──────
   if (bld.produces !== 'bonus') {
-    const slotLevel  = (gs.bldLevels && gs.bldLevels[bld.id]) || 0;
+    const slotLevel  = (gs.bldSlotLevels && gs.bldSlotLevels[bld.id]) || 0;
     const slotCap    = cnt + slotLevel;
     const slotCost   = _getBldSlotCost(bld);
     const slotAfford = canAfford(slotCost);
@@ -763,7 +763,7 @@ function assignWorker(bldId) {
   if (!bld) return;
   const cnt      = gs.buildings[bldId] || 0;
   const assigned = gs.assignments[bldId] || 0;
-  const slotCap  = cnt + ((gs.bldLevels && gs.bldLevels[bldId]) || 0);
+  const slotCap  = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bldId]) || 0);
   if (cnt === 0)                    { notify('건물이 없습니다', 'red'); return; }
   if (getAvailableWorkers() <= 0)   { notify('여유 인원 없음', 'red'); return; }
   if (assigned >= slotCap)          { notify('슬롯 수용 한도 초과 — 슬롯 업그레이드 필요', 'amber'); return; }

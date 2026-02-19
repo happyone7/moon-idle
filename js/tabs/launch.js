@@ -261,6 +261,8 @@ function renderLaunchTab() {
   if (!launchInProgress) {
     if (preLaunch) preLaunch.style.display = '';
     if (animZone)  animZone.classList.remove('active');
+  } else {
+    return; // 발사 애니메이션 중 DOM 재렌더링 방지 (BUG-007)
   }
 
   // ── 준비된 슬롯 탐색 ────────────────────────────────────

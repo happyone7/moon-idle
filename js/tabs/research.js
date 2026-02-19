@@ -234,6 +234,7 @@ function renderResearchTab() {
 }
 
 function selectTech(uid) {
-  // kept for compatibility
-  buyUpgrade(uid);
+  // legacy alias: 자동 구매 대신 상세 패널만 표시 (BUG-014)
+  selectedTechId = uid;
+  if (typeof renderTechDetail === 'function') renderTechDetail(uid);
 }

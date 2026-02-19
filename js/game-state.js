@@ -5,7 +5,8 @@ let gs = {
   res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
   buildings: { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldUpgrades: {},    // per-building named upgrades purchased
-  bldLevels: {},      // { buildingId: upgradeCount }
+  bldLevels: {},      // { buildingId: statUpgradeCount } — 생산량 업그레이드 (getBldProdMult용)
+  bldSlotLevels: {},  // { buildingId: slotUpgradeCount } — 인원 슬롯 추가 (BUG-013 분리)
   addons: {},         // { buildingId: addonOptionId } — A/B 선택된 애드온
   addonUpgrades: {}, // { upgradeId: true }
   workers: 1,          // 총 인원
@@ -457,6 +458,7 @@ function loadGame(slot) {
     if (gs.settings.lang === undefined) gs.settings.lang = 'en';
     gs.lastTick = saved.lastTick || Date.now();
     gs.bldLevels = saved.bldLevels || {};
+    gs.bldSlotLevels = saved.bldSlotLevels || {};
     gs.bldUpgrades = saved.bldUpgrades || {};
     gs._prodHubVisited = saved._prodHubVisited !== undefined ? saved._prodHubVisited :
       ((saved.buildings && (saved.buildings.ops_center || 0) > 0) ||

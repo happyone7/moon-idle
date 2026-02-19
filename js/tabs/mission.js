@@ -99,6 +99,7 @@ function confirmLaunch() {
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};
   gs.bldLevels = {};
+  gs.bldSlotLevels = {};
   gs.bldUpgrades = {};
   gs.addons = {};
   gs.addonUpgrades = {};

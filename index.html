@@ -1129,6 +1129,59 @@ body.tab-launch #rp { display: none; }
 .mg-bar-val { color: var(--green); font-size: 8px; flex: 1; }
 .mg-bar-cnt { color: var(--green-mid); min-width: 28px; text-align: right; }
 .mg-next { font-size: 9px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+
+/* ===========================
+   MOBILE RESPONSIVE (≤640px)
+   Art Director 6.2 요청
+   =========================== */
+@media (max-width: 640px) {
+  /* 좌측 자원 패널 숨김 — 좁은 화면에서 공간 확보 */
+  #res-left { display: none !important; }
+  /* 우측 인원 패널도 숨김 */
+  #rp { display: none !important; }
+
+  /* 네비게이션 탭: 가로 스크롤 */
+  #nav-tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  #nav-tabs::-webkit-scrollbar { height: 3px; }
+  .nav-tab {
+    min-width: 72px;
+    padding: 8px 10px;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+
+  /* 탭 콘텐츠 영역 전체 너비 사용 */
+  #ww { width: 100%; }
+
+  /* 발사 탭 3컬럼 → 1컬럼 스택 */
+  .lc-3col {
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+  .lc-3col > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
+  /* 연구 탭 카드 트리 가로 스크롤 */
+  .rsh-tree-area { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* 조립 탭 슬롯 그리드 1열 */
+  .asm-slots-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 오버레이/모달 전체 너비 */
+  #bld-ov { max-width: 96vw !important; left: 2vw !important; right: 2vw !important; }
+  #offline-modal { max-width: 96vw !important; }
+}
 </style>
 </head>
 <body>

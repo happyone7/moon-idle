@@ -12,7 +12,7 @@ function withdrawAllWorkers() {
 function quickAssign(bid) {
   const avail = getAvailableWorkers();
   if (avail <= 0) { notify('여유 인원 없음', 'amber'); return; }
-  const slotCap = (gs.buildings[bid] || 0) + ((gs.bldLevels && gs.bldLevels[bid]) || 0);
+  const slotCap = (gs.buildings[bid] || 0) + ((gs.bldSlotLevels && gs.bldSlotLevels[bid]) || 0);
   const assigned = (gs.assignments && gs.assignments[bid]) || 0;
   if (assigned >= slotCap) { notify(`슬롯 수용 한도 초과 (${slotCap})`, 'amber'); return; }
   if (!gs.assignments) gs.assignments = {};
@@ -138,7 +138,7 @@ function renderProductionTab() {
       else if (b.id === 'launch_pad') rateStr = `<span style="color:var(--green-mid)">슬롯 ${cnt}</span>`;
       else if (b.id === 'housing')    rateStr = `<span style="color:var(--green-mid)">인원 +${cnt}</span>`;
     }
-    const slotCap = cnt + ((gs.bldLevels && gs.bldLevels[b.id]) || 0);
+    const slotCap = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[b.id]) || 0);
     const canPlus = b.produces !== 'bonus' && cnt > 0 && getAvailableWorkers() > 0 && assigned < slotCap;
     const canMinus = b.produces !== 'bonus' && assigned > 0;
     const wkrCell = (b.produces !== 'bonus' && cnt > 0)
