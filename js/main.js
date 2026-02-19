@@ -24,7 +24,7 @@ function renderResources() {
   const rlInner = document.getElementById('rl-inner');
   if (rlInner) {
     const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
-    const CAT_HEADERS = { money:'// 자금', metal:'// 소재', research:'// 연구' };
+    const CAT_HEADERS = { money: t('cat_funds'), metal: t('cat_materials'), research: t('cat_research') };
 
     let html = '';
     RESOURCES.forEach(r => {
@@ -39,7 +39,7 @@ function renderResources() {
       html += `<div class="rl-item">
         <div class="rl-row">
           <span class="rl-sym" style="color:${r.color}">${r.symbol}</span>
-          <span class="rl-name">${r.name}</span>
+          <span class="rl-name">${t('res_' + r.id) || r.name}</span>
           <span class="rl-val" style="color:${r.color}">${fmt(val)}</span>
           <span class="rl-rate">${rateStr}</span>
         </div>
@@ -53,9 +53,9 @@ function renderResources() {
     html += `<div class="rl-item rl-worker-row">
       <div class="rl-row">
         <span class="rl-sym">&#128100;</span>
-        <span class="rl-name">인원</span>
+        <span class="rl-name">${t('res_workers')}</span>
         <span class="rl-val" style="color:var(--white)">${assignedW}/${totalW}</span>
-        <span class="rl-rate">여유 ${avail}</span>
+        <span class="rl-rate">${t('res_free')} ${avail}</span>
       </div>
     </div>`;
     rlInner.innerHTML = html;
@@ -84,7 +84,6 @@ function renderResources() {
 // ============================================================
 function renderAll() {
   renderResources();
-  if (activeTab === 'rocket')     renderRocketTab();
   if (activeTab === 'production') renderProductionTab();
   if (activeTab === 'research')   renderResearchTab();
   if (activeTab === 'assembly')   renderAssemblyTab();
@@ -144,9 +143,8 @@ function startNewGame(slot) {
   gs.moonstone = 0;
   gs.history = [];
   gs.lastTick = Date.now();
-  gs.settings = { sound: true };
+  gs.settings = { sound: true, lang: 'en' };
   gs.unlocks = {
-    tab_rocket: true,
     tab_production: true, tab_research: false, tab_assembly: false,
     tab_launch: true,  tab_mission: false,
     bld_housing: true, bld_ops_center: true, bld_supply_depot: false, bld_mine: false,
@@ -263,8 +261,9 @@ function enterGame() {
       setTimeout(() => BGM.start(0), 1200);
     }
     calcOffline();
+    if (typeof applyI18n === 'function') applyI18n();
     renderUnlocks();
-    switchMainTab('rocket');
+    switchMainTab('launch');
     renderAll();
     setInterval(tick, 200);
     setInterval(renderAll, 500);

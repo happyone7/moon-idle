@@ -18,10 +18,9 @@ let gs = {
   moonstone: 0,
   history: [],
   lastTick: Date.now(),
-  settings: { sound: true },
+  settings: { sound: true, lang: 'en' },
   saveVersion: 2,
   unlocks: {
-    tab_rocket: true,
     tab_production: true,
     tab_research: false,   // 연구소 구매 후 자동 해금
     tab_assembly: false,
@@ -444,7 +443,8 @@ function loadGame(slot) {
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
     gs.assembly = saved.assembly || { selectedQuality:'proto', jobs:[] };
-    gs.settings = saved.settings || { sound: true };
+    gs.settings = saved.settings || { sound: true, lang: 'en' };
+    if (gs.settings.lang === undefined) gs.settings.lang = 'en';
     gs.lastTick = saved.lastTick || Date.now();
     gs.bldLevels = saved.bldLevels || {};
     gs.bldUpgrades = saved.bldUpgrades || {};

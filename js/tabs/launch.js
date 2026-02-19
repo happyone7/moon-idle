@@ -236,37 +236,10 @@ function renderLaunchTab() {
   const lc_checklist = document.getElementById('lc-checklist');
   if (lc_checklist) lc_checklist.innerHTML = chkHtml;
 
-  // ── 2. 발사 데이터 ───────────────────────────────────────
-  const lc_launchData = document.getElementById('lc-launch-data');
-  if (lc_launchData) {
-    lc_launchData.innerHTML = hasReady
-      ? `<div class="lc-drow"><span>기체</span><span class="v">${q.name}</span></div>
-         <div class="lc-drow"><span>목표 고도</span><span class="v">${Math.floor(sci.altitude)} km</span></div>
-         <div class="lc-drow"><span>Δv</span><span class="v">${sci.deltaV.toFixed(2)} km/s</span></div>
-         <div class="lc-drow"><span>TWR</span><span class="v">${sci.twr.toFixed(2)}</span></div>
-         <div class="lc-drow"><span>신뢰도</span><span class="v">${sci.reliability.toFixed(1)}%</span></div>
-         <div class="lc-drow"><span>문스톤 예상</span><span class="va">+${earned}</span></div>`
-      : `<div style="color:var(--green-dim);font-size:11px;line-height:1.8">// 조립동에서 로켓을 조립하세요</div>`;
-  }
+  // ── 2. 온보딩 퀘스트 ────────────────────────────────────
+  _renderLcQuest();
 
-  // ── 3. 조립 대기 큐 ──────────────────────────────────────
-  const lc_queue = document.getElementById('lc-queue');
-  if (lc_queue) {
-    let qHtml = '';
-    gs.assembly.jobs.forEach((job, idx) => {
-      if (!job) return;
-      if (job.ready) {
-        qHtml += `<div class="lc-drow"><span>슬롯 ${idx+1}</span><span class="v">${getQuality(job.qualityId).name} [대기]</span></div>`;
-      } else {
-        const remain = Math.max(0, Math.floor((job.endAt - Date.now()) / 1000));
-        qHtml += `<div class="lc-drow"><span>슬롯 ${idx+1}</span><span class="va">${getQuality(job.qualityId).name} ${fmtTime(remain)}</span></div>`;
-      }
-    });
-    if (!qHtml) qHtml = `<div style="color:var(--green-dim);font-size:11px;">// 조립 중인 로켓 없음</div>`;
-    lc_queue.innerHTML = qHtml;
-  }
-
-  // ── 4. ASCII 로켓 ────────────────────────────────────────
+  // ── 3. ASCII 로켓 ────────────────────────────────────────
   const rocketPre = document.getElementById('lc-rocket-pre');
   if (rocketPre) rocketPre.textContent = _lcRocketArt(hasReady ? q.id : 'standby');
 
@@ -334,10 +307,10 @@ function renderLaunchTab() {
   const histEl = document.getElementById('lc-history');
   if (histEl) {
     if (gs.history.length === 0) {
-      histEl.innerHTML = `<div style="color:var(--green-dim);font-size:11px;line-height:1.8">// 발사 기록 없음</div>`;
+      histEl.innerHTML = `<div style="color:var(--green-dim);font-size:11px;line-height:1.8">${t('hist_none')}</div>`;
     } else {
       histEl.innerHTML = `<table class="lc-hist-table">
-        <thead><tr><th>NO.</th><th>기체</th><th>고도</th><th>신뢰도</th></tr></thead>
+        <thead><tr><th>${t('hist_col_no')}</th><th>${t('hist_col_veh')}</th><th>${t('hist_col_alt')}</th><th>${t('hist_col_rel')}</th></tr></thead>
         <tbody>${gs.history.slice(-10).reverse().map(h =>
           `<tr><td>${String(h.no).padStart(3,'0')}</td><td>${h.quality}</td><td>${h.altitude}km</td><td>${h.reliability}%</td></tr>`
         ).join('')}</tbody></table>`;
@@ -349,10 +322,60 @@ function renderLaunchTab() {
   if (statsEl) {
     const maxAlt = gs.history.length ? Math.max(...gs.history.map(h => Number(h.altitude) || 0)) : 0;
     statsEl.innerHTML =
-      `<div class="lc-stat-row"><span>총 발사</span><span class="sv">${gs.launches}회</span></div>` +
-      `<div class="lc-stat-row"><span>최고 고도</span><span class="sv">${maxAlt} km</span></div>` +
-      `<div class="lc-stat-row"><span>문스톤 보유</span><span class="sva">&#9670; ${gs.moonstone}</span></div>` +
-      `<div class="lc-stat-row"><span>생산 보너스</span><span class="sv">+${gs.moonstone * 5}%</span></div>`;
+      `<div class="lc-stat-row"><span>${t('stat_launches')}</span><span class="sv">${gs.launches}</span></div>` +
+      `<div class="lc-stat-row"><span>${t('stat_max_alt')}</span><span class="sv">${maxAlt} km</span></div>` +
+      `<div class="lc-stat-row"><span>${t('stat_moonstone')}</span><span class="sva">&#9670; ${gs.moonstone}</span></div>` +
+      `<div class="lc-stat-row"><span>${t('stat_bonus')}</span><span class="sv">+${gs.moonstone * 5}%</span></div>`;
   }
+}
+
+
+// ── 온보딩 퀘스트 렌더링 ─────────────────────────────────
+function _renderLcQuest() {
+  const el = document.getElementById('lc-quest');
+  if (!el) return;
+
+  const bld = gs.buildings || {};
+  const upgs = gs.upgrades || {};
+  const jobs = (gs.assembly && gs.assembly.jobs) || [];
+  const hasLaunched = (gs.launches || 0) >= 1;
+
+  // 서브미션 조건 정의
+  const subs = [
+    { icon: '🏢', key: 'q_sub_ops',      done: (gs.assignments && (gs.assignments.ops_center || 0) >= 1) },
+    { icon: '💰', key: 'q_sub_money',    done: (gs.res.money || 0) >= 1000 },
+    { icon: '⛏️', key: 'q_sub_mine',     done: (bld.mine || 0) >= 1 },
+    { icon: '🔬', key: 'q_sub_lab',      done: (bld.research_lab || 0) >= 1 },
+    { icon: '📡', key: 'q_sub_research', done: Object.keys(upgs).length >= 1 },
+    { icon: '🚀', key: 'q_sub_pad',      done: (bld.launch_pad || 0) >= 1 },
+    { icon: '🛸', key: 'q_sub_assemble', done: jobs.some(j => j && (j.ready || j.endAt)) },
+  ];
+
+  const doneCount = subs.filter(s => s.done).length;
+  const allSubsDone = doneCount === subs.length;
+  const mainDone = hasLaunched;
+  const mainCls  = mainDone ? 'lc-quest-main-done' : 'lc-quest-main-title';
+
+  let html = `<div class="lc-quest-main">
+    <div class="${mainCls}">${mainDone ? t('q_done_title') : t('q_main_title')}</div>
+    <div class="lc-quest-main-desc">${mainDone ? t('q_done_desc') : t('q_main_desc')}</div>
+  </div>`;
+
+  if (!mainDone) {
+    html += `<div class="lc-quest-subs">`;
+    subs.forEach(s => {
+      html += `<div class="lc-quest-sub">
+        <span class="qs-icon">${s.icon}</span>
+        <span class="qs-text${s.done ? ' done' : ''}">${t(s.key)}</span>
+        <span class="qs-chk ${s.done ? 'done' : 'todo'}">${s.done ? '✔' : '○'}</span>
+      </div>`;
+    });
+    html += `</div>`;
+    if (allSubsDone) {
+      html += `<div style="color:var(--amber);font-size:10px;margin-top:6px;letter-spacing:.08em">${t('q_ready')}</div>`;
+    }
+  }
+
+  el.innerHTML = html;
 }
 

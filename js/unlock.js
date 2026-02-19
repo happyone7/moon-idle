@@ -12,15 +12,20 @@ function applyUnlocks(unlockList) {
 }
 
 const TAB_UNLOCK_NAMES = {
-  tab_production: '생산 시설',
-  tab_research:   '연구소',
-  tab_assembly:   '조립동',
-  tab_launch:     '발사 통제',
-  tab_mission:    '임무 현황',
+  tab_production: () => t('tab_production'),
+  tab_research:   () => t('tab_research'),
+  tab_assembly:   () => t('tab_assembly'),
+  tab_launch:     () => t('tab_launch'),
+  tab_mission:    () => t('tab_mission'),
 };
+function _tabUnlockLabel(tabKey) {
+  const entry = TAB_UNLOCK_NAMES[tabKey];
+  if (typeof entry === 'function') return entry();
+  return entry || tabKey;
+}
 
 function _showUnlockBanner(tabKey) {
-  const label = TAB_UNLOCK_NAMES[tabKey] || tabKey;
+  const label = _tabUnlockLabel(tabKey);
   const banner = document.getElementById('tab-unlock-flash');
   if (!banner) return;
   banner.innerHTML = `
@@ -41,7 +46,6 @@ function _showUnlockBanner(tabKey) {
 function renderUnlocks() {
   // Map of tab id suffix -> element id
   const TAB_MAP = {
-    tab_rocket:     'nav-tab-rocket',
     tab_production: 'nav-tab-production',
     tab_research:   'nav-tab-research',
     tab_assembly:   'nav-tab-assembly',
