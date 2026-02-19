@@ -241,8 +241,9 @@ body.tab-production #world-bg {
   cursor: grab;
 }
 body.tab-production #world-bg:active { cursor: grabbing; }
-/* 발사 통제 탭에서는 좌측 자원 패널 숨김 */
+/* 발사 통제 탭에서는 좌측 자원 패널 + 우측 인원 패널 숨김 */
 body.tab-launch #res-left { display: none; }
+body.tab-launch #rp { display: none; }
 #world-bg::-webkit-scrollbar { height: 6px; }
 #world-bg::-webkit-scrollbar-track { background: #010800; border-top: 1px solid var(--green-dim); }
 #world-bg::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
@@ -746,19 +747,35 @@ body.tab-launch #res-left { display: none; }
 .lc-pnl-title.cyan { color: #00cfff; border-bottom-color: #004466; }
 
 /* 온보딩 퀘스트 패널 */
-.lc-quest-main { margin-bottom: 8px; }
-.lc-quest-main-title { color: var(--amber); font-size: 11px; font-weight: bold; margin-bottom: 3px; }
-.lc-quest-main-desc { color: #8aaa8a; font-size: 10px; line-height: 1.5; }
-.lc-quest-main-done { color: var(--green); font-size: 10px; letter-spacing: .1em; text-shadow: var(--glow); margin-top: 3px; }
-.lc-quest-subs { display: flex; flex-direction: column; gap: 3px; }
-.lc-quest-sub  { display: flex; align-items: center; gap: 6px; font-size: 10px; padding: 3px 0; border-bottom: 1px solid #0a1a0a; }
+.qs-section-hd { color: var(--green-dim); font-size: 9px; letter-spacing: .18em; text-transform: uppercase; padding: 6px 0 3px; border-bottom: 1px solid #0a1a0a; margin-bottom: 4px; }
+.qs-sub-hd { margin-top: 8px; border-top: 1px solid var(--green-dim); padding-top: 6px; }
+.qs-cnt { color: var(--amber); margin-left: 6px; }
+/* Main mission row */
+.lc-quest-main { margin-bottom: 0; }
+.lc-quest-main-row { display: flex; align-items: flex-start; gap: 6px; padding: 4px 0; }
+.qs-main-text { flex: 1; color: var(--amber); font-size: 10px; line-height: 1.5; }
+/* Complete state */
+.lc-quest-main-done { padding: 4px 0; }
+.lc-quest-main-done .lc-quest-main-title { color: var(--green); font-size: 10px; letter-spacing: .1em; text-shadow: var(--glow); margin-bottom: 3px; }
+.lc-quest-main-done .lc-quest-main-desc  { color: var(--green-dim); font-size: 10px; line-height: 1.5; }
+/* Sub missions */
+.lc-quest-subs { display: flex; flex-direction: column; }
+.lc-quest-sub  { display: flex; align-items: center; gap: 5px; font-size: 10px; padding: 3px 0; border-bottom: 1px solid #0a1a0a; }
 .lc-quest-sub:last-child { border-bottom: none; }
-.lc-quest-sub .qs-icon { font-size: 12px; flex-shrink: 0; }
-.lc-quest-sub .qs-text { flex: 1; color: #8aaa8a; }
-.lc-quest-sub .qs-text.done { color: var(--green-dim); text-decoration: line-through; }
-.lc-quest-sub .qs-chk  { font-size: 11px; flex-shrink: 0; }
-.lc-quest-sub .qs-chk.done  { color: var(--green); text-shadow: var(--glow); }
-.lc-quest-sub .qs-chk.todo  { color: #334433; }
+/* Bracket icons (ASCII style, matches building icons) */
+.qs-icon-bracket { font-size: 10px; flex-shrink: 0; min-width: 38px; color: var(--green-dim); font-family: 'Courier New', Consolas, monospace; letter-spacing: 0; opacity: 0.65; }
+.qs-icon-bracket.done { color: var(--green); text-shadow: var(--glow); opacity: 1; }
+.qs-text { flex: 1; color: #6a8a6a; font-size: 10px; }
+.qs-text.done { color: var(--green-dim); text-decoration: line-through; opacity: 0.7; }
+.qs-chk { font-size: 12px; flex-shrink: 0; min-width: 14px; text-align: right; }
+.qs-chk.done { color: var(--green); text-shadow: var(--glow); }
+.qs-chk.todo { color: #334433; }
+/* 완료된 서브미션 행 전체 dim */
+.lc-quest-sub.sub-done { opacity: 0.55; border-bottom-color: #060f06; }
+.qs-all-ready { color: var(--amber); font-size: 10px; margin-top: 6px; letter-spacing: .08em; border-top: 1px solid #5a3c00; padding-top: 4px; }
+/* 진행 미니 바 */
+.qs-progress-bar  { height: 2px; background: var(--green-dim); margin: 2px 0 4px; overflow: hidden; }
+.qs-progress-fill { height: 100%; background: var(--green); box-shadow: var(--glow); transition: width 0.4s ease; }
 
 /* GO/NO-GO 체크리스트 */
 .chk-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #0d2010; font-size: 11px; }
@@ -782,7 +799,7 @@ body.tab-launch #res-left { display: none; }
 
 /* 로켓 디스플레이 */
 .lc-rocket-disp { padding: 12px 0 6px; text-align: center; border-bottom: 1px solid var(--green-dim); flex-shrink: 0; }
-pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; line-height: 1.35; color: var(--green); white-space: pre; text-shadow: 0 0 6px #00e676, 0 0 16px rgba(0,230,118,.5); letter-spacing: 0; }
+pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; line-height: 1.35; color: var(--green); white-space: pre; text-shadow: 0 0 6px #00e676, 0 0 16px rgba(0,230,118,.5); letter-spacing: 0; font-family: 'Courier New', Consolas, 'Lucida Console', monospace; }
 
 /* 상태 바 */
 .lc-sbar-wrap { padding: 8px 12px; border-bottom: 1px solid var(--green-dim); background: var(--panel-bg); flex-shrink: 0; }

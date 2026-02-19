@@ -219,20 +219,20 @@ function renderLaunchTab() {
   const hasFuel        = (gs.res.fuel || 0) > 50;
   const hasElec        = (gs.buildings.elec_lab || 0) >= 1;
   const checks = [
-    { name: '발사대 구조',   go: launchPadBuilt },
-    { name: '추진제 주입',   go: hasFuel },
-    { name: '기체 조립',     go: hasReady },
-    { name: '항법 장치',     go: hasElec || hasReady },
-    { name: '엔진 계통',     go: launchPadBuilt },
-    { name: '기상 조건',     go: true },
+    { key: 'chk_pad',  go: launchPadBuilt },
+    { key: 'chk_prop', go: hasFuel },
+    { key: 'chk_veh',  go: hasReady },
+    { key: 'chk_nav',  go: hasElec || hasReady },
+    { key: 'chk_eng',  go: launchPadBuilt },
+    { key: 'chk_wx',   go: true },
   ];
   const allGo = hasReady && launchPadBuilt && hasFuel;
   let chkHtml = checks.map(c =>
-    `<div class="chk-row"><span class="chk-name">${c.name}</span><span class="chk-badge${c.go ? '' : ' nogo'}">${c.go ? 'GO &#10003;' : 'NO-GO &#10007;'}</span></div>`
+    `<div class="chk-row"><span class="chk-name">${t(c.key)}</span><span class="chk-badge${c.go ? '' : ' nogo'}">${c.go ? 'GO &#10003;' : 'NO-GO &#10007;'}</span></div>`
   ).join('');
   chkHtml += allGo
     ? `<div class="chk-all-go">&#9654;&#9654; ALL SYSTEMS GO &#9664;&#9664;<br><span style="font-size:10px;color:var(--green-dim)">${checks.filter(c=>c.go).length}/${checks.length} GO</span></div>`
-    : `<div class="chk-no-go">// 발사 전 확인 필요</div>`;
+    : `<div class="chk-no-go">${t('chk_ng')}</div>`;
   const lc_checklist = document.getElementById('lc-checklist');
   if (lc_checklist) lc_checklist.innerHTML = chkHtml;
 
@@ -267,17 +267,17 @@ function renderLaunchTab() {
     if (hasReady) {
       const fb = 100 - sci.reliability;
       const MODES = [
-        { name: '엔진 정지',    pct: fb * 0.40 },
-        { name: '자이로 오작동', pct: fb * 0.25 },
-        { name: 'MaxQ 과부하', pct: fb * 0.20 },
-        { name: 'LOX 차단',    pct: fb * 0.10 },
-        { name: '유도 계통',   pct: fb * 0.05 },
+        { key: 'fail_engine',   pct: fb * 0.40 },
+        { key: 'fail_gyro',     pct: fb * 0.25 },
+        { key: 'fail_maxq',     pct: fb * 0.20 },
+        { key: 'fail_lox',      pct: fb * 0.10 },
+        { key: 'fail_guidance', pct: fb * 0.05 },
       ];
       failWrap.innerHTML = MODES.map(m => {
         const p    = Math.min(99, m.pct).toFixed(1);
         const bars = '█'.repeat(Math.max(0, Math.round(m.pct / 3)));
         const lvl  = m.pct > 10 ? 'high' : m.pct > 4 ? 'mid' : 'low';
-        return `<div class="lc-fail-row"><span class="lc-fail-name">${m.name}</span><span class="lc-fail-bar">${bars}</span><span class="lc-fail-pct">${p}%</span><span class="lc-fail-lvl ${lvl}">${lvl.toUpperCase()}</span></div>`;
+        return `<div class="lc-fail-row"><span class="lc-fail-name">${t(m.key)}</span><span class="lc-fail-bar">${bars}</span><span class="lc-fail-pct">${p}%</span><span class="lc-fail-lvl ${lvl}">${lvl.toUpperCase()}</span></div>`;
       }).join('');
     } else {
       failWrap.innerHTML = `<div style="color:var(--green-dim);font-size:11px;text-align:center;padding:6px 0">// 데이터 없음</div>`;
@@ -290,14 +290,14 @@ function renderLaunchTab() {
     if (hasReady) {
       const rc = sci.reliability > 80 ? 'green' : sci.reliability > 60 ? 'amber' : 'red';
       commitStats.innerHTML =
-        `<div class="lc-cs"><span class="lc-cs-val ${rc}">${sci.reliability.toFixed(0)}%</span><span class="lc-cs-label">성공률</span></div>` +
-        `<div class="lc-cs"><span class="lc-cs-val green">${Math.floor(sci.altitude)}<span style="font-size:11px">km</span></span><span class="lc-cs-label">목표 고도</span></div>` +
-        `<div class="lc-cs"><span class="lc-cs-val amber">+${earned}</span><span class="lc-cs-label">문스톤</span></div>`;
+        `<div class="lc-cs"><span class="lc-cs-val ${rc}">${sci.reliability.toFixed(0)}%</span><span class="lc-cs-label">${t('lc_success_pct')}</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val green">${Math.floor(sci.altitude)}<span style="font-size:11px">km</span></span><span class="lc-cs-label">${t('lc_target_alt')}</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val amber">+${earned}</span><span class="lc-cs-label">${t('lc_moonstone')}</span></div>`;
     } else {
       commitStats.innerHTML =
-        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">성공률</span></div>` +
-        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">목표 고도</span></div>` +
-        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">문스톤</span></div>`;
+        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_success_pct')}</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_target_alt')}</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_moonstone')}</span></div>`;
     }
   }
   const launchBtn = document.getElementById('lc-btn-launch');
@@ -335,44 +335,61 @@ function _renderLcQuest() {
   const el = document.getElementById('lc-quest');
   if (!el) return;
 
-  const bld = gs.buildings || {};
+  const bld  = gs.buildings || {};
   const upgs = gs.upgrades || {};
   const jobs = (gs.assembly && gs.assembly.jobs) || [];
   const hasLaunched = (gs.launches || 0) >= 1;
 
-  // 서브미션 조건 정의
-  const subs = [
-    { icon: '🏢', key: 'q_sub_ops',      done: (gs.assignments && (gs.assignments.ops_center || 0) >= 1) },
-    { icon: '💰', key: 'q_sub_money',    done: (gs.res.money || 0) >= 1000 },
-    { icon: '⛏️', key: 'q_sub_mine',     done: (bld.mine || 0) >= 1 },
-    { icon: '🔬', key: 'q_sub_lab',      done: (bld.research_lab || 0) >= 1 },
-    { icon: '📡', key: 'q_sub_research', done: Object.keys(upgs).length >= 1 },
-    { icon: '🚀', key: 'q_sub_pad',      done: (bld.launch_pad || 0) >= 1 },
-    { icon: '🛸', key: 'q_sub_assemble', done: jobs.some(j => j && (j.ready || j.endAt)) },
-  ];
-
-  const doneCount = subs.filter(s => s.done).length;
-  const allSubsDone = doneCount === subs.length;
+  // ── MAIN MISSION (발사 완료 여부)
   const mainDone = hasLaunched;
-  const mainCls  = mainDone ? 'lc-quest-main-done' : 'lc-quest-main-title';
 
-  let html = `<div class="lc-quest-main">
-    <div class="${mainCls}">${mainDone ? t('q_done_title') : t('q_main_title')}</div>
-    <div class="lc-quest-main-desc">${mainDone ? t('q_done_desc') : t('q_main_desc')}</div>
-  </div>`;
+  // ── SUB MISSIONS 조건 (ASCII bracket 아이콘, 이모지 없음)
+  const subs = [
+    { icon: '[OPS]', key: 'q_sub_ops',      done: (gs.assignments && (gs.assignments.ops_center || 0) >= 1) },
+    { icon: '[FND]', key: 'q_sub_money',    done: (gs.res.money || 0) >= 1000 },
+    { icon: '[MIN]', key: 'q_sub_mine',     done: (bld.mine || 0) >= 1 },
+    { icon: '[RSH]', key: 'q_sub_lab',      done: (bld.research_lab || 0) >= 1 },
+    { icon: '[TEC]', key: 'q_sub_research', done: Object.keys(upgs).length >= 1 },
+    { icon: '[PAD]', key: 'q_sub_pad',      done: (bld.launch_pad || 0) >= 1 },
+    { icon: '[ASM]', key: 'q_sub_assemble', done: jobs.some(j => j && (j.ready || j.endAt)) },
+  ];
+  const doneCount   = subs.filter(s => s.done).length;
+  const allSubsDone = doneCount === subs.length;
 
+  // ── MAIN MISSION 블록
+  let html = '';
+  if (mainDone) {
+    html += `<div class="lc-quest-main-done">
+      <div class="lc-quest-main-title">&#9632; MISSION COMPLETE</div>
+      <div class="lc-quest-main-desc">${t('q_done_desc')}</div>
+    </div>`;
+  } else {
+    html += `<div class="lc-quest-main">
+      <div class="qs-section-hd">// MAIN MISSION</div>
+      <div class="lc-quest-main-row">
+        <span class="qs-icon-bracket">[GO!]</span>
+        <span class="qs-main-text">${t('q_main_desc')}</span>
+        <span class="qs-chk todo">&#9675;</span>
+      </div>
+    </div>`;
+  }
+
+  // ── SUB MISSIONS 블록 (메인 미션 미완료 시만 표시)
   if (!mainDone) {
+    const pct = (doneCount / subs.length * 100).toFixed(0);
+    html += `<div class="qs-section-hd qs-sub-hd">// SUB MISSIONS <span class="qs-cnt">${doneCount}/${subs.length}</span></div>`;
+    html += `<div class="qs-progress-bar"><div class="qs-progress-fill" style="width:${pct}%"></div></div>`;
     html += `<div class="lc-quest-subs">`;
     subs.forEach(s => {
-      html += `<div class="lc-quest-sub">
-        <span class="qs-icon">${s.icon}</span>
+      html += `<div class="lc-quest-sub${s.done ? ' sub-done' : ''}">
+        <span class="qs-icon-bracket${s.done ? ' done' : ''}">${s.icon}</span>
         <span class="qs-text${s.done ? ' done' : ''}">${t(s.key)}</span>
-        <span class="qs-chk ${s.done ? 'done' : 'todo'}">${s.done ? '✔' : '○'}</span>
+        <span class="qs-chk ${s.done ? 'done' : 'todo'}">${s.done ? '&#10003;' : '&#9675;'}</span>
       </div>`;
     });
     html += `</div>`;
     if (allSubsDone) {
-      html += `<div style="color:var(--amber);font-size:10px;margin-top:6px;letter-spacing:.08em">${t('q_ready')}</div>`;
+      html += `<div class="qs-all-ready">&gt;&gt; ${t('q_ready')}</div>`;
     }
   }
 
