@@ -245,7 +245,7 @@ function _renderSlotModal(modal, mode) {
         </div>`;
       }
     } else {
-      const date = new Date(s.lastTick).toLocaleDateString('ko-KR');
+      const date = s.lastTick ? new Date(s.lastTick).toLocaleDateString('ko-KR') : '—';
       if (mode === 'new') {
         slotsHtml += `<div class="ssm-slot ssm-occupied" onclick="confirmNewInSlot(${s.slot})">
           <div class="ssm-slot-num">SLOT ${s.slot}</div>

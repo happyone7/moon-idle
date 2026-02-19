@@ -564,7 +564,7 @@ function openBldOv(bld, el) {
     ${actRows || '<div class="bov-act-empty">// 업그레이드 없음</div>'}
   </div>
   <div class="bov-desc-col" id="bov-desc">
-    <div class="bov-desc-hint">항목에 마우스를<br>올려 상세 확인</div>
+    <div class="bov-desc-hint">${bld.desc || bld.name}<br><span style="color:var(--green-dim);font-size:10px">// 항목 hover로 상세 확인</span></div>
   </div>
 </div>
 <div class="bov-foot">

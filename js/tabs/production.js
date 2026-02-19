@@ -1,4 +1,33 @@
 
+// ─── 인원 배치 UX 헬퍼 ────────────────────────────────────
+function withdrawAllWorkers() {
+  if (!gs.assignments) return;
+  const was = getTotalAssigned();
+  if (was === 0) { notify('배치된 인원이 없습니다', 'amber'); return; }
+  Object.keys(gs.assignments).forEach(k => { gs.assignments[k] = 0; });
+  notify(`// 전체 인원 철수 완료 (${was}명 회수)`, 'amber');
+  renderAll();
+}
+
+function quickAssign(bid) {
+  const avail = getAvailableWorkers();
+  if (avail <= 0) { notify('여유 인원 없음', 'amber'); return; }
+  const slotCap = (gs.buildings[bid] || 0) + ((gs.bldLevels && gs.bldLevels[bid]) || 0);
+  const assigned = (gs.assignments && gs.assignments[bid]) || 0;
+  if (assigned >= slotCap) { notify(`슬롯 수용 한도 초과 (${slotCap})`, 'amber'); return; }
+  if (!gs.assignments) gs.assignments = {};
+  gs.assignments[bid] = assigned + 1;
+  renderAll();
+}
+
+function quickUnassign(bid) {
+  const assigned = (gs.assignments && gs.assignments[bid]) || 0;
+  if (assigned <= 0) return;
+  if (!gs.assignments) gs.assignments = {};
+  gs.assignments[bid] = assigned - 1;
+  renderAll();
+}
+
 function buyBuilding(bid) {
   const bld = BUILDINGS.find(b => b.id === bid);
   if (!bld) return;
@@ -85,7 +114,12 @@ function renderProductionTab() {
   const totalW = getTotalWorkers();
   const assignedW = getTotalAssigned();
   const statusEl = document.getElementById('prod-status');
-  if (statusEl) statusEl.textContent = `인원: ${assignedW}/${totalW}  수입: +${fmtDec(totalIncome, 1)}/s`;
+  if (statusEl) {
+    const withdrawBtn = assignedW > 0
+      ? `&nbsp;<button class="blr-withdraw-btn" onclick="withdrawAllWorkers()">[ 전체 철수 ]</button>`
+      : '';
+    statusEl.innerHTML = `인원: ${assignedW}/${totalW} &nbsp; 수입: +${fmtDec(totalIncome, 1)}/s${withdrawBtn}`;
+  }
 
   // 건물 리스트: 버튼 없이 상태만 표시 (건설은 월드 호버 팝업에서)
   let html = '';
@@ -104,10 +138,21 @@ function renderProductionTab() {
       else if (b.id === 'launch_pad') rateStr = `<span style="color:var(--green-mid)">슬롯 ${cnt}</span>`;
       else if (b.id === 'housing')    rateStr = `<span style="color:var(--green-mid)">인원 +${cnt}</span>`;
     }
+    const slotCap = cnt + ((gs.bldLevels && gs.bldLevels[b.id]) || 0);
+    const canPlus = b.produces !== 'bonus' && cnt > 0 && getAvailableWorkers() > 0 && assigned < slotCap;
+    const canMinus = b.produces !== 'bonus' && assigned > 0;
+    const wkrCell = (b.produces !== 'bonus' && cnt > 0)
+      ? `<span class="blr-wkr">
+          <button class="blr-wbtn${canMinus ? '' : ' dis'}" onclick="quickUnassign('${b.id}')" ${canMinus ? '' : 'disabled'}>-</button>
+          <span class="blr-wassign">${assigned}</span>
+          <button class="blr-wbtn${canPlus ? '' : ' dis'}" onclick="quickAssign('${b.id}')" ${canPlus ? '' : 'disabled'}>+</button>
+        </span>`
+      : `<span class="blr-wkr-empty"></span>`;
     html += `<div class="bld-list-row">
       <span class="blr-icon">${b.icon}</span>
       <span class="blr-name">${b.name}</span>
       <span class="blr-cnt">×${cnt}</span>
+      ${wkrCell}
       <span class="blr-rate">${rateStr}</span>
     </div>`;
   });
