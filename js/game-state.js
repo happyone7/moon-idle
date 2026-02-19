@@ -2,7 +2,7 @@
 //  GAME STATE
 // ============================================================
 let gs = {
-  res: { money:5000, metal:0, fuel:0, electronics:0, research:0 },
+  res: { money:1500, metal:0, fuel:0, electronics:0, research:0 },
   buildings: { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldUpgrades: {},    // per-building named upgrades purchased
   bldLevels: {},      // { buildingId: statUpgradeCount } — 생산량 업그레이드 (getBldProdMult용)
@@ -33,7 +33,7 @@ let gs = {
     bld_housing: true,      // 처음부터 표시
     bld_ops_center: true,  // 처음부터 표시
     bld_supply_depot: false,
-    bld_mine: false,
+    bld_mine: true,        // 처음부터 표시 (채굴기는 초기 핵심 건물)
     bld_extractor: false,
     bld_refinery: false,
     bld_cryo_plant: false,
@@ -494,7 +494,7 @@ function loadGame(slot) {
       bld_ops_center: true,
       bld_supply_depot: false,
 
-      bld_mine: false,
+      bld_mine: true,        // 처음부터 표시 (채굴기는 초기 핵심 건물)
       bld_extractor: false,
       bld_refinery: false,
       bld_cryo_plant: false,
