@@ -391,9 +391,10 @@ body.tab-launch #rp { display: none; }
 #bgm-track-label { font-size: 11px; color: var(--green-dim); min-width: 80px; }
 
 /* Progress bars */
-.prog-wrap { border: 1px solid var(--green-dim); height: 8px; background: var(--bg); overflow: hidden; margin: 4px 0; }
+.prog-wrap { border: 1px solid var(--green-dim); height: 10px; background: var(--bg); overflow: hidden; margin: 6px 0 3px; }
 .prog-fill { height: 100%; background: var(--green-mid); transition: width 0.3s; }
-.prog-fill.amber { background: var(--amber); }
+.prog-fill.amber { background: var(--amber); box-shadow: 0 0 4px rgba(255,171,0,0.5); }
+.prog-pct  { font-size: 11px; color: var(--green-mid); text-align: right; }
 
 /* Notifications */
 #notif { position: fixed; bottom: 40px; right: 20px; z-index: 8000; display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
@@ -750,18 +751,75 @@ body.tab-launch #rp { display: none; }
 .rocket-art-wrap { text-align: center; padding: 10px; border: var(--border); background: var(--bg); min-height: 280px; display: flex; align-items: center; justify-content: center; }
 #rocket-art-display { font-size: 13px; white-space: pre; line-height: 1.3; color: var(--green-dim); }
 #rocket-art-display .done { color: var(--green); text-shadow: var(--glow); }
-.parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 6px 0; font-size: 13px; gap: 8px; }
-.part-done { color: var(--green); text-shadow: var(--glow); }
+
+/* Parts list — done vs pending clarity */
+.parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 7px 0; font-size: 13px; gap: 8px; }
+.parts-list-item.part-item-done { background: rgba(0,230,118,0.04); }
+.parts-list-item.part-item-missing { opacity: 0.72; }
+.part-done { color: var(--green); text-shadow: var(--glow); font-weight: bold; }
 .part-pending { color: var(--green-dim); }
-.quality-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.q-btn { flex: 1; min-width: 100px; }
-.q-btn.selected { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 8px var(--amber); }
-.slot-card { border: var(--border); background: var(--panel-bg); padding: 10px 14px; margin-bottom: 10px; }
-.slot-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.part-missing-badge { font-size: 10px; letter-spacing: .1em; color: var(--green-dim); border: 1px solid var(--green-dim); padding: 1px 5px; opacity: 0.6; }
+
+/* Quality selector — tiered visual design */
+.quality-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.q-btn {
+  flex: 1; min-width: 110px; min-height: 52px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 8px 10px;
+  border: 1px solid var(--green-dim); background: var(--bg);
+  transition: all 0.15s;
+}
+.q-btn:hover:not(:disabled) { border-color: var(--green); }
+.q-btn-label { font-size: 13px; letter-spacing: 1px; font-family: var(--font); }
+.q-btn-sub { font-size: 10px; color: var(--green-dim); letter-spacing: .05em; }
+/* Tier colours */
+.q-btn[data-qid="proto"]    { border-color: #1a5c34; }
+.q-btn[data-qid="standard"] { border-color: #2a6040; }
+.q-btn[data-qid="advanced"] { border-color: #3d5a28; }
+.q-btn[data-qid="elite"]    { border-color: var(--amber-dim); }
+/* Selected state — strong highlight */
+.q-btn.selected { background: rgba(0,230,118,0.07); border-width: 2px; }
+.q-btn[data-qid="proto"].selected    { border-color: var(--green-mid); color: var(--green-mid); }
+.q-btn[data-qid="standard"].selected { border-color: var(--green); color: var(--green); box-shadow: 0 0 8px rgba(0,230,118,0.3); }
+.q-btn[data-qid="advanced"].selected { border-color: #80ff60; color: #80ff60; box-shadow: 0 0 10px rgba(128,255,96,0.3); }
+.q-btn[data-qid="elite"].selected    { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 10px var(--amber-glow); background: rgba(255,171,0,0.07); }
+.q-btn-label.q-lbl-proto    { color: inherit; }
+.q-btn-label.q-lbl-standard { color: inherit; }
+.q-btn-label.q-lbl-advanced { color: inherit; }
+.q-btn-label.q-lbl-elite    { color: var(--amber); }
+
+/* Assembly slot cards */
+.slot-card {
+  border: var(--border); background: var(--panel-bg);
+  padding: 12px 14px; margin-bottom: 10px;
+  min-height: 88px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.slot-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .slot-title { font-size: 13px; color: var(--green); letter-spacing: 1px; }
-.slot-state.idle { color: var(--green-mid); }
-.slot-state.busy { color: var(--amber); }
-.slot-state.ready { color: var(--green); text-shadow: var(--glow); }
+
+/* Status badge replacing plain text */
+.slot-state {
+  font-size: 10px; letter-spacing: .12em; padding: 2px 7px;
+  border: 1px solid; border-radius: 0;
+}
+.slot-state.idle  { color: var(--green-dim); border-color: var(--green-dim); background: rgba(26,92,52,0.2); }
+.slot-state.busy  { color: var(--amber);     border-color: var(--amber-dim); background: rgba(255,171,0,0.08); }
+.slot-state.ready { color: var(--green);     border-color: var(--green);     background: rgba(0,230,118,0.1); text-shadow: var(--glow); }
+
+/* Ready slot — glowing pulse to draw attention */
+.slot-card.slot-ready {
+  border-color: var(--green);
+  box-shadow: 0 0 12px rgba(0,230,118,0.18);
+  animation: pulse-slot-ready 2.5s ease-in-out infinite;
+}
+@keyframes pulse-slot-ready {
+  0%,100% { box-shadow: 0 0 6px rgba(0,230,118,0.15); border-color: var(--green); }
+  50%     { box-shadow: 0 0 18px rgba(0,230,118,0.35); border-color: var(--green); }
+}
+/* Busy slot — subtle amber tint */
+.slot-card.slot-busy { border-color: var(--amber); }
+
 .science-box { border: var(--border); background: var(--bg); padding: 10px 14px; font-size: 12px; color: var(--green-mid); margin-top: 10px; line-height: 1.7; }
 .science-box .val { color: var(--green); }
 .science-box .ms-val { color: var(--amber); }
