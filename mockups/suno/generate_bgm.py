@@ -186,8 +186,8 @@ def main():
             # 완료된 경우: data.response.sunoData[] 구조
             songs = None
             if isinstance(data, dict):
-                response = data.get("response", {})
-                suno_data = response.get("sunoData", [])
+                response = data.get("response") or {}
+                suno_data = response.get("sunoData") or []
                 if suno_data:
                     songs = suno_data
 
