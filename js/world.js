@@ -2,12 +2,13 @@
 //  WORLD — js/world.js
 // ============================================================
 const WORLD_POSITIONS = {
-  housing:      30,   research_lab: 240,  r_and_d:      410,
+  research_lab: 240,  r_and_d:      410,
   ops_center:   590,  // addon @ 760
   supply_depot: 940,  mine:         1150, extractor:    1290,
   refinery:     1480, cryo_plant:   1660, elec_lab:     1860,
   fab_plant:    2030, solar_array:  2220, launch_pad:   2430,
   // launch_pad addon @ 2600
+  housing:      2750, // 주거 시설 — 시설 끝쪽에 배치
 };
 
 // 애드온 건물 위치 (부모 건물 우측 고정)
@@ -364,6 +365,33 @@ function updateWorldBuildings() {
   });
 }
 
+// ─── SLOT UPGRADE HELPERS ─────────────────────────────────────
+function _getBldSlotCost(bld) {
+  const level = (gs.bldLevels && gs.bldLevels[bld.id]) || 0;
+  const mult  = 2 * (level + 1);
+  const cost  = {};
+  Object.entries(bld.baseCost).forEach(([res, amt]) => {
+    cost[res] = Math.ceil(amt * mult);
+  });
+  return cost;
+}
+
+function buyBldSlotUpgrade(bldId) {
+  const bld = BUILDINGS.find(b => b.id === bldId);
+  if (!bld) return;
+  if ((gs.buildings[bldId] || 0) === 0) { notify('건물을 먼저 건설하세요', 'red'); return; }
+  const cost = _getBldSlotCost(bld);
+  if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
+  spend(cost);
+  if (!gs.bldLevels) gs.bldLevels = {};
+  gs.bldLevels[bldId] = (gs.bldLevels[bldId] || 0) + 1;
+  notify(`${bld.icon} ${bld.name} — 슬롯 +1 (현재 ${gs.buildings[bldId] + gs.bldLevels[bldId]}슬롯)`);
+  playSfx('triangle', 580, 0.09, 0.04, 820);
+  const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+  if (pre) openBldOv(bld, pre);
+  renderAll();
+}
+
 // ─── BUILDING HOVER OVERLAY — 2-panel layout ─────────────────
 let _bldOvTimer  = null;
 let _bldOvActions = [];
@@ -382,13 +410,27 @@ function openBldOv(bld, el) {
   // ── Build action list ──────────────────────────────────────
   const actions = [];
 
-  // Worker rows (production buildings only)
+  // ── 슬롯 업그레이드 (생산 건물만, 보너스 건물 제외) ──────
   if (bld.produces !== 'bonus') {
+    const slotLevel  = (gs.bldLevels && gs.bldLevels[bld.id]) || 0;
+    const slotCap    = cnt + slotLevel;
+    const slotCost   = _getBldSlotCost(bld);
+    const slotAfford = canAfford(slotCost);
+    actions.push({
+      label: `슬롯 +1 업그레이드`,
+      info: slotAfford ? getCostStr(slotCost) : `[부족]`,
+      disabled: cnt === 0,
+      affordable: slotAfford,
+      desc: `인원 배치 슬롯 +1\n현재 슬롯: ${slotCap}개 (건물 ${cnt} + 업그 ${slotLevel})\n비용: ${getCostStr(slotCost)}`,
+      type: 'slot_upgrade',
+    });
+
+    // Worker rows
     actions.push({
       label: '+ 인원 배치',
       info: `여유 ${avail}명`,
-      disabled: avail <= 0 || cnt === 0 || assigned >= cnt,
-      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 상한: ${cnt}명\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id), 2)}/s`,
+      disabled: avail <= 0 || cnt === 0 || assigned >= slotCap,
+      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 슬롯: ${slotCap}개\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id), 2)}/s`,
       type: 'assign',
     });
     actions.push({
@@ -549,7 +591,8 @@ function bovClick(idx) {
   const act = _bldOvActions[idx];
   if (!act || act.type === 'sep') return;
   if (act.done || act.disabled) return;
-  if (act.type === 'assign')        assignWorker(_bldOvBld.id);
+  if (act.type === 'slot_upgrade')  buyBldSlotUpgrade(_bldOvBld.id);
+  else if (act.type === 'assign')   assignWorker(_bldOvBld.id);
   else if (act.type === 'unassign') unassignWorker(_bldOvBld.id);
   else if (act.type === 'upgrade') {
     if (!act.affordable) { notify('자원 부족', 'red'); return; }
@@ -711,9 +754,10 @@ function assignWorker(bldId) {
   if (!bld) return;
   const cnt      = gs.buildings[bldId] || 0;
   const assigned = gs.assignments[bldId] || 0;
+  const slotCap  = cnt + ((gs.bldLevels && gs.bldLevels[bldId]) || 0);
   if (cnt === 0)                    { notify('건물이 없습니다', 'red'); return; }
   if (getAvailableWorkers() <= 0)   { notify('여유 인원 없음', 'red'); return; }
-  if (assigned >= cnt)              { notify('건물 수용 한도 초과', 'amber'); return; }
+  if (assigned >= slotCap)          { notify('슬롯 수용 한도 초과 — 슬롯 업그레이드 필요', 'amber'); return; }
   gs.assignments[bldId] = assigned + 1;
   notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
