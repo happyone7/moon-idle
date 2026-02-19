@@ -8,13 +8,17 @@ import os
 import sys
 import time
 import json
-import urllib.request
-import urllib.error
 import io
+import cloudscraper
 
 # Windows 콘솔 UTF-8 출력 강제 설정 (cp949 우회)
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+# Cloudflare 우회 세션 (TLS 지문 + JS 챌린지 자동 처리)
+_scraper = cloudscraper.create_scraper(
+    browser={"browser": "chrome", "platform": "windows", "mobile": False}
+)
 
 # ── 설정 ──────────────────────────────────────────────────────────────────
 API_KEY    = os.environ.get("SUNOAPI_KEY", "")
@@ -91,35 +95,32 @@ TRACKS = [
 # ── 유틸 ──────────────────────────────────────────────────────────────────
 def api_call(method, path, body=None):
     url = BASE_URL + path
-    data = json.dumps(body).encode("utf-8") if body else None
-    req = urllib.request.Request(url, data=data, method=method)
-    req.add_header("Authorization", f"Bearer {API_KEY}")
-    req.add_header("Content-Type", "application/json")
-    req.add_header("Accept", "application/json, text/plain, */*")
-    req.add_header("Accept-Language", "en-US,en;q=0.9")
-    req.add_header("User-Agent",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/131.0.0.0 Safari/537.36")
-    req.add_header("Origin", "https://sunoapi.org")
-    req.add_header("Referer", "https://sunoapi.org/")
+    headers = {
+        "Authorization": f"Bearer {API_KEY}",
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Origin": "https://sunoapi.org",
+        "Referer": "https://sunoapi.org/",
+    }
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        body_text = e.read().decode("utf-8", errors="replace")
-        print(f"  [HTTP {e.code}] {body_text[:300]}")
-        return None
+        if method == "GET":
+            r = _scraper.get(url, headers=headers, timeout=30)
+        else:
+            r = _scraper.post(url, headers=headers, json=body, timeout=30)
+        if r.status_code >= 400:
+            print(f"  [HTTP {r.status_code}] {r.text[:300]}")
+            return None
+        return r.json()
     except Exception as e:
         print(f"  [ERR] {e}")
         return None
 
 def download_file(url, dest_path):
-    req = urllib.request.Request(url)
-    req.add_header("User-Agent", "Mozilla/5.0")
-    with urllib.request.urlopen(req, timeout=60) as r:
-        with open(dest_path, "wb") as f:
-            f.write(r.read())
+    r = _scraper.get(url, timeout=60)
+    r.raise_for_status()
+    with open(dest_path, "wb") as f:
+        f.write(r.content)
 
 # ── 태스크 상태 조회 ───────────────────────────────────────────────────────
 def get_task_status(task_id):
