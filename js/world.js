@@ -2,16 +2,26 @@
 //  WORLD — js/world.js
 // ============================================================
 const WORLD_POSITIONS = {
-  research_lab: 30,  r_and_d: 230,
-  ops_center: 440,   supply_depot: 630, mine: 850,
-  extractor: 1010,   refinery: 1200,   cryo_plant: 1390,
-  elec_lab: 1590,    fab_plant: 1760,  solar_array: 1950,
-  launch_pad: 2150,
+  housing: 30,      research_lab: 240, r_and_d: 410,
+  ops_center: 590,  supply_depot: 780, mine: 990,
+  extractor: 1130,  refinery: 1320,   cryo_plant: 1500,
+  elec_lab: 1700,   fab_plant: 1870,  solar_array: 2060,
+  launch_pad: 2270,
 };
 
 // ─── ASCII BUILDING ART ─────────────────────────────────────
 function _bldAscii(bld) {
   switch (bld.wbClass) {
+
+    case 'wb-housing':
+      return (
+        '╔═══════════╗\n' +
+        '║  HOUSING  ║\n' +
+        '║ □□ □□ □□  ║\n' +
+        '║ □□ □□ □□  ║\n' +
+        '╚═══════════╝\n' +
+        '  █████████'
+      );
 
     case 'wb-ops': {
       const lbl = bld.id === 'ops_center' ? 'OPS CTR  ' : 'SUPPLY D ';
@@ -78,9 +88,9 @@ function _bldAscii(bld) {
 
     case 'wb-launchpad':
       return (
-        '      /▲\\\n' +
-        '     / ▓ \\\n' +
-        '    /  ▓  \\\n' +
+        '      /▲╲\n' +
+        '     / ▓ ╲\n' +
+        '    /  ▓  ╲\n' +
         '   ╔═══════╗\n' +
         '   ║ [PAD] ║\n' +
         '──╚═════════╝──'
@@ -117,118 +127,181 @@ function updateWorldBuildings() {
   });
 }
 
-// ─── BUILDING HOVER OVERLAY ─────────────────────────────────
-let _bldOvTimer = null;
+// ─── BUILDING HOVER OVERLAY — 2-panel layout ─────────────────
+let _bldOvTimer  = null;
+let _bldOvActions = [];
+let _bldOvBld    = null;
 
 function openBldOv(bld, el) {
   clearTimeout(_bldOvTimer);
-  const cnt = gs.buildings[bld.id] || 0;
-  const cost = getBuildingCost(bld);
-  const costStr = getCostStr(cost);
-  const affordable = canAfford(cost);
-
-  // Production rate line
-  let prodLine = '';
-  const assigned = (gs.assignments && gs.assignments[bld.id]) || 0;
-  if (bld.produces !== 'bonus') {
-    const rate = bld.baseRate * assigned * (prodMult[bld.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id);
-    prodLine = assigned > 0 ? `${bld.produces} +${fmtDec(rate, 2)}/s` : '인원 미배치';
-  } else if (bld.id === 'solar_array') {
-    prodLine = `전체 생산 +${cnt * 10}%`;
-  } else if (bld.id === 'launch_pad') {
-    prodLine = `발사 슬롯 +${cnt}`;
-  } else {
-    prodLine = bld.desc;
-  }
-
   const ovEl = document.getElementById('bld-ov');
   if (!ovEl) return;
 
-  document.getElementById('bov-hd').textContent = `${bld.icon} ${bld.name}  ×${cnt}`;
-  document.getElementById('bov-cnt').innerHTML = `설명: <span>${bld.desc}</span>`;
-  document.getElementById('bov-prod').innerHTML = `생산: <span>${prodLine}</span>`;
-  document.getElementById('bov-cost').innerHTML = `다음 건설: <span style="color:${affordable ? 'var(--green)' : 'var(--red)'}">${costStr}</span>`;
+  const cnt      = gs.buildings[bld.id] || 0;
+  const assigned = (gs.assignments && gs.assignments[bld.id]) || 0;
+  const avail    = getAvailableWorkers();
+  const prod     = getProduction();
 
-  // Worker assignment row (생산 건물만)
-  const workerRow = document.getElementById('bov-workers');
-  if (workerRow && bld.produces !== 'bonus') {
-    const avail = getAvailableWorkers();
-    workerRow.style.display = 'block';
-    workerRow.innerHTML = `인원: <span>${assigned}명 배치 (여유 ${avail}명)</span>`;
-  } else if (workerRow) {
-    workerRow.style.display = 'none';
+  // ── Build action list ──────────────────────────────────────
+  const actions = [];
+
+  // Worker rows (production buildings only)
+  if (bld.produces !== 'bonus') {
+    actions.push({
+      label: '+ 인원 배치',
+      info: `여유 ${avail}명`,
+      disabled: avail <= 0 || cnt === 0 || assigned >= cnt,
+      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 상한: ${cnt}명\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id), 2)}/s`,
+      type: 'assign',
+    });
+    actions.push({
+      label: '- 인원 철수',
+      info: `배치 ${assigned}명`,
+      disabled: assigned <= 0,
+      desc: `[${bld.name}]에서 인원 회수\n현재 ${assigned}명 배치 중`,
+      type: 'unassign',
+    });
   }
 
-  // Building level + upgrade (생산 건물이 1개 이상 있을 때만)
-  const lvRow = document.getElementById('bov-level');
-  const upgCostRow = document.getElementById('bov-upg-cost');
-  const upgBtn = document.getElementById('bov-upg');
-  if (cnt > 0 && bld.produces !== 'bonus') {
-    const lv = getBldLevel(bld.id);
-    const mult = getBldProdMult(bld.id);
-    if (lvRow) {
-      lvRow.style.display = 'block';
-      lvRow.innerHTML = `레벨: <span>Lv.${lv + 1}  (+${Math.round((mult - 1) * 100)}% 생산)</span>`;
-    }
-    const upgCost = getBldUpgradeCost(bld.id);
-    const upgAfford = canAfford(upgCost);
-    if (upgCostRow) {
-      upgCostRow.style.display = 'block';
-      upgCostRow.innerHTML = `업그레이드: <span style="color:${upgAfford ? 'var(--green)' : 'var(--red)'}">${getCostStr(upgCost)}</span>`;
-    }
-    if (upgBtn) {
-      upgBtn.style.display = '';
-      upgBtn.className = 'bov-btn amber' + (upgAfford ? '' : ' disabled');
-      upgBtn.onclick = () => upgBuilding(bld.id);
-    }
-  } else {
-    if (lvRow) lvRow.style.display = 'none';
-    if (upgCostRow) upgCostRow.style.display = 'none';
-    if (upgBtn) upgBtn.style.display = 'none';
-  }
+  // Named building upgrades
+  const bldUpgs = (typeof BUILDING_UPGRADES !== 'undefined' && BUILDING_UPGRADES[bld.id]) || [];
+  bldUpgs.forEach(upg => {
+    const done     = !!(gs.bldUpgrades && gs.bldUpgrades[upg.id]);
+    const reqMet   = !upg.req || !!(gs.bldUpgrades && gs.bldUpgrades[upg.req]);
+    const affordable = canAfford(upg.cost);
+    const reqName  = upg.req ? (bldUpgs.find(u => u.id === upg.req)?.name || upg.req) : null;
+    actions.push({
+      label: upg.name,
+      info:  done ? '[완료]' : getCostStr(upg.cost),
+      done, affordable, reqMet,
+      disabled: done || !reqMet || cnt === 0,
+      desc:  upg.desc + (reqName && !reqMet ? `\n// 선행 필요: ${reqName}` : '') + (cnt === 0 ? '\n// 건물을 먼저 건설하세요' : ''),
+      type: 'upgrade',
+      upgId: upg.id,
+    });
+  });
 
-  // Worker assignment buttons (생산 건물만)
-  const wBtns = document.getElementById('bov-worker-btns');
-  if (wBtns && bld.produces !== 'bonus') {
-    const avail = getAvailableWorkers();
-    wBtns.style.display = 'flex';
-    wBtns.innerHTML =
-      `<button class="bov-btn${avail <= 0 ? ' disabled' : ''}" onclick="assignWorker('${bld.id}')">+ 배치</button>` +
-      `<button class="bov-btn amber${assigned <= 0 ? ' disabled' : ''}" onclick="unassignWorker('${bld.id}')">- 철수</button>`;
-  } else if (wBtns) {
-    wBtns.style.display = 'none';
-  }
+  _bldOvActions = actions;
+  _bldOvBld = bld;
 
-  const buyBtn = document.getElementById('bov-buy');
-  if (buyBtn) {
-    buyBtn.textContent = affordable ? '[ 건물 추가 ]' : '[ 자원 부족 ]';
-    buyBtn.className = affordable ? 'bov-btn' : 'bov-btn disabled';
-    buyBtn.onclick = () => { buyBuilding(bld.id); };
-  }
+  // ── Build HTML ─────────────────────────────────────────────
+  let actRows = '';
+  actions.forEach((act, i) => {
+    let rowCls = '';
+    if (act.done)                        rowCls = 'bov-done';
+    else if (act.disabled)               rowCls = 'bov-locked';
+    else if (act.type === 'upgrade' && !act.affordable) rowCls = 'bov-need';
 
-  // Position overlay above building
+    let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : act.type === 'upgrade' && !act.affordable ? '[부족]' : '[실행]';
+    const btnDis = act.done || act.disabled || (act.type === 'upgrade' && !act.affordable);
+
+    actRows += `<div class="bov-act ${rowCls}" data-idx="${i}"
+      onmouseenter="bovHover(${i})"
+      onclick="bovClick(${i})">
+      <span class="bov-act-label">${act.label}</span>
+      <button class="bov-act-btn${btnDis ? ' dis' : ''}" tabindex="-1">${btnTxt}</button>
+      <span class="bov-act-info${act.type==='upgrade'&&!act.affordable&&!act.done?' red':''}">${act.info}</span>
+    </div>`;
+  });
+
+  // Construction cost
+  const buyCost    = getBuildingCost(bld);
+  const buyAfford  = canAfford(buyCost);
+  const buyLabel   = cnt > 0 ? (buyAfford ? '건물 추가 건설' : '건물 추가 (자원 부족)') : (buyAfford ? '건설 시작' : '건설 (자원 부족)');
+
+  // Production rate line
+  let rateStr = '';
+  if (bld.produces !== 'bonus') {
+    const rate = bld.baseRate * assigned * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id);
+    rateStr = assigned > 0 ? `${bld.produces} +${fmtDec(rate,2)}/s` : '인원 미배치';
+  } else if (bld.id === 'solar_array') { rateStr = `전체 생산 +${((getSolarBonus()-1)*100).toFixed(0)}%`; }
+  else if (bld.id === 'launch_pad')    { rateStr = `발사 슬롯 +${cnt}`; }
+  else if (bld.id === 'housing')       { rateStr = `인원 상한 ${gs.workers}명`; }
+
+  ovEl.innerHTML = `
+<div class="bov-head">
+  <span class="bov-head-name">${bld.icon} ${bld.name}</span>
+  <span class="bov-head-meta">×${cnt} &nbsp; <span style="color:var(--green-mid);font-size:11px">${rateStr}</span></span>
+</div>
+<div class="bov-body">
+  <div class="bov-acts-col" id="bov-acts">
+    ${actRows || '<div class="bov-act-empty">// 업그레이드 없음</div>'}
+  </div>
+  <div class="bov-desc-col" id="bov-desc">
+    <div class="bov-desc-hint">항목에 마우스를<br>올려 상세 확인</div>
+  </div>
+</div>
+<div class="bov-foot">
+  <button class="bov-buy-btn${buyAfford?'':' dis'}" onclick="buyBuilding('${bld.id}')" ${buyAfford?'':'disabled'}>
+    [ ${buyLabel} ] <span class="bov-buy-cost">${getCostStr(buyCost)}</span>
+  </button>
+</div>`;
+
+  // Position
   const r = el.getBoundingClientRect();
-  const ovW = 290, ovH = 220;
+  const ovW = 490, ovH = ovEl.offsetHeight || 260;
   let lx = r.left - 10;
   let ty = r.top - ovH - 8;
   if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
   if (lx < 4) lx = 4;
   if (ty < 4) ty = r.bottom + 6;
   ovEl.style.left = lx + 'px';
-  ovEl.style.top = ty + 'px';
+  ovEl.style.top  = ty + 'px';
+  ovEl.style.width = ovW + 'px';
   ovEl.style.display = 'block';
+}
+
+function bovHover(idx) {
+  const act = _bldOvActions[idx];
+  if (!act) return;
+  const dp = document.getElementById('bov-desc');
+  if (!dp) return;
+  dp.innerHTML = `<div class="bov-desc-name">${act.label}</div><div class="bov-desc-body">${act.desc.replace(/\n/g,'<br>')}</div>`;
+}
+
+function bovClick(idx) {
+  const act = _bldOvActions[idx];
+  if (!act || act.done || act.disabled) return;
+  if (act.type === 'assign')   assignWorker(_bldOvBld.id);
+  else if (act.type === 'unassign') unassignWorker(_bldOvBld.id);
+  else if (act.type === 'upgrade') {
+    if (!act.affordable) { notify('자원 부족', 'red'); return; }
+    buyBldUpgrade(act.upgId, _bldOvBld.id);
+  }
+}
+
+function buyBldUpgrade(upgId, bldId) {
+  const bld  = BUILDINGS.find(b => b.id === bldId);
+  const bldUpgList = (typeof BUILDING_UPGRADES !== 'undefined' && BUILDING_UPGRADES[bldId]) || [];
+  const upg  = bldUpgList.find(u => u.id === upgId);
+  if (!upg || !bld) return;
+  if (!gs.bldUpgrades) gs.bldUpgrades = {};
+  if (gs.bldUpgrades[upgId]) { notify('이미 완료된 업그레이드', 'amber'); return; }
+  if (upg.req && !gs.bldUpgrades[upg.req]) { notify('선행 업그레이드 필요', 'red'); return; }
+  if (!canAfford(upg.cost)) { notify('자원 부족', 'red'); return; }
+  spend(upg.cost);
+  gs.bldUpgrades[upgId] = true;
+  // Side-effects
+  if (upg.wkr) { gs.workers = (gs.workers || 1) + upg.wkr; syncWorkerDots(); }
+  if (upg.rel) reliabilityBonus += upg.rel;
+  notify(`${bld.icon} ${upg.name} 완료`);
+  playSfx('triangle', 520, 0.1, 0.04, 780);
+  // Refresh overlay
+  const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+  if (el) openBldOv(bld, el);
+  renderAll();
 }
 
 // ─── WORKER ASSIGNMENT ───────────────────────────────────────
 function assignWorker(bldId) {
   if (!gs.assignments) gs.assignments = {};
-  const bld = BUILDINGS.find(b => b.id === bldId);
+  const bld      = BUILDINGS.find(b => b.id === bldId);
   if (!bld) return;
-  const cnt = gs.buildings[bldId] || 0;
+  const cnt      = gs.buildings[bldId] || 0;
   const assigned = gs.assignments[bldId] || 0;
-  if (cnt === 0) { notify('건물이 없습니다', 'red'); return; }
-  if (getAvailableWorkers() <= 0) { notify('여유 인원 없음', 'red'); return; }
-  if (assigned >= cnt) { notify('건물 수용 한도 초과', 'amber'); return; }
+  if (cnt === 0)                    { notify('건물이 없습니다', 'red'); return; }
+  if (getAvailableWorkers() <= 0)   { notify('여유 인원 없음', 'red'); return; }
+  if (assigned >= cnt)              { notify('건물 수용 한도 초과', 'amber'); return; }
   gs.assignments[bldId] = assigned + 1;
   notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
@@ -269,13 +342,10 @@ function syncWorkerDots() {
   if (!layer) return;
   const total = gs.workers || 1;
 
-  // Remove excess dots
   while (_workerDots.length > total) {
     const d = _workerDots.pop();
     if (d.el && d.el.parentNode) d.el.parentNode.removeChild(d.el);
   }
-
-  // Add missing dots
   while (_workerDots.length < total) {
     const el = document.createElement('span');
     el.className = 'wkr';
@@ -324,7 +394,7 @@ function initWorldDrag() {
     wb.scrollLeft = dragSL - (e.pageX - wb.offsetLeft - dragX) * 1.3;
   });
 
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBldOv(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeBldOv(); hideTechTip(); } });
 
   const bldOv = document.getElementById('bld-ov');
   if (bldOv) {
@@ -332,7 +402,6 @@ function initWorldDrag() {
     bldOv.addEventListener('mouseleave', closeBldOv);
   }
 
-  // Worker dot animation loop
   setInterval(_tickWorkers, 80);
   syncWorkerDots();
 }
