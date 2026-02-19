@@ -11,25 +11,25 @@ const RESOURCES = [
 
 const BUILDINGS = [
   { id:'housing',      name:'주거 시설',        icon:'[HSG]', produces:'bonus',       baseRate:0,   baseCost:{money:150},                                    desc:'인원 상한 +1',      wbClass:'wb-housing' },
-  { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:25,  baseCost:{metal:800},                                    desc:'수익 창출 허브',    wbClass:'wb-ops' },
+  { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:30,  baseCost:{metal:200},                                    desc:'수익 창출 허브',    wbClass:'wb-ops' },
   { id:'supply_depot', name:'보급 창고',        icon:'[DEP]', produces:'money',       baseRate:15,  baseCost:{metal:1500,electronics:200},                   desc:'물류 수익',         wbClass:'wb-ops' },
-  { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'metal',       baseRate:20,  baseCost:{money:2000},                                   desc:'기본 금속 생산',    wbClass:'wb-mine' },
+  { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'metal',       baseRate:20,  baseCost:{money:1000},                                   desc:'기본 금속 생산',    wbClass:'wb-mine' },
   { id:'extractor',    name:'보크사이트 추출기', icon:'[EXT]', produces:'metal',       baseRate:25,  baseCost:{money:5000,metal:2000},                        desc:'고급 금속 추출',    wbClass:'wb-mine' },
   { id:'refinery',     name:'연료 정제소',      icon:'[REF]', produces:'fuel',        baseRate:15,  baseCost:{money:8000,metal:3000},                        desc:'LOX/RP-1 생산',    wbClass:'wb-refinery' },
   { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:20,  baseCost:{money:12000,metal:5000,electronics:1000},      desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
   { id:'elec_lab',     name:'전자공학 연구소',  icon:'[PCB]', produces:'electronics', baseRate:15,  baseCost:{money:15000,metal:5000},                       desc:'회로 부품 생산',    wbClass:'wb-eleclab' },
   { id:'fab_plant',    name:'반도체 공장',      icon:'[FAB]', produces:'electronics', baseRate:20,  baseCost:{money:20000,metal:8000,electronics:2000},      desc:'고급 반도체',       wbClass:'wb-eleclab' },
-  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:8,   baseCost:{money:10000},                                  desc:'기술 연구 포인트',  wbClass:'wb-research' },
+  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:12,  baseCost:{money:18000},                                  desc:'기술 연구 포인트',  wbClass:'wb-research' },
   { id:'r_and_d',      name:'R&D 센터',         icon:'[RND]', produces:'research',    baseRate:15,  baseCost:{money:50000,electronics:5000},                 desc:'고급 연구 가속',    wbClass:'wb-research' },
   { id:'solar_array',  name:'태양광 어레이',    icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:30000,electronics:5000},                 desc:'전체 생산 +10%/개', wbClass:'wb-solar' },
   { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:100000,metal:30000,electronics:8000},    desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },
 ];
 
 const PARTS = [
-  { id:'engine',   name:'엔진',        icon:'[ENG]', cost:{metal:4000,fuel:2000,electronics:1000} },
+  { id:'engine',   name:'엔진',        icon:'[ENG]', cost:{metal:2500,fuel:1500,electronics:800} },
   { id:'fueltank', name:'연료 탱크',   icon:'[TNK]', cost:{metal:3000,fuel:3000} },
   { id:'control',  name:'제어 시스템', icon:'[CTL]', cost:{electronics:4000,metal:1500} },
-  { id:'hull',     name:'기체 선체',   icon:'[HUL]', cost:{metal:5000} },
+  { id:'hull',     name:'기체 선체',   icon:'[HUL]', cost:{metal:3500} },
   { id:'payload',  name:'탑재체',      icon:'[PLD]', cost:{electronics:3000,metal:1000} },
 ];
 
