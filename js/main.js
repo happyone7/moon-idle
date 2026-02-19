@@ -3,6 +3,7 @@
 // ============================================================
 function switchMainTab(tabId) {
   activeTab = tabId;
+  document.body.className = 'tab-' + tabId;
   document.querySelectorAll('.nav-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tabId);
   });
