@@ -306,17 +306,44 @@ function updateWorldBuildings() {
     // Show all unlocked buildings (ghost if not built yet)
     if (!gs.unlocks || !gs.unlocks['bld_' + b.id]) return;
 
-    const x   = WORLD_POSITIONS[b.id] || 100;
-    const cnt = gs.buildings[b.id] || 0;
-    const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
-    const isBonus  = b.produces === 'bonus';
+    const x           = WORLD_POSITIONS[b.id] || 100;
+    const cnt         = gs.buildings[b.id] || 0;
+    const assigned    = (gs.assignments && gs.assignments[b.id]) || 0;
+    const isBonus     = b.produces === 'bonus';
+    const addonDef    = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[b.id];
+    const addonChoice = gs.addons && gs.addons[b.id];
 
     // CSS state class
     let stateClass;
-    if (cnt === 0)                          stateClass = 'wb-state-ghost';
-    else if (assigned > 0 || isBonus)      stateClass = 'wb-state-active';
-    else                                    stateClass = 'wb-state-idle';
+    if (cnt === 0)                     stateClass = 'wb-state-ghost';
+    else if (assigned > 0 || isBonus) stateClass = 'wb-state-active';
+    else                               stateClass = 'wb-state-idle';
 
+    // ── Add-on pre (created first so parent hover can reference it) ──
+    let addonPre = null;
+    if (cnt >= 1 && ADDON_POSITIONS[b.id] && addonDef) {
+      addonPre = document.createElement('pre');
+      addonPre.style.left = ADDON_POSITIONS[b.id] + 'px';
+      addonPre.dataset.addonFor = b.id;
+      if (addonChoice) {
+        const opt = addonDef.options.find(o => o.id === addonChoice);
+        addonPre.className = 'world-bld wb-addon wb-state-active';
+        addonPre.textContent = _addonAscii(opt);
+        addonPre.dataset.bid = b.id + '_addon';
+        addonPre.addEventListener('mouseenter', () => openAddonOv(b, opt, addonPre));
+        addonPre.addEventListener('mouseleave', () => scheduleBldOvClose());
+      } else {
+        // Uninstalled: invisible by default, ghost-revealed on parent hover
+        addonPre.className = 'world-bld wb-addon';
+        addonPre.style.opacity = '0';
+        addonPre.style.pointerEvents = 'none';
+        addonPre.style.transition = 'opacity 0.25s';
+        addonPre.textContent = _addonPlaceholderAscii();
+      }
+      layer.appendChild(addonPre);
+    }
+
+    // ── Parent building pre ───────────────────────────────────
     const pre = document.createElement('pre');
     pre.className = 'world-bld ' + stateClass;
     pre.dataset.bid = b.id;
@@ -324,37 +351,16 @@ function updateWorldBuildings() {
     pre.textContent = _bldAscii(b);
 
     if (cnt > 0) {
-      pre.addEventListener('mouseenter', () => openBldOv(b, pre));
-      pre.addEventListener('mouseleave', () => scheduleBldOvClose());
+      pre.addEventListener('mouseenter', () => {
+        openBldOv(b, pre);
+        if (addonPre && !addonChoice) addonPre.style.opacity = '0.2';
+      });
+      pre.addEventListener('mouseleave', () => {
+        scheduleBldOvClose();
+        if (addonPre && !addonChoice) addonPre.style.opacity = '0';
+      });
     }
     layer.appendChild(pre);
-
-    // ── Add-on building ─────────────────────────────────────
-    if (cnt >= 1 && ADDON_POSITIONS[b.id]) {
-      const addonX      = ADDON_POSITIONS[b.id];
-      const addonChoice = gs.addons && gs.addons[b.id];
-      const addonDef    = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[b.id];
-      if (addonDef) {
-        const addonPre = document.createElement('pre');
-        addonPre.style.left = addonX + 'px';
-
-        if (addonChoice) {
-          const opt = addonDef.options.find(o => o.id === addonChoice);
-          addonPre.className = 'world-bld wb-addon wb-state-active';
-          addonPre.textContent = _addonAscii(opt);
-          addonPre.dataset.bid = b.id + '_addon';
-          addonPre.addEventListener('mouseenter', () => openAddonOv(b, opt, addonPre));
-          addonPre.addEventListener('mouseleave', () => scheduleBldOvClose());
-        } else {
-          addonPre.className = 'world-bld wb-addon wb-addon-ph';
-          addonPre.textContent = _addonPlaceholderAscii();
-          // Hover on placeholder → open parent building overlay to show A/B choice
-          addonPre.addEventListener('mouseenter', () => openBldOv(b, pre));
-          addonPre.addEventListener('mouseleave', () => scheduleBldOvClose());
-        }
-        layer.appendChild(addonPre);
-      }
-    }
   });
 }
 
@@ -470,11 +476,12 @@ function openBldOv(bld, el) {
     else if (act.disabled)                                          rowCls = 'bov-locked';
     else if ((act.type === 'upgrade' || act.type === 'addon_upgrade') && !act.affordable) rowCls = 'bov-need';
 
-    const isUpg = act.type === 'upgrade' || act.type === 'addon_upgrade';
+    const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade';
+    const isWorker = act.type === 'assign' || act.type === 'unassign';
     let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : (isUpg && !act.affordable) ? '[부족]' : '[실행]';
     const btnDis = act.done || act.disabled || (isUpg && !act.affordable);
 
-    actRows += `<div class="bov-act ${rowCls}" data-idx="${i}"
+    actRows += `<div class="bov-act ${rowCls}${isWorker ? ' bov-worker' : ''}" data-idx="${i}"
       onmouseenter="bovHover(${i})"
       onclick="bovClick(${i})">
       <span class="bov-act-label">${act.label}</span>

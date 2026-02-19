@@ -78,6 +78,13 @@ body::after {
 .title-btn { background: none; border: 2px solid var(--green-dim); color: var(--green); font-family: var(--font); font-size: 15px; letter-spacing: 3px; padding: 9px 28px; cursor: pointer; text-transform: uppercase; transition: all 0.15s; }
 .title-btn:hover { border-color: var(--green); text-shadow: var(--glow); }
 .title-btn.primary { border-color: var(--green); text-shadow: var(--glow); }
+/* Continue button — amber emphasis */
+#continue-btn { border-color: var(--amber); color: var(--amber); text-shadow: var(--amber-glow); }
+#continue-btn:hover { background: rgba(255,171,0,0.1); border-color: #ffc300; }
+/* Settings button on title screen */
+.title-settings { margin-top: 8px; }
+.title-btn-sm { background: none; border: 1px solid var(--green-dim); color: var(--green-dim); font-family: var(--font); font-size: 11px; letter-spacing: 2px; padding: 4px 12px; cursor: pointer; text-transform: uppercase; transition: all 0.15s; }
+.title-btn-sm:hover { border-color: var(--green); color: var(--green); }
 @keyframes title-fade-out { from { opacity: 1; } to { opacity: 0; pointer-events: none; } }
 .fade-out { animation: title-fade-out 0.8s ease forwards; pointer-events: none; }
 
@@ -186,14 +193,22 @@ body::after {
 #res-left::-webkit-scrollbar { width: 3px; }
 /* Section header */
 .sh { color: var(--green-dim); font-size: 11px; letter-spacing: 2px; padding: 7px 4px 3px; border-bottom: 1px solid var(--green-dim); margin-bottom: 5px; text-transform: uppercase; }
-/* Resource items (rendered by JS) */
-.rl-item { padding: 3px 4px 5px; margin-bottom: 4px; border-bottom: 1px solid #0a1a0a; }
-.rl-label { color: var(--green-mid); font-size: 12px; }
-.rl-val { color: var(--green); font-size: 14px; font-weight: bold; }
-.rl-rate { color: var(--green-mid); font-size: 11px; }
-.rl-bar { height: 4px; background: var(--green-dim); margin-top: 3px; border-radius: 2px; overflow: hidden; }
-.rl-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.8s; border-radius: 2px; }
-.rl-bar-fill.amber { background: var(--amber); }
+/* Resource panel tabs */
+.rl-tabs { display:flex; gap:0; margin-bottom:6px; border-bottom:1px solid var(--green-dim); }
+.rl-tab { background:none; border:none; border-bottom:2px solid transparent; color:var(--green-dim); font-family:var(--font); font-size:10px; letter-spacing:2px; padding:5px 7px; cursor:pointer; text-transform:uppercase; transition:all 0.12s; flex:1; }
+.rl-tab:hover { color:var(--green); }
+.rl-tab.active { color:var(--green); border-bottom-color:var(--green); }
+/* Resource items — horizontal layout */
+.rl-item { padding:4px 2px 2px; margin-bottom:2px; border-bottom:1px solid #0a1a0a; }
+.rl-row { display:flex; align-items:center; gap:4px; }
+.rl-sym { font-size:10px; min-width:22px; flex-shrink:0; font-weight:bold; }
+.rl-name { color:var(--green-mid); font-size:11px; flex:1; }
+.rl-val { font-size:13px; font-weight:bold; min-width:44px; text-align:right; }
+.rl-rate { color:var(--green-dim); font-size:10px; min-width:46px; text-align:right; }
+.rl-worker-row { border-top:1px solid var(--green-dim); margin-top:3px; padding-top:5px; }
+.rl-bar { height:3px; background:#0a1a0a; margin-top:2px; border-radius:2px; overflow:hidden; }
+.rl-bar-fill { height:100%; background:var(--green-mid); transition:width 0.8s; border-radius:2px; }
+.rl-bar-fill.amber { background:var(--amber); }
 .rl-ms-row { margin-top: 8px; padding: 6px 4px; border: 1px solid #7a5100; background: rgba(255,171,0,0.05); }
 .rl-ms-label { color: #7a5100; font-size: 11px; letter-spacing: 1px; }
 .rl-ms-val { color: var(--amber); font-size: 16px; font-weight: bold; }
@@ -477,6 +492,12 @@ body::after {
 .bov-done .bov-act-label { color:var(--green-dim); }
 .bov-locked .bov-act-label { color:#2a3a2a; }
 .bov-need .bov-act-label { color:#2a4a2a; }
+/* Worker assign/unassign rows — amber accent */
+.bov-act.bov-worker { background:rgba(255,171,0,0.04); border-left:2px solid #7a5100; }
+.bov-act.bov-worker:hover { background:rgba(255,171,0,0.09); }
+.bov-act.bov-worker .bov-act-label { color:var(--amber); }
+.bov-act.bov-worker .bov-act-btn:not(.dis) { border-color:var(--amber); color:var(--amber); }
+.bov-act.bov-worker .bov-act-info { color:#a06800; }
 .bov-act-btn { padding:2px 7px; font-size:10px; font-family:var(--font); background:transparent; border:1px solid var(--green-dim); color:var(--green-mid); cursor:pointer; white-space:nowrap; }
 .bov-act-btn:hover:not(.dis) { border-color:var(--green); color:var(--green); }
 .bov-act-btn.dis { border-color:#1a3a1a; color:#1a3a1a; cursor:default; }
@@ -514,16 +535,23 @@ body::after {
 
 /* ── Mission goal panel ── */
 #mission-goal {
-  display: flex; align-items: flex-start; gap: 12px;
-  background: rgba(0,8,0,0.7); border: 1px solid var(--green-dim);
-  padding: 10px 12px; margin-bottom: 12px;
+  display: flex; align-items: flex-start; gap: 14px;
+  background: rgba(0,12,2,0.9); border: 1px solid var(--green);
+  box-shadow: 0 0 8px rgba(0,230,118,0.15);
+  padding: 12px 14px; margin-bottom: 12px;
   font-family: var(--font); font-size: 12px;
+  min-height: 80px;
 }
-.mg-rocket { font-size: 11px; color: var(--green); line-height: 1.25; margin: 0; flex-shrink: 0; text-shadow: 0 0 6px rgba(0,230,118,0.5); }
+.mg-rocket-wrap { flex-shrink:0; text-align:center; }
+.mg-rocket-label { font-size:9px; letter-spacing:3px; color:var(--green-dim); margin-bottom:3px; }
+.mg-rocket { font-size: 12px; color: var(--green); line-height: 1.3; margin: 0; text-shadow: 0 0 8px rgba(0,230,118,0.6); }
 .mg-info   { flex: 1; }
-.mg-title  { color: var(--green-mid); font-size: 11px; letter-spacing: 1px; margin-bottom: 6px; }
-.mg-bar    { color: var(--green); font-size: 11px; margin-bottom: 3px; letter-spacing: 0; }
-.mg-next   { color: var(--amber); font-size: 11px; margin-top: 6px; }
+.mg-title  { color: var(--green-mid); font-size: 11px; letter-spacing: 1px; margin-bottom: 8px; }
+.mg-bar-row { display:flex; align-items:center; gap:4px; margin-bottom:3px; }
+.mg-bar-lbl { color:var(--green-dim); font-size:10px; min-width:42px; }
+.mg-bar-val { color:var(--green); font-size:11px; flex:1; }
+.mg-bar-cnt { color:var(--green-mid); font-size:10px; min-width:28px; text-align:right; }
+.mg-next   { color: var(--amber); font-size: 11px; margin-top: 8px; text-shadow: var(--amber-glow); }
 
 /* ===========================
    RESEARCH TAB
@@ -695,10 +723,13 @@ body::after {
   <div class="title-logo">MOON IDLE</div>
   <div class="title-subtitle">달 탐사 로켓 제작소 / LUNAR EXPLORATION SIM</div>
   <div id="boot-log"></div>
-  <div id="save-strip">// 저장 데이터 없음</div>
+  <div id="save-strip">// 저장 데이터 확인 중...</div>
   <div class="title-btns">
-    <button class="title-btn primary" id="new-game-btn">새 게임</button>
+    <button class="title-btn primary" id="new-game-btn" style="display:none">새 게임</button>
     <button class="title-btn" id="continue-btn" style="display:none">이어하기</button>
+  </div>
+  <div class="title-settings">
+    <button class="title-btn-sm" id="title-snd-btn">SND:ON</button>
   </div>
 </div>
 
@@ -748,7 +779,11 @@ body::after {
 
     <!-- ── LEFT PANEL ── -->
     <div id="res-left">
-      <div class="sh">&#9726; 자원</div>
+      <div class="rl-tabs">
+        <button class="rl-tab active" data-cat="all" onclick="switchResTab('all')">전체</button>
+        <button class="rl-tab" data-cat="material" onclick="switchResTab('material')">소재</button>
+        <button class="rl-tab" data-cat="research" onclick="switchResTab('research')">연구</button>
+      </div>
       <div id="rl-inner"></div>
       <div id="rl-ms-box"></div>
     </div>
