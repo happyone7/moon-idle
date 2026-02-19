@@ -5,7 +5,8 @@ let gs = {
   res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
   buildings: { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldUpgrades: {},    // per-building named upgrades purchased
-  bldLevels: {},      // { buildingId: upgradeCount }
+  bldLevels: {},      // { buildingId: statUpgradeCount } — 생산량 업그레이드 (getBldProdMult용)
+  bldSlotLevels: {},  // { buildingId: slotUpgradeCount } — 인원 슬롯 추가 (BUG-013 분리)
   addons: {},         // { buildingId: addonOptionId } — A/B 선택된 애드온
   addonUpgrades: {}, // { upgradeId: true }
   workers: 1,          // 총 인원
@@ -14,6 +15,8 @@ let gs = {
   assembly: { selectedQuality:'proto', jobs:[] },
   upgrades: {},
   msUpgrades: {},
+  autoEnabled: {},
+  milestones: {},
   launches: 0,
   moonstone: 0,
   history: [],
@@ -26,6 +29,7 @@ let gs = {
     tab_assembly: false,
     tab_launch: true,
     tab_mission: false,
+    tab_automation: false, // 첫 발사 완료 후 자동 해금
     bld_housing: true,      // 처음부터 표시
     bld_ops_center: true,  // 처음부터 표시
     bld_supply_depot: false,
@@ -61,7 +65,7 @@ let recentResearches = [];
 //  HELPERS
 // ============================================================
 function fmt(n) {
-  if (typeof n !== 'number' || isNaN(n)) return '0';
+  if (typeof n !== 'number' || !isFinite(n)) return '0';
   if (n >= 1e9) return (n/1e9).toFixed(1)+'B';
   if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
   if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
@@ -69,7 +73,7 @@ function fmt(n) {
 }
 
 function fmtDec(n, d=1) {
-  if (typeof n !== 'number' || isNaN(n)) return '0.0';
+  if (typeof n !== 'number' || !isFinite(n)) return '0.0';
   if (n >= 1e6) return (n/1e6).toFixed(2)+'M';
   if (n >= 1e3) return (n/1e3).toFixed(1)+'K';
   return n.toFixed(d);
@@ -126,7 +130,7 @@ function upgBuilding(bid) {
   spend(cost);
   if (!gs.bldLevels) gs.bldLevels = {};
   gs.bldLevels[bid] = (gs.bldLevels[bid] || 0) + 1;
-  notify(`${bld.icon} ${bld.name} Lv.${gs.bldLevels[bid] + 1} 업그레이드 완료`);
+  notify(`${bld.icon} ${bld.name} Lv.${gs.bldLevels[bid]} 업그레이드 완료`);
   playSfx('triangle', 520, 0.1, 0.04, 780);
   // 오버레이 갱신
   const el = document.querySelector('.world-bld[data-bid="' + bid + '"]');
@@ -231,7 +235,9 @@ function canAfford(cost) {
 }
 
 function spend(cost) {
-  Object.entries(cost).forEach(([r, v]) => { gs.res[r] -= v; });
+  Object.entries(cost).forEach(([r, v]) => {
+    gs.res[r] = Math.max(0, (gs.res[r] || 0) - v);
+  });
 }
 
 function getBuildingCost(bld) {
@@ -258,7 +264,8 @@ function getProduction() {
     // 생산량은 배치된 인원(assignments) 기반
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
     if (assigned === 0) return;
-    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id);
+    const msBonus = typeof getMilestoneProdBonus === 'function' ? getMilestoneProdBonus() : 1;
+    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id) * msBonus;
     prod[b.produces] += rate;
   });
   // Add RP bonus from tech hub addon
@@ -301,7 +308,9 @@ function getRocketScience(qualityId) {
 function getMoonstoneReward(qualityId) {
   const sci = getRocketScience(qualityId);
   const q = getQuality(qualityId);
-  return Math.max(1, Math.floor((sci.altitude / 20) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / 4));
+  const base = Math.max(1, Math.floor((sci.altitude / 20) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / 4));
+  const mult = typeof getMilestoneMsBonus === 'function' ? getMilestoneMsBonus() : 1;
+  return Math.floor(base * mult);
 }
 
 function getCostStr(cost) {
@@ -414,7 +423,9 @@ function deleteSlot(slot) {
 function saveGame() {
   try {
     localStorage.setItem(SAVE_PREFIX + currentSaveSlot, JSON.stringify(gs));
-  } catch(e) {}
+  } catch(e) {
+    if (e.name === 'QuotaExceededError') notify('저장 실패: 저장 공간 부족', 'red');
+  }
 }
 
 function loadGame(slot) {
@@ -447,6 +458,7 @@ function loadGame(slot) {
     if (gs.settings.lang === undefined) gs.settings.lang = 'en';
     gs.lastTick = saved.lastTick || Date.now();
     gs.bldLevels = saved.bldLevels || {};
+    gs.bldSlotLevels = saved.bldSlotLevels || {};
     gs.bldUpgrades = saved.bldUpgrades || {};
     gs._prodHubVisited = saved._prodHubVisited !== undefined ? saved._prodHubVisited :
       ((saved.buildings && (saved.buildings.ops_center || 0) > 0) ||
@@ -454,14 +466,17 @@ function loadGame(slot) {
     gs.addons = saved.addons || {};
     gs.addonUpgrades = saved.addonUpgrades || {};
     gs.msUpgrades = saved.msUpgrades || {};
+    gs.autoEnabled = saved.autoEnabled || {};
+    gs.milestones  = saved.milestones  || {};
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
       tab_production: true,
       tab_research: true,
       tab_assembly: false,
-      tab_launch: false,
+      tab_launch: true,
       tab_mission: false,
+      tab_automation: false,
       bld_housing: true,
       bld_ops_center: true,
       bld_supply_depot: false,
@@ -532,21 +547,142 @@ function loadGame(slot) {
 
 function calcOffline() {
   const now = Date.now();
-  const elapsed = Math.min((now - gs.lastTick) / 1000, 8 * 3600);
+  const rawElapsed = (now - gs.lastTick) / 1000;
+  const elapsed = Math.min(rawElapsed, 8 * 3600);
   if (elapsed < 5) { gs.lastTick = now; return; }
+
   const prod = getProduction();
-  RESOURCES.forEach(r => { gs.res[r.id] = (gs.res[r.id] || 0) + prod[r.id] * elapsed; });
+  const report = {
+    elapsed,
+    resources: {},
+    assemblyCompleted: 0,
+    autoLaunches: [],
+  };
+
+  // 자원 수집
+  RESOURCES.forEach(r => {
+    const gained = prod[r.id] * elapsed;
+    if (gained > 0.01) report.resources[r.id] = gained;
+    gs.res[r.id] = Math.max(0, (gs.res[r.id] || 0) + gained);
+  });
+
   gs.lastTick = now;
+
+  // 조립 완료 처리
+  const beforeJobs = JSON.stringify((gs.assembly && gs.assembly.jobs) || []);
   updateAssemblyJobs(now);
-  const mins = Math.floor(elapsed / 60);
-  if (mins > 0) {
+  const afterJobs = JSON.stringify((gs.assembly && gs.assembly.jobs) || []);
+  // 새로 완료된 슬롯 수 세기
+  const jobsBefore = JSON.parse(beforeJobs);
+  const jobsAfter  = JSON.parse(afterJobs);
+  jobsAfter.forEach((job, idx) => {
+    if (job && job.ready && (!jobsBefore[idx] || !jobsBefore[idx].ready)) {
+      report.assemblyCompleted++;
+      // 자동 발사 처리 — auto_launch 구매 + 활성화된 경우에만
+      if (gs.msUpgrades && gs.msUpgrades['auto_launch'] && gs.autoEnabled && gs.autoEnabled['auto_launch'] !== false) {
+        const q = getQuality(job.qualityId);
+        const sci = getRocketScience(q.id);
+        const rollSuccess = Math.random() * 100 < sci.reliability;
+        const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
+        gs.launches++;
+        if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches || 0) + 1;
+        if (earned > 0) gs.moonstone += earned;
+        gs.history.push({
+          no: gs.launches,
+          quality: q.name,
+          qualityId: job.qualityId,
+          deltaV: sci.deltaV.toFixed(2),
+          altitude: rollSuccess ? Math.floor(sci.altitude) : 0,
+          reliability: sci.reliability.toFixed(1),
+          success: rollSuccess,
+          earned,
+          date: `D+${gs.launches * 2}`,
+        });
+        gs.assembly.jobs[idx] = null;
+        report.autoLaunches.push({ quality: q.name, qualityId: job.qualityId, success: rollSuccess, earned, altitude: Math.floor(sci.altitude), reliability: sci.reliability.toFixed(1) });
+      }
+    }
+  });
+
+  // 오프라인 보고서 표시 (1분 이상 오프라인 시)
+  if (elapsed >= 60) {
+    setTimeout(() => _showOfflineReport(report), 500);
+  } else {
+    const secs = Math.floor(elapsed % 60);
     const banner = document.getElementById('offline-banner');
     if (banner) {
       banner.style.display = 'block';
-      banner.textContent = `오프라인 ${mins}분 — 자원 생산 완료`;
-      setTimeout(() => { banner.style.display = 'none'; }, 5000);
+      banner.textContent = `오프라인 ${secs}초 — 자원 생산 완료`;
+      setTimeout(() => { banner.style.display = 'none'; }, 3000);
     }
   }
+}
+
+function _showOfflineReport(report) {
+  const h = Math.floor(report.elapsed / 3600);
+  const m = Math.floor((report.elapsed % 3600) / 60);
+  const s = Math.floor(report.elapsed % 60);
+  const timeStr = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+
+  // 자원 수익 HTML
+  const RES_NAMES = { money:'₩ 자금', metal:'Fe 금속', fuel:'LOX 연료', electronics:'PCB 전자', research:'RP 연구' };
+  let resHtml = '';
+  Object.entries(report.resources).forEach(([rid, val]) => {
+    if (val > 0.01) {
+      resHtml += `<div class="ofr-row"><span class="ofr-lbl">${RES_NAMES[rid]||rid}</span><span class="ofr-val">+${fmt(val)}</span></div>`;
+    }
+  });
+
+  // 자동 발사 이력 HTML
+  let launchHtml = '';
+  if (report.autoLaunches.length > 0) {
+    // 기체 종류별 집계
+    const byQuality = {};
+    report.autoLaunches.forEach(l => {
+      if (!byQuality[l.quality]) byQuality[l.quality] = { total:0, success:0, earned:0, altMax:0 };
+      byQuality[l.quality].total++;
+      if (l.success) { byQuality[l.quality].success++; byQuality[l.quality].earned += l.earned; }
+      if (l.altitude > byQuality[l.quality].altMax) byQuality[l.quality].altMax = l.altitude;
+    });
+
+    const totalEarned = report.autoLaunches.reduce((s,l) => s + (l.earned||0), 0);
+    const totalSuccess = report.autoLaunches.filter(l => l.success).length;
+    const totalLaunches = report.autoLaunches.length;
+    const successRate = totalLaunches > 0 ? ((totalSuccess/totalLaunches)*100).toFixed(0) : 0;
+
+    launchHtml += `<div class="ofr-section-hd">// 자동 발사 (${totalLaunches}회 · 성공률 ${successRate}%)</div>`;
+    Object.entries(byQuality).forEach(([qname, stat]) => {
+      const qSuccessRate = stat.total > 0 ? ((stat.success/stat.total)*100).toFixed(0) : 0;
+      launchHtml += `<div class="ofr-launch-row">
+        <span class="ofr-quality">${qname}</span>
+        <span class="ofr-launch-stat">×${stat.total} 발사</span>
+        <span class="ofr-launch-stat" style="color:${stat.success===stat.total?'var(--green)':'var(--amber)'}">✓ ${stat.success}회 (${qSuccessRate}%)</span>
+        <span class="ofr-launch-stat">최고도 ${stat.altMax}km</span>
+      </div>`;
+    });
+    launchHtml += `<div class="ofr-row ofr-total"><span class="ofr-lbl">총 문스톤 획득</span><span class="ofr-val" style="color:var(--amber)">+${totalEarned}개</span></div>`;
+  }
+
+  const assemblyHtml = report.assemblyCompleted > 0
+    ? `<div class="ofr-section-hd">// 조립 완료</div><div class="ofr-row"><span class="ofr-lbl">조립 완료 슬롯</span><span class="ofr-val">${report.assemblyCompleted}개</span></div>`
+    : '';
+
+  const modalHtml = `
+<div id="offline-report-modal" class="ofr-backdrop">
+  <div class="ofr-box">
+    <div class="ofr-hd">// 오프라인 복귀 보고서</div>
+    <div class="ofr-time">경과 시간: ${timeStr}</div>
+    <div class="ofr-section-hd">// 자원 수익</div>
+    ${resHtml || '<div class="ofr-empty">// 자원 생산 없음</div>'}
+    ${assemblyHtml}
+    ${launchHtml}
+    <button class="ofr-confirm-btn" onclick="document.getElementById('offline-report-modal').remove()">[ 확인 ]</button>
+  </div>
+</div>`;
+
+  const div = document.createElement('div');
+  div.innerHTML = modalHtml;
+  document.body.appendChild(div.firstElementChild);
 }
 
 
@@ -557,9 +693,11 @@ function tick() {
   const now = Date.now();
   const dt = Math.min((now - gs.lastTick) / 1000, 1);
   gs.lastTick = now;
+  if (dt < 0.001) return;  // 너무 짧은 tick 방지 (calcOffline 직후)
   const prod = getProduction();
-  RESOURCES.forEach(r => { gs.res[r.id] = (gs.res[r.id] || 0) + prod[r.id] * dt; });
+  RESOURCES.forEach(r => { gs.res[r.id] = Math.max(0, (gs.res[r.id] || 0) + prod[r.id] * dt); });
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
+  if (typeof runAutomation === 'function') runAutomation();
 }
 

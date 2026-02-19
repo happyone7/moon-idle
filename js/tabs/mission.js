@@ -57,6 +57,11 @@ function applyMsUpgradesFromState() {
     const count = gs.msUpgrades[u.id] || 0;
     for (let i = 0; i < count; i++) u.apply();
   });
+  // AUTOMATION_UPGRADES 중 프레스티지 후에도 유지되는 영구 효과 재적용
+  if (gs.msUpgrades['ms_early_boost']) {
+    globalMult *= 1.08;
+  }
+  // ms_quick_workers: workers는 confirmLaunch에서 savedWorkers로 보존되므로 별도 재적용 불필요
 }
 
 /** 문스톤 업그레이드 구매 */
@@ -82,12 +87,14 @@ function buyMsUpgrade(id) {
 // ============================================================
 function confirmLaunch() {
   gs.moonstone += pendingLaunchMs;
-  const savedMs        = gs.msUpgrades || {};
-  const savedMoonstone = gs.moonstone;
-  const savedLaunches  = gs.launches;
-  const savedHistory   = gs.history;
-  const savedUnlocks   = gs.unlocks;
-  const savedWorkers   = gs.workers;   // 문스톤으로 늘린 인원은 유지
+  pendingLaunchMs = 0;  // closeLaunchOverlay 이중 지급 방지
+  const savedMs         = gs.msUpgrades || {};
+  const savedMoonstone  = gs.moonstone;
+  const savedLaunches   = gs.launches;
+  const savedHistory    = gs.history;
+  const savedUnlocks    = gs.unlocks;
+  const savedWorkers    = gs.workers;     // 문스톤으로 늘린 인원은 유지
+  const savedMilestones = gs.milestones || {}; // BUG-P08: 마일스톤 보존 (프레스티지 후 재지급 방지)
 
   // Prestige reset — keep moonstone, msUpgrades, launches, history, unlocks, workers
   gs.res = { money:500, metal:0, fuel:0, electronics:0, research:0 };
@@ -98,17 +105,19 @@ function confirmLaunch() {
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};
   gs.bldLevels = {};
+  gs.bldSlotLevels = {};
   gs.bldUpgrades = {};
   gs.addons = {};
   gs.addonUpgrades = {};
 
   // Restore persistent fields
-  gs.moonstone  = savedMoonstone;
-  gs.msUpgrades = savedMs;
-  gs.launches   = savedLaunches;
-  gs.history    = savedHistory;
-  gs.unlocks    = savedUnlocks;
-  gs.workers    = savedWorkers;
+  gs.moonstone   = savedMoonstone;
+  gs.msUpgrades  = savedMs;
+  gs.launches    = savedLaunches;
+  gs.history     = savedHistory;
+  gs.unlocks     = savedUnlocks;
+  gs.workers     = savedWorkers;
+  gs.milestones  = savedMilestones; // BUG-P08
 
   // Reset multipliers then re-apply from saved MS upgrades
   prodMult = {};
@@ -122,13 +131,21 @@ function confirmLaunch() {
   closeLaunchOverlay();
   notify(`문스톤 ${gs.moonstone}개 보유 — 생산 +${gs.moonstone * 5}%`, '');
   playSfx('triangle', 500, 0.12, 0.04, 760);
+  switchMainTab('production'); // DESIGN-007: 프레스티지 후 생산 탭으로 이동
   saveGame();
   renderAll();
 }
 
 function closeLaunchOverlay() {
+  // 문스톤 실제 지급 (pendingLaunchMs에 저장된 값)
+  if (pendingLaunchMs > 0) {
+    gs.moonstone += pendingLaunchMs;
+    pendingLaunchMs = 0;
+  }
   const overlay = document.getElementById('launch-overlay');
   if (overlay) overlay.classList.remove('show');
+  saveGame();
+  renderAll();
 }
 
 
@@ -137,11 +154,11 @@ function closeLaunchOverlay() {
 // ============================================================
 const PHASES = [
   { id:'proto',    name:'PHASE 1: 프로토타입', targetAlt:50,  targetLaunches:1 },
-  { id:'sub',      name:'PHASE 2: 준궤도',     targetAlt:100, targetLaunches:3 },
-  { id:'orbital',  name:'PHASE 3: 궤도',       targetAlt:200, targetLaunches:5 },
-  { id:'cislunar', name:'PHASE 4: 시스루나',   targetAlt:300, targetLaunches:8 },
-  { id:'lunar',    name:'PHASE 5: 달 착륙',    targetAlt:400, targetLaunches:12 },
-];
+  { id:'sub',      name:'PHASE 2: 준궤도',     targetAlt:90,  targetLaunches:3 },
+  { id:'orbital',  name:'PHASE 3: 궤도',       targetAlt:105, targetLaunches:5 },
+  { id:'cislunar', name:'PHASE 4: 시스루나',   targetAlt:120, targetLaunches:8 },
+  { id:'lunar',    name:'PHASE 5: 달 착륙',    targetAlt:135, targetLaunches:12 },
+]; // targetAlt 현실화: ELITE 최대 도달 가능 고도 기준 (DESIGN-003)
 
 
 // ============================================================
@@ -159,7 +176,6 @@ function renderMissionTab() {
     const pct = Math.min(100, (maxAlt / ph.targetAlt) * 100);
     const done = maxAlt >= ph.targetAlt && gs.launches >= ph.targetLaunches;
     const locked = !prevDone && i > 0;
-    if (done) prevDone = true;
     phaseHtml += `<div class="phase-row">
       <div class="phase-name">${ph.name}</div>
       <div class="phase-bar-wrap">
@@ -169,7 +185,7 @@ function renderMissionTab() {
         ${done ? '완료 ✓' : locked ? '잠금' : `${Math.floor(pct)}%`}
       </div>
     </div>`;
-    if (!done) prevDone = false;
+    prevDone = done; // BUG-P15: 단순화
   });
   const phaseWrap = document.getElementById('phase-progress-wrap');
   if (phaseWrap) phaseWrap.innerHTML = phaseHtml;

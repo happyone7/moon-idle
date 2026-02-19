@@ -17,6 +17,7 @@ const TAB_UNLOCK_NAMES = {
   tab_assembly:   () => t('tab_assembly'),
   tab_launch:     () => t('tab_launch'),
   tab_mission:    () => t('tab_mission'),
+  tab_automation: () => 'AUTOMATION',
 };
 function _tabUnlockLabel(tabKey) {
   const entry = TAB_UNLOCK_NAMES[tabKey];
@@ -51,6 +52,7 @@ function renderUnlocks() {
     tab_assembly:   'nav-tab-assembly',
     tab_launch:     'nav-tab-launch',
     tab_mission:    'nav-tab-mission',
+    tab_automation: 'nav-tab-automation',
   };
 
   Object.entries(TAB_MAP).forEach(([key, elId]) => {
@@ -93,7 +95,17 @@ function checkAutoUnlocks() {
     notify('[ 연구소 완공 ] 연구 탭 해금!', 'amber');
   }
 
+  // 첫 발사 완료 → 자동화 탭 해금
+  if (!gs.unlocks.tab_automation && (gs.launches || 0) >= 1) {
+    gs.unlocks.tab_automation = true;
+    changed = true;
+    notify('[ 첫 발사 완료 ] 자동화 탭 해금!', 'amber');
+  }
+
   if (changed) renderUnlocks();
+
+  // 마일스톤 체크
+  if (typeof checkMilestones === 'function') checkMilestones();
 }
 
 

@@ -358,7 +358,12 @@ function updateWorldBuildings() {
 
     // ── Parent building pre ───────────────────────────────────
     const pre = document.createElement('pre');
-    pre.className = 'world-bld ' + stateClass;
+    if (cnt === 0) {
+      pre.className = 'world-bld ' + stateClass + ' ghost-bld';
+    } else {
+      const workerClass = assigned > 0 ? ' active-bld has-workers' : ' active-bld';
+      pre.className = 'world-bld ' + stateClass + (cnt > 0 ? workerClass : '');
+    }
     pre.dataset.bid = b.id;
     pre.style.left = x + 'px';
     pre.textContent = cnt === 0 ? _scaffoldAscii() : _bldAscii(b);
@@ -372,6 +377,14 @@ function updateWorldBuildings() {
         scheduleBldOvClose();
         if (addonPre && !addonChoice) addonPre.style.opacity = '0';
       });
+    } else {
+      pre.addEventListener('mouseenter', () => {
+        clearTimeout(_bldOvTimer);
+        openGhostOv(b, pre);
+      });
+      pre.addEventListener('mouseleave', () => {
+        scheduleBldOvClose();
+      });
     }
     layer.appendChild(pre);
   });
@@ -379,7 +392,7 @@ function updateWorldBuildings() {
 
 // ─── SLOT UPGRADE HELPERS ─────────────────────────────────────
 function _getBldSlotCost(bld) {
-  const level = (gs.bldLevels && gs.bldLevels[bld.id]) || 0;
+  const level = (gs.bldSlotLevels && gs.bldSlotLevels[bld.id]) || 0;
   return { money: 500 * 2 * (level + 1) };
 }
 
@@ -390,9 +403,9 @@ function buyBldSlotUpgrade(bldId) {
   const cost = _getBldSlotCost(bld);
   if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
   spend(cost);
-  if (!gs.bldLevels) gs.bldLevels = {};
-  gs.bldLevels[bldId] = (gs.bldLevels[bldId] || 0) + 1;
-  notify(`${bld.icon} ${bld.name} — 슬롯 +1 (현재 ${gs.buildings[bldId] + gs.bldLevels[bldId]}슬롯)`);
+  if (!gs.bldSlotLevels) gs.bldSlotLevels = {};
+  gs.bldSlotLevels[bldId] = (gs.bldSlotLevels[bldId] || 0) + 1;
+  notify(`${bld.icon} ${bld.name} — 슬롯 +1 (현재 ${gs.buildings[bldId] + gs.bldSlotLevels[bldId]}슬롯)`);
   playSfx('triangle', 580, 0.09, 0.04, 820);
   _triggerUpgradeAnim(bldId);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
@@ -420,7 +433,7 @@ function openBldOv(bld, el) {
 
   // ── 슬롯 업그레이드 (생산 건물만, 보너스 건물 제외) ──────
   if (bld.produces !== 'bonus') {
-    const slotLevel  = (gs.bldLevels && gs.bldLevels[bld.id]) || 0;
+    const slotLevel  = (gs.bldSlotLevels && gs.bldSlotLevels[bld.id]) || 0;
     const slotCap    = cnt + slotLevel;
     const slotCost   = _getBldSlotCost(bld);
     const slotAfford = canAfford(slotCost);
@@ -438,7 +451,7 @@ function openBldOv(bld, el) {
       label: '+ 인원 배치',
       info: `여유 ${avail}명`,
       disabled: avail <= 0 || cnt === 0 || assigned >= slotCap,
-      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 슬롯: ${slotCap}개\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id), 2)}/s`,
+      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 슬롯: ${slotCap}개\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id) * getAddonMult(bld.id), 2)}/s`,
       type: 'assign',
     });
     actions.push({
@@ -476,11 +489,13 @@ function openBldOv(bld, el) {
     actions.push({ type: 'sep', label: '// 애드온 슬롯' });
     if (!addonChoice) {
       addonDef.options.forEach((opt, i) => {
+        const addonAfford = !opt.cost || canAfford(opt.cost);
         actions.push({
           label: `[${i === 0 ? 'A' : 'B'}] ${opt.name}`,
-          info: '선택',
+          info: opt.cost ? getCostStr(opt.cost) : '선택',
+          affordable: addonAfford,
           disabled: false,
-          desc: opt.desc,
+          desc: opt.desc + (opt.cost ? `\n// 비용: ${getCostStr(opt.cost)}` : ''),
           type: 'addon_choose',
           addonId: opt.id,
           addonBldId: bld.id,
@@ -548,7 +563,7 @@ function openBldOv(bld, el) {
   // Production rate line
   let rateStr = '';
   if (bld.produces !== 'bonus') {
-    const rate = bld.baseRate * assigned * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id);
+    const rate = bld.baseRate * assigned * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id) * getAddonMult(bld.id);
     rateStr = assigned > 0 ? `${bld.produces} +${fmtDec(rate,2)}/s` : '인원 미배치';
   } else if (bld.id === 'solar_array') { rateStr = `전체 생산 +${((getSolarBonus()-1)*100).toFixed(0)}%`; }
   else if (bld.id === 'launch_pad')    { rateStr = `발사 슬롯 +${cnt}`; }
@@ -564,7 +579,7 @@ function openBldOv(bld, el) {
     ${actRows || '<div class="bov-act-empty">// 업그레이드 없음</div>'}
   </div>
   <div class="bov-desc-col" id="bov-desc">
-    <div class="bov-desc-hint">항목에 마우스를<br>올려 상세 확인</div>
+    <div class="bov-desc-hint">${bld.desc || bld.name}<br><span style="color:var(--green-dim);font-size:10px">// 항목 hover로 상세 확인</span></div>
   </div>
 </div>
 <div class="bov-foot">
@@ -712,6 +727,12 @@ function buyAddonOption(bldId, optionId) {
   const opt = addonDef.options.find(o => o.id === optionId);
   if (!opt) return;
 
+  // 비용 체크 및 차감
+  if (opt.cost) {
+    if (!canAfford(opt.cost)) { notify('자원 부족', 'red'); return; }
+    spend(opt.cost);
+  }
+
   gs.addons[bldId] = optionId;
   // Apply immediate side-effects
   if (opt.effect) {
@@ -763,7 +784,7 @@ function assignWorker(bldId) {
   if (!bld) return;
   const cnt      = gs.buildings[bldId] || 0;
   const assigned = gs.assignments[bldId] || 0;
-  const slotCap  = cnt + ((gs.bldLevels && gs.bldLevels[bldId]) || 0);
+  const slotCap  = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bldId]) || 0);
   if (cnt === 0)                    { notify('건물이 없습니다', 'red'); return; }
   if (getAvailableWorkers() <= 0)   { notify('여유 인원 없음', 'red'); return; }
   if (assigned >= slotCap)          { notify('슬롯 수용 한도 초과 — 슬롯 업그레이드 필요', 'amber'); return; }
@@ -893,6 +914,11 @@ function _tickWorkers() {
     if (d.x > 3100) { d.x = 3100; d.vx = -Math.abs(d.vx) * (0.85 + Math.random() * 0.3); }
     d.el.style.left = Math.round(d.x) + 'px';
   });
+}
+
+function hideTechTip() {
+  const el = document.getElementById('tech-tip');
+  if (el) el.style.display = 'none';
 }
 
 // ─── DRAG SCROLL INIT ────────────────────────────────────────

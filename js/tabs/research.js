@@ -27,7 +27,7 @@ const TIER_GROUPS = [
   { label: 'TIER-3  //  고급 공학',    nodes: ['automation', 'rocket_eng', 'reliability', 'lightweight'] },
   { label: 'TIER-4  //  우주 공학',    nodes: ['fusion', 'multipad', 'launch_ctrl'] },
   { label: 'TIER-5  //  임무 시스템',  nodes: ['mission_sys'] },
-];
+]; // TIER-6 제거: auto_worker_assign/auto_assemble_restart는 효과 없어 삭제됨 (DESIGN-002)
 
 function buyUpgrade(uid) {
   const upg = UPGRADES.find(u => u.id === uid);
@@ -47,7 +47,6 @@ function buyUpgrade(uid) {
 // ============================================================
 //  RENDER: RESEARCH TAB v2 — horizontal card tree + detail panel
 // ============================================================
-let selectedTechId = null;
 
 function selectTech2(uid) {
   selectedTechId = uid;
@@ -58,7 +57,27 @@ function selectTech2(uid) {
   renderTechDetail(uid);
 }
 
+let _researchDetailRenderedFor = null; // 더블클릭 방지: 마지막으로 전체 렌더된 tech ID
+
+/** 기술 상세 패널 버튼 상태만 업데이트 (DOM 재생성 없이) */
+function _updateTechDetailBtnState() {
+  const uid = selectedTechId;
+  if (!uid) return;
+  const panel = document.getElementById('rsh-detail-panel');
+  if (!panel) return;
+  const btn = panel.querySelector('.rdp-btn');
+  if (!btn) return;
+  const upg = UPGRADES.find(u => u.id === uid);
+  if (!upg) return;
+  const purchased = !!gs.upgrades[uid];
+  const reqMet    = !upg.req || !!gs.upgrades[upg.req];
+  const affordable = canAfford(upg.cost);
+  btn.disabled    = purchased || !reqMet || !affordable;
+  btn.textContent = purchased ? '연구 완료' : !reqMet ? '선행 필요' : !affordable ? '자원 부족' : '연구 실행';
+}
+
 function renderTechDetail(uid) {
+  _researchDetailRenderedFor = uid;
   const panel = document.getElementById('rsh-detail-panel');
   if (!panel) return;
 
@@ -142,7 +161,7 @@ function renderResearchTab() {
     const cnt = gs.buildings[b.id] || 0;
     if (cnt === 0) return;
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
-    const rate = b.baseRate * assigned * (prodMult.research || 1) * globalMult * getMoonstoneMult() * getSolarBonus();
+    const rate = b.baseRate * assigned * (prodMult.research || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id);
     rpSourcesHtml += `<div class="rsh-src-row">
       <span>${b.icon} ${b.name} ×${cnt}</span>
       <span>+${fmtDec(rate, 2)}/s</span>
@@ -215,25 +234,35 @@ function renderResearchTab() {
 </div>`;
   });
 
-  // ── DETAIL PANEL (right side) ────────────────────────────────
-  const detailHtml = `<div class="rsh-detail-panel" id="rsh-detail-panel">
-  <div class="rdp-hd">기술 상세</div>
-  <div class="rdp-empty">// 기술 카드를 클릭하면<br>상세 정보가 표시됩니다</div>
-</div>`;
+  // ── DETAIL PANEL (right side) ─────────────────────────────────
+  // 기존 패널 엘리먼트를 미리 저장 (innerHTML 교체 시 제거되지만 JS 참조는 유지됨)
+  // 이렇게 하면 mousedown → renderAll → mouseup 사이클에서 click 이벤트가 끊기지 않음
+  const savedPanel = document.getElementById('rsh-detail-panel');
 
   layout.innerHTML = `<div class="rsh-layout2">
   ${sidebarHtml}
   <div class="rsh-tree-area">
     <div class="rsh-tier-row">${tierColsHtml}</div>
   </div>
-  ${detailHtml}
+  <div class="rsh-detail-panel" id="rsh-detail-panel">
+    <div class="rdp-hd">기술 상세</div>
+    <div class="rdp-empty">// 기술 카드를 클릭하면<br>상세 정보가 표시됩니다</div>
+  </div>
 </div>`;
 
-  // Restore selected tech detail if any
-  if (selectedTechId) renderTechDetail(selectedTechId);
+  if (savedPanel && _researchDetailRenderedFor === selectedTechId && selectedTechId) {
+    // 같은 기술 선택 유지: 기존 패널 재부착 + 버튼 상태만 갱신 (DOM 재생성 금지 — 클릭 이벤트 보존)
+    const newPanel = document.getElementById('rsh-detail-panel');
+    if (newPanel) newPanel.replaceWith(savedPanel);
+    _updateTechDetailBtnState();
+  } else if (selectedTechId) {
+    // 기술이 바뀌었거나 최초 렌더: 전체 상세 패널 렌더
+    renderTechDetail(selectedTechId);
+  }
 }
 
 function selectTech(uid) {
-  // kept for compatibility
-  buyUpgrade(uid);
+  // legacy alias: 자동 구매 대신 상세 패널만 표시 (BUG-014)
+  selectedTechId = uid;
+  if (typeof renderTechDetail === 'function') renderTechDetail(uid);
 }

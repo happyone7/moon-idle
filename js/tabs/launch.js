@@ -1,32 +1,42 @@
 
 function launchFromSlot(slotIdx) {
+  if (launchInProgress) return; // 중복 발사 방지
   ensureAssemblyState();
   const job = gs.assembly.jobs[slotIdx];
   if (!job || !job.ready) return;
   const q = getQuality(job.qualityId);
   const sci = getRocketScience(q.id);
-  const earned = getMoonstoneReward(q.id);
+
+  // 신뢰도 기반 성공/실패 판정 (첫 발사는 무조건 성공 — DESIGN-005)
+  const rollSuccess = gs.launches === 0 || Math.random() * 100 < sci.reliability;
+  const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
+
   gs.assembly.jobs[slotIdx] = null;
   gs.launches++;
+  if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches || 0) + 1;
+
   gs.history.push({
     no: gs.launches,
     quality: q.name,
+    qualityId: job.qualityId,
     deltaV: sci.deltaV.toFixed(2),
-    altitude: Math.floor(sci.altitude),
+    altitude: rollSuccess ? Math.floor(sci.altitude) : 0,
     reliability: sci.reliability.toFixed(1),
+    success: rollSuccess,
+    earned: earned,
     date: `D+${gs.launches * 2}`,
   });
   pendingLaunchMs = earned;
-  pendingLaunchData = { q, sci, earned };
+  pendingLaunchData = { q, sci, earned, success: rollSuccess };
 
   // Switch to launch tab
   switchMainTab('launch');
 
   // Run animation sequence
-  _runLaunchAnimation(q, sci, earned);
+  _runLaunchAnimation(q, sci, earned, rollSuccess);
 }
 
-function _runLaunchAnimation(q, sci, earned) {
+function _runLaunchAnimation(q, sci, earned, success = true) {
   launchInProgress = true;
 
   // 중앙 컬럼: 정적 패널 숨기고 애니메이션 존 표시
@@ -112,11 +122,14 @@ function _runLaunchAnimation(q, sci, earned) {
   setTimeout(() => {
     launchInProgress = false;
     playLaunchSfx();
-    _showLaunchOverlay(q, sci, earned);
+    _showLaunchOverlay(q, sci, earned, success);
   }, 3500);
 }
 
-function _showLaunchOverlay(q, sci, earned) {
+function _showLaunchOverlay(q, sci, earned, success = true) {
+  // 오버레이 타이틀 성공/실패 반영 (BUG-P09)
+  const loTitle = document.getElementById('lo-title');
+  if (loTitle) loTitle.textContent = success ? '// 달 탐사 성공' : '// 발사 실패';
   const loRocket = document.getElementById('lo-rocket-art');
   if (loRocket) loRocket.textContent =
 `    *
@@ -127,9 +140,17 @@ function _showLaunchOverlay(q, sci, earned) {
 |_______|`;
   const loStats = document.getElementById('lo-stats');
   if (loStats) loStats.innerHTML =
-    `기체: ${q.name}  |  Δv: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${Math.floor(sci.altitude)} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
+    `기체: ${q.name}  |  Δv: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${success ? Math.floor(sci.altitude) : '---'} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
   const loMs = document.getElementById('lo-ms');
-  if (loMs) loMs.textContent = `문스톤 +${earned}개 획득 예정`;
+  if (loMs) {
+    if (success) {
+      loMs.textContent = `✓ 발사 성공 — 문스톤 +${earned}개`;
+      loMs.style.color = 'var(--green)';
+    } else {
+      loMs.textContent = `✗ 발사 실패 — 신뢰도 부족 (${sci.reliability.toFixed(1)}%)`;
+      loMs.style.color = 'var(--red)';
+    }
+  }
   const overlay = document.getElementById('launch-overlay');
   if (overlay) overlay.classList.add('show');
 }
@@ -243,6 +264,8 @@ function renderLaunchTab() {
   if (!launchInProgress) {
     if (preLaunch) preLaunch.style.display = '';
     if (animZone)  animZone.classList.remove('active');
+  } else {
+    return; // 발사 애니메이션 중 DOM 재렌더링 방지 (BUG-007)
   }
 
   // ── 준비된 슬롯 탐색 ────────────────────────────────────
@@ -421,9 +444,9 @@ function renderLaunchTab() {
       histEl.innerHTML = `<div style="color:var(--green-dim);font-size:11px;line-height:1.8">${t('hist_none')}</div>`;
     } else {
       histEl.innerHTML = `<table class="lc-hist-table">
-        <thead><tr><th>${t('hist_col_no')}</th><th>${t('hist_col_veh')}</th><th>${t('hist_col_alt')}</th><th>${t('hist_col_rel')}</th></tr></thead>
+        <thead><tr><th>${t('hist_col_no')}</th><th>${t('hist_col_veh')}</th><th>${t('hist_col_alt')}</th><th>${t('hist_col_rel')}</th><th>결과</th></tr></thead>
         <tbody>${gs.history.slice(-10).reverse().map(h =>
-          `<tr><td>${String(h.no).padStart(3,'0')}</td><td>${h.quality}</td><td>${h.altitude}km</td><td>${h.reliability}%</td></tr>`
+          `<tr><td>${String(h.no).padStart(3,'0')}</td><td>${h.quality}</td><td>${h.success!==false ? h.altitude+'km' : '---'}</td><td>${h.reliability}%</td><td style="color:${h.success!==false?'var(--green)':'var(--red)'}">${h.success!==false?'✓':'✗'}</td></tr>`
         ).join('')}</tbody></table>`;
     }
   }

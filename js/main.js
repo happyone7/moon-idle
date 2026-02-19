@@ -26,6 +26,8 @@ function switchMainTab(tabId) {
     if ((gs.buildings.research_lab || 0) === 0) {
       gs.buildings.research_lab = 1;
       gs.workers = (gs.workers || 2) + 1;
+      if (!gs.assignments) gs.assignments = {};
+      gs.assignments.research_lab = 1;
       gs.unlocks.tab_research = true;
       hubChanged = true;
       setTimeout(() => notify('[연구소] 무상 건설 — 연구 탭 해금!', 'amber'), 500);
@@ -110,12 +112,31 @@ function renderResources() {
 // ============================================================
 function renderAll() {
   renderResources();
-  if (activeTab === 'production') renderProductionTab();
+  if (activeTab === 'production') { renderProductionTab(); if (typeof renderMissionGoal === 'function') renderMissionGoal(); }
   if (activeTab === 'research')   renderResearchTab();
   if (activeTab === 'assembly')   renderAssemblyTab();
   if (activeTab === 'launch')     renderLaunchTab();
   if (activeTab === 'mission')    renderMissionTab();
+  if (activeTab === 'automation') renderAutomationTab();
   updateWorldBuildings();
+  if (typeof renderMilestonePanel === 'function') renderMilestonePanel();
+  // document.title 동적 업데이트
+  _updateDocTitle();
+}
+
+function _updateDocTitle() {
+  const jobs = (gs.assembly && gs.assembly.jobs) || [];
+  const hasReady = jobs.some(j => j && j.ready);
+  const hasAssembling = jobs.some(j => j && !j.ready && j.endAt);
+  if (hasReady) {
+    document.title = '[발사 준비] MoonIdle';
+  } else if (hasAssembling) {
+    document.title = '[조립 중] MoonIdle';
+  } else {
+    const prod = getProduction();
+    const incomeStr = prod.money > 0 ? ` +${Math.floor(prod.money)}/s` : '';
+    document.title = `MoonIdle${incomeStr}`;
+  }
 }
 
 
@@ -159,6 +180,7 @@ function startNewGame(slot) {
   gs.assignments = {};
   gs._prodHubVisited = false;
   gs.bldLevels = {};
+  gs.bldSlotLevels = {};
   gs.bldUpgrades = {};
   gs.addons = {};
   gs.addonUpgrades = {};
@@ -225,7 +247,7 @@ function _renderSlotModal(modal, mode) {
         </div>`;
       }
     } else {
-      const date = new Date(s.lastTick).toLocaleDateString('ko-KR');
+      const date = s.lastTick ? new Date(s.lastTick).toLocaleDateString('ko-KR') : '—';
       if (mode === 'new') {
         slotsHtml += `<div class="ssm-slot ssm-occupied" onclick="confirmNewInSlot(${s.slot})">
           <div class="ssm-slot-num">SLOT ${s.slot}</div>
