@@ -4,8 +4,10 @@
 let gs = {
   res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
   buildings: { housing:0, ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
-  bldUpgrades: {},  // per-building named upgrades purchased
-  bldLevels: {},   // { buildingId: upgradeCount }
+  bldUpgrades: {},    // per-building named upgrades purchased
+  bldLevels: {},      // { buildingId: upgradeCount }
+  addons: {},         // { buildingId: addonOptionId } — A/B 선택된 애드온
+  addonUpgrades: {}, // { upgradeId: true }
   workers: 1,          // 총 인원
   assignments: {},     // { buildingId: workerCount }
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
@@ -85,7 +87,7 @@ function clamp(v, mn, mx) { return Math.min(mx, Math.max(mn, v)); }
 
 function getQuality(qid) { return QUALITIES.find(q => q.id === qid) || QUALITIES[0]; }
 
-function getAssemblySlots() { return 1 + gs.buildings.launch_pad + slotBonus; }
+function getAssemblySlots() { return 1 + gs.buildings.launch_pad + slotBonus + getAddonSlotBonus(); }
 
 function ensureAssemblyState() {
   if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
@@ -148,6 +150,80 @@ function getBldUpgradeMult(bldId) {
   return upgrades.reduce((m, u) => (gs.bldUpgrades[u.id] && u.mult) ? m * u.mult : m, 1);
 }
 
+// ─── ADD-ON HELPERS ──────────────────────────────────────────
+function _getAddonOpt(bldId) {
+  if (!gs.addons || !gs.addons[bldId]) return null;
+  const def = (typeof BUILDING_ADDONS !== 'undefined') && BUILDING_ADDONS[bldId];
+  if (!def) return null;
+  return def.options.find(o => o.id === gs.addons[bldId]) || null;
+}
+
+// Production multiplier from add-on (affects parent building's output)
+function getAddonMult(bldId) {
+  const opt = _getAddonOpt(bldId);
+  if (!opt) return 1;
+  let mult = (opt.effect && opt.effect.moneyMult) || 1;
+  (opt.upgrades || []).forEach(u => {
+    if (gs.addonUpgrades && gs.addonUpgrades[u.id] && u.mult) mult *= u.mult;
+  });
+  return mult;
+}
+
+// Extra RP/s from ops_center tech hub addon
+function getAddonRpBonus() {
+  const opt = _getAddonOpt('ops_center');
+  if (!opt) return 0;
+  let bonus = (opt.effect && opt.effect.rpBonus) || 0;
+  (opt.upgrades || []).forEach(u => {
+    if (gs.addonUpgrades && gs.addonUpgrades[u.id] && u.rpBonus) bonus += u.rpBonus;
+  });
+  return bonus;
+}
+
+// Extra reliability from launch_pad ctrl addon
+function getAddonRelBonus() {
+  const opt = _getAddonOpt('launch_pad');
+  if (!opt) return 0;
+  let rel = (opt.effect && opt.effect.rel) || 0;
+  (opt.upgrades || []).forEach(u => {
+    if (gs.addonUpgrades && gs.addonUpgrades[u.id] && u.rel) rel += u.rel;
+  });
+  return rel;
+}
+
+// Assembly time multiplier from launch_pad addons
+function getAddonTimeMult() {
+  const opt = _getAddonOpt('launch_pad');
+  if (!opt) return 1;
+  let mult = (opt.effect && opt.effect.timeMult) || 1;
+  (opt.upgrades || []).forEach(u => {
+    if (gs.addonUpgrades && gs.addonUpgrades[u.id] && u.timeMult) mult *= u.timeMult;
+  });
+  return mult;
+}
+
+// Extra assembly slots from VIF addon
+function getAddonSlotBonus() {
+  const opt = _getAddonOpt('launch_pad');
+  if (!opt) return 0;
+  let slot = (opt.effect && opt.effect.slotBonus) || 0;
+  (opt.upgrades || []).forEach(u => {
+    if (gs.addonUpgrades && gs.addonUpgrades[u.id] && u.slotBonus) slot += u.slotBonus;
+  });
+  return slot;
+}
+
+// Part cost multiplier from VIF addon (< 1 = discount)
+function getAddonPartCostMult() {
+  const opt = _getAddonOpt('launch_pad');
+  if (!opt) return 1;
+  let reduct = (opt.effect && opt.effect.partCostReduct) || 0;
+  (opt.upgrades || []).forEach(u => {
+    if (gs.addonUpgrades && gs.addonUpgrades[u.id] && u.partCostReduct) reduct += u.partCostReduct;
+  });
+  return Math.max(0.05, 1 - reduct);
+}
+
 function canAfford(cost) {
   return Object.entries(cost).every(([r, v]) => (gs.res[r] || 0) >= v);
 }
@@ -166,8 +242,9 @@ function getBuildingCost(bld) {
 
 function getPartCost(part) {
   const cost = {};
+  const addonMult = getAddonPartCostMult();
   Object.entries(part.cost).forEach(([r, v]) => {
-    cost[r] = Math.floor(v * partCostMult);
+    cost[r] = Math.floor(v * partCostMult * addonMult);
   });
   return cost;
 }
@@ -179,9 +256,11 @@ function getProduction() {
     // 생산량은 배치된 인원(assignments) 기반
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
     if (assigned === 0) return;
-    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id);
+    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id);
     prod[b.produces] += rate;
   });
+  // Add RP bonus from tech hub addon
+  prod.research += getAddonRpBonus();
   return prod;
 }
 
@@ -210,7 +289,7 @@ function getRocketScience(qualityId) {
   const deltaV = isp * 9.81 * Math.log(m0 / dryMass) / 1000;
   const twr = thrust / (m0 * 9.81);
   const reliability = clamp(
-    56 + gs.buildings.research_lab * 1.9 + gs.buildings.elec_lab * 0.8 + reliabilityBonus + q.relBonus,
+    56 + gs.buildings.research_lab * 1.9 + gs.buildings.elec_lab * 0.8 + reliabilityBonus + q.relBonus + getAddonRelBonus(),
     0, 99.5
   );
   const altitude = clamp(deltaV * 22, 0, 400);
@@ -321,6 +400,8 @@ function loadGame() {
     gs.lastTick = saved.lastTick || Date.now();
     gs.bldLevels = saved.bldLevels || {};
     gs.bldUpgrades = saved.bldUpgrades || {};
+    gs.addons = saved.addons || {};
+    gs.addonUpgrades = saved.addonUpgrades || {};
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
@@ -366,6 +447,25 @@ function loadGame() {
           const upg = BUILDING_UPGRADES[bldId].find(u => u.id === uid);
           if (upg && upg.rel) reliabilityBonus += upg.rel;
         }
+      });
+    }
+    // Re-apply add-on immediate effects (rel, slotBonus, partCostReduct)
+    if (typeof BUILDING_ADDONS !== 'undefined') {
+      Object.entries(gs.addons || {}).forEach(([bldId, optId]) => {
+        const def = BUILDING_ADDONS[bldId];
+        if (!def) return;
+        const opt = def.options.find(o => o.id === optId);
+        if (!opt || !opt.effect) return;
+        if (opt.effect.rel)            reliabilityBonus += opt.effect.rel;
+        if (opt.effect.slotBonus)      slotBonus        += opt.effect.slotBonus;
+        if (opt.effect.partCostReduct) partCostMult     *= (1 - opt.effect.partCostReduct);
+        // Re-apply addon upgrade side-effects
+        (opt.upgrades || []).forEach(u => {
+          if (!gs.addonUpgrades || !gs.addonUpgrades[u.id]) return;
+          if (u.rel)            reliabilityBonus += u.rel;
+          if (u.slotBonus)      slotBonus        += u.slotBonus;
+          if (u.partCostReduct) partCostMult     *= (1 - u.partCostReduct);
+        });
       });
     }
 

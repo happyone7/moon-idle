@@ -2,40 +2,120 @@
 //  WORLD — js/world.js
 // ============================================================
 const WORLD_POSITIONS = {
-  housing: 30,      research_lab: 240, r_and_d: 410,
-  ops_center: 590,  supply_depot: 780, mine: 990,
-  extractor: 1130,  refinery: 1320,   cryo_plant: 1500,
-  elec_lab: 1700,   fab_plant: 1870,  solar_array: 2060,
-  launch_pad: 2270,
+  housing:      30,   research_lab: 240,  r_and_d:      410,
+  ops_center:   590,  // addon @ 760
+  supply_depot: 940,  mine:         1150, extractor:    1290,
+  refinery:     1480, cryo_plant:   1660, elec_lab:     1860,
+  fab_plant:    2030, solar_array:  2220, launch_pad:   2430,
+  // launch_pad addon @ 2600
 };
 
-// ─── ASCII BUILDING ART ─────────────────────────────────────
+// 애드온 건물 위치 (부모 건물 우측 고정)
+const ADDON_POSITIONS = {
+  ops_center:  760,
+  launch_pad: 2600,
+};
+
+// ─── ASCII BUILDING ART (upgrade-aware, no double-width chars) ───
 function _bldAscii(bld) {
+  const bu = gs.bldUpgrades || {};
   switch (bld.wbClass) {
 
     case 'wb-housing':
+      if (bu.hsg_township) return (
+        '╔═══════╗\n' +
+        '║ ▓▓▓▓  ║\n' +
+        '║ ▓▓▓▓  ║\n' +
+        '╠═══════╣\n' +
+        '║ ▒▒▒▒  ║\n' +
+        '║ ▒▒▒▒  ║\n' +
+        '╠═══════╣\n' +
+        '║TWNSHIP║\n' +
+        '╚═══════╝\n' +
+        ' ███████'
+      );
+      if (bu.hsg_welfare) return (
+        '╔═══════════╗\n' +
+        '║  HOUSING  ║\n' +
+        '║ ▓▓ ▓▓ ▓▓  ║\n' +
+        '║ ▓▓ ▓▓ ▓▓  ║\n' +
+        '║ ▓▓ ▓▓ ▓▓  ║\n' +
+        '╚═══════════╝\n' +
+        '  █████████'
+      );
+      if (bu.hsg_dorm) return (
+        '╔═══════════╗\n' +
+        '║  HOUSING  ║\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '║ ░░ ░░ ░░  ║\n' +
+        '╚═══════════╝\n' +
+        '  █████████'
+      );
       return (
         '╔═══════════╗\n' +
         '║  HOUSING  ║\n' +
-        '║ □□ □□ □□  ║\n' +
-        '║ □□ □□ □□  ║\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
+        '║ ▒▒ ▒▒ ▒▒  ║\n' +
         '╚═══════════╝\n' +
         '  █████████'
       );
 
     case 'wb-ops': {
-      const lbl = bld.id === 'ops_center' ? 'OPS CTR  ' : 'SUPPLY D ';
+      const isOps = bld.id === 'ops_center';
+      if (isOps && bu.ops_premium) return (
+        '╔══════════╗\n' +
+        '║ PREMIUM  ║\n' +
+        '║ ▓▓▓▓▓▓▓▓ ║\n' +
+        '║ ░ VIP ░  ║\n' +
+        '╚══════════╝\n' +
+        ' ██████████'
+      );
+      if (isOps && bu.ops_24h) return (
+        '╔══════════╗\n' +
+        '║ OPS CTR  ║\n' +
+        '║ ▓▓▓▓▓▓▓▓ ║\n' +
+        '║ ░░ 24H ░░║\n' +
+        '╚══════════╝\n' +
+        ' ██████████'
+      );
+      if (isOps && bu.ops_sales) return (
+        '╔══════════╗\n' +
+        '║ OPS CTR  ║\n' +
+        '║ ▓▓░▓▓░▓▓ ║\n' +
+        '║ ░▓▓░▓▓░▓ ║\n' +
+        '╚══════════╝\n' +
+        ' ██████████'
+      );
+      const lbl = isOps ? 'OPS CTR  ' : 'SUPPLY D ';
       return (
         '╔══════════╗\n' +
         '║ ' + lbl + '║\n' +
-        '║ ■□■□■□■  ║\n' +
-        '║ □■□■□■□  ║\n' +
+        '║ ▓░▓░▓░▓  ║\n' +
+        '║ ░▓░▓░▓░  ║\n' +
         '╚══════════╝\n' +
         '  ████████'
       );
     }
 
-    case 'wb-mine':
+    case 'wb-mine': {
+      const isExt = bld.id === 'extractor';
+      if (!isExt && bu.mine_robot) return (
+        '     ╔═══╗\n' +
+        '     ║▓▓▓║\n' +
+        '╔════╩═══╩════╗\n' +
+        '║  ▓ ROBOT ▓  ║\n' +
+        '╚═════════════╝\n' +
+        '    ███████████'
+      );
+      if (!isExt && bu.mine_deep) return (
+        '     ╔═══╗\n' +
+        '     ║▓▓▓║\n' +
+        '╔════╩═══╩════╗\n' +
+        '║  ▓▒▒▒▒▒▒▓  ║\n' +
+        '╚═════════════╝\n' +
+        '    ███████████'
+      );
       return (
         '     ╔═══╗\n' +
         '     ║ ▓ ║\n' +
@@ -44,6 +124,7 @@ function _bldAscii(bld) {
         '╚═════════════╝\n' +
         '    ███████████'
       );
+    }
 
     case 'wb-refinery':
       return (
@@ -65,18 +146,55 @@ function _bldAscii(bld) {
         '  ████████'
       );
 
-    case 'wb-research':
-      return (
+    case 'wb-research': {
+      const isRnd = bld.id === 'r_and_d';
+      if (!isRnd && bu.rsh_super) return (
+        '╔════════════╗\n' +
+        '║ SUPER-LAB  ║\n' +
+        '║ ▓▓░░░░▓▓   ║\n' +
+        '║ ░▓▓▓▓▓░    ║\n' +
+        '╠════════════╣\n' +
+        '║ [CPU-9000] ║\n' +
+        '╚════════════╝\n' +
+        '   ██████████'
+      );
+      if (!isRnd && bu.rsh_cross) return (
         '╔════════════╗\n' +
         '║  RESEARCH  ║\n' +
-        '║ ■□■□■□■□   ║\n' +
-        '║ □■□■□■□■   ║\n' +
+        '║ ▓▓▓░▓▓▓░▓▓ ║\n' +
+        '║ ░▓▓▓░▓▓▓░▓ ║\n' +
         '╠════════════╣\n' +
         '╚════════════╝\n' +
         '   ██████████'
       );
+      return (
+        '╔════════════╗\n' +
+        '║  RESEARCH  ║\n' +
+        '║ ▓░▓░▓░▓░   ║\n' +
+        '║ ░▓░▓░▓░▓   ║\n' +
+        '╠════════════╣\n' +
+        '╚════════════╝\n' +
+        '   ██████████'
+      );
+    }
 
     case 'wb-solar':
+      if (bu.sol_tracker) return (
+        ' ╔╗ -- ╔╗\n' +
+        ' ╠╣    ╠╣\n' +
+        ' ╚╝    ╚╝\n' +
+        '  │     │\n' +
+        '  │     │\n' +
+        ' ████████'
+      );
+      if (bu.sol_hieff) return (
+        ' ╔╗    ╔╗\n' +
+        ' ╠╣▓   ╠╣▓\n' +
+        ' ╚╝    ╚╝\n' +
+        '  │     │\n' +
+        '  │     │\n' +
+        ' ████████'
+      );
       return (
         ' ╔╗    ╔╗\n' +
         ' ╠╣    ╠╣\n' +
@@ -87,6 +205,22 @@ function _bldAscii(bld) {
       );
 
     case 'wb-launchpad':
+      if (bu.pad_fuelfeed) return (
+        '      /▲╲\n' +
+        '     /▓▓▓╲\n' +
+        '    /══▓══╲\n' +
+        '   ╔═══════╗\n' +
+        '   ║[PAD+] ║\n' +
+        '──╚═════════╝──'
+      );
+      if (bu.pad_reinforce) return (
+        '      /▲╲\n' +
+        '     / ▓ ╲\n' +
+        '    /══▓══╲\n' +
+        '   ╔═══════╗\n' +
+        '   ║[R-PAD]║\n' +
+        '──╚═════════╝──'
+      );
       return (
         '      /▲╲\n' +
         '     / ▓ ╲\n' +
@@ -108,22 +242,119 @@ function _bldAscii(bld) {
   }
 }
 
+// ─── ADD-ON BUILDING ASCII ART ───────────────────────────────
+function _addonAscii(option) {
+  if (!option) return _addonPlaceholderAscii();
+  switch (option.id) {
+    case 'addon_inv_bank':
+      return (
+        '─╔══════╗\n' +
+        ' ║ INV  ║\n' +
+        ' ║ BANK ║\n' +
+        ' ║ $$$  ║\n' +
+        ' ╚══════╝\n' +
+        '  ██████'
+      );
+    case 'addon_tech_hub':
+      return (
+        '─╔══════╗\n' +
+        ' ║ TECH ║\n' +
+        ' ║  HUB ║\n' +
+        ' ║ ▒▒▒  ║\n' +
+        ' ╚══════╝\n' +
+        '  ██████'
+      );
+    case 'addon_launch_ctrl':
+      return (
+        '─╔═════╗\n' +
+        ' ║ CTL ║\n' +
+        ' ║ TWR ║\n' +
+        ' ║ ▓▓▓ ║\n' +
+        ' ╚═════╝\n' +
+        '  █████'
+      );
+    case 'addon_vif':
+      return (
+        '─╔═════╗\n' +
+        ' ║ VIF ║\n' +
+        ' ║─────║\n' +
+        ' ║ FAB ║\n' +
+        ' ╚═════╝\n' +
+        '  █████'
+      );
+    default:
+      return _addonPlaceholderAscii();
+  }
+}
+
+function _addonPlaceholderAscii() {
+  return (
+    '─╔═════╗\n' +
+    ' ║ ??? ║\n' +
+    ' ║ADDON║\n' +
+    ' ╚═════╝\n' +
+    '  █████'
+  );
+}
+
 function updateWorldBuildings() {
   const layer = document.getElementById('buildings-layer');
   if (!layer) return;
   layer.innerHTML = '';
+
   BUILDINGS.forEach(b => {
-    if ((gs.buildings[b.id] || 0) === 0) return;
-    const x = WORLD_POSITIONS[b.id] || 100;
+    // Show all unlocked buildings (ghost if not built yet)
+    if (!gs.unlocks || !gs.unlocks['bld_' + b.id]) return;
+
+    const x   = WORLD_POSITIONS[b.id] || 100;
+    const cnt = gs.buildings[b.id] || 0;
+    const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
+    const isBonus  = b.produces === 'bonus';
+
+    // CSS state class
+    let stateClass;
+    if (cnt === 0)                          stateClass = 'wb-state-ghost';
+    else if (assigned > 0 || isBonus)      stateClass = 'wb-state-active';
+    else                                    stateClass = 'wb-state-idle';
+
     const pre = document.createElement('pre');
-    pre.className = 'world-bld';
+    pre.className = 'world-bld ' + stateClass;
     pre.dataset.bid = b.id;
     pre.style.left = x + 'px';
     pre.textContent = _bldAscii(b);
 
-    pre.addEventListener('mouseenter', () => openBldOv(b, pre));
-    pre.addEventListener('mouseleave', () => scheduleBldOvClose());
+    if (cnt > 0) {
+      pre.addEventListener('mouseenter', () => openBldOv(b, pre));
+      pre.addEventListener('mouseleave', () => scheduleBldOvClose());
+    }
     layer.appendChild(pre);
+
+    // ── Add-on building ─────────────────────────────────────
+    if (cnt >= 1 && ADDON_POSITIONS[b.id]) {
+      const addonX      = ADDON_POSITIONS[b.id];
+      const addonChoice = gs.addons && gs.addons[b.id];
+      const addonDef    = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[b.id];
+      if (addonDef) {
+        const addonPre = document.createElement('pre');
+        addonPre.style.left = addonX + 'px';
+
+        if (addonChoice) {
+          const opt = addonDef.options.find(o => o.id === addonChoice);
+          addonPre.className = 'world-bld wb-addon wb-state-active';
+          addonPre.textContent = _addonAscii(opt);
+          addonPre.dataset.bid = b.id + '_addon';
+          addonPre.addEventListener('mouseenter', () => openAddonOv(b, opt, addonPre));
+          addonPre.addEventListener('mouseleave', () => scheduleBldOvClose());
+        } else {
+          addonPre.className = 'world-bld wb-addon wb-addon-ph';
+          addonPre.textContent = _addonPlaceholderAscii();
+          // Hover on placeholder → open parent building overlay to show A/B choice
+          addonPre.addEventListener('mouseenter', () => openBldOv(b, pre));
+          addonPre.addEventListener('mouseleave', () => scheduleBldOvClose());
+        }
+        layer.appendChild(addonPre);
+      }
+    }
   });
 }
 
@@ -181,26 +412,74 @@ function openBldOv(bld, el) {
     });
   });
 
+  // ── Add-on A/B choice section ────────────────────────────
+  const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bld.id];
+  if (addonDef && cnt >= 1) {
+    const addonChoice = gs.addons && gs.addons[bld.id];
+    // Separator
+    actions.push({ type: 'sep', label: '// 애드온 슬롯' });
+    if (!addonChoice) {
+      addonDef.options.forEach((opt, i) => {
+        actions.push({
+          label: `[${i === 0 ? 'A' : 'B'}] ${opt.name}`,
+          info: '선택',
+          disabled: false,
+          desc: opt.desc,
+          type: 'addon_choose',
+          addonId: opt.id,
+          addonBldId: bld.id,
+        });
+      });
+    } else {
+      const chosen = addonDef.options.find(o => o.id === addonChoice);
+      if (chosen) {
+        actions.push({ type: 'sep', label: `// ${chosen.name} 업그레이드` });
+        (chosen.upgrades || []).forEach(upg => {
+          const done     = !!(gs.addonUpgrades && gs.addonUpgrades[upg.id]);
+          const reqMet   = !upg.req || !!(gs.addonUpgrades && gs.addonUpgrades[upg.req]);
+          const affordable = canAfford(upg.cost);
+          actions.push({
+            label: upg.name,
+            info: done ? '[완료]' : getCostStr(upg.cost),
+            done, affordable, reqMet,
+            disabled: done || !reqMet,
+            desc: upg.desc + (!reqMet ? '\n// 선행 업그레이드 필요' : ''),
+            type: 'addon_upgrade',
+            upgId: upg.id,
+            addonBldId: bld.id,
+          });
+        });
+      }
+    }
+  }
+
   _bldOvActions = actions;
   _bldOvBld = bld;
 
   // ── Build HTML ─────────────────────────────────────────────
   let actRows = '';
   actions.forEach((act, i) => {
-    let rowCls = '';
-    if (act.done)                        rowCls = 'bov-done';
-    else if (act.disabled)               rowCls = 'bov-locked';
-    else if (act.type === 'upgrade' && !act.affordable) rowCls = 'bov-need';
+    // Separator / section label
+    if (act.type === 'sep') {
+      actRows += `<div class="bov-sep-label">${act.label}</div>`;
+      return;
+    }
 
-    let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : act.type === 'upgrade' && !act.affordable ? '[부족]' : '[실행]';
-    const btnDis = act.done || act.disabled || (act.type === 'upgrade' && !act.affordable);
+    let rowCls = '';
+    if (act.done)                                                   rowCls = 'bov-done';
+    else if (act.disabled)                                          rowCls = 'bov-locked';
+    else if ((act.type === 'upgrade' || act.type === 'addon_upgrade') && !act.affordable) rowCls = 'bov-need';
+
+    const isUpg = act.type === 'upgrade' || act.type === 'addon_upgrade';
+    let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : (isUpg && !act.affordable) ? '[부족]' : '[실행]';
+    const btnDis = act.done || act.disabled || (isUpg && !act.affordable);
 
     actRows += `<div class="bov-act ${rowCls}" data-idx="${i}"
       onmouseenter="bovHover(${i})"
       onclick="bovClick(${i})">
       <span class="bov-act-label">${act.label}</span>
       <button class="bov-act-btn${btnDis ? ' dis' : ''}" tabindex="-1">${btnTxt}</button>
-      <span class="bov-act-info${act.type==='upgrade'&&!act.affordable&&!act.done?' red':''}">${act.info}</span>
+      <span class="bov-act-info${isUpg&&!act.affordable&&!act.done?' red':''}">${act.info}</span>
     </div>`;
   });
 
@@ -261,12 +540,20 @@ function bovHover(idx) {
 
 function bovClick(idx) {
   const act = _bldOvActions[idx];
-  if (!act || act.done || act.disabled) return;
-  if (act.type === 'assign')   assignWorker(_bldOvBld.id);
+  if (!act || act.type === 'sep') return;
+  if (act.done || act.disabled) return;
+  if (act.type === 'assign')        assignWorker(_bldOvBld.id);
   else if (act.type === 'unassign') unassignWorker(_bldOvBld.id);
   else if (act.type === 'upgrade') {
     if (!act.affordable) { notify('자원 부족', 'red'); return; }
     buyBldUpgrade(act.upgId, _bldOvBld.id);
+  }
+  else if (act.type === 'addon_choose') {
+    buyAddonOption(act.addonBldId, act.addonId);
+  }
+  else if (act.type === 'addon_upgrade') {
+    if (!act.affordable) { notify('자원 부족', 'red'); return; }
+    buyAddonUpgrade(act.upgId, act.addonBldId);
   }
 }
 
@@ -289,6 +576,124 @@ function buyBldUpgrade(upgId, bldId) {
   // Refresh overlay
   const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (el) openBldOv(bld, el);
+  renderAll();
+}
+
+// ─── ADD-ON OVERLAY ──────────────────────────────────────────
+function openAddonOv(bld, opt, el) {
+  clearTimeout(_bldOvTimer);
+  const ovEl = document.getElementById('bld-ov');
+  if (!ovEl) return;
+
+  const actions = [];
+  (opt.upgrades || []).forEach(upg => {
+    const done     = !!(gs.addonUpgrades && gs.addonUpgrades[upg.id]);
+    const reqMet   = !upg.req || !!(gs.addonUpgrades && gs.addonUpgrades[upg.req]);
+    const affordable = canAfford(upg.cost);
+    actions.push({
+      label: upg.name,
+      info:  done ? '[완료]' : getCostStr(upg.cost),
+      done, affordable, reqMet,
+      disabled: done || !reqMet,
+      desc: upg.desc + (!reqMet ? '\n// 선행 업그레이드 필요' : ''),
+      type: 'addon_upgrade',
+      upgId: upg.id,
+      addonBldId: bld.id,
+    });
+  });
+
+  _bldOvActions = actions;
+  _bldOvBld = bld;
+
+  let actRows = '';
+  actions.forEach((act, i) => {
+    let rowCls = act.done ? 'bov-done' : act.disabled ? 'bov-locked' : (!act.affordable ? 'bov-need' : '');
+    let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : !act.affordable ? '[부족]' : '[실행]';
+    const btnDis = act.done || act.disabled || !act.affordable;
+    actRows += `<div class="bov-act ${rowCls}" data-idx="${i}"
+      onmouseenter="bovHover(${i})" onclick="bovClick(${i})">
+      <span class="bov-act-label">${act.label}</span>
+      <button class="bov-act-btn${btnDis?' dis':''}" tabindex="-1">${btnTxt}</button>
+      <span class="bov-act-info">${act.info}</span>
+    </div>`;
+  });
+
+  ovEl.innerHTML = `
+<div class="bov-head">
+  <span class="bov-head-name" style="color:var(--amber)">${opt.icon || '[?]'} ${opt.name}</span>
+  <span class="bov-head-meta" style="color:var(--amber)">ADD-ON</span>
+</div>
+<div class="bov-body">
+  <div class="bov-acts-col" id="bov-acts">
+    ${actRows || '<div class="bov-act-empty">// 업그레이드 없음</div>'}
+  </div>
+  <div class="bov-desc-col" id="bov-desc">
+    <div class="bov-desc-hint">${opt.desc.replace(/\n/g,'<br>')}</div>
+  </div>
+</div>`;
+
+  const r = el.getBoundingClientRect();
+  const ovW = 420, ovH = ovEl.offsetHeight || 200;
+  let lx = r.left - 10;
+  let ty = r.top - ovH - 8;
+  if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
+  if (lx < 4) lx = 4;
+  if (ty < 4) ty = r.bottom + 6;
+  ovEl.style.left = lx + 'px';
+  ovEl.style.top  = ty + 'px';
+  ovEl.style.width = ovW + 'px';
+  ovEl.style.display = 'block';
+}
+
+function buyAddonOption(bldId, optionId) {
+  const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bldId];
+  if (!addonDef) return;
+  if (!gs.addons) gs.addons = {};
+  if (gs.addons[bldId]) { notify('이미 애드온이 설치되어 있습니다', 'amber'); return; }
+  const opt = addonDef.options.find(o => o.id === optionId);
+  if (!opt) return;
+
+  gs.addons[bldId] = optionId;
+  // Apply immediate side-effects
+  if (opt.effect) {
+    if (opt.effect.rel)            reliabilityBonus += opt.effect.rel;
+    if (opt.effect.slotBonus)      slotBonus        += opt.effect.slotBonus;
+    if (opt.effect.partCostReduct) partCostMult     *= (1 - opt.effect.partCostReduct);
+  }
+  notify(`${opt.name} 애드온 설치 완료!`);
+  playSfx('triangle', 660, 0.12, 0.06, 1000);
+  updateWorldBuildings();
+  const bld = BUILDINGS.find(b => b.id === bldId);
+  const el  = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+  if (bld && el) openBldOv(bld, el);
+  renderAll();
+}
+
+function buyAddonUpgrade(upgId, bldId) {
+  const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bldId];
+  if (!addonDef) return;
+  const addonChoice = gs.addons && gs.addons[bldId];
+  if (!addonChoice) return;
+  const opt = addonDef.options.find(o => o.id === addonChoice);
+  if (!opt) return;
+  const upg = (opt.upgrades || []).find(u => u.id === upgId);
+  if (!upg) return;
+
+  if (!gs.addonUpgrades) gs.addonUpgrades = {};
+  if (gs.addonUpgrades[upgId]) { notify('이미 완료', 'amber'); return; }
+  if (upg.req && !gs.addonUpgrades[upg.req]) { notify('선행 업그레이드 필요', 'red'); return; }
+  if (!canAfford(upg.cost)) { notify('자원 부족', 'red'); return; }
+
+  spend(upg.cost);
+  gs.addonUpgrades[upgId] = true;
+  if (upg.rel)            reliabilityBonus += upg.rel;
+  if (upg.slotBonus)      slotBonus        += upg.slotBonus;
+  if (upg.partCostReduct) partCostMult     *= (1 - upg.partCostReduct);
+  notify(`▶ ${upg.name} 완료`);
+  playSfx('triangle', 700, 0.12, 0.04, 1100);
+  const bld = BUILDINGS.find(b => b.id === bldId);
+  const el  = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+  if (bld && el) openBldOv(bld, el);
   renderAll();
 }
 

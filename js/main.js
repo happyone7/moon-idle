@@ -120,6 +120,8 @@ function startNewGame() {
   gs.assignments = { ops_center: 1 };  // 첫 워커는 ops_center 자동 배치
   gs.bldLevels = {};
   gs.bldUpgrades = {};
+  gs.addons = {};
+  gs.addonUpgrades = {};
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};

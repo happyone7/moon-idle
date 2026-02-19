@@ -15,9 +15,64 @@ function buyBuilding(bid) {
   renderAll();
 }
 // ============================================================
+//  MISSION GOAL PANEL
+// ============================================================
+function renderMissionGoal() {
+  const el = document.getElementById('mission-goal');
+  if (!el) return;
+
+  const parts     = gs.parts || {};
+  const builtParts = Object.values(parts).reduce((a, v) => a + (v > 0 ? 1 : 0), 0);
+  const totalParts = PARTS.length;
+  const hasMine    = gs.unlocks && gs.unlocks['bld_mine'];
+  const hasAssembly= gs.unlocks && gs.unlocks['tab_assembly'];
+  const hasLaunch  = gs.unlocks && gs.unlocks['tab_launch'];
+
+  // Rocket ASCII — changes as player progresses
+  let rocketArt;
+  if (hasLaunch) {
+    rocketArt = '   *\n  /|\\\n /▓|▓\\\n╔══╧══╗\n║READY║\n╚═════╝\n  ███';
+  } else if (hasAssembly) {
+    rocketArt = '   ?\n  /|\\\n /░|░\\\n╔══╧══╗\n║ WIP ║\n╚═════╝\n  ▒▒▒';
+  } else {
+    rocketArt = '   ?\n  /X\\\n /X|X\\\n╔══X══╗\n║BUILD║\n╚═════╝\n  ░░░';
+  }
+
+  // Research progress
+  const researchDone  = Object.keys(gs.upgrades || {}).length;
+  const researchTotal = UPGRADES.length;
+
+  function bar(pct) {
+    pct = Math.min(100, Math.max(0, pct));
+    const f = Math.round(pct / 10);
+    return '█'.repeat(f) + '░'.repeat(10 - f);
+  }
+
+  // Next objective
+  let nextObj;
+  if (!hasMine)     nextObj = '→ 연구소 건설 후 기초 생산 기술 연구';
+  else if (!hasAssembly) nextObj = '→ 합금·로켓공학 기술 연구 시 조립동 해금';
+  else if (builtParts < totalParts) nextObj = `→ 부품 제작 진행 중 (${builtParts}/${totalParts})`;
+  else if (!hasLaunch) nextObj = '→ 발사 제어 시스템 연구 후 발사 탭 해금!';
+  else               nextObj = '→ 발사 탭에서 로켓을 발사하세요!';
+
+  const techPct = researchTotal > 0 ? (researchDone / researchTotal * 100) : 0;
+  const partPct = (builtParts / totalParts) * 100;
+
+  el.innerHTML = `<pre class="mg-rocket">${rocketArt}</pre>
+<div class="mg-info">
+  <div class="mg-title">// MISSION: 달 탐사 로켓 발사</div>
+  <div class="mg-bar">기술 연구 [${bar(techPct)}] ${researchDone}/${researchTotal}</div>
+  <div class="mg-bar">부품 제작 [${bar(partPct)}] ${builtParts}/${totalParts}</div>
+  <div class="mg-next">${nextObj}</div>
+</div>`;
+}
+
+// ============================================================
 //  RENDER: PRODUCTION TAB
 // ============================================================
 function renderProductionTab() {
+  renderMissionGoal();
   const prod = getProduction();
   const totalIncome = prod.money;
   const totalW = getTotalWorkers();

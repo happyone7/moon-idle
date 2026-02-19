@@ -126,3 +126,65 @@ const BUILDING_UPGRADES = {
   ],
 };
 
+// ============================================================
+//  BUILDING ADD-ONS — A/B 선택 가능한 부속 건물
+//  각 건물에 1개만 설치 가능. 설치 후 변경 불가.
+//  effect: { moneyMult, rpBonus, rel, timeMult, slotBonus, partCostReduct }
+// ============================================================
+const BUILDING_ADDONS = {
+  ops_center: {
+    unlockMin: 1,
+    options: [
+      {
+        id: 'addon_inv_bank',
+        name: '투자 은행',
+        icon: '[INV]',
+        desc: '운영센터 자금 생산 ×2.0\n부속 업그레이드로 추가 수익 배율',
+        effect: { moneyMult: 2.0 },
+        upgrades: [
+          { id:'inv_derivatives', name:'파생상품 운용',  cost:{money:8000},                   desc:'자금 생산 추가 +40%', mult:1.4 },
+          { id:'inv_hedge',       name:'헤지펀드 설립',  cost:{money:25000,electronics:300},  desc:'자금 생산 추가 ×1.8', mult:1.8, req:'inv_derivatives' },
+        ],
+      },
+      {
+        id: 'addon_tech_hub',
+        name: '기술 스타트업 허브',
+        icon: '[HUB]',
+        desc: '운영센터 자금 생산 ×1.5\n연구 포인트 자동 발생 +0.5/s',
+        effect: { moneyMult: 1.5, rpBonus: 0.5 },
+        upgrades: [
+          { id:'hub_incubate', name:'인큐베이팅 프로그램', cost:{money:6000,research:100},   desc:'연구 포인트 +0.3/s 추가', rpBonus:0.3 },
+          { id:'hub_unicorn',  name:'유니콘 상장',         cost:{money:20000,research:500},  desc:'자금 생산 추가 +30%',     mult:1.3, req:'hub_incubate' },
+        ],
+      },
+    ],
+  },
+  launch_pad: {
+    unlockMin: 1,
+    options: [
+      {
+        id: 'addon_launch_ctrl',
+        name: '발사 제어 타워',
+        icon: '[CTL]',
+        desc: '발사 신뢰도 +20%\n조립 시간 -15%',
+        effect: { rel: 20, timeMult: 0.85 },
+        upgrades: [
+          { id:'ctrl_ai',         name:'AI 비행 제어',   cost:{electronics:500,research:200},  desc:'신뢰도 +10% 추가', rel:10 },
+          { id:'ctrl_autonomous', name:'완전 자율 발사', cost:{electronics:1500,research:800}, desc:'조립 시간 추가 -20%', timeMult:0.8, req:'ctrl_ai' },
+        ],
+      },
+      {
+        id: 'addon_vif',
+        name: '수직 통합 시설',
+        icon: '[VIF]',
+        desc: '조립 슬롯 +1\n부품 비용 -15%',
+        effect: { slotBonus: 1, partCostReduct: 0.15 },
+        upgrades: [
+          { id:'vif_print', name:'3D 프린팅 허브', cost:{metal:800,electronics:400},  desc:'부품 비용 추가 -10%', partCostReduct:0.10 },
+          { id:'vif_auto',  name:'조립 자동화',    cost:{metal:2000,electronics:1000}, desc:'조립 슬롯 추가 +1', slotBonus:1, req:'vif_print' },
+        ],
+      },
+    ],
+  },
+};
+
