@@ -83,7 +83,7 @@ function renderResources() {
 // ============================================================
 function renderAll() {
   renderResources();
-  renderMissionGoal();
+  if (activeTab === 'rocket')     renderRocketTab();
   if (activeTab === 'production') renderProductionTab();
   if (activeTab === 'research')   renderResearchTab();
   if (activeTab === 'assembly')   renderAssemblyTab();
@@ -138,12 +138,14 @@ function startNewGame(slot) {
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};
+  gs.msUpgrades = {};
   gs.launches = 0;
   gs.moonstone = 0;
   gs.history = [];
   gs.lastTick = Date.now();
   gs.settings = { sound: true };
   gs.unlocks = {
+    tab_rocket: true,
     tab_production: true, tab_research: false, tab_assembly: false,
     tab_launch: false, tab_mission: false,
     bld_housing: true, bld_ops_center: true, bld_supply_depot: false, bld_mine: false,
@@ -261,6 +263,7 @@ function enterGame() {
     }
     calcOffline();
     renderUnlocks();
+    switchMainTab('rocket');
     renderAll();
     setInterval(tick, 200);
     setInterval(renderAll, 500);

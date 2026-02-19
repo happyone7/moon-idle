@@ -41,6 +41,7 @@ function _showUnlockBanner(tabKey) {
 function renderUnlocks() {
   // Map of tab id suffix -> element id
   const TAB_MAP = {
+    tab_rocket:     'nav-tab-rocket',
     tab_production: 'nav-tab-production',
     tab_research:   'nav-tab-research',
     tab_assembly:   'nav-tab-assembly',

@@ -13,6 +13,7 @@ let gs = {
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
   assembly: { selectedQuality:'proto', jobs:[] },
   upgrades: {},
+  msUpgrades: {},
   launches: 0,
   moonstone: 0,
   history: [],
@@ -20,6 +21,7 @@ let gs = {
   settings: { sound: true },
   saveVersion: 2,
   unlocks: {
+    tab_rocket: true,
     tab_production: true,
     tab_research: false,   // 연구소 구매 후 자동 해금
     tab_assembly: false,
@@ -47,7 +49,7 @@ let fusionBonus = 0;
 let reliabilityBonus = 0;
 let slotBonus = 0;
 let audioCtx = null;
-let activeTab  = 'production';
+let activeTab  = 'rocket';
 let resLeftTab = 'all';
 let launchInProgress = false;
 let pendingLaunchMs = 0;
@@ -448,9 +450,11 @@ function loadGame(slot) {
     gs.bldUpgrades = saved.bldUpgrades || {};
     gs.addons = saved.addons || {};
     gs.addonUpgrades = saved.addonUpgrades || {};
+    gs.msUpgrades = saved.msUpgrades || {};
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
+      tab_rocket: true,
       tab_production: true,
       tab_research: true,
       tab_assembly: false,
@@ -516,6 +520,7 @@ function loadGame(slot) {
     }
 
     ensureAssemblyState();
+    if (typeof applyMsUpgradesFromState === 'function') applyMsUpgradesFromState();
     return true;
   } catch(e) {
     console.warn('Load failed', e);
