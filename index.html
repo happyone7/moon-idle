@@ -377,10 +377,26 @@ body::after {
   user-select: none;
   padding: 0;
   text-shadow: 0 0 4px rgba(0,230,118,0.25);
-  transition: color 0.12s, text-shadow 0.12s;
+  transition: color 0.2s, opacity 0.2s, filter 0.2s, text-shadow 0.15s;
 }
-.world-bld:hover { color: var(--green); text-shadow: 0 0 8px #00e67680; }
+.world-bld:hover { color: var(--green); text-shadow: 0 0 10px #00e67680; }
 .world-bld.active-bld { color: var(--green); text-shadow: 0 0 8px #00e67680; }
+
+/* ── Building state classes ── */
+.world-bld.wb-state-ghost  { opacity: 0.15; filter: sepia(1) hue-rotate(80deg) brightness(0.5); pointer-events: none; cursor: default; }
+.world-bld.wb-state-idle   { opacity: 0.38; color: #1a3820; filter: brightness(0.65); }
+.world-bld.wb-state-active { opacity: 1; color: var(--green); text-shadow: 0 0 8px rgba(0,230,118,0.55); }
+.world-bld.wb-state-active:hover { text-shadow: 0 0 16px #00e676cc; }
+.world-bld.wb-state-idle:hover { pointer-events: auto; opacity: 0.75; }
+
+/* ── Add-on buildings ── */
+.world-bld.wb-addon         { color: var(--amber); text-shadow: 0 0 6px rgba(255,171,0,0.4); }
+.world-bld.wb-addon:hover   { color: #ffdd55; text-shadow: 0 0 14px rgba(255,171,0,0.8); }
+.world-bld.wb-addon-ph      { opacity: 0.28; animation: addon-pulse 2s ease-in-out infinite; color: var(--amber); }
+@keyframes addon-pulse { 0%,100%{opacity:0.2} 50%{opacity:0.4} }
+
+/* ── Building overlay separator label ── */
+.bov-sep-label { font-size:10px; color:var(--green-mid); padding:4px 10px 2px; letter-spacing:1px; border-top:1px solid #0a1a0a; margin-top:2px; }
 
 /* Worker dots */
 .wkr {
@@ -448,6 +464,19 @@ body::after {
    PRODUCTION TAB
    =========================== */
 #prod-status { font-size: 13px; color: var(--green-mid); margin-bottom: 10px; border-bottom: var(--border); padding-bottom: 8px; }
+
+/* ── Mission goal panel ── */
+#mission-goal {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: rgba(0,8,0,0.7); border: 1px solid var(--green-dim);
+  padding: 10px 12px; margin-bottom: 12px;
+  font-family: var(--font); font-size: 12px;
+}
+.mg-rocket { font-size: 11px; color: var(--green); line-height: 1.25; margin: 0; flex-shrink: 0; text-shadow: 0 0 6px rgba(0,230,118,0.5); }
+.mg-info   { flex: 1; }
+.mg-title  { color: var(--green-mid); font-size: 11px; letter-spacing: 1px; margin-bottom: 6px; }
+.mg-bar    { color: var(--green); font-size: 11px; margin-bottom: 3px; letter-spacing: 0; }
+.mg-next   { color: var(--amber); font-size: 11px; margin-top: 6px; }
 
 /* ===========================
    RESEARCH TAB
@@ -694,6 +723,7 @@ body::after {
         <div class="tab-pane active" id="pane-production">
           <div class="panel">
             <div class="panel-header">생산 허브</div>
+            <div id="mission-goal"></div>
             <div id="prod-status"></div>
             <div id="bld-grid"></div>
           </div>
