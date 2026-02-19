@@ -3,7 +3,7 @@
 // ============================================================
 let gs = {
   res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { housing:0, ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
+  buildings: { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldUpgrades: {},    // per-building named upgrades purchased
   bldLevels: {},      // { buildingId: upgradeCount }
   addons: {},         // { buildingId: addonOptionId } — A/B 선택된 애드온
@@ -448,6 +448,9 @@ function loadGame(slot) {
     gs.lastTick = saved.lastTick || Date.now();
     gs.bldLevels = saved.bldLevels || {};
     gs.bldUpgrades = saved.bldUpgrades || {};
+    gs._prodHubVisited = saved._prodHubVisited !== undefined ? saved._prodHubVisited :
+      ((saved.buildings && (saved.buildings.ops_center || 0) > 0) ||
+       (saved.buildings && (saved.buildings.research_lab || 0) > 0));
     gs.addons = saved.addons || {};
     gs.addonUpgrades = saved.addonUpgrades || {};
     gs.msUpgrades = saved.msUpgrades || {};
