@@ -43,7 +43,9 @@ function startAssembly(slotIdx) {
   gs.assembly.jobs[slotIdx] = {
     qualityId: q.id,
     startAt: now,
-    endAt: now + q.timeSec * 1000 * (typeof getMilestoneAssemblyMult === 'function' ? getMilestoneAssemblyMult() : 1),
+    endAt: now + q.timeSec * 1000
+      * (typeof getAddonTimeMult === 'function' ? getAddonTimeMult() : 1)
+      * (typeof getMilestoneAssemblyMult === 'function' ? getMilestoneAssemblyMult() : 1),
     ready: false,
   };
   notify(`슬롯 ${slotIdx + 1}: ${q.name} 조립 시작 (${fmtTime(q.timeSec)})`);

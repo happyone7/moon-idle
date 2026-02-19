@@ -40,6 +40,15 @@ function buyAutoUpgrade(id) {
   if (!gs.autoEnabled) gs.autoEnabled = {};
   gs.autoEnabled[id] = true;
 
+  // 즉시 효과 — ms_quick_workers / ms_early_boost
+  if (id === 'ms_quick_workers') {
+    gs.workers = (gs.workers || 1) + 1;
+    if (typeof syncWorkerDots === 'function') syncWorkerDots();
+  }
+  if (id === 'ms_early_boost') {
+    globalMult *= 1.08;
+  }
+
   notify(`[AUTO] ${upg.name} 활성화`, 'amber');
   playSfx('triangle', 650, 0.12, 0.04, 900);
   saveGame();
@@ -117,20 +126,31 @@ function runAutomation() {
         builtBlds.forEach(b => {
           const current = assigns[b.id] || 0;
           const ratio = current / total;
-          const extra = Math.floor(avail * ratio);
+          const slotCap = (gs.buildings[b.id] || 0) + ((gs.bldSlotLevels && gs.bldSlotLevels[b.id]) || 0);
+          const maxExtra = Math.max(0, slotCap - current);
+          const extra = Math.min(Math.floor(avail * ratio), maxExtra);
           if (extra > 0) {
             if (!gs.assignments) gs.assignments = {};
             gs.assignments[b.id] = current + extra;
             distributed += extra;
           }
         });
-        // 남은 인원은 첫 번째 생산 건물에 배치
+        // 남은 인원은 첫 번째 여유 있는 생산 건물에 배치
         const leftover = avail - distributed;
         if (leftover > 0) {
-          const firstBld = builtBlds.find(b => (gs.buildings[b.id] || 0) > 0);
+          const firstBld = builtBlds.find(b => {
+            const cnt = gs.buildings[b.id] || 0;
+            const slotCap = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[b.id]) || 0);
+            return cnt > 0 && (gs.assignments[b.id] || 0) < slotCap;
+          });
           if (firstBld) {
-            if (!gs.assignments) gs.assignments = {};
-            gs.assignments[firstBld.id] = (gs.assignments[firstBld.id] || 0) + leftover;
+            const slotCap = (gs.buildings[firstBld.id] || 0) + ((gs.bldSlotLevels && gs.bldSlotLevels[firstBld.id]) || 0);
+            const curAssign = (gs.assignments && gs.assignments[firstBld.id]) || 0;
+            const canAdd = Math.min(leftover, slotCap - curAssign);
+            if (canAdd > 0) {
+              if (!gs.assignments) gs.assignments = {};
+              gs.assignments[firstBld.id] = curAssign + canAdd;
+            }
           }
         }
       } else {
@@ -156,6 +176,12 @@ function runAutomation() {
       if (opt.cost) spend(opt.cost);
       if (!gs.addons) gs.addons = {};
       gs.addons[b.id] = opt.id;
+      // side-effect 적용 (BUG-P13 수정)
+      if (opt.effect) {
+        if (opt.effect.rel)            reliabilityBonus += opt.effect.rel;
+        if (opt.effect.slotBonus)      slotBonus        += opt.effect.slotBonus;
+        if (opt.effect.partCostReduct) partCostMult     *= (1 - opt.effect.partCostReduct);
+      }
       notify(`[AUTO] ${b.icon} 애드온 설치: ${opt.name || opt.id}`, 'amber');
     });
   }
@@ -219,7 +245,9 @@ function runAutomation() {
         gs.assembly.jobs[i] = {
           qualityId: q.id,
           startAt: now,
-          endAt: now + q.timeSec * 1000,
+          endAt: now + q.timeSec * 1000
+            * (typeof getAddonTimeMult === 'function' ? getAddonTimeMult() : 1)
+            * (typeof getMilestoneAssemblyMult === 'function' ? getMilestoneAssemblyMult() : 1),
           ready: false,
         };
         notify(`[AUTO] 슬롯 ${i + 1}: ${q.name} 조립 자동 시작`, 'amber');

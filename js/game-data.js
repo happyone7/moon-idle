@@ -28,15 +28,15 @@ const BUILDINGS = [
 const PARTS = [
   { id:'engine',   name:'엔진',        icon:'[ENG]', cost:{metal:80,fuel:40,electronics:20} },
   { id:'fueltank', name:'연료 탱크',   icon:'[TNK]', cost:{metal:60,fuel:60} },
-  { id:'control',  name:'제어 시스템', icon:'[CTL]', cost:{electronics:80,research:30} },
+  { id:'control',  name:'제어 시스템', icon:'[CTL]', cost:{electronics:80,metal:30} },
   { id:'hull',     name:'기체 선체',   icon:'[HUL]', cost:{metal:100} },
-  { id:'payload',  name:'탑재체',      icon:'[PLD]', cost:{electronics:40,research:50} },
+  { id:'payload',  name:'탑재체',      icon:'[PLD]', cost:{electronics:60,metal:20} },
 ];
 
 const QUALITIES = [
   { id:'proto',    name:'PROTO-MK1', icon:'[P1]', costMult:1.0, timeSec:20,  ispBonus:0,  dryMassMult:1.0,  relBonus:0,  reuseBonus:0,  rewardMult:1.0 },
-  { id:'standard', name:'STD-MK2',  icon:'[S2]', costMult:2.0, timeSec:60,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:1.5 },
-  { id:'advanced', name:'ADV-MK3',  icon:'[A3]', costMult:4.0, timeSec:120, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:2.5 },
+  { id:'standard', name:'STD-MK2',  icon:'[S2]', costMult:2.0, timeSec:40,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:2.0 },
+  { id:'advanced', name:'ADV-MK3',  icon:'[A3]', costMult:4.0, timeSec:80, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:3.0 },
   { id:'elite',    name:'ELITE-MK4',icon:'[E4]', costMult:8.0, timeSec:240, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:4.5 },
 ];
 
@@ -58,8 +58,6 @@ const UPGRADES = [
   { id:'fusion',             name:'핵융합 엔진',       icon:'[FSN]', cost:{research:500,electronics:400},   req:'automation',         desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
   { id:'reliability',        name:'신뢰도 강화',       icon:'[REL]', cost:{research:300},                   req:'microchip',          desc:'발사 신뢰도 +15%',             effect:()=>{ reliabilityBonus+=15; } },
   { id:'multipad',           name:'복수 발사대',       icon:'[MUL]', cost:{research:400,metal:1000},        req:'alloy',              desc:'조립 슬롯 +1',                 effect:()=>{ slotBonus++; } },
-  { id:'auto_worker_assign',    name:'인원 자동 재배치',     icon:'[AWA]', cost:{research:150,electronics:100},  req:'automation', desc:'인원 배치 설정을 저장하고 자동으로 최적 배치',   effect:()=>{},                                                                       unlocks:[] },
-  { id:'auto_assemble_restart', name:'조립 자동 재시작',     icon:'[AAR]', cost:{research:200,electronics:150},  req:'automation', desc:'발사 후 즉시 다음 조립을 자동으로 시작',          effect:()=>{},                                                                       unlocks:[] },
 ];
 
 // ============================================================
@@ -141,6 +139,7 @@ const BUILDING_ADDONS = {
         id: 'addon_inv_bank',
         name: '투자 은행',
         icon: '[INV]',
+        cost: { money: 800 },
         desc: '운영센터 자금 생산 ×2.0\n부속 업그레이드로 추가 수익 배율',
         effect: { moneyMult: 2.0 },
         upgrades: [
@@ -152,6 +151,7 @@ const BUILDING_ADDONS = {
         id: 'addon_tech_hub',
         name: '기술 스타트업 허브',
         icon: '[HUB]',
+        cost: { money: 1200 },
         desc: '운영센터 자금 생산 ×1.5\n연구 포인트 자동 발생 +0.5/s',
         effect: { moneyMult: 1.5, rpBonus: 0.5 },
         upgrades: [
@@ -168,6 +168,7 @@ const BUILDING_ADDONS = {
         id: 'addon_launch_ctrl',
         name: '발사 제어 타워',
         icon: '[CTL]',
+        cost: { money: 2000, electronics: 200 },
         desc: '발사 신뢰도 +20%\n조립 시간 -15%',
         effect: { rel: 20, timeMult: 0.85 },
         upgrades: [
@@ -179,6 +180,7 @@ const BUILDING_ADDONS = {
         id: 'addon_vif',
         name: '수직 통합 시설',
         icon: '[VIF]',
+        cost: { money: 2000, metal: 300 },
         desc: '조립 슬롯 +1\n부품 비용 -15%',
         effect: { slotBonus: 1, partCostReduct: 0.15 },
         upgrades: [
@@ -195,6 +197,9 @@ const BUILDING_ADDONS = {
 //  별도 자동화 탭에서 관리. gs.msUpgrades에 저장.
 // ============================================================
 const AUTOMATION_UPGRADES = [
+  // ── 문스톤 초기 업그레이드 (TIER 0) ──────────────────────
+  { id:'ms_quick_workers', name:'긴급 인력 지원',   icon:'[HRE]', cost:{moonstone:1}, req:null, tier:0, desc:'인원 상한 +1 영구 추가. 프레스티지 후에도 유지.' },
+  { id:'ms_early_boost',   name:'초기 생산 자금',   icon:'[EFD]', cost:{moonstone:2}, req:null, tier:0, desc:'전체 생산 속도 +8% 영구 적용. 프레스티지 후에도 유지.' },
   // ── 건물/생산 자동화 (TIER 0) ─────────────────────────────
   { id:'auto_build',          name:'건물 자동 건설',             icon:'[AB1]', cost:{moonstone:5},  req:null,               tier:0, desc:'자금/자원 조건이 충족되면 잠금 해제된 건물을 자동으로 1개씩 건설. 가장 저렴한 건물부터 우선 건설.' },
   { id:'auto_housing_upg',    name:'주거 시설 자동 업그레이드',   icon:'[AB2]', cost:{moonstone:5},  req:null,               tier:0, desc:'여유 인원이 0명일 때 자동으로 주거 시설 업그레이드를 구매.' },
@@ -236,9 +241,9 @@ const MILESTONES = [
     id:   'orbit_200',
     name: '궤도 돌입',
     icon: '[ORB]',
-    desc: '발사 고도 200km 이상 달성',
+    desc: '발사 고도 115km 이상 달성',
     reward: '문스톤 +5 즉시 지급',
-    check: gs => Array.isArray(gs.history) && gs.history.some(h => (h.altitude || 0) >= 200),
+    check: gs => Array.isArray(gs.history) && gs.history.some(h => (h.altitude || 0) >= 115),
   },
   {
     id:   'ten_launches',

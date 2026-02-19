@@ -358,7 +358,12 @@ function updateWorldBuildings() {
 
     // ── Parent building pre ───────────────────────────────────
     const pre = document.createElement('pre');
-    pre.className = 'world-bld ' + stateClass;
+    if (cnt === 0) {
+      pre.className = 'world-bld ' + stateClass + ' ghost-bld';
+    } else {
+      const workerClass = assigned > 0 ? ' active-bld has-workers' : ' active-bld';
+      pre.className = 'world-bld ' + stateClass + (cnt > 0 ? workerClass : '');
+    }
     pre.dataset.bid = b.id;
     pre.style.left = x + 'px';
     pre.textContent = cnt === 0 ? _scaffoldAscii() : _bldAscii(b);
@@ -371,6 +376,14 @@ function updateWorldBuildings() {
       pre.addEventListener('mouseleave', () => {
         scheduleBldOvClose();
         if (addonPre && !addonChoice) addonPre.style.opacity = '0';
+      });
+    } else {
+      pre.addEventListener('mouseenter', () => {
+        clearTimeout(_bldOvTimer);
+        openGhostOv(b, pre);
+      });
+      pre.addEventListener('mouseleave', () => {
+        scheduleBldOvClose();
       });
     }
     layer.appendChild(pre);
@@ -438,7 +451,7 @@ function openBldOv(bld, el) {
       label: '+ 인원 배치',
       info: `여유 ${avail}명`,
       disabled: avail <= 0 || cnt === 0 || assigned >= slotCap,
-      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 슬롯: ${slotCap}개\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id), 2)}/s`,
+      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 슬롯: ${slotCap}개\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id) * getAddonMult(bld.id), 2)}/s`,
       type: 'assign',
     });
     actions.push({
@@ -476,11 +489,13 @@ function openBldOv(bld, el) {
     actions.push({ type: 'sep', label: '// 애드온 슬롯' });
     if (!addonChoice) {
       addonDef.options.forEach((opt, i) => {
+        const addonAfford = !opt.cost || canAfford(opt.cost);
         actions.push({
           label: `[${i === 0 ? 'A' : 'B'}] ${opt.name}`,
-          info: '선택',
+          info: opt.cost ? getCostStr(opt.cost) : '선택',
+          affordable: addonAfford,
           disabled: false,
-          desc: opt.desc,
+          desc: opt.desc + (opt.cost ? `\n// 비용: ${getCostStr(opt.cost)}` : ''),
           type: 'addon_choose',
           addonId: opt.id,
           addonBldId: bld.id,
@@ -548,7 +563,7 @@ function openBldOv(bld, el) {
   // Production rate line
   let rateStr = '';
   if (bld.produces !== 'bonus') {
-    const rate = bld.baseRate * assigned * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id);
+    const rate = bld.baseRate * assigned * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id) * getAddonMult(bld.id);
     rateStr = assigned > 0 ? `${bld.produces} +${fmtDec(rate,2)}/s` : '인원 미배치';
   } else if (bld.id === 'solar_array') { rateStr = `전체 생산 +${((getSolarBonus()-1)*100).toFixed(0)}%`; }
   else if (bld.id === 'launch_pad')    { rateStr = `발사 슬롯 +${cnt}`; }
@@ -711,6 +726,12 @@ function buyAddonOption(bldId, optionId) {
   if (gs.addons[bldId]) { notify('이미 애드온이 설치되어 있습니다', 'amber'); return; }
   const opt = addonDef.options.find(o => o.id === optionId);
   if (!opt) return;
+
+  // 비용 체크 및 차감
+  if (opt.cost) {
+    if (!canAfford(opt.cost)) { notify('자원 부족', 'red'); return; }
+    spend(opt.cost);
+  }
 
   gs.addons[bldId] = optionId;
   // Apply immediate side-effects
@@ -893,6 +914,11 @@ function _tickWorkers() {
     if (d.x > 3100) { d.x = 3100; d.vx = -Math.abs(d.vx) * (0.85 + Math.random() * 0.3); }
     d.el.style.left = Math.round(d.x) + 'px';
   });
+}
+
+function hideTechTip() {
+  const el = document.getElementById('tech-tip');
+  if (el) el.style.display = 'none';
 }
 
 // ─── DRAG SCROLL INIT ────────────────────────────────────────

@@ -1130,6 +1130,26 @@ body.tab-launch #rp { display: none; }
 .mg-bar-cnt { color: var(--green-mid); min-width: 28px; text-align: right; }
 .mg-next { font-size: 9px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
 
+/* ── 미건설 건물 ghost 표시 ── */
+.ghost-bld { opacity: 0.5; filter: grayscale(0.7); border: 1px dashed #1a4a2a !important; }
+.ghost-bld .wb-name { color: #2a5a3a !important; font-size: 10px; }
+.ghost-bld:hover { opacity: 0.7; border-color: var(--green-dim) !important; }
+
+/* ── 활성 건물 강조 이펙트 ── */
+.world-bld.active-bld {
+  filter: brightness(1.4) !important;
+  text-shadow: 0 0 8px var(--green), 0 0 16px rgba(0,230,118,0.4) !important;
+  border-color: var(--green-mid) !important;
+  transition: filter 0.3s, text-shadow 0.3s;
+}
+.world-bld.active-bld.has-workers {
+  animation: bld-pulse 2s ease-in-out infinite alternate;
+}
+@keyframes bld-pulse {
+  from { text-shadow: 0 0 6px var(--green), 0 0 12px rgba(0,230,118,0.3); }
+  to   { text-shadow: 0 0 12px var(--green), 0 0 24px rgba(0,230,118,0.6), 0 0 40px rgba(0,230,118,0.2); }
+}
+
 </style>
 </head>
 <body>
@@ -1409,7 +1429,7 @@ body.tab-launch #rp { display: none; }
      LAUNCH OVERLAY (position:fixed)
      =========================== -->
 <div id="launch-overlay">
-  <div class="lo-title">// 달 탐사 성공</div>
+  <div class="lo-title" id="lo-title">// 달 탐사 성공</div>
   <pre class="lo-rocket" id="lo-rocket-art"></pre>
   <div class="lo-stats" id="lo-stats"></div>
   <div class="lo-ms" id="lo-ms"></div>

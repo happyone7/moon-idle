@@ -7,8 +7,8 @@ function launchFromSlot(slotIdx) {
   const q = getQuality(job.qualityId);
   const sci = getRocketScience(q.id);
 
-  // 신뢰도 기반 성공/실패 판정
-  const rollSuccess = Math.random() * 100 < sci.reliability;
+  // 신뢰도 기반 성공/실패 판정 (첫 발사는 무조건 성공 — DESIGN-005)
+  const rollSuccess = gs.launches === 0 || Math.random() * 100 < sci.reliability;
   const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
 
   gs.assembly.jobs[slotIdx] = null;
@@ -127,6 +127,9 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
 }
 
 function _showLaunchOverlay(q, sci, earned, success = true) {
+  // 오버레이 타이틀 성공/실패 반영 (BUG-P09)
+  const loTitle = document.getElementById('lo-title');
+  if (loTitle) loTitle.textContent = success ? '// 달 탐사 성공' : '// 발사 실패';
   const loRocket = document.getElementById('lo-rocket-art');
   if (loRocket) loRocket.textContent =
 `    *
