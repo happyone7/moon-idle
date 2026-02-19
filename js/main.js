@@ -148,7 +148,7 @@ function startNewGame(slot) {
   gs.unlocks = {
     tab_rocket: true,
     tab_production: true, tab_research: false, tab_assembly: false,
-    tab_launch: false, tab_mission: false,
+    tab_launch: true,  tab_mission: false,
     bld_housing: true, bld_ops_center: true, bld_supply_depot: false, bld_mine: false,
     bld_extractor: false, bld_refinery: false, bld_cryo_plant: false,
     bld_elec_lab: false, bld_fab_plant: false, bld_research_lab: true,

@@ -25,7 +25,7 @@ let gs = {
     tab_production: true,
     tab_research: false,   // 연구소 구매 후 자동 해금
     tab_assembly: false,
-    tab_launch: false,
+    tab_launch: true,
     tab_mission: false,
     bld_housing: true,      // 처음부터 표시
     bld_ops_center: true,  // 처음부터 표시
@@ -49,7 +49,7 @@ let fusionBonus = 0;
 let reliabilityBonus = 0;
 let slotBonus = 0;
 let audioCtx = null;
-let activeTab  = 'rocket';
+let activeTab  = 'launch';
 let resLeftTab = 'all';
 let launchInProgress = false;
 let pendingLaunchMs = 0;

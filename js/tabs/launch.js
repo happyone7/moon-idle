@@ -29,6 +29,12 @@ function launchFromSlot(slotIdx) {
 function _runLaunchAnimation(q, sci, earned) {
   launchInProgress = true;
 
+  // 중앙 컬럼: 정적 패널 숨기고 애니메이션 존 표시
+  const preLaunch = document.getElementById('lc-pre-launch');
+  const animZone  = document.getElementById('lc-anim-zone');
+  if (preLaunch) preLaunch.style.display = 'none';
+  if (animZone)  animZone.classList.add('active');
+
   const animWrap = document.getElementById('launch-anim-wrap');
   if (!animWrap) return;
 
@@ -128,32 +134,225 @@ function _showLaunchOverlay(q, sci, earned) {
   if (overlay) overlay.classList.add('show');
 }
 // ============================================================
-//  RENDER: LAUNCH TAB
+//  LAUNCH READY — 첫 번째 완성 슬롯 발사
+// ============================================================
+function launchReady() {
+  ensureAssemblyState();
+  let readySlot = -1;
+  gs.assembly.jobs.forEach((job, idx) => {
+    if (job && job.ready && readySlot === -1) readySlot = idx;
+  });
+  if (readySlot >= 0) launchFromSlot(readySlot);
+}
+
+// ============================================================
+//  ROCKET ASCII ART HELPER
+// ============================================================
+function _lcRocketArt(qualId) {
+  if (qualId === 'standby') {
+    return [
+      '       *       ',
+      '      /|\\      ',
+      '    /  |  \\    ',
+      '   | STBY  |   ',
+      '   |       |   ',
+      '   | [   ] |   ',
+      '  /|       |\\  ',
+      ' / |_______|  \\',
+      '     /| |\\     ',
+      '      | |      ',
+      '     [PAD]     ',
+    ].join('\n');
+  }
+  const lbl = { proto:'P-MK1', standard:'S-MK2', advanced:'A-MK3', elite:'E-MK4' }[qualId] || 'MOON';
+  return [
+    '       *        ',
+    '      /|\\       ',
+    '     / | \\      ',
+    '    /--+--\\     ',
+    '   | PAYLD |    ',
+    '   |-------|    ',
+    `   |${lbl.padStart(5,' ').slice(0,5).padEnd(7,' ')}|    `,
+    '   |-------|    ',
+    '   | HULL  |    ',
+    '   |       |    ',
+    '   |[=LOX=]|    ',
+    '   |[=RP1=]|    ',
+    '   |-------|    ',
+    '  /| ENGNE |\\   ',
+    ' / |_______| \\  ',
+    '   *   |   *    ',
+    '      |||       ',
+    '     [PAD]      ',
+  ].join('\n');
+}
+
+// ============================================================
+//  RENDER: LAUNCH TAB (v7d 3-column)
 // ============================================================
 function renderLaunchTab() {
   ensureAssemblyState();
-  let readyHtml = '';
-  gs.assembly.jobs.forEach((job, idx) => {
-    if (!job) return;
-    if (job.ready) {
-      const ms = getMoonstoneReward(job.qualityId);
-      readyHtml += `<div class="ready-slot-row">
-        <span style="color:var(--green);">슬롯 ${idx + 1}: ${getQuality(job.qualityId).name}</span>
-        <span style="color:var(--green);font-size:12px;">[준비 완료]</span>
-        <button class="btn btn-sm btn-amber" onclick="launchFromSlot(${idx})">[ ▶▶ 발사 ]</button>
-      </div>`;
-    } else {
-      const remain = Math.max(0, Math.floor((job.endAt - Date.now()) / 1000));
-      readyHtml += `<div class="ready-slot-row">
-        <span style="color:var(--amber);">슬롯 ${idx + 1}: ${getQuality(job.qualityId).name}</span>
-        <span style="color:var(--amber);font-size:12px;">조립 중 ${fmtTime(remain)}</span>
-      </div>`;
-    }
-  });
-  if (!readyHtml) {
-    readyHtml = '<div style="color:var(--green-dim);font-size:13px;">// 준비된 로켓이 없습니다. 조립동에서 로켓을 조립하세요.</div>';
+
+  // 애니메이션 존 리셋 (발사 후 renderAll 호출 시 복원)
+  const preLaunch = document.getElementById('lc-pre-launch');
+  const animZone  = document.getElementById('lc-anim-zone');
+  if (!launchInProgress) {
+    if (preLaunch) preLaunch.style.display = '';
+    if (animZone)  animZone.classList.remove('active');
   }
-  const readyWrap = document.getElementById('ready-list-wrap');
-  if (readyWrap) readyWrap.innerHTML = readyHtml;
+
+  // ── 준비된 슬롯 탐색 ────────────────────────────────────
+  let readySlot = -1, readyJob = null;
+  gs.assembly.jobs.forEach((job, idx) => {
+    if (job && job.ready && readySlot === -1) { readySlot = idx; readyJob = job; }
+  });
+  const hasReady = readySlot >= 0;
+  let q = null, sci = null, earned = 0;
+  if (hasReady) {
+    q      = getQuality(readyJob.qualityId);
+    sci    = getRocketScience(q.id);
+    earned = getMoonstoneReward(q.id);
+  }
+
+  // ── 1. GO/NO-GO 체크리스트 ───────────────────────────────
+  const launchPadBuilt = (gs.buildings.launch_pad || 0) >= 1;
+  const hasFuel        = (gs.res.fuel || 0) > 50;
+  const hasElec        = (gs.buildings.elec_lab || 0) >= 1;
+  const checks = [
+    { name: '발사대 구조',   go: launchPadBuilt },
+    { name: '추진제 주입',   go: hasFuel },
+    { name: '기체 조립',     go: hasReady },
+    { name: '항법 장치',     go: hasElec || hasReady },
+    { name: '엔진 계통',     go: launchPadBuilt },
+    { name: '기상 조건',     go: true },
+  ];
+  const allGo = hasReady && launchPadBuilt && hasFuel;
+  let chkHtml = checks.map(c =>
+    `<div class="chk-row"><span class="chk-name">${c.name}</span><span class="chk-badge${c.go ? '' : ' nogo'}">${c.go ? 'GO &#10003;' : 'NO-GO &#10007;'}</span></div>`
+  ).join('');
+  chkHtml += allGo
+    ? `<div class="chk-all-go">&#9654;&#9654; ALL SYSTEMS GO &#9664;&#9664;<br><span style="font-size:10px;color:var(--green-dim)">${checks.filter(c=>c.go).length}/${checks.length} GO</span></div>`
+    : `<div class="chk-no-go">// 발사 전 확인 필요</div>`;
+  const lc_checklist = document.getElementById('lc-checklist');
+  if (lc_checklist) lc_checklist.innerHTML = chkHtml;
+
+  // ── 2. 발사 데이터 ───────────────────────────────────────
+  const lc_launchData = document.getElementById('lc-launch-data');
+  if (lc_launchData) {
+    lc_launchData.innerHTML = hasReady
+      ? `<div class="lc-drow"><span>기체</span><span class="v">${q.name}</span></div>
+         <div class="lc-drow"><span>목표 고도</span><span class="v">${Math.floor(sci.altitude)} km</span></div>
+         <div class="lc-drow"><span>Δv</span><span class="v">${sci.deltaV.toFixed(2)} km/s</span></div>
+         <div class="lc-drow"><span>TWR</span><span class="v">${sci.twr.toFixed(2)}</span></div>
+         <div class="lc-drow"><span>신뢰도</span><span class="v">${sci.reliability.toFixed(1)}%</span></div>
+         <div class="lc-drow"><span>문스톤 예상</span><span class="va">+${earned}</span></div>`
+      : `<div style="color:var(--green-dim);font-size:11px;line-height:1.8">// 조립동에서 로켓을 조립하세요</div>`;
+  }
+
+  // ── 3. 조립 대기 큐 ──────────────────────────────────────
+  const lc_queue = document.getElementById('lc-queue');
+  if (lc_queue) {
+    let qHtml = '';
+    gs.assembly.jobs.forEach((job, idx) => {
+      if (!job) return;
+      if (job.ready) {
+        qHtml += `<div class="lc-drow"><span>슬롯 ${idx+1}</span><span class="v">${getQuality(job.qualityId).name} [대기]</span></div>`;
+      } else {
+        const remain = Math.max(0, Math.floor((job.endAt - Date.now()) / 1000));
+        qHtml += `<div class="lc-drow"><span>슬롯 ${idx+1}</span><span class="va">${getQuality(job.qualityId).name} ${fmtTime(remain)}</span></div>`;
+      }
+    });
+    if (!qHtml) qHtml = `<div style="color:var(--green-dim);font-size:11px;">// 조립 중인 로켓 없음</div>`;
+    lc_queue.innerHTML = qHtml;
+  }
+
+  // ── 4. ASCII 로켓 ────────────────────────────────────────
+  const rocketPre = document.getElementById('lc-rocket-pre');
+  if (rocketPre) rocketPre.textContent = _lcRocketArt(hasReady ? q.id : 'standby');
+
+  // ── 5. 상태 바 ───────────────────────────────────────────
+  const sbarWrap = document.getElementById('lc-sbar-wrap');
+  if (sbarWrap) {
+    if (hasReady) {
+      const dvPct  = Math.min(100, (sci.deltaV / 10) * 100);
+      const relPct = sci.reliability;
+      const twrPct = Math.min(100, (sci.twr / 5) * 100);
+      const dvC    = dvPct  > 60 ? '' : dvPct  > 30 ? ' amber' : ' red';
+      const relC   = relPct > 70 ? '' : relPct > 50 ? ' amber' : ' red';
+      sbarWrap.innerHTML =
+        `<div class="lc-sbar-row"><span class="lc-sbar-lbl">Δv (km/s)</span><div class="lc-sbar-track"><div class="lc-sbar-fill${dvC}" style="width:${dvPct.toFixed(0)}%"></div></div><span class="lc-sbar-pct">${sci.deltaV.toFixed(1)}</span></div>` +
+        `<div class="lc-sbar-row"><span class="lc-sbar-lbl">신뢰도</span><div class="lc-sbar-track"><div class="lc-sbar-fill${relC}" style="width:${relPct.toFixed(0)}%"></div></div><span class="lc-sbar-pct">${relPct.toFixed(0)}%</span></div>` +
+        `<div class="lc-sbar-row"><span class="lc-sbar-lbl">TWR</span><div class="lc-sbar-track"><div class="lc-sbar-fill" style="width:${twrPct.toFixed(0)}%"></div></div><span class="lc-sbar-pct">${sci.twr.toFixed(2)}</span></div>`;
+    } else {
+      sbarWrap.innerHTML = `<div style="color:var(--green-dim);font-size:11px;text-align:center;padding:6px 0">// 데이터 없음</div>`;
+    }
+  }
+
+  // ── 6. 실패 확률 분석 ────────────────────────────────────
+  const failWrap = document.getElementById('lc-fail-wrap');
+  if (failWrap) {
+    if (hasReady) {
+      const fb = 100 - sci.reliability;
+      const MODES = [
+        { name: '엔진 정지',    pct: fb * 0.40 },
+        { name: '자이로 오작동', pct: fb * 0.25 },
+        { name: 'MaxQ 과부하', pct: fb * 0.20 },
+        { name: 'LOX 차단',    pct: fb * 0.10 },
+        { name: '유도 계통',   pct: fb * 0.05 },
+      ];
+      failWrap.innerHTML = MODES.map(m => {
+        const p    = Math.min(99, m.pct).toFixed(1);
+        const bars = '█'.repeat(Math.max(0, Math.round(m.pct / 3)));
+        const lvl  = m.pct > 10 ? 'high' : m.pct > 4 ? 'mid' : 'low';
+        return `<div class="lc-fail-row"><span class="lc-fail-name">${m.name}</span><span class="lc-fail-bar">${bars}</span><span class="lc-fail-pct">${p}%</span><span class="lc-fail-lvl ${lvl}">${lvl.toUpperCase()}</span></div>`;
+      }).join('');
+    } else {
+      failWrap.innerHTML = `<div style="color:var(--green-dim);font-size:11px;text-align:center;padding:6px 0">// 데이터 없음</div>`;
+    }
+  }
+
+  // ── 7. 커밋 박스 ────────────────────────────────────────
+  const commitStats = document.getElementById('lc-commit-stats');
+  if (commitStats) {
+    if (hasReady) {
+      const rc = sci.reliability > 80 ? 'green' : sci.reliability > 60 ? 'amber' : 'red';
+      commitStats.innerHTML =
+        `<div class="lc-cs"><span class="lc-cs-val ${rc}">${sci.reliability.toFixed(0)}%</span><span class="lc-cs-label">성공률</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val green">${Math.floor(sci.altitude)}<span style="font-size:11px">km</span></span><span class="lc-cs-label">목표 고도</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val amber">+${earned}</span><span class="lc-cs-label">문스톤</span></div>`;
+    } else {
+      commitStats.innerHTML =
+        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">성공률</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">목표 고도</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">문스톤</span></div>`;
+    }
+  }
+  const launchBtn = document.getElementById('lc-btn-launch');
+  if (launchBtn) launchBtn.disabled = !allGo;
+
+  // ── 8. 발사 이력 ────────────────────────────────────────
+  const histEl = document.getElementById('lc-history');
+  if (histEl) {
+    if (gs.history.length === 0) {
+      histEl.innerHTML = `<div style="color:var(--green-dim);font-size:11px;line-height:1.8">// 발사 기록 없음</div>`;
+    } else {
+      histEl.innerHTML = `<table class="lc-hist-table">
+        <thead><tr><th>NO.</th><th>기체</th><th>고도</th><th>신뢰도</th></tr></thead>
+        <tbody>${gs.history.slice(-10).reverse().map(h =>
+          `<tr><td>${String(h.no).padStart(3,'0')}</td><td>${h.quality}</td><td>${h.altitude}km</td><td>${h.reliability}%</td></tr>`
+        ).join('')}</tbody></table>`;
+    }
+  }
+
+  // ── 9. 통계 ────────────────────────────────────────────
+  const statsEl = document.getElementById('lc-stats-panel');
+  if (statsEl) {
+    const maxAlt = gs.history.length ? Math.max(...gs.history.map(h => Number(h.altitude) || 0)) : 0;
+    statsEl.innerHTML =
+      `<div class="lc-stat-row"><span>총 발사</span><span class="sv">${gs.launches}회</span></div>` +
+      `<div class="lc-stat-row"><span>최고 고도</span><span class="sv">${maxAlt} km</span></div>` +
+      `<div class="lc-stat-row"><span>문스톤 보유</span><span class="sva">&#9670; ${gs.moonstone}</span></div>` +
+      `<div class="lc-stat-row"><span>생산 보너스</span><span class="sv">+${gs.moonstone * 5}%</span></div>`;
+  }
 }
 

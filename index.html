@@ -721,17 +721,105 @@ body.tab-production #world-bg:active { cursor: grabbing; }
 .science-box .ms-val { color: var(--amber); }
 
 /* ===========================
-   LAUNCH TAB
+   LAUNCH TAB — V7D 3-COLUMN
    =========================== */
-.launch-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.ready-slot-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 7px 0; font-size: 13px; gap: 8px; }
-.telemetry-wrap { border: var(--border); background: var(--bg); padding: 12px 14px; font-size: 13px; min-height: 160px; }
+/* pane-launch 활성화 시 flex 3컬럼 */
+#pane-launch.active { display: flex; height: 100%; padding: 0; overflow: hidden; }
+
+/* 컬럼 공통 */
+.lc-col { overflow-y: auto; overflow-x: hidden; flex-shrink: 0; }
+.lc-col::-webkit-scrollbar { width: 3px; }
+.lc-col::-webkit-scrollbar-thumb { background: var(--green-dim); }
+.lc-col-left   { flex: 0 0 28%; max-width: 28%; border-right: 1px solid var(--green-dim); background: var(--panel-bg); }
+.lc-col-center { flex: 0 0 44%; max-width: 44%; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.lc-col-right  { flex: 0 0 28%; max-width: 28%; border-left: 1px solid var(--green-dim); background: var(--panel-bg); }
+
+/* LC 패널 (v7d 스타일) */
+.lc-panel { padding: 8px 10px; border-bottom: 1px solid var(--green-dim); }
+.lc-pnl-title { color: var(--green-dim); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px solid var(--green-dim); padding-bottom: 3px; }
+.lc-pnl-title.green { color: var(--green); text-shadow: var(--glow); border-bottom-color: var(--green-mid); }
+.lc-pnl-title.amber { color: var(--amber); border-bottom-color: #5a3c00; }
+
+/* GO/NO-GO 체크리스트 */
+.chk-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #0d2010; font-size: 11px; }
+.chk-row:last-child { border-bottom: none; }
+.chk-name  { color: #8aaa8a; flex: 1; }
+.chk-badge { font-size: 10px; padding: 1px 6px; border: 1px solid var(--green-mid); color: var(--green); background: rgba(0,230,118,.07); text-shadow: var(--glow); white-space: nowrap; }
+.chk-badge.nogo { border-color: var(--red); color: var(--red); background: rgba(255,23,68,.08); text-shadow: none; }
+.chk-all-go { background: rgba(0,230,118,.07); border: 1px solid var(--green); padding: 5px 8px; text-align: center; color: var(--green); font-size: 11px; letter-spacing: .1em; text-shadow: var(--glow); margin-top: 6px; animation: pulse-green 2.5s ease-in-out infinite; }
+.chk-no-go  { background: rgba(255,23,68,.04); border: 1px solid #3a0a10; padding: 5px 8px; text-align: center; color: #8a3a3a; font-size: 11px; letter-spacing: .1em; margin-top: 6px; }
+@keyframes pulse-green { 0%,100% { box-shadow: 0 0 4px #00e67660; } 50% { box-shadow: 0 0 14px #00e676bb, 0 0 28px #00e67640; } }
+
+/* 데이터 행 */
+.lc-drow     { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 2px 0; color: #8aaa8a; }
+.lc-drow .v  { color: var(--green); text-shadow: var(--glow); }
+.lc-drow .va { color: var(--amber); }
+
+/* 중앙: pre-launch vs anim zone */
+#lc-pre-launch { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+#lc-anim-zone  { flex: 1; overflow-y: auto; display: none; padding: 8px 12px; }
+#lc-anim-zone.active { display: block; }
+
+/* 로켓 디스플레이 */
+.lc-rocket-disp { padding: 12px 0 6px; text-align: center; border-bottom: 1px solid var(--green-dim); flex-shrink: 0; }
+pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; line-height: 1.35; color: var(--green); white-space: pre; text-shadow: 0 0 6px #00e676, 0 0 16px rgba(0,230,118,.5); letter-spacing: 0; }
+
+/* 상태 바 */
+.lc-sbar-wrap { padding: 8px 12px; border-bottom: 1px solid var(--green-dim); background: var(--panel-bg); flex-shrink: 0; }
+.lc-sbar-row  { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.lc-sbar-lbl  { width: 60px; font-size: 10px; color: var(--green-mid); flex-shrink: 0; }
+.lc-sbar-track { flex: 1; height: 8px; background: rgba(26,92,52,.35); border: 1px solid var(--green-dim); overflow: hidden; }
+.lc-sbar-fill  { height: 100%; background: var(--green); box-shadow: 0 0 4px var(--green); transition: width .4s; }
+.lc-sbar-fill.amber { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
+.lc-sbar-fill.red   { background: var(--red);   box-shadow: 0 0 4px var(--red); }
+.lc-sbar-pct  { width: 34px; text-align: right; font-size: 10px; color: var(--green); flex-shrink: 0; }
+
+/* 실패 확률 분석 */
+.lc-fail-wrap { padding: 8px 12px; border-bottom: 1px solid var(--green-dim); flex-shrink: 0; }
+.lc-fail-row  { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; font-size: 10px; }
+.lc-fail-name { width: 80px; color: #8aaa8a; flex-shrink: 0; }
+.lc-fail-bar  { flex: 1; color: var(--red); font-size: 11px; letter-spacing: -1px; overflow: hidden; white-space: nowrap; }
+.lc-fail-pct  { width: 30px; text-align: right; color: var(--amber); flex-shrink: 0; }
+.lc-fail-lvl  { font-size: 9px; padding: 0 4px; border: 1px solid; flex-shrink: 0; }
+.lc-fail-lvl.low  { border-color: var(--green-dim); color: var(--green-mid); }
+.lc-fail-lvl.mid  { border-color: #5a3c00; color: var(--amber); }
+.lc-fail-lvl.high { border-color: var(--red); color: var(--red); }
+
+/* 발사 커밋 박스 */
+#lc-commit-box { margin: 10px 12px 12px; border: 2px solid var(--amber); padding: 12px; background: #000d01; animation: pulse-amber 3s ease-in-out infinite; flex-shrink: 0; }
+@keyframes pulse-amber { 0%,100% { box-shadow: 0 0 4px #ffab0060; border-color: var(--amber); } 50% { box-shadow: 0 0 20px #ffab00cc, 0 0 40px #ffab0040; border-color: #ffd050; } }
+.lc-commit-hd    { color: var(--amber); font-size: 12px; letter-spacing: .15em; text-shadow: 0 0 8px #ffab0080; text-align: center; margin-bottom: 10px; }
+.lc-commit-stats { display: flex; justify-content: space-around; margin-bottom: 12px; }
+.lc-cs           { text-align: center; }
+.lc-cs-val       { display: block; font-size: 20px; letter-spacing: .05em; margin-bottom: 2px; }
+.lc-cs-val.green { color: var(--green); text-shadow: var(--glow-strong); }
+.lc-cs-val.amber { color: var(--amber); text-shadow: 0 0 8px #ffab0080; }
+.lc-cs-val.red   { color: var(--red);   text-shadow: 0 0 8px #ff174480; }
+.lc-cs-label     { font-size: 9px; color: var(--green-dim); letter-spacing: .1em; }
+#lc-btn-launch { display: block; width: 100%; padding: 10px 0; background: rgba(255,171,0,.08); border: 2px solid var(--amber); color: var(--amber); font-family: var(--font); font-size: 15px; letter-spacing: .2em; cursor: pointer; text-shadow: 0 0 8px #ffab0080; transition: background .2s; margin-bottom: 7px; }
+#lc-btn-launch:hover:not(:disabled) { background: rgba(255,171,0,.2); }
+#lc-btn-launch:disabled { opacity: .5; cursor: not-allowed; }
+#lc-btn-abort  { display: block; width: 100%; padding: 6px 0; background: rgba(255,23,68,.07); border: 1px solid var(--red); color: var(--red); font-family: var(--font); font-size: 11px; letter-spacing: .15em; cursor: pointer; transition: background .2s; }
+#lc-btn-abort:hover { background: rgba(255,23,68,.16); }
+
+/* 이력 테이블 (우측) */
+.lc-hist-table    { width: 100%; border-collapse: collapse; font-size: 10px; }
+.lc-hist-table th { color: var(--green-dim); padding: 3px 5px; text-align: left; border-bottom: 1px solid var(--green-dim); }
+.lc-hist-table td { padding: 4px 5px; border-bottom: 1px solid #0d1a0d; color: #8aaa8a; vertical-align: top; }
+
+/* 통계 행 (우측) */
+.lc-stat-row      { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; color: #8aaa8a; }
+.lc-stat-row .sv  { color: var(--green); }
+.lc-stat-row .sva { color: var(--amber); }
+
+/* 기존 animation 클래스 유지 */
+.telemetry-wrap { border: var(--border); background: var(--bg); padding: 12px 14px; font-size: 13px; min-height: 120px; }
 .telem-line { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #0a1a0a; color: var(--green-mid); }
-.telem-time { color: var(--green-mid); min-width: 55px; font-size: 12px; }
-.telem-event { min-width: 160px; color: var(--green); text-transform: uppercase; font-size: 12px; }
-.telem-bar { flex: 1; height: 6px; border: 1px solid var(--green-dim); }
+.telem-time  { color: var(--green-mid); min-width: 55px; font-size: 12px; }
+.telem-event { min-width: 140px; color: var(--green); text-transform: uppercase; font-size: 12px; }
+.telem-bar   { flex: 1; height: 6px; border: 1px solid var(--green-dim); }
 .telem-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.5s; }
-.telem-pct { color: var(--green); font-size: 12px; min-width: 38px; text-align: right; }
+.telem-pct   { color: var(--green); font-size: 12px; min-width: 38px; text-align: right; }
 .launch-anim-wrap { text-align: center; padding: 14px; min-height: 150px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); }
 .launch-rocket-ascii { font-size: 12px; white-space: pre; color: var(--green); display: inline-block; }
 .launch-rocket-ascii.launching { animation: rocket-launch 3s ease-in forwards; }
@@ -854,11 +942,11 @@ body.tab-production #world-bg:active { cursor: grabbing; }
 
   <!-- ══ NAV TABS (topbar 바로 아래) ══ -->
   <div id="nav-tabs">
-    <button class="nav-tab active" id="nav-tab-rocket" data-tab="rocket">우주선 제작</button>
+    <button class="nav-tab active" id="nav-tab-launch" data-tab="launch">발사 통제</button>
+    <button class="nav-tab" id="nav-tab-rocket" data-tab="rocket">우주선 제작</button>
     <button class="nav-tab" id="nav-tab-production" data-tab="production">생산 허브</button>
     <button class="nav-tab" id="nav-tab-research" data-tab="research">연구소</button>
     <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" style="display:none">조립동</button>
-    <button class="nav-tab" id="nav-tab-launch" data-tab="launch" style="display:none">발사 통제</button>
     <button class="nav-tab" id="nav-tab-mission" data-tab="mission" style="display:none">미션 현황</button>
   </div>
 
@@ -947,33 +1035,67 @@ body.tab-production #world-bg:active { cursor: grabbing; }
           </div>
         </div>
 
-        <!-- ===== LAUNCH TAB ===== -->
+        <!-- ===== LAUNCH TAB (v7d 3-column) ===== -->
         <div class="tab-pane" id="pane-launch">
-          <div class="panel">
-            <div class="panel-header">발사 통제</div>
-            <div class="launch-layout">
-              <div>
-                <div class="panel">
-                  <div class="panel-header">발사 준비</div>
-                  <div id="ready-list-wrap"></div>
-                </div>
-                <div class="launch-result" id="launch-result">
-                  <div class="launch-result-title">발사 성공</div>
-                  <div class="launch-result-stats" id="lr-stats"></div>
-                  <div id="lr-ms" style="color:var(--amber);font-size:15px;margin-bottom:10px;"></div>
-                </div>
+
+          <!-- ── LEFT: 체크리스트 + 발사 데이터 + 조립 대기 ── -->
+          <div class="lc-col lc-col-left">
+            <div class="lc-panel">
+              <div class="lc-pnl-title green">PRE-LAUNCH GO / NO-GO</div>
+              <div id="lc-checklist"></div>
+            </div>
+            <div class="lc-panel">
+              <div class="lc-pnl-title amber">발사 데이터</div>
+              <div id="lc-launch-data"></div>
+            </div>
+            <div class="lc-panel">
+              <div class="lc-pnl-title">조립 대기</div>
+              <div id="lc-queue"></div>
+            </div>
+          </div>
+
+          <!-- ── CENTER: 로켓 아트 + 상태 바 + 실패 분석 + 커밋 박스 ── -->
+          <div class="lc-col lc-col-center">
+            <!-- 발사 전 정적 패널 -->
+            <div id="lc-pre-launch">
+              <div class="lc-rocket-disp">
+                <pre class="lc-rocket-art" id="lc-rocket-pre">// STANDBY</pre>
               </div>
-              <div>
-                <div class="panel">
-                  <div class="panel-header">발사 시퀀스</div>
-                  <div class="launch-anim-wrap" id="launch-anim-wrap">
-                    <div style="color:var(--green-mid);font-size:13px;">// 발사 대기 중</div>
-                  </div>
-                  <div id="telem-wrap"></div>
-                </div>
+              <div class="lc-sbar-wrap" id="lc-sbar-wrap"></div>
+              <div class="lc-fail-wrap" id="lc-fail-wrap"></div>
+              <div id="lc-commit-box">
+                <div class="lc-commit-hd">&#9474; LAUNCH COMMIT &#9474;</div>
+                <div class="lc-commit-stats" id="lc-commit-stats"></div>
+                <button id="lc-btn-launch" onclick="launchReady()" disabled>[ &#9658;&#9658; 발사 실행 ]</button>
+                <button id="lc-btn-abort">[ ABORT ]</button>
+              </div>
+            </div>
+            <!-- 발사 애니메이션 존 (launch.js가 toggle) -->
+            <div id="lc-anim-zone">
+              <div class="launch-anim-wrap" id="launch-anim-wrap">
+                <div style="color:var(--green-mid);font-size:13px;">// 발사 대기 중</div>
+              </div>
+              <div id="telem-wrap"></div>
+              <div class="launch-result" id="launch-result">
+                <div class="launch-result-title">발사 성공</div>
+                <div class="launch-result-stats" id="lr-stats"></div>
+                <div id="lr-ms" style="color:var(--amber);font-size:15px;margin-bottom:10px;"></div>
               </div>
             </div>
           </div>
+
+          <!-- ── RIGHT: 발사 이력 + 통계 ── -->
+          <div class="lc-col lc-col-right">
+            <div class="lc-panel">
+              <div class="lc-pnl-title">발사 이력</div>
+              <div id="lc-history"></div>
+            </div>
+            <div class="lc-panel">
+              <div class="lc-pnl-title">통계</div>
+              <div id="lc-stats-panel"></div>
+            </div>
+          </div>
+
         </div>
 
         <!-- ===== MISSION TAB ===== -->
