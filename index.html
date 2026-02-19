@@ -464,11 +464,28 @@ body.tab-launch #rp { display: none; }
 .world-bld.active-bld { color: var(--green); text-shadow: 0 0 8px #00e67680; }
 
 /* ── Building state classes ── */
-.world-bld.wb-state-ghost  { opacity: 0.15; filter: sepia(1) hue-rotate(80deg) brightness(0.5); pointer-events: none; cursor: default; }
+.world-bld.wb-state-ghost  { opacity: 0.38; color: #1a3020; cursor: pointer; animation: ghost-pulse 3s ease-in-out infinite; }
+.world-bld.wb-state-ghost:hover { opacity: 0.65; color: var(--green-dim); animation: none; }
+@keyframes ghost-pulse { 0%,100% { opacity:0.30; } 50% { opacity:0.50; } }
 .world-bld.wb-state-idle   { opacity: 0.60; color: #2a5a38; }
 .world-bld.wb-state-active { opacity: 1; color: var(--green); text-shadow: 0 0 8px rgba(0,230,118,0.55); }
 .world-bld.wb-state-active:hover { text-shadow: 0 0 16px #00e676cc; }
 .world-bld.wb-state-idle:hover { pointer-events: auto; opacity: 0.75; }
+/* ── Build & Upgrade Animations ── */
+@keyframes wb-build {
+  0%   { opacity:0; transform:scaleY(0.15) translateY(18px); filter:blur(5px); }
+  40%  { opacity:0.8; filter:blur(1px); }
+  70%  { transform:scaleY(1.06) translateY(-3px); }
+  100% { opacity:1; transform:scaleY(1) translateY(0); filter:blur(0); }
+}
+.world-bld.wb-anim-build { animation: wb-build 0.85s cubic-bezier(0.22,1,0.36,1) forwards !important; }
+@keyframes wb-upgrade {
+  0%   { filter:brightness(1); }
+  25%  { filter:brightness(3) saturate(2); color:var(--amber); text-shadow:0 0 18px var(--amber); }
+  55%  { transform:scale(1.06); filter:brightness(2); }
+  100% { filter:brightness(1); transform:scale(1); }
+}
+.world-bld.wb-anim-upgrade { animation: wb-upgrade 0.7s ease-out forwards !important; }
 
 /* ── Add-on buildings ── */
 .world-bld.wb-addon         { color: var(--amber); text-shadow: 0 0 6px rgba(255,171,0,0.4); }
@@ -550,7 +567,18 @@ body.tab-launch #rp { display: none; }
 /* ===========================
    PRODUCTION TAB
    =========================== */
-#prod-status { font-size: 13px; color: var(--green-mid); margin-bottom: 10px; border-bottom: var(--border); padding-bottom: 8px; }
+#pane-production.active { display:block; padding:8px 8px 0 0; text-align:right; }
+#prod-bld-panel { display:inline-block; text-align:left; width:220px; background:rgba(1,10,2,0.93); border:1px solid var(--green-dim); padding:6px 8px; font-size:11px; vertical-align:top; max-height:calc(100vh - 100px); overflow-y:auto; }
+.bld-list-hd { font-size:10px; letter-spacing:2px; color:var(--green-mid); text-transform:uppercase; border-bottom:1px solid var(--green-dim); padding-bottom:4px; margin-bottom:5px; }
+#prod-status { font-size:10px; color:var(--green-dim); margin-bottom:5px; padding-bottom:4px; border-bottom:1px solid #0a1a0a; }
+.bld-list-row { display:flex; align-items:center; gap:4px; padding:3px 0; border-bottom:1px solid #0a1a0a; }
+.blr-icon { color:var(--green-mid); min-width:28px; font-size:10px; }
+.blr-name { flex:1; color:var(--white); font-size:10px; white-space:nowrap; overflow:hidden; }
+.blr-cnt { color:var(--green-dim); font-size:10px; min-width:18px; text-align:right; }
+.blr-rate { font-size:10px; min-width:60px; text-align:right; }
+/* Ghost building popup */
+.ghost-art-preview { font-size:10px; line-height:1.4; color:var(--green-mid); opacity:0.8; border:1px solid #0a2010; padding:6px 8px; margin:6px 0; white-space:pre; background:rgba(0,10,0,0.4); display:block; }
+.ghost-tag { font-size:9px; letter-spacing:2px; color:#1a3020; border:1px solid #1a3020; padding:2px 5px; }
 
 /* ===========================
    ROCKET BUILD TAB (첫 번째 탭 — 우주선 제작 현황)
@@ -585,8 +613,9 @@ body.tab-launch #rp { display: none; }
 /* ===========================
    RESEARCH TAB
    =========================== */
-/* research layout — vertical scroll, no fixed height */
-#research-layout { min-height: 0; }
+/* research layout — proper flex height chain */
+#pane-research.active { display:flex; flex-direction:column; padding:0; height:100%; overflow:hidden; }
+#research-layout { flex:1; min-height:0; }
 .rsh-layout { display: flex; gap: 12px; align-items: flex-start; }
 .rsh-sidebar { width: 210px; flex-shrink: 0; background: var(--panel-bg); border: var(--border); padding: 10px; }
 .rsh-sb-hd { font-size: 10px; letter-spacing: 3px; color: var(--green-mid); text-transform: uppercase; border-bottom: var(--border); padding-bottom: 5px; margin-bottom: 8px; }
@@ -668,7 +697,7 @@ body.tab-launch #rp { display: none; }
 /* ===========================
    RESEARCH TAB v2 — horizontal card tree
    =========================== */
-.rsh-layout2 { display:flex; height:100%; min-height:0; }
+.rsh-layout2 { display:flex; height:100%; min-height:0; overflow:hidden; }
 .rsh-tree-area { flex:1; overflow:auto; padding:10px 14px; }
 .rsh-tier-row { display:flex; align-items:flex-start; gap:0; }
 .rsh-tier-col { display:flex; flex-direction:column; gap:6px; min-width:132px; }
@@ -1020,8 +1049,8 @@ body.tab-launch #rp { display: none; }
 
         <!-- ===== PRODUCTION TAB ===== -->
         <div class="tab-pane" id="pane-production">
-          <div class="panel">
-            <div class="panel-header">생산 허브</div>
+          <div id="prod-bld-panel">
+            <div class="bld-list-hd">건물 리스트</div>
             <div id="prod-status"></div>
             <div id="bld-grid"></div>
           </div>

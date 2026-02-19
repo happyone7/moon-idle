@@ -10,6 +10,32 @@ function switchMainTab(tabId) {
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   const pane = document.getElementById('pane-' + tabId);
   if (pane) pane.classList.add('active');
+
+  // 생산 허브 첫 방문: 운영센터 + 연구소 무상 건설
+  if (tabId === 'production' && !gs._prodHubVisited) {
+    gs._prodHubVisited = true;
+    let hubChanged = false;
+    if ((gs.buildings.ops_center || 0) === 0) {
+      gs.buildings.ops_center = 1;
+      gs.workers = (gs.workers || 2) + 1;
+      if (!gs.assignments) gs.assignments = {};
+      gs.assignments.ops_center = 1;
+      hubChanged = true;
+      setTimeout(() => notify('[운영센터] 무상 건설!', 'amber'), 200);
+    }
+    if ((gs.buildings.research_lab || 0) === 0) {
+      gs.buildings.research_lab = 1;
+      gs.workers = (gs.workers || 2) + 1;
+      gs.unlocks.tab_research = true;
+      hubChanged = true;
+      setTimeout(() => notify('[연구소] 무상 건설 — 연구 탭 해금!', 'amber'), 500);
+    }
+    if (hubChanged) {
+      if (typeof syncWorkerDots === 'function') syncWorkerDots();
+      if (typeof renderUnlocks === 'function') renderUnlocks();
+    }
+  }
+
   renderAll();
 }
 
@@ -128,9 +154,10 @@ function startTitleSequence() {
 function startNewGame(slot) {
   currentSaveSlot = slot || 1;
   gs.res = { money:0, metal:0, fuel:0, electronics:0, research:0 };
-  gs.buildings = { housing:0, ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
-  gs.workers = 1;  // 건물 구매마다 자동 +1
-  gs.assignments = { ops_center: 1 };  // 첫 워커는 ops_center 자동 배치
+  gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
+  gs.workers = 2;  // 주거시설 1동 = 기본 1 + housing +1
+  gs.assignments = {};
+  gs._prodHubVisited = false;
   gs.bldLevels = {};
   gs.bldUpgrades = {};
   gs.addons = {};

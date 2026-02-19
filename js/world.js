@@ -2,19 +2,19 @@
 //  WORLD — js/world.js
 // ============================================================
 const WORLD_POSITIONS = {
-  research_lab: 240,  r_and_d:      410,
-  ops_center:   590,  // addon @ 760
-  supply_depot: 940,  mine:         1150, extractor:    1290,
-  refinery:     1480, cryo_plant:   1660, elec_lab:     1860,
-  fab_plant:    2030, solar_array:  2220, launch_pad:   2430,
-  // launch_pad addon @ 2600
-  housing:      2750, // 주거 시설 — 시설 끝쪽에 배치
+  housing:      310,  // 주거시설 맨 왼쪽
+  research_lab: 510,  r_and_d:      680,
+  ops_center:   860,  // addon @ 1030
+  supply_depot: 1210, mine:         1420, extractor:    1560,
+  refinery:     1750, cryo_plant:   1930, elec_lab:     2130,
+  fab_plant:    2300, solar_array:  2490, launch_pad:   2700,
+  // launch_pad addon @ 2870
 };
 
 // 애드온 건물 위치 (부모 건물 우측 고정)
 const ADDON_POSITIONS = {
-  ops_center:  760,
-  launch_pad: 2600,
+  ops_center:  1030,
+  launch_pad: 2870,
 };
 
 // ─── ASCII BUILDING ART (upgrade-aware, no double-width chars) ───
@@ -298,6 +298,18 @@ function _addonPlaceholderAscii() {
   );
 }
 
+// ─── SCAFFOLD/CONSTRUCTION PLACEHOLDER ────────────────────
+function _scaffoldAscii() {
+  return (
+    '     |\n' +
+    '  ╔══╧══╗\n' +
+    '  ║/////║\n' +
+    '  ║ TBD ║\n' +
+    '  ╚═════╝\n' +
+    '  ███████'
+  );
+}
+
 function updateWorldBuildings() {
   const layer = document.getElementById('buildings-layer');
   if (!layer) return;
@@ -349,7 +361,7 @@ function updateWorldBuildings() {
     pre.className = 'world-bld ' + stateClass;
     pre.dataset.bid = b.id;
     pre.style.left = x + 'px';
-    pre.textContent = _bldAscii(b);
+    pre.textContent = cnt === 0 ? _scaffoldAscii() : _bldAscii(b);
 
     if (cnt > 0) {
       pre.addEventListener('mouseenter', () => {
@@ -368,12 +380,7 @@ function updateWorldBuildings() {
 // ─── SLOT UPGRADE HELPERS ─────────────────────────────────────
 function _getBldSlotCost(bld) {
   const level = (gs.bldLevels && gs.bldLevels[bld.id]) || 0;
-  const mult  = 2 * (level + 1);
-  const cost  = {};
-  Object.entries(bld.baseCost).forEach(([res, amt]) => {
-    cost[res] = Math.ceil(amt * mult);
-  });
-  return cost;
+  return { money: 500 * 2 * (level + 1) };
 }
 
 function buyBldSlotUpgrade(bldId) {
@@ -387,6 +394,7 @@ function buyBldSlotUpgrade(bldId) {
   gs.bldLevels[bldId] = (gs.bldLevels[bldId] || 0) + 1;
   notify(`${bld.icon} ${bld.name} — 슬롯 +1 (현재 ${gs.buildings[bldId] + gs.bldLevels[bldId]}슬롯)`);
   playSfx('triangle', 580, 0.09, 0.04, 820);
+  _triggerUpgradeAnim(bldId);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (pre) openBldOv(bld, pre);
   renderAll();
@@ -623,6 +631,7 @@ function buyBldUpgrade(upgId, bldId) {
   if (upg.rel) reliabilityBonus += upg.rel;
   notify(`${bld.icon} ${upg.name} 완료`);
   playSfx('triangle', 520, 0.1, 0.04, 780);
+  _triggerUpgradeAnim(bldId);
   // Refresh overlay
   const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (el) openBldOv(bld, el);
@@ -778,6 +787,69 @@ function unassignWorker(bldId) {
   renderAll();
 }
 
+// ─── GHOST BUILDING POPUP (미건설 건물 클릭/호버) ────────────
+function openGhostOv(bld, el) {
+  clearTimeout(_bldOvTimer);
+  const ovEl = document.getElementById('bld-ov');
+  if (!ovEl) return;
+
+  const cost = getBuildingCost(bld);
+  const affordable = canAfford(cost);
+  const costStr = getCostStr(cost);
+  const art = _bldAscii(bld);
+
+  _bldOvActions = [];
+  _bldOvBld = bld;
+
+  ovEl.innerHTML = `
+<div class="bov-head">
+  <span class="bov-head-name">${bld.icon} ${bld.name}</span>
+  <span class="ghost-tag">미건설</span>
+</div>
+<div class="bov-body" style="flex-direction:column;gap:6px;">
+  <pre class="ghost-art-preview">${art}</pre>
+  <div style="font-size:11px;color:var(--green-mid);">${bld.desc}</div>
+</div>
+<div class="bov-foot">
+  <button class="bov-buy-btn${affordable?'':' dis'}" onclick="buyBuilding('${bld.id}')" ${affordable?'':'disabled'}>
+    [ 건설 시작 ] <span class="bov-buy-cost">${costStr}</span>
+  </button>
+</div>`;
+
+  const r = el.getBoundingClientRect();
+  const ovW = 240, ovH = ovEl.offsetHeight || 200;
+  let lx = r.left - 10;
+  let ty = r.top - ovH - 8;
+  if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
+  if (lx < 4) lx = 4;
+  if (ty < 4) ty = r.bottom + 6;
+  ovEl.style.left = lx + 'px';
+  ovEl.style.top  = ty + 'px';
+  ovEl.style.width = ovW + 'px';
+  ovEl.style.display = 'block';
+}
+
+// ─── BUILDING ANIMATIONS ──────────────────────────────────
+function _triggerBuildAnim(bid) {
+  setTimeout(() => {
+    const pre = document.querySelector('.world-bld[data-bid="' + bid + '"]');
+    if (pre) {
+      pre.classList.add('wb-anim-build');
+      setTimeout(() => pre.classList.remove('wb-anim-build'), 1000);
+    }
+  }, 60);
+}
+
+function _triggerUpgradeAnim(bid) {
+  setTimeout(() => {
+    const pre = document.querySelector('.world-bld[data-bid="' + bid + '"]');
+    if (pre) {
+      pre.classList.add('wb-anim-upgrade');
+      setTimeout(() => pre.classList.remove('wb-anim-upgrade'), 800);
+    }
+  }, 60);
+}
+
 function scheduleBldOvClose() {
   _bldOvTimer = setTimeout(() => {
     const ov = document.getElementById('bld-ov');
@@ -891,8 +963,10 @@ function initWorldDrag() {
 
     if (found) {
       const bld = BUILDINGS.find(b => b.id === found.bid);
-      if (bld && (gs.buildings[found.bid] || 0) > 0) {
-        openBldOv(bld, found.pre);
+      if (bld) {
+        const cnt = gs.buildings[found.bid] || 0;
+        if (cnt > 0) openBldOv(bld, found.pre);
+        else         openGhostOv(bld, found.pre);
       }
     } else {
       scheduleBldOvClose();
