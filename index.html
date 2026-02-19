@@ -798,8 +798,21 @@ body.tab-launch #rp { display: none; }
 #lc-anim-zone.active { display: block; }
 
 /* 로켓 디스플레이 */
-.lc-rocket-disp { padding: 12px 0 6px; text-align: center; border-bottom: 1px solid var(--green-dim); flex-shrink: 0; }
-pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; line-height: 1.35; color: var(--green); white-space: pre; text-shadow: 0 0 6px #00e676, 0 0 16px rgba(0,230,118,.5); letter-spacing: 0; font-family: 'Courier New', Consolas, 'Lucida Console', monospace; }
+.lc-rocket-disp { padding: 12px 0 8px; text-align: center; border-bottom: 1px solid var(--green-dim); flex-shrink: 0; }
+.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; line-height: 1.35; white-space: pre; letter-spacing: 0; }
+
+/* 조립 현황 슬롯 (LEFT 컬럼) */
+.lc-asm-slot { padding: 6px; margin-bottom: 6px; border: 1px solid var(--green-dim); }
+.lc-asm-slot-hd { font-size: 10px; color: var(--green-dim); letter-spacing: .08em; margin-bottom: 4px; }
+.lc-asm-ready { border-color: var(--green); background: rgba(0,230,118,.04); }
+.lc-asm-busy  { border-color: var(--amber); }
+.lc-asm-prog-wrap { height: 3px; background: #0a1a0a; border-radius: 2px; overflow: hidden; margin-bottom: 2px; }
+.lc-asm-prog-fill { height: 100%; background: var(--amber); border-radius: 2px; }
+.lc-parts-status { border-top: 1px solid var(--green-dim); margin-top: 6px; padding-top: 6px; }
+
+/* 발사 버튼 상태별 스타일 */
+#lc-btn-launch.lc-btn-launch-standby { opacity: 0.45; border-style: dashed; animation: none; color: var(--green-dim); }
+#lc-btn-launch.lc-btn-launch-go { opacity: 1; border-style: solid; animation: pulse-amber 3s ease-in-out infinite; color: var(--amber); }
 
 /* 상태 바 */
 .lc-sbar-wrap { padding: 8px 12px; border-bottom: 1px solid var(--green-dim); background: var(--panel-bg); flex-shrink: 0; }
@@ -1067,15 +1080,15 @@ pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; li
         <!-- ===== LAUNCH TAB (v7d 3-column) ===== -->
         <div class="tab-pane" id="pane-launch">
 
-          <!-- ── LEFT: 체크리스트 + 온보딩 퀘스트 ── -->
+          <!-- ── LEFT: 체크리스트 + 조립 현황 ── -->
           <div class="lc-col lc-col-left">
             <div class="lc-panel">
               <div class="lc-pnl-title green">PRE-LAUNCH GO / NO-GO</div>
               <div id="lc-checklist"></div>
             </div>
-            <div class="lc-panel" id="lc-quest-panel">
-              <div class="lc-pnl-title cyan">// MISSION OBJECTIVES</div>
-              <div id="lc-quest"></div>
+            <div class="lc-panel">
+              <div class="lc-pnl-title">// 조립 현황</div>
+              <div id="lc-asm-slots"></div>
             </div>
           </div>
 
@@ -1084,15 +1097,15 @@ pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; li
             <!-- 발사 전 정적 패널 -->
             <div id="lc-pre-launch">
               <div class="lc-rocket-disp">
-                <pre class="lc-rocket-art" id="lc-rocket-pre">// STANDBY</pre>
+                <div class="lc-rocket-art" id="lc-rocket-pre"></div>
               </div>
               <div class="lc-sbar-wrap" id="lc-sbar-wrap"></div>
               <div class="lc-fail-wrap" id="lc-fail-wrap"></div>
               <div id="lc-commit-box">
                 <div class="lc-commit-hd">&#9474; LAUNCH COMMIT &#9474;</div>
                 <div class="lc-commit-stats" id="lc-commit-stats"></div>
-                <button id="lc-btn-launch" onclick="launchReady()" disabled>[ &#9658;&#9658; 발사 실행 ]</button>
-                <button id="lc-btn-abort">[ ABORT ]</button>
+                <button id="lc-btn-launch" onclick="launchReady()" disabled>[ ··· 발사 준비 중 ··· ]</button>
+                <button id="lc-btn-abort" onclick="abortAssembly()" style="display:none;">[ ABORT ]</button>
               </div>
             </div>
             <!-- 발사 애니메이션 존 (launch.js가 toggle) -->
@@ -1109,8 +1122,12 @@ pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; li
             </div>
           </div>
 
-          <!-- ── RIGHT: 발사 이력 + 통계 ── -->
+          <!-- ── RIGHT: 미션 목표 + 발사 이력 + 통계 ── -->
           <div class="lc-col lc-col-right">
+            <div class="lc-panel" id="lc-quest-panel">
+              <div class="lc-pnl-title cyan">// MISSION OBJECTIVES</div>
+              <div id="lc-quest"></div>
+            </div>
             <div class="lc-panel">
               <div class="lc-pnl-title">발사 이력</div>
               <div id="lc-history"></div>

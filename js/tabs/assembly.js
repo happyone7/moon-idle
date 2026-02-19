@@ -1,4 +1,18 @@
 
+function abortAssembly() {
+  ensureAssemblyState();
+  let aborted = false;
+  gs.assembly.jobs = gs.assembly.jobs.map(j => {
+    if (j && !j.ready) { aborted = true; return null; }
+    return j;
+  });
+  if (aborted) {
+    notify('조립 취소됨', 'red');
+    playSfx('triangle', 220, 0.08, 0.05, 180);
+    renderAll();
+  }
+}
+
 function craftPart(pid) {
   const part = PARTS.find(p => p.id === pid);
   if (!part) return;
