@@ -241,6 +241,8 @@ body.tab-production #world-bg {
   cursor: grab;
 }
 body.tab-production #world-bg:active { cursor: grabbing; }
+/* 발사 통제 탭에서는 좌측 자원 패널 숨김 */
+body.tab-launch #res-left { display: none; }
 #world-bg::-webkit-scrollbar { height: 6px; }
 #world-bg::-webkit-scrollbar-track { background: #010800; border-top: 1px solid var(--green-dim); }
 #world-bg::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
@@ -378,6 +380,8 @@ body.tab-production #world-bg:active { cursor: grabbing; }
 #sound-btn:hover { color: var(--green); border-color: var(--green); }
 #bgm-prev-btn { font-size: 11px; padding: 3px 7px; border: 1px solid var(--green-dim); background: transparent; color: var(--green-mid); cursor: pointer; font-family: var(--font); transition: all 0.12s; }
 #bgm-prev-btn:hover { color: var(--green); border-color: var(--green); }
+#lang-btn { font-size: 11px; padding: 3px 8px; border: 1px solid var(--amber); background: transparent; color: var(--amber); cursor: pointer; font-family: var(--font); letter-spacing: 1px; transition: all 0.12s; }
+#lang-btn:hover { color: #ffe080; border-color: #ffe080; }
 #bgm-track-label { font-size: 11px; color: var(--green-dim); min-width: 80px; }
 
 /* Progress bars */
@@ -739,6 +743,22 @@ body.tab-production #world-bg:active { cursor: grabbing; }
 .lc-pnl-title { color: var(--green-dim); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px solid var(--green-dim); padding-bottom: 3px; }
 .lc-pnl-title.green { color: var(--green); text-shadow: var(--glow); border-bottom-color: var(--green-mid); }
 .lc-pnl-title.amber { color: var(--amber); border-bottom-color: #5a3c00; }
+.lc-pnl-title.cyan { color: #00cfff; border-bottom-color: #004466; }
+
+/* 온보딩 퀘스트 패널 */
+.lc-quest-main { margin-bottom: 8px; }
+.lc-quest-main-title { color: var(--amber); font-size: 11px; font-weight: bold; margin-bottom: 3px; }
+.lc-quest-main-desc { color: #8aaa8a; font-size: 10px; line-height: 1.5; }
+.lc-quest-main-done { color: var(--green); font-size: 10px; letter-spacing: .1em; text-shadow: var(--glow); margin-top: 3px; }
+.lc-quest-subs { display: flex; flex-direction: column; gap: 3px; }
+.lc-quest-sub  { display: flex; align-items: center; gap: 6px; font-size: 10px; padding: 3px 0; border-bottom: 1px solid #0a1a0a; }
+.lc-quest-sub:last-child { border-bottom: none; }
+.lc-quest-sub .qs-icon { font-size: 12px; flex-shrink: 0; }
+.lc-quest-sub .qs-text { flex: 1; color: #8aaa8a; }
+.lc-quest-sub .qs-text.done { color: var(--green-dim); text-decoration: line-through; }
+.lc-quest-sub .qs-chk  { font-size: 11px; flex-shrink: 0; }
+.lc-quest-sub .qs-chk.done  { color: var(--green); text-shadow: var(--glow); }
+.lc-quest-sub .qs-chk.todo  { color: #334433; }
 
 /* GO/NO-GO 체크리스트 */
 .chk-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #0d2010; font-size: 11px; }
@@ -926,7 +946,7 @@ pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; li
   <div id="topbar">
     <span class="logo">&#9654; MOON IDLE</span>
     <span class="sep">—</span>
-    <span style="color:var(--green-mid);font-size:13px">달 탐사 로켓 제작소</span>
+    <span style="color:var(--green-mid);font-size:13px" data-i18n="title_subtitle">Lunar Rocket Facility</span>
     <span class="sep">|</span>
     <span class="clk" id="tb-clock">00:00:00</span>
     <span class="sep">|</span>
@@ -937,17 +957,17 @@ pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; li
       <button id="bgm-prev-btn" onclick="typeof BGM!=='undefined'&&BGM.next()" title="다음 BGM">BGM&#9664;&#9654;</button>
       <span id="bgm-track-label">[BGM: 앰비언트]</span>
       <button id="sound-btn">SND:ON</button>
+      <button id="lang-btn" onclick="toggleLang()" title="Language / 언어">한국어</button>
     </div>
   </div>
 
   <!-- ══ NAV TABS (topbar 바로 아래) ══ -->
   <div id="nav-tabs">
-    <button class="nav-tab active" id="nav-tab-launch" data-tab="launch">발사 통제</button>
-    <button class="nav-tab" id="nav-tab-rocket" data-tab="rocket">우주선 제작</button>
-    <button class="nav-tab" id="nav-tab-production" data-tab="production">생산 허브</button>
-    <button class="nav-tab" id="nav-tab-research" data-tab="research">연구소</button>
-    <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" style="display:none">조립동</button>
-    <button class="nav-tab" id="nav-tab-mission" data-tab="mission" style="display:none">미션 현황</button>
+    <button class="nav-tab active" id="nav-tab-launch" data-tab="launch" data-i18n="tab_launch">Launch Control</button>
+    <button class="nav-tab" id="nav-tab-production" data-tab="production" data-i18n="tab_production">Production Hub</button>
+    <button class="nav-tab" id="nav-tab-research" data-tab="research" data-i18n="tab_research">Research Lab</button>
+    <button class="nav-tab" id="nav-tab-assembly" data-tab="assembly" data-i18n="tab_assembly" style="display:none">Assembly Bay</button>
+    <button class="nav-tab" id="nav-tab-mission" data-tab="mission" data-i18n="tab_mission" style="display:none">Missions</button>
   </div>
 
   <!-- ══ OFFLINE BANNER ══ -->
@@ -967,14 +987,6 @@ pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; li
 
       <!-- TAB CONTENT AREA -->
       <div id="tab-area">
-
-        <!-- ===== ROCKET BUILD TAB (첫 번째 — 우주선 제작 현황) ===== -->
-        <div class="tab-pane active" id="pane-rocket">
-          <div class="panel">
-            <div class="panel-header">우주선 제작 현황</div>
-            <div id="rc-inner"></div>
-          </div>
-        </div>
 
         <!-- ===== PRODUCTION TAB ===== -->
         <div class="tab-pane" id="pane-production">
@@ -1038,19 +1050,15 @@ pre.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; li
         <!-- ===== LAUNCH TAB (v7d 3-column) ===== -->
         <div class="tab-pane" id="pane-launch">
 
-          <!-- ── LEFT: 체크리스트 + 발사 데이터 + 조립 대기 ── -->
+          <!-- ── LEFT: 체크리스트 + 온보딩 퀘스트 ── -->
           <div class="lc-col lc-col-left">
             <div class="lc-panel">
               <div class="lc-pnl-title green">PRE-LAUNCH GO / NO-GO</div>
               <div id="lc-checklist"></div>
             </div>
-            <div class="lc-panel">
-              <div class="lc-pnl-title amber">발사 데이터</div>
-              <div id="lc-launch-data"></div>
-            </div>
-            <div class="lc-panel">
-              <div class="lc-pnl-title">조립 대기</div>
-              <div id="lc-queue"></div>
+            <div class="lc-panel" id="lc-quest-panel">
+              <div class="lc-pnl-title cyan">// MISSION OBJECTIVES</div>
+              <div id="lc-quest"></div>
             </div>
           </div>
 
@@ -1214,9 +1222,9 @@ setInterval(function() {
 
 <script src="js/game-data.js"></script>
 <script src="js/game-state.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/unlock.js"></script>
 <script src="js/world.js"></script>
-<script src="js/tabs/rocket.js"></script>
 <script src="js/tabs/production.js"></script>
 <script src="js/tabs/research.js"></script>
 <script src="js/tabs/assembly.js"></script>
