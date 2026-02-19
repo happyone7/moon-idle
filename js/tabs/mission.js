@@ -97,7 +97,7 @@ function confirmLaunch() {
   const savedMilestones = gs.milestones || {}; // BUG-P08: 마일스톤 보존 (프레스티지 후 재지급 방지)
 
   // Prestige reset — keep moonstone, msUpgrades, launches, history, unlocks, workers
-  gs.res = { money:500, metal:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:5000, metal:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.assignments = {};
   gs._prodHubVisited = false;

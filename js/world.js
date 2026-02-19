@@ -481,6 +481,21 @@ function openBldOv(bld, el) {
     });
   });
 
+  // ── 주거 시설: 직원 고용 섹션 ────────────────────────────
+  if (bld.id === 'housing' && cnt >= 1) {
+    const hireCost = getWorkerHireCost();
+    const hireAfford = (gs.res.money || 0) >= hireCost;
+    actions.push({ type: 'sep', label: '// 직원 고용' });
+    actions.push({
+      label: `직원 고용 (현재 ${gs.workers}명)`,
+      info: hireAfford ? `₩${fmt(hireCost)}` : `[자금 부족]`,
+      disabled: false,
+      affordable: hireAfford,
+      desc: `직원 1명 고용\n현재 인원: ${gs.workers}명\n고용 비용: ₩${fmt(hireCost)}\n다음 고용 비용: ₩${fmt(Math.floor(500 * Math.pow(2.0, gs.workers)))}`,
+      type: 'hire_worker',
+    });
+  }
+
   // ── Add-on A/B choice section ────────────────────────────
   const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bld.id];
   if (addonDef && cnt >= 1) {
@@ -539,9 +554,9 @@ function openBldOv(bld, el) {
     let rowCls = '';
     if (act.done)                                                   rowCls = 'bov-done';
     else if (act.disabled)                                          rowCls = 'bov-locked';
-    else if ((act.type === 'upgrade' || act.type === 'addon_upgrade') && !act.affordable) rowCls = 'bov-need';
+    else if ((act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker') && !act.affordable) rowCls = 'bov-need';
 
-    const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade';
+    const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker';
     const isWorker = act.type === 'assign' || act.type === 'unassign';
     let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : (isUpg && !act.affordable) ? '[부족]' : '[실행]';
     const btnDis = act.done || act.disabled || (isUpg && !act.affordable);
@@ -617,6 +632,7 @@ function bovClick(idx) {
   if (act.type === 'slot_upgrade')  buyBldSlotUpgrade(_bldOvBld.id);
   else if (act.type === 'assign')   assignWorker(_bldOvBld.id);
   else if (act.type === 'unassign') unassignWorker(_bldOvBld.id);
+  else if (act.type === 'hire_worker') hireWorker();
   else if (act.type === 'upgrade') {
     if (!act.affordable) { notify('자원 부족', 'red'); return; }
     buyBldUpgrade(act.upgId, _bldOvBld.id);
@@ -790,6 +806,7 @@ function assignWorker(bldId) {
   if (assigned >= slotCap)          { notify('슬롯 수용 한도 초과 — 슬롯 업그레이드 필요', 'amber'); return; }
   gs.assignments[bldId] = assigned + 1;
   notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
+  playSfx('triangle', 300, 0.04, 0.02, 400);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (pre) openBldOv(bld, pre);
   renderAll();
@@ -801,11 +818,40 @@ function unassignWorker(bldId) {
   gs.assignments[bldId] = Math.max(0, gs.assignments[bldId] - 1);
   if (gs.assignments[bldId] === 0) delete gs.assignments[bldId];
   if (bld) notify(`${bld.icon} ${bld.name} — 인원 철수`);
+  playSfx('triangle', 400, 0.04, 0.02, 300);
   if (bld) {
     const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
     if (pre) openBldOv(bld, pre);
   }
   renderAll();
+}
+
+// ─── 직원 고용 시스템 ─────────────────────────────────────────
+function hireWorker() {
+  const cost = getWorkerHireCost();
+  if ((gs.res.money || 0) < cost) {
+    notify('자금 부족 — 직원 고용 불가', 'red');
+    return; // 팝업 유지
+  }
+  gs.res.money -= cost;
+  gs.workers = (gs.workers || 1) + 1;
+  notify(`직원 고용 완료 — 현재 ${gs.workers}명`, 'green');
+  playSfx('triangle', 400, 0.1, 0.05, 600);
+  // 팝업 내용만 갱신 (닫지 않음)
+  _refreshBldOvHousingPanel();
+  saveGame();
+  renderAll();
+}
+
+function _refreshBldOvHousingPanel() {
+  const housingBld = BUILDINGS.find(b => b.id === 'housing');
+  if (!housingBld) return;
+  const pre = document.querySelector('.world-bld[data-bid="housing"]');
+  if (pre) {
+    openBldOv(housingBld, pre);
+  } else {
+    if (typeof syncWorkerDots === 'function') syncWorkerDots();
+  }
 }
 
 // ─── GHOST BUILDING POPUP (미건설 건물 클릭/호버) ────────────
