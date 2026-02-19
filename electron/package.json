@@ -1,0 +1,34 @@
+{
+  "name": "moonidle",
+  "version": "0.2.0",
+  "description": "MoonIdle — Rocket Idle Game",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win --x64",
+    "build:dir": "electron-builder --win --dir"
+  },
+  "build": {
+    "appId": "com.moonidle.game",
+    "productName": "MoonIdle",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "files": [
+      "index.html",
+      "js/**",
+      "css/**",
+      "audio/**",
+      "assets/**",
+      "electron/**"
+    ]
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.0.0"
+  }
+}
