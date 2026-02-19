@@ -47,6 +47,95 @@ function buyUpgrade(uid) {
 // ============================================================
 //  RENDER: RESEARCH TAB — vertical scroll card list
 // ============================================================
+// ─── TECH HOVER TOOLTIP ──────────────────────────────────────
+let _techTipTimer = null;
+
+function showTechTip(uid, cardEl) {
+  clearTimeout(_techTipTimer);
+  const upg = UPGRADES.find(u => u.id === uid);
+  if (!upg) return;
+  const tip = document.getElementById('tech-tip');
+  if (!tip) return;
+
+  const purchased  = !!gs.upgrades[uid];
+  const reqMet     = !upg.req || !!gs.upgrades[upg.req];
+  const affordable = canAfford(upg.cost);
+  const reqUpg     = upg.req ? UPGRADES.find(u => u.id === upg.req) : null;
+
+  let statusTxt, statusCls;
+  if (purchased)        { statusTxt = '[연구 완료]'; statusCls = 'tt-ok'; }
+  else if (!reqMet)     { statusTxt = '[잠금]';     statusCls = 'tt-lock'; }
+  else if (affordable)  { statusTxt = '[연구 가능]'; statusCls = 'tt-rdy'; }
+  else                  { statusTxt = '[자원 부족]'; statusCls = 'tt-need'; }
+
+  const costHtml = Object.entries(upg.cost).map(([r, v]) => {
+    const res = RESOURCES.find(x => x.id === r);
+    const have = gs.res[r] || 0;
+    return `<div class="tt-cost-row">
+      <span>${res ? res.symbol + ' ' + res.name : r}</span>
+      <span style="color:${have>=v?'var(--green)':'var(--red)'}">${fmt(have)} / ${fmt(v)}</span>
+    </div>`;
+  }).join('');
+
+  const prereqHtml = reqUpg
+    ? `<div class="tt-row">선행: <span style="color:${gs.upgrades[upg.req]?'var(--green)':'var(--red)'}">${reqUpg.name} ${gs.upgrades[upg.req]?'[완료]':'[미완료]'}</span></div>`
+    : '';
+
+  const unlocksHtml = (upg.unlocks && upg.unlocks.length > 0)
+    ? '<div class="tt-sub">잠금 해제</div>' + upg.unlocks.map(k =>
+        `<div class="tt-row" style="color:var(--green)">▶ ${k.replace('bld_','').replace('tab_','[탭] ')}</div>`
+      ).join('')
+    : '';
+
+  const viz = TECH_VIZ[uid];
+  const vizHtml = viz ? `<div class="tt-viz">
+    <div class="tt-viz-hd">// TECH VISUALIZATION</div>
+    ${viz.lines.map(l=>`<div class="tt-viz-bar">${l}</div>`).join('')}
+    <div class="tt-viz-stat">${viz.stat}</div>
+  </div>` : '';
+
+  const btnDis = purchased || !reqMet || !affordable;
+  const btnTxt = purchased ? '[ 연구 완료 ]' : !reqMet ? '[ 선행 필요 ]' : !affordable ? '[ 자원 부족 ]' : '[ 연구 실행 ]';
+
+  tip.innerHTML = `
+<div class="tt-head">
+  <span>${upg.icon} ${upg.name}</span>
+  <span class="tt-status ${statusCls}">${statusTxt}</span>
+</div>
+<div class="tt-desc">${upg.desc}</div>
+<div class="tt-sub">비용</div>
+${costHtml}
+${prereqHtml}
+${unlocksHtml}
+${vizHtml}
+<button class="btn btn-full btn-sm${purchased||!reqMet||!affordable?' btn-amber':''}"
+  onclick="buyUpgrade('${uid}')" ${btnDis?'disabled':''}>
+  ${btnTxt}
+</button>`;
+
+  // Position: right of card, or left if not enough space
+  const r   = cardEl.getBoundingClientRect();
+  const tipW = 260;
+  let lx = r.right + 8;
+  if (lx + tipW > window.innerWidth - 6) lx = r.left - tipW - 8;
+  if (lx < 4) lx = 4;
+  let ty = r.top;
+  const tipH = 320;
+  if (ty + tipH > window.innerHeight - 6) ty = window.innerHeight - tipH - 6;
+  if (ty < 4) ty = 4;
+
+  tip.style.left    = lx + 'px';
+  tip.style.top     = ty + 'px';
+  tip.style.display = 'block';
+}
+
+function hideTechTip() {
+  _techTipTimer = setTimeout(() => {
+    const tip = document.getElementById('tech-tip');
+    if (tip && !tip.matches(':hover')) tip.style.display = 'none';
+  }, 120);
+}
+
 function renderResearchTab() {
   const layout = document.getElementById('research-layout');
   if (!layout) return;
@@ -111,8 +200,6 @@ function renderResearchTab() {
       const purchased = !!gs.upgrades[uid];
       const reqMet    = !upg.req || !!gs.upgrades[upg.req];
       const affordable = canAfford(upg.cost);
-      const isOpen     = selectedTechId === uid;
-
       // Status badge
       let statusText, statusCls;
       if (purchased)        { statusText = '[완료]';     statusCls = 'rsh-ok'; }
@@ -127,68 +214,17 @@ function renderResearchTab() {
         return `<span class="${have >= v ? 'rsh-cost-ok' : 'rsh-cost-ng'}">${res ? res.symbol : r}:${fmt(v)}</span>`;
       }).join(' ');
 
-      // Expanded detail (only when open)
-      let expandHtml = '';
-      if (isOpen) {
-        const reqUpg = upg.req ? UPGRADES.find(u => u.id === upg.req) : null;
-        const prereqHtml = reqUpg
-          ? `<div class="rsh-det-row">선행: <span style="color:${gs.upgrades[upg.req] ? 'var(--green)' : 'var(--red)'}">${reqUpg.name} ${gs.upgrades[upg.req] ? '[완료]' : '[미완료]'}</span></div>`
-          : '<div class="rsh-det-row" style="color:var(--green-dim);">선행: 없음</div>';
-
-        const costRows = Object.entries(upg.cost).map(([r, v]) => {
-          const res = RESOURCES.find(x => x.id === r);
-          const have = gs.res[r] || 0;
-          return `<div class="rsh-det-cost">
-            <span>${res ? res.symbol + ' ' + res.name : r}</span>
-            <span style="color:${have >= v ? 'var(--green)' : 'var(--red)'}">${fmt(have)} / ${fmt(v)}</span>
-          </div>`;
-        }).join('');
-
-        const unlocksHtml = (upg.unlocks && upg.unlocks.length > 0)
-          ? '<div class="rsh-det-sub">잠금 해제</div>' +
-            upg.unlocks.map(key =>
-              `<div class="rsh-det-row" style="color:var(--green);">▶ ${key.replace('bld_', '').replace('tab_', '[탭] ')}</div>`
-            ).join('')
-          : '';
-
-        const viz = TECH_VIZ[uid];
-        const vizHtml = viz ? `
-<div class="rsh-viz-box">
-  <div class="rsh-viz-hd">// TECH VISUALIZATION</div>
-  ${viz.lines.map(l => `<div class="rsh-viz-bar">${l}</div>`).join('')}
-  <div class="rsh-viz-stat">${viz.stat}</div>
-</div>` : '';
-
-        const btnDisabled = purchased || !reqMet || !affordable;
-        const btnText = purchased ? '[ 연구 완료 ]'
-          : !reqMet   ? '[ 선행 필요 ]'
-          : !affordable ? '[ 자원 부족 ]'
-          : '[ 연구 실행 ]';
-
-        expandHtml = `<div class="rsh-expand" onclick="event.stopPropagation()">
-  <div class="rsh-det-desc">${upg.desc}</div>
-  ${prereqHtml}
-  <div class="rsh-det-sub">비용</div>
-  ${costRows}
-  ${unlocksHtml}
-  ${vizHtml}
-  <button class="btn btn-full btn-sm${purchased||!reqMet||!affordable?' btn-amber':''}"
-    onclick="buyUpgrade('${uid}');selectTech('${uid}');" ${btnDisabled ? 'disabled' : ''}>
-    ${btnText}
-  </button>
-</div>`;
-      }
-
       cardsHtml += `
-<div class="rsh-card${isOpen ? ' open' : ''}${purchased ? ' done' : ''}" onclick="selectTech('${uid}')">
+<div class="rsh-card${purchased ? ' done' : ''}"
+  onmouseenter="showTechTip('${uid}', this)"
+  onmouseleave="hideTechTip()"
+  onclick="buyUpgrade('${uid}')">
   <div class="rsh-card-row">
     <span class="rsh-icon">${upg.icon}</span>
     <span class="rsh-name">${upg.name}</span>
     <span class="rsh-pills">${costPills}</span>
     <span class="rsh-status ${statusCls}">${statusText}</span>
-    <span class="rsh-arrow">${isOpen ? '▲' : '▼'}</span>
   </div>
-  ${expandHtml}
 </div>`;
     });
 
@@ -212,7 +248,6 @@ function renderResearchTab() {
 }
 
 function selectTech(uid) {
-  // Toggle: clicking same card closes it
-  selectedTechId = (selectedTechId === uid) ? null : uid;
-  renderResearchTab();
+  // kept for compatibility — buying is now via click on card directly
+  buyUpgrade(uid);
 }

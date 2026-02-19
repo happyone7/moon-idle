@@ -63,13 +63,13 @@ function renderAssemblyTab() {
   const exhClass    = 'r-exhaust' + ((pd.fueltank && pd.engine) ? ' done' : '');
 
   const rocketInner = `<span class="${noseClass}">           *
-          /|\\
-         / | \\
-        /  |  \\
-       /   |   \\
-      /  BETA   \\
-     /   mk.2    \\
-    /______________\\</span>
+          /|╲
+         / | ╲
+        /  |  ╲
+       /   |   ╲
+      /  BETA   ╲
+     /   mk.2    ╲
+    /______________╲</span>
 <span class="${payClass}">   |  [PAYLOAD]    |
    |   _________   |
    |  |  NAV    |  |
@@ -88,11 +88,11 @@ function renderAssemblyTab() {
    | | 156 kN  |   |
    | |_________|   |
    |_______________|</span>
-<span class="${exhClass}">  / [LOX]  [RP-1]  \\
- /___________________\\
+<span class="${exhClass}">  / [LOX]  [RP-1]  ╲
+ /___________________╲
        |   |   |
-      /|   |   |\\
-     /_|___|___|_\\</span>`;
+      /|   |   |╲
+     /_|___|___|_╲</span>`;
 
   const artDisplay = document.getElementById('rocket-art-display');
   if (artDisplay) artDisplay.innerHTML = rocketInner;

@@ -3,7 +3,8 @@
 // ============================================================
 let gs = {
   res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
-  buildings: { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
+  buildings: { housing:0, ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
+  bldUpgrades: {},  // per-building named upgrades purchased
   bldLevels: {},   // { buildingId: upgradeCount }
   workers: 1,          // 총 인원
   assignments: {},     // { buildingId: workerCount }
@@ -22,6 +23,7 @@ let gs = {
     tab_assembly: false,
     tab_launch: false,
     tab_mission: false,
+    bld_housing: true,      // 처음부터 표시
     bld_ops_center: true,  // 처음부터 표시
     bld_supply_depot: false,
     bld_mine: false,
@@ -130,7 +132,21 @@ function upgBuilding(bid) {
 
 function getMoonstoneMult() { return 1 + gs.moonstone * 0.05; }
 
-function getSolarBonus() { return 1 + gs.buildings.solar_array * 0.1; }
+function getSolarBonus() {
+  let perPanel = 0.10;
+  if (gs.bldUpgrades) {
+    if (gs.bldUpgrades.sol_hieff)   perPanel += 0.05;
+    if (gs.bldUpgrades.sol_tracker) perPanel += 0.05;
+  }
+  return 1 + gs.buildings.solar_array * perPanel;
+}
+
+// Returns multiplicative stack from all purchased per-building upgrades
+function getBldUpgradeMult(bldId) {
+  if (!gs.bldUpgrades) return 1;
+  const upgrades = (typeof BUILDING_UPGRADES !== 'undefined' && BUILDING_UPGRADES[bldId]) || [];
+  return upgrades.reduce((m, u) => (gs.bldUpgrades[u.id] && u.mult) ? m * u.mult : m, 1);
+}
 
 function canAfford(cost) {
   return Object.entries(cost).every(([r, v]) => (gs.res[r] || 0) >= v);
@@ -163,7 +179,7 @@ function getProduction() {
     // 생산량은 배치된 인원(assignments) 기반
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
     if (assigned === 0) return;
-    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id);
+    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id);
     prod[b.produces] += rate;
   });
   return prod;
@@ -304,6 +320,7 @@ function loadGame() {
     gs.settings = saved.settings || { sound: true };
     gs.lastTick = saved.lastTick || Date.now();
     gs.bldLevels = saved.bldLevels || {};
+    gs.bldUpgrades = saved.bldUpgrades || {};
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
@@ -312,8 +329,10 @@ function loadGame() {
       tab_assembly: false,
       tab_launch: false,
       tab_mission: false,
-      bld_ops_center: false,
+      bld_housing: true,
+      bld_ops_center: true,
       bld_supply_depot: false,
+
       bld_mine: false,
       bld_extractor: false,
       bld_refinery: false,
@@ -339,6 +358,16 @@ function loadGame() {
       const upg = UPGRADES.find(u => u.id === uid);
       if (upg) upg.effect();
     });
+    // Re-apply building upgrade side-effects (rel only; wkr is already in gs.workers)
+    if (typeof BUILDING_UPGRADES !== 'undefined') {
+      Object.keys(gs.bldUpgrades || {}).forEach(uid => {
+        if (!gs.bldUpgrades[uid]) return;
+        for (const bldId in BUILDING_UPGRADES) {
+          const upg = BUILDING_UPGRADES[bldId].find(u => u.id === uid);
+          if (upg && upg.rel) reliabilityBonus += upg.rel;
+        }
+      });
+    }
 
     ensureAssemblyState();
     return true;

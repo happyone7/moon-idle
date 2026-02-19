@@ -10,6 +10,7 @@ const RESOURCES = [
 ];
 
 const BUILDINGS = [
+  { id:'housing',      name:'주거 시설',        icon:'[HSG]', produces:'bonus',       baseRate:0,   baseCost:{money:150},                            desc:'인원 상한 +1',      wbClass:'wb-housing' },
   { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:25,  baseCost:{metal:50},                            desc:'수익 창출 허브',    wbClass:'wb-ops' },
   { id:'supply_depot', name:'보급 창고',        icon:'[DEP]', produces:'money',       baseRate:60,  baseCost:{metal:200,electronics:50},             desc:'물류 수익',         wbClass:'wb-ops' },
   { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'metal',       baseRate:1.2, baseCost:{money:100},                            desc:'기본 금속 생산',    wbClass:'wb-mine' },
@@ -58,4 +59,70 @@ const UPGRADES = [
   { id:'reliability',        name:'신뢰도 강화',       icon:'[REL]', cost:{research:300},                   req:'microchip',          desc:'발사 신뢰도 +15%',             effect:()=>{ reliabilityBonus+=15; } },
   { id:'multipad',           name:'복수 발사대',       icon:'[MUL]', cost:{research:400,metal:1000},        req:'alloy',              desc:'조립 슬롯 +1',                 effect:()=>{ slotBonus++; } },
 ];
+
+// ============================================================
+//  BUILDING UPGRADES — per-building purchasable improvements
+//  mult: production multiplier (stacks multiplicatively)
+//  wkr:  adds to gs.workers when purchased
+//  rel:  adds to reliabilityBonus when purchased
+//  solarBonus: extra solar bonus per panel
+// ============================================================
+const BUILDING_UPGRADES = {
+  housing: [
+    { id:'hsg_dorm',      name:'기숙사 증설',          cost:{money:250},                          desc:'인원 상한 +2명 추가',              wkr:2 },
+    { id:'hsg_welfare',   name:'복리 후생 강화',        cost:{money:800,metal:50},                 desc:'인원 +3명 추가',                   wkr:3,  req:'hsg_dorm' },
+    { id:'hsg_township',  name:'타운십 조성',           cost:{money:3000,metal:200},               desc:'인원 +5명 대규모 주거 허브',       wkr:5,  req:'hsg_welfare' },
+  ],
+  ops_center: [
+    { id:'ops_sales',     name:'영업팀 강화',           cost:{money:400},                          desc:'이 건물 수익 +35%',                mult:1.35 },
+    { id:'ops_24h',       name:'24시간 운영',           cost:{money:1500,electronics:50},          desc:'이 건물 수익 추가 +50%',           mult:1.50, req:'ops_sales' },
+    { id:'ops_premium',   name:'프리미엄 서비스',       cost:{money:4000,electronics:200},         desc:'이 건물 수익 ×1.8 증폭',           mult:1.80, req:'ops_24h' },
+  ],
+  supply_depot: [
+    { id:'dep_logistics', name:'물류 최적화',           cost:{money:600,metal:100},                desc:'이 건물 수익 +40%',                mult:1.40 },
+    { id:'dep_autoware',  name:'자동화 창고',           cost:{money:2000,electronics:100},         desc:'이 건물 수익 +60%',                mult:1.60, req:'dep_logistics' },
+  ],
+  mine: [
+    { id:'mine_bit',      name:'강화 드릴 비트',        cost:{money:300,metal:50},                 desc:'이 건물 금속 생산 +30%',           mult:1.30 },
+    { id:'mine_deep',     name:'심층 채굴 기술',        cost:{money:900,metal:200},                desc:'이 건물 금속 생산 +50%',           mult:1.50, req:'mine_bit' },
+    { id:'mine_robot',    name:'로봇 채굴기',           cost:{money:2500,electronics:100},         desc:'이 건물 금속 생산 ×2.0',           mult:2.00, req:'mine_deep' },
+  ],
+  extractor: [
+    { id:'ext_pump',      name:'고속 추출 펌프',        cost:{money:500,metal:100},                desc:'이 건물 금속 생산 +40%',           mult:1.40 },
+    { id:'ext_filter',    name:'순도 향상 필터',        cost:{money:1500,metal:300},               desc:'이 건물 금속 생산 +60%',           mult:1.60, req:'ext_pump' },
+  ],
+  refinery: [
+    { id:'ref_catalyst',  name:'촉매 반응로',           cost:{money:400,metal:80},                 desc:'이 건물 연료 생산 +35%',           mult:1.35 },
+    { id:'ref_highpress', name:'고압 정제 시스템',      cost:{money:1200,metal:200},               desc:'이 건물 연료 생산 +55%',           mult:1.55, req:'ref_catalyst' },
+  ],
+  cryo_plant: [
+    { id:'cry_heatex',    name:'열교환 최적화',         cost:{money:800,electronics:50},           desc:'이 건물 연료 생산 +40%',           mult:1.40 },
+    { id:'cry_supercon',  name:'초전도 냉각 코일',      cost:{money:2500,electronics:200},         desc:'이 건물 연료 생산 +70%',           mult:1.70, req:'cry_heatex' },
+  ],
+  elec_lab: [
+    { id:'elb_smd',       name:'SMD 자동 납땜',         cost:{money:600,metal:100},                desc:'이 건물 전자부품 +35%',            mult:1.35 },
+    { id:'elb_nano',      name:'나노 패터닝',           cost:{money:1800,electronics:100},         desc:'이 건물 전자부품 +55%',            mult:1.55, req:'elb_smd' },
+  ],
+  fab_plant: [
+    { id:'fab_euv',       name:'EUV 리소그래피',        cost:{money:2000,electronics:200},         desc:'이 건물 전자부품 +50%',            mult:1.50 },
+    { id:'fab_3d',        name:'3D 적층 기술',          cost:{money:5000,electronics:500},         desc:'이 건물 전자부품 ×2.0',            mult:2.00, req:'fab_euv' },
+  ],
+  research_lab: [
+    { id:'rsh_equip',     name:'최신 장비 도입',        cost:{money:500},                          desc:'이 건물 RP +40%',                  mult:1.40 },
+    { id:'rsh_cross',     name:'융합 연구 프로그램',    cost:{money:1500,electronics:100},         desc:'이 건물 RP +60%',                  mult:1.60, req:'rsh_equip' },
+    { id:'rsh_super',     name:'슈퍼컴퓨터 연결',      cost:{money:4000,electronics:400},         desc:'이 건물 RP ×2.0',                  mult:2.00, req:'rsh_cross' },
+  ],
+  r_and_d: [
+    { id:'rnd_collab',    name:'외부 연구 협력',        cost:{money:2000,electronics:200},         desc:'이 건물 RP +50%',                  mult:1.50 },
+    { id:'rnd_patent',    name:'특허 풀 구축',          cost:{money:5000,electronics:500},         desc:'이 건물 RP ×1.8',                  mult:1.80, req:'rnd_collab' },
+  ],
+  solar_array: [
+    { id:'sol_hieff',     name:'고효율 패널',           cost:{money:600,electronics:50},           desc:'태양광 보너스 +5%/개 추가\n→ +15%/개로 증가', solarBonus:0.05 },
+    { id:'sol_tracker',   name:'추적 시스템',           cost:{money:1500,electronics:100},         desc:'태양광 보너스 추가 +5%/개\n→ +20%/개로 증가', solarBonus:0.05, req:'sol_hieff' },
+  ],
+  launch_pad: [
+    { id:'pad_reinforce', name:'발사대 보강',           cost:{money:1000,metal:500},               desc:'발사 신뢰도 +10%',                 rel:10 },
+    { id:'pad_fuelfeed',  name:'연료 공급 가속',        cost:{money:3000,metal:1000,electronics:200}, desc:'조립 시간 -20% (발사대 필요)',   timeMult:0.8, req:'pad_reinforce' },
+  ],
+};
 
