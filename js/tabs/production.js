@@ -28,14 +28,14 @@ function renderMissionGoal() {
   const hasAssembly= gs.unlocks && gs.unlocks['tab_assembly'];
   const hasLaunch  = gs.unlocks && gs.unlocks['tab_launch'];
 
-  // Rocket ASCII — changes as player progresses
+  // Rocket ASCII — changes as player progresses (╲ = U+2572, safe in Korean fonts)
   let rocketArt;
   if (hasLaunch) {
-    rocketArt = '   *\n  /|\\\n /▓|▓\\\n╔══╧══╗\n║READY║\n╚═════╝\n  ███';
+    rocketArt = '    *\n   ╱|╲\n  ╱▓|▓╲\n ╔══╧══╗\n ║READY║\n ╚═════╝\n   ███';
   } else if (hasAssembly) {
-    rocketArt = '   ?\n  /|\\\n /░|░\\\n╔══╧══╗\n║ WIP ║\n╚═════╝\n  ▒▒▒';
+    rocketArt = '    ?\n   ╱|╲\n  ╱░|░╲\n ╔══╧══╗\n ║ WIP ║\n ╚═════╝\n   ▒▒▒';
   } else {
-    rocketArt = '   ?\n  /X\\\n /X|X\\\n╔══X══╗\n║BUILD║\n╚═════╝\n  ░░░';
+    rocketArt = '    ?\n   ╱X╲\n  ╱X|X╲\n ╔══X══╗\n ║BUILD║\n ╚═════╝\n   ░░░';
   }
 
   // Research progress
@@ -59,11 +59,15 @@ function renderMissionGoal() {
   const techPct = researchTotal > 0 ? (researchDone / researchTotal * 100) : 0;
   const partPct = (builtParts / totalParts) * 100;
 
-  el.innerHTML = `<pre class="mg-rocket">${rocketArt}</pre>
+  el.innerHTML = `
+<div class="mg-rocket-wrap">
+  <div class="mg-rocket-label">STATUS</div>
+  <pre class="mg-rocket">${rocketArt}</pre>
+</div>
 <div class="mg-info">
   <div class="mg-title">// MISSION: 달 탐사 로켓 발사</div>
-  <div class="mg-bar">기술 연구 [${bar(techPct)}] ${researchDone}/${researchTotal}</div>
-  <div class="mg-bar">부품 제작 [${bar(partPct)}] ${builtParts}/${totalParts}</div>
+  <div class="mg-bar-row"><span class="mg-bar-lbl">기술 연구</span><span class="mg-bar-val">[${bar(techPct)}]</span><span class="mg-bar-cnt">${researchDone}/${researchTotal}</span></div>
+  <div class="mg-bar-row"><span class="mg-bar-lbl">부품 제작</span><span class="mg-bar-val">[${bar(partPct)}]</span><span class="mg-bar-cnt">${builtParts}/${totalParts}</span></div>
   <div class="mg-next">${nextObj}</div>
 </div>`;
 }

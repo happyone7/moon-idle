@@ -16,6 +16,14 @@ function switchMainTab(tabId) {
 // ============================================================
 //  RENDER: RESOURCES
 // ============================================================
+function switchResTab(cat) {
+  resLeftTab = cat;
+  document.querySelectorAll('.rl-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.cat === cat)
+  );
+  renderResources();
+}
+
 function renderResources() {
   const prod = getProduction();
 
@@ -23,28 +31,42 @@ function renderResources() {
   const rlInner = document.getElementById('rl-inner');
   if (rlInner) {
     const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
+    const RES_CATS = {
+      all:      ['money','metal','fuel','electronics','research'],
+      material: ['money','metal','fuel','electronics'],
+      research: ['money','research'],
+    };
+    const showing = RES_CATS[resLeftTab] || RES_CATS.all;
+
     let html = '';
-    RESOURCES.forEach(r => {
-      const val = gs.res[r.id] || 0;
-      const rate = prod[r.id] || 0;
-      const max = RES_MAX[r.id] || 10000;
-      const pct = Math.min(100, (val / max) * 100);
+    RESOURCES.filter(r => showing.includes(r.id)).forEach(r => {
+      const val     = gs.res[r.id] || 0;
+      const rate    = prod[r.id] || 0;
+      const max     = RES_MAX[r.id] || 10000;
+      const pct     = Math.min(100, (val / max) * 100);
       const isAmber = r.id === 'money';
+      const rateStr = rate > 0.001 ? `+${fmtDec(rate, 2)}/s` : '';
       html += `<div class="rl-item">
-        <div class="rl-label">${r.symbol} ${r.name}</div>
-        <div class="rl-val" style="color:${r.color}">${fmt(val)}</div>
-        ${rate > 0.001 ? `<div class="rl-rate">+${fmtDec(rate, 2)}/s</div>` : ''}
+        <div class="rl-row">
+          <span class="rl-sym" style="color:${r.color}">${r.symbol}</span>
+          <span class="rl-name">${r.name}</span>
+          <span class="rl-val" style="color:${r.color}">${fmt(val)}</span>
+          <span class="rl-rate">${rateStr}</span>
+        </div>
         <div class="rl-bar"><div class="rl-bar-fill${isAmber ? ' amber' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
       </div>`;
     });
     // Worker status
-    const avail = getAvailableWorkers();
-    const totalW = gs.workers || 1;
+    const avail     = getAvailableWorkers();
+    const totalW    = gs.workers || 1;
     const assignedW = totalW - avail;
-    html += `<div class="rl-item" style="border-top:1px solid var(--green-dim);margin-top:4px;padding-top:5px;">
-      <div class="rl-label">&#128100; 인원</div>
-      <div class="rl-val" style="color:var(--white)">${assignedW} / ${totalW}명</div>
-      <div class="rl-rate">여유 ${avail}명</div>
+    html += `<div class="rl-item rl-worker-row">
+      <div class="rl-row">
+        <span class="rl-sym">&#128100;</span>
+        <span class="rl-name">인원</span>
+        <span class="rl-val" style="color:var(--white)">${assignedW}/${totalW}</span>
+        <span class="rl-rate">여유 ${avail}</span>
+      </div>
     </div>`;
     rlInner.innerHTML = html;
   }
@@ -58,7 +80,7 @@ function renderResources() {
     }
   }
 
-  // Update sound button
+  // Update sound button (navbar)
   const sndBtn = document.getElementById('sound-btn');
   if (sndBtn) {
     sndBtn.textContent = gs.settings.sound ? 'SND:ON' : 'SND:OFF';
@@ -279,6 +301,12 @@ function init() {
   const contBtn = document.getElementById('continue-btn');
   if (contBtn) contBtn.addEventListener('click', () => openSaveSlotModal('continue'));
 
+  const titleSndBtn = document.getElementById('title-snd-btn');
+  if (titleSndBtn) titleSndBtn.addEventListener('click', () => {
+    toggleSound();
+    if (titleSndBtn) titleSndBtn.textContent = gs.settings.sound ? 'SND:ON' : 'SND:OFF';
+  });
+
   const sndBtn = document.getElementById('sound-btn');
   if (sndBtn) sndBtn.addEventListener('click', toggleSound);
 
@@ -296,11 +324,14 @@ function init() {
   // Boot sequence
   startTitleSequence();
 
-  // Check for existing saves (migrate legacy save first)
+  // Check for existing saves — both buttons hidden until check completes
   migrateLegacySave();
   const allSlots = getSaveSlots();
   const occupied = allSlots.filter(s => !s.empty);
   setTimeout(() => {
+    // Show New Game (always) and Continue (only if saves exist)
+    const newBtnEl = document.getElementById('new-game-btn');
+    if (newBtnEl) newBtnEl.style.display = '';
     if (occupied.length > 0) {
       const contBtnEl = document.getElementById('continue-btn');
       if (contBtnEl) contBtnEl.style.display = '';
