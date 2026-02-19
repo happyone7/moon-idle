@@ -76,7 +76,6 @@ function renderMissionGoal() {
 //  RENDER: PRODUCTION TAB
 // ============================================================
 function renderProductionTab() {
-  renderMissionGoal();
   const prod = getProduction();
   const totalIncome = prod.money;
   const totalW = getTotalWorkers();

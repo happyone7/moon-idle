@@ -193,11 +193,8 @@ body::after {
 #res-left::-webkit-scrollbar { width: 3px; }
 /* Section header */
 .sh { color: var(--green-dim); font-size: 11px; letter-spacing: 2px; padding: 7px 4px 3px; border-bottom: 1px solid var(--green-dim); margin-bottom: 5px; text-transform: uppercase; }
-/* Resource panel tabs */
-.rl-tabs { display:flex; gap:0; margin-bottom:6px; border-bottom:1px solid var(--green-dim); }
-.rl-tab { background:none; border:none; border-bottom:2px solid transparent; color:var(--green-dim); font-family:var(--font); font-size:10px; letter-spacing:2px; padding:5px 7px; cursor:pointer; text-transform:uppercase; transition:all 0.12s; flex:1; }
-.rl-tab:hover { color:var(--green); }
-.rl-tab.active { color:var(--green); border-bottom-color:var(--green); }
+/* Resource category headers */
+.rl-cat-hd { font-size:10px; letter-spacing:2px; color:var(--green-dim); padding:6px 2px 2px; border-bottom:1px solid #0a1a0a; margin-bottom:3px; }
 /* Resource items — horizontal layout */
 .rl-item { padding:4px 2px 2px; margin-bottom:2px; border-bottom:1px solid #0a1a0a; }
 .rl-row { display:flex; align-items:center; gap:4px; }
@@ -446,7 +443,7 @@ body::after {
 
 /* ── Building state classes ── */
 .world-bld.wb-state-ghost  { opacity: 0.15; filter: sepia(1) hue-rotate(80deg) brightness(0.5); pointer-events: none; cursor: default; }
-.world-bld.wb-state-idle   { opacity: 0.38; color: #1a3820; filter: brightness(0.65); }
+.world-bld.wb-state-idle   { opacity: 0.60; color: #2a5a38; }
 .world-bld.wb-state-active { opacity: 1; color: var(--green); text-shadow: 0 0 8px rgba(0,230,118,0.55); }
 .world-bld.wb-state-active:hover { text-shadow: 0 0 16px #00e676cc; }
 .world-bld.wb-state-idle:hover { pointer-events: auto; opacity: 0.75; }
@@ -533,14 +530,13 @@ body::after {
    =========================== */
 #prod-status { font-size: 13px; color: var(--green-mid); margin-bottom: 10px; border-bottom: var(--border); padding-bottom: 8px; }
 
-/* ── Mission goal panel ── */
+/* ── Mission goal panel — always-visible strip between world and tabs ── */
 #mission-goal {
   display: flex; align-items: flex-start; gap: 14px;
-  background: rgba(0,12,2,0.9); border: 1px solid var(--green);
-  box-shadow: 0 0 8px rgba(0,230,118,0.15);
-  padding: 12px 14px; margin-bottom: 12px;
+  background: rgba(0,10,2,0.97); border-bottom: 1px solid var(--green-dim);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  padding: 8px 14px; flex-shrink: 0;
   font-family: var(--font); font-size: 12px;
-  min-height: 80px;
 }
 .mg-rocket-wrap { flex-shrink:0; text-align:center; }
 .mg-rocket-label { font-size:9px; letter-spacing:3px; color:var(--green-dim); margin-bottom:3px; }
@@ -635,6 +631,43 @@ body::after {
 .ov-num { font-size: 20px; color: var(--green); text-shadow: var(--glow-strong); line-height: 1.2; }
 .ov-num.amber { color: var(--amber); text-shadow: var(--amber-glow); }
 .ov-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--green-dim); margin-top: 2px; }
+
+/* ===========================
+   RESEARCH TAB v2 — horizontal card tree
+   =========================== */
+.rsh-layout2 { display:flex; height:100%; min-height:0; }
+.rsh-tree-area { flex:1; overflow:auto; padding:10px 14px; }
+.rsh-tier-row { display:flex; align-items:flex-start; gap:0; }
+.rsh-tier-col { display:flex; flex-direction:column; gap:6px; min-width:132px; }
+.rsh-tier-label2 { font-size:9px; letter-spacing:2px; color:var(--green-mid); text-transform:uppercase; padding:4px 6px; background:var(--panel-bg); border:var(--border); margin-bottom:2px; text-align:center; }
+.rsh-tier-arrow { display:flex; align-items:flex-start; justify-content:center; width:26px; padding-top:34px; color:var(--green-dim); font-size:14px; flex-shrink:0; }
+.rsh-card2 { border:1px solid var(--green-dim); padding:7px 8px; cursor:pointer; transition:border-color 0.12s,background 0.12s,box-shadow 0.12s; min-height:62px; display:flex; flex-direction:column; gap:3px; background:rgba(1,8,0,0.85); }
+.rsh-card2:hover { border-color:var(--green); background:rgba(0,230,118,0.04); }
+.rsh-card2.selected { border-color:var(--green); background:rgba(0,230,118,0.07); box-shadow:0 0 8px rgba(0,230,118,0.15); }
+.rsh-card2.done { border-color:#1a4a2a; opacity:0.65; }
+.rsh-card2.locked { border-color:#0f1a0f; cursor:default; opacity:0.45; }
+.rsh-card2.available { animation:node-available-pulse 2s ease-in-out infinite; }
+@keyframes node-available-pulse { 0%,100%{box-shadow:0 0 4px rgba(0,153,77,0.3)} 50%{box-shadow:0 0 10px rgba(0,230,118,0.45)} }
+.rsh-c2-icon { font-size:14px; }
+.rsh-c2-name { color:var(--white); font-size:10px; line-height:1.3; }
+.rsh-c2-status { font-size:9px; letter-spacing:1px; margin-top:2px; }
+/* Research detail panel (right side) */
+.rsh-detail-panel { width:196px; flex-shrink:0; background:var(--panel-bg); border-left:var(--border); overflow-y:auto; padding:10px; }
+.rdp-hd { font-size:10px; letter-spacing:3px; color:var(--green-mid); text-transform:uppercase; border-bottom:var(--border); padding-bottom:5px; margin-bottom:8px; }
+.rdp-icon { font-size:22px; margin-bottom:4px; }
+.rdp-name { font-size:13px; color:var(--green); text-shadow:var(--glow); margin-bottom:2px; }
+.rdp-status { font-size:10px; letter-spacing:1px; margin-bottom:8px; }
+.rdp-desc { font-size:11px; color:var(--green-mid); line-height:1.6; margin-bottom:8px; }
+.rdp-sub { font-size:10px; letter-spacing:2px; color:var(--green-dim); text-transform:uppercase; margin:6px 0 3px; border-top:1px solid #0a1a0a; padding-top:5px; }
+.rdp-cost-row { display:flex; justify-content:space-between; font-size:10px; color:var(--green-mid); padding:2px 0; border-bottom:1px solid #0a1a0a; }
+.rdp-viz { margin-top:8px; border:1px solid #3a2800; background:rgba(255,171,0,0.04); padding:6px 8px; }
+.rdp-viz-hd { font-size:9px; color:#7a5100; letter-spacing:2px; margin-bottom:3px; }
+.rdp-viz-bar { color:var(--amber); font-size:10px; margin:1px 0; }
+.rdp-viz-stat { color:var(--amber); font-size:11px; margin-top:3px; }
+.rdp-btn { display:block; width:100%; margin-top:10px; background:none; border:1px solid var(--green-mid); color:var(--green); font-family:var(--font); font-size:12px; letter-spacing:1px; padding:7px; cursor:pointer; text-transform:uppercase; transition:all 0.15s; }
+.rdp-btn:hover:not(:disabled) { border-color:var(--green); text-shadow:var(--glow); }
+.rdp-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.rdp-empty { font-size:11px; color:#1a3a1a; line-height:1.8; }
 
 /* ===========================
    ASSEMBLY TAB
@@ -779,11 +812,6 @@ body::after {
 
     <!-- ── LEFT PANEL ── -->
     <div id="res-left">
-      <div class="rl-tabs">
-        <button class="rl-tab active" data-cat="all" onclick="switchResTab('all')">전체</button>
-        <button class="rl-tab" data-cat="material" onclick="switchResTab('material')">소재</button>
-        <button class="rl-tab" data-cat="research" onclick="switchResTab('research')">연구</button>
-      </div>
       <div id="rl-inner"></div>
       <div id="rl-ms-box"></div>
     </div>
@@ -801,6 +829,9 @@ body::after {
         </div>
       </div>
 
+      <!-- MISSION GOAL STRIP (always visible) -->
+      <div id="mission-goal"></div>
+
       <!-- TAB CONTENT AREA -->
       <div id="tab-area">
 
@@ -808,7 +839,6 @@ body::after {
         <div class="tab-pane active" id="pane-production">
           <div class="panel">
             <div class="panel-header">생산 허브</div>
-            <div id="mission-goal"></div>
             <div id="prod-status"></div>
             <div id="bld-grid"></div>
           </div>

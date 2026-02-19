@@ -16,30 +16,19 @@ function switchMainTab(tabId) {
 // ============================================================
 //  RENDER: RESOURCES
 // ============================================================
-function switchResTab(cat) {
-  resLeftTab = cat;
-  document.querySelectorAll('.rl-tab').forEach(t =>
-    t.classList.toggle('active', t.dataset.cat === cat)
-  );
-  renderResources();
-}
-
 function renderResources() {
   const prod = getProduction();
 
-  // Left panel update
+  // Left panel — categories inline (no tabs)
   const rlInner = document.getElementById('rl-inner');
   if (rlInner) {
     const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
-    const RES_CATS = {
-      all:      ['money','metal','fuel','electronics','research'],
-      material: ['money','metal','fuel','electronics'],
-      research: ['money','research'],
-    };
-    const showing = RES_CATS[resLeftTab] || RES_CATS.all;
+    const CAT_HEADERS = { money:'// 자금', metal:'// 소재', research:'// 연구' };
 
     let html = '';
-    RESOURCES.filter(r => showing.includes(r.id)).forEach(r => {
+    RESOURCES.forEach(r => {
+      const hd = CAT_HEADERS[r.id];
+      if (hd) html += `<div class="rl-cat-hd">${hd}</div>`;
       const val     = gs.res[r.id] || 0;
       const rate    = prod[r.id] || 0;
       const max     = RES_MAX[r.id] || 10000;
@@ -94,6 +83,7 @@ function renderResources() {
 // ============================================================
 function renderAll() {
   renderResources();
+  renderMissionGoal();
   if (activeTab === 'production') renderProductionTab();
   if (activeTab === 'research')   renderResearchTab();
   if (activeTab === 'assembly')   renderAssemblyTab();
