@@ -40,8 +40,8 @@ function launchFromSlot(slotIdx) {
 
 function _runLaunchAnimation(q, sci, earned, success = true) {
   launchInProgress = true;
-  // 발사 시퀀스 진입 → LAUNCH BGM (TRACK 2)
-  if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.start(2);
+  // 발사 시퀀스 진입 → 발사 긴장감 이벤트 BGM
+  if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('launch');
 
   // 중앙 컬럼: 정적 패널 숨기고 애니메이션 존 표시
   const preLaunch = document.getElementById('lc-pre-launch');
@@ -126,8 +126,8 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   setTimeout(() => {
     launchInProgress = false;
     playLaunchSfx();
-    // 발사 결과 후 BGM DRIVE (TRACK 0)으로 복귀
-    if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.start(0);
+    // 발사 결과 후 이벤트 BGM 종료 → 페이즈 트랙으로 복귀
+    if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.stopEvent();
     _showLaunchOverlay(q, sci, earned, success);
   }, 3500);
 }

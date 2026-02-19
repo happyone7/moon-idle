@@ -131,6 +131,8 @@ function confirmLaunch() {
   closeLaunchOverlay();
   notify(`문스톤 ${gs.moonstone}개 보유 — 생산 +${gs.moonstone * 5}%`, '');
   playSfx('triangle', 500, 0.12, 0.04, 760);
+  // 프레스티지 BGM 이벤트 (bgm_08_prestige_void)
+  if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('prestige');
   switchMainTab('production'); // DESIGN-007: 프레스티지 후 생산 탭으로 이동
   saveGame();
   renderAll();

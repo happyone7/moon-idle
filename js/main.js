@@ -4,15 +4,10 @@
 function switchMainTab(tabId) {
   // 탭 전환 클릭음
   playSfx('triangle', 220, 0.05, 0.025, 330);
-  // BGM 탭 연동
+  // BGM 탭 연동 — 페이즈 갱신 + 발사 탭 덕킹
   if (typeof BGM !== 'undefined' && BGM.playing) {
-    if (tabId === 'research') {
-      BGM.start(1); // GRID — 사색적 글리치 (110BPM A-minor)
-    } else if (tabId === 'launch') {
-      BGM.start(0); // DRIVE — 기본 트랙 (발사 준비 대기)
-    } else {
-      BGM.start(0); // DRIVE — 기본 트랙
-    }
+    BGM.duck(tabId === 'launch');
+    BGM.refreshPhase();
   }
   activeTab = tabId;
   document.body.className = 'tab-' + tabId;
@@ -132,6 +127,8 @@ function renderAll() {
   if (activeTab === 'automation') renderAutomationTab();
   updateWorldBuildings();
   if (typeof renderMilestonePanel === 'function') renderMilestonePanel();
+  // BGM 페이즈 갱신 (unlock 상태 변화 반영)
+  if (typeof BGM !== 'undefined' && BGM.playing) BGM.refreshPhase();
   // document.title 동적 업데이트
   _updateDocTitle();
 }
@@ -319,7 +316,7 @@ function enterGame() {
     if (rl) rl.classList.add('visible');
     if (typeof initWorldDrag === 'function') initWorldDrag();
     if (typeof BGM !== 'undefined' && gs.settings.sound) {
-      setTimeout(() => BGM.start(0), 1200);
+      setTimeout(() => BGM.start(), 1200);
     }
     calcOffline();
     if (typeof applyI18n === 'function') applyI18n();
