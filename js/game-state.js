@@ -2,7 +2,7 @@
 //  GAME STATE
 // ============================================================
 let gs = {
-  res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
+  res: { money:5000, metal:0, fuel:0, electronics:0, research:0 },
   buildings: { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldUpgrades: {},    // per-building named upgrades purchased
   bldLevels: {},      // { buildingId: statUpgradeCount } — 생산량 업그레이드 (getBldProdMult용)
@@ -246,6 +246,19 @@ function getBuildingCost(bld) {
     cost[r] = Math.floor(v * Math.pow(1.15, gs.buildings[bld.id] || 0));
   });
   return cost;
+}
+
+// 지수형 건물 구매 비용: baseCost × 1.15^currentCount
+// buildingId로 직접 조회하는 헬퍼 (자동화/UI 등에서 사용)
+function getBldPurchaseCost(bldId) {
+  const bld = BUILDINGS.find(b => b.id === bldId);
+  if (!bld) return {};
+  return getBuildingCost(bld);
+}
+
+// 직원 고용 비용: 500 × 2.0^(workers-1)
+function getWorkerHireCost() {
+  return Math.floor(500 * Math.pow(2.0, (gs.workers || 1) - 1));
 }
 
 function getPartCost(part) {
@@ -689,13 +702,31 @@ function _showOfflineReport(report) {
 // ============================================================
 //  TICK / OFFLINE
 // ============================================================
+// 자원 한도 경고음 쿨다운 (연속 발생 방지)
+let _resCap_lastSfx = 0;
+const RES_CAP_COOLDOWN = 10000; // 10초 쿨다운
+
 function tick() {
   const now = Date.now();
   const dt = Math.min((now - gs.lastTick) / 1000, 1);
   gs.lastTick = now;
   if (dt < 0.001) return;  // 너무 짧은 tick 방지 (calcOffline 직후)
   const prod = getProduction();
+  const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
   RESOURCES.forEach(r => { gs.res[r.id] = Math.max(0, (gs.res[r.id] || 0) + prod[r.id] * dt); });
+  // 자원 한도 도달 경고음 (생산 중인 자원이 한도에 근접/도달 시)
+  if (now - _resCap_lastSfx > RES_CAP_COOLDOWN) {
+    const prod2 = getProduction();
+    const atCap = RESOURCES.some(r => {
+      const cap = RES_MAX[r.id];
+      if (!cap || !prod2[r.id] || prod2[r.id] <= 0) return false;
+      return (gs.res[r.id] || 0) >= cap * 0.99;
+    });
+    if (atCap) {
+      playSfx('square', 160, 0.12, 0.06, 120);
+      _resCap_lastSfx = now;
+    }
+  }
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
   if (typeof runAutomation === 'function') runAutomation();

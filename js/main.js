@@ -2,6 +2,18 @@
 //  TAB SWITCHING
 // ============================================================
 function switchMainTab(tabId) {
+  // 탭 전환 클릭음
+  playSfx('triangle', 220, 0.05, 0.025, 330);
+  // BGM 탭 연동
+  if (typeof BGM !== 'undefined' && BGM.playing) {
+    if (tabId === 'research') {
+      BGM.start(1); // GRID — 사색적 글리치 (110BPM A-minor)
+    } else if (tabId === 'launch') {
+      BGM.start(0); // DRIVE — 기본 트랙 (발사 준비 대기)
+    } else {
+      BGM.start(0); // DRIVE — 기본 트랙
+    }
+  }
   activeTab = tabId;
   document.body.className = 'tab-' + tabId;
   document.querySelectorAll('.nav-tab').forEach(t => {
@@ -174,7 +186,7 @@ function startTitleSequence() {
 
 function startNewGame(slot) {
   currentSaveSlot = slot || 1;
-  gs.res = { money:0, metal:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:5000, metal:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.workers = 2;  // 주거시설 1동 = 기본 1 + housing +1
   gs.assignments = {};

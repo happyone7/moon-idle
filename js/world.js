@@ -481,6 +481,21 @@ function openBldOv(bld, el) {
     });
   });
 
+  // ── 주거 시설: 직원 고용 섹션 ────────────────────────────
+  if (bld.id === 'housing' && cnt >= 1) {
+    const hireCost = getWorkerHireCost();
+    const hireAfford = (gs.res.money || 0) >= hireCost;
+    actions.push({ type: 'sep', label: '// 직원 고용' });
+    actions.push({
+      label: `직원 고용 (현재 ${gs.workers}명)`,
+      info: hireAfford ? `₩${fmt(hireCost)}` : `[자금 부족]`,
+      disabled: false,
+      affordable: hireAfford,
+      desc: `직원 1명 고용\n현재 인원: ${gs.workers}명\n고용 비용: ₩${fmt(hireCost)}\n다음 고용 비용: ₩${fmt(Math.floor(500 * Math.pow(2.0, gs.workers)))}`,
+      type: 'hire_worker',
+    });
+  }
+
   // ── Add-on A/B choice section ────────────────────────────
   const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bld.id];
   if (addonDef && cnt >= 1) {
@@ -790,6 +805,7 @@ function assignWorker(bldId) {
   if (assigned >= slotCap)          { notify('슬롯 수용 한도 초과 — 슬롯 업그레이드 필요', 'amber'); return; }
   gs.assignments[bldId] = assigned + 1;
   notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
+  playSfx('triangle', 300, 0.04, 0.02, 400);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (pre) openBldOv(bld, pre);
   renderAll();
@@ -801,6 +817,7 @@ function unassignWorker(bldId) {
   gs.assignments[bldId] = Math.max(0, gs.assignments[bldId] - 1);
   if (gs.assignments[bldId] === 0) delete gs.assignments[bldId];
   if (bld) notify(`${bld.icon} ${bld.name} — 인원 철수`);
+  playSfx('triangle', 400, 0.04, 0.02, 300);
   if (bld) {
     const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
     if (pre) openBldOv(bld, pre);

@@ -28,6 +28,7 @@ function craftPart(pid) {
 
 function selectQuality(qid) {
   gs.assembly.selectedQuality = qid;
+  playSfx('triangle', 400, 0.04, 0.02, 500);
   renderAssemblyTab();
 }
 
@@ -61,6 +62,8 @@ function updateAssemblyJobs(now=Date.now()) {
     if (now >= job.endAt) {
       job.ready = true;
       notify(`슬롯 ${i + 1}: ${getQuality(job.qualityId).name} 조립 완료`);
+      playSfx('square', 660, 0.14, 0.07, 1000);
+      setTimeout(() => playSfx('sine', 880, 0.12, 0.04), 50);
     }
   }
 }
