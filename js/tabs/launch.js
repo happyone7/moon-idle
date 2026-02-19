@@ -146,45 +146,89 @@ function launchReady() {
 }
 
 // ============================================================
-//  ROCKET ASCII ART HELPER
+//  ROCKET ASCII ART HELPER — per-part color HTML
 // ============================================================
-function _lcRocketArt(qualId) {
-  if (qualId === 'standby') {
-    return [
-      '       *       ',
-      '      /|\\      ',
-      '    /  |  \\    ',
-      '   | STBY  |   ',
-      '   |       |   ',
-      '   | [   ] |   ',
-      '  /|       |\\  ',
-      ' / |_______|  \\',
-      '     /| |\\     ',
-      '      | |      ',
-      '     [PAD]     ',
-    ].join('\n');
+function _lcRocketArtHtml() {
+  const p = gs.parts || {};
+  const jobs = (gs.assembly && gs.assembly.jobs) || [];
+  const now = Date.now();
+
+  // Find first ready job
+  let readyJob = null;
+  jobs.forEach(j => { if (j && j.ready && !readyJob) readyJob = j; });
+
+  // Find first in-progress job
+  let inProgressJob = null;
+  jobs.forEach(j => { if (j && !j.ready && j.endAt && !inProgressJob) inProgressJob = j; });
+
+  // Part-level color: green = all parts assembled (ready), amber = part built, dim = not built
+  const col = (partKey) => {
+    if (readyJob) return 'var(--green)';
+    return (p[partKey]) ? 'var(--amber)' : '#1f3520';
+  };
+
+  // Parts built count for % indicator
+  const partsDone  = PARTS.filter(pt => p[pt.id]).length;
+  const totalParts = PARTS.length;
+  const partsPct   = Math.round((partsDone / totalParts) * 100);
+
+  // Assembly job progress
+  let asmPct = 0;
+  if (readyJob) {
+    asmPct = 100;
+  } else if (inProgressJob) {
+    const elapsed = Math.max(0, now - inProgressJob.startAt);
+    const total   = Math.max(1, inProgressJob.endAt - inProgressJob.startAt);
+    asmPct = Math.min(100, (elapsed / total) * 100);
   }
-  const lbl = { proto:'P-MK1', standard:'S-MK2', advanced:'A-MK3', elite:'E-MK4' }[qualId] || 'MOON';
-  return [
-    '       *        ',
-    '      /|\\       ',
-    '     / | \\      ',
-    '    /--+--\\     ',
-    '   | PAYLD |    ',
-    '   |-------|    ',
-    `   |${lbl.padStart(5,' ').slice(0,5).padEnd(7,' ')}|    `,
-    '   |-------|    ',
-    '   | HULL  |    ',
-    '   |       |    ',
-    '   |[=LOX=]|    ',
-    '   |[=RP1=]|    ',
-    '   |-------|    ',
-    '  /| ENGNE |\\   ',
-    ' / |_______| \\  ',
-    '   *   |   *    ',
-    '      |||       ',
-    '     [PAD]      ',
-  ].join('\n');
+
+  const payC  = col('payload');
+  const ctlC  = col('control');
+  const hulC  = col('hull');
+  const ftkC  = col('fueltank');
+  const engC  = col('engine');
+
+  const span = (color, text) => `<span style="color:${color}">${text}</span>`;
+
+  const lines = [
+    span('var(--green-dim)', '       *        '),
+    span(payC,               '      /|\\       '),
+    span(payC,               '     / | \\      '),
+    span(payC,               '    /--+--\\     '),
+    span(payC,               '   | PAYLD |    '),
+    span(hulC,               '   |-------|    '),
+    span(ctlC,               readyJob ? '   | READY |    ' : '   | CTRL  |    '),
+    span(hulC,               '   |-------|    '),
+    span(hulC,               '   | HULL  |    '),
+    span(hulC,               '   |       |    '),
+    span(ftkC,               '   |[=LOX=]|    '),
+    span(ftkC,               '   |[=RP1=]|    '),
+    span(engC,               '   |-------|    '),
+    span(engC,               '  /| ENGNE |\\   '),
+    span(engC,               ' / |_______| \\  '),
+    span('var(--green-dim)', '   *   |   *    '),
+    span(engC,               '      |||       '),
+    span('var(--green-dim)', '     [PAD]      '),
+  ];
+
+  // Progress indicators
+  const barLen = 10;
+  const filledP = Math.round(partsPct  / 100 * barLen);
+  const filledA = Math.round(asmPct    / 100 * barLen);
+  const barColor = readyJob ? 'var(--green)' : 'var(--amber)';
+
+  let progressHtml = `<div style="font-size:10px;color:var(--green-dim);text-align:center;margin-top:6px;font-family:'Courier New',Consolas,monospace;">`;
+  progressHtml += `<span style="color:var(--green-dim)">부품: </span><span style="color:${barColor}">${'█'.repeat(filledP)}${'░'.repeat(barLen - filledP)}</span> <span style="color:${barColor}">${partsPct}%</span>`;
+  if (inProgressJob || readyJob) {
+    const asmColor = readyJob ? 'var(--green)' : 'var(--amber)';
+    progressHtml += `<br><span style="color:var(--green-dim)">조립: </span><span style="color:${asmColor}">${'█'.repeat(filledA)}${'░'.repeat(barLen - filledA)}</span> <span style="color:${asmColor}">${Math.round(asmPct)}%</span>`;
+  }
+  if (readyJob) {
+    progressHtml += `<br><span style="color:var(--green);text-shadow:0 0 8px #00e676;">&#9654; LAUNCH READY</span>`;
+  }
+  progressHtml += `</div>`;
+
+  return `<div style="font-family:'Courier New',Consolas,monospace;font-size:11px;line-height:1.35;white-space:pre;text-align:left;display:inline-block;">${lines.join('\n')}</div>${progressHtml}`;
 }
 
 // ============================================================
@@ -239,9 +283,9 @@ function renderLaunchTab() {
   // ── 2. 온보딩 퀘스트 ────────────────────────────────────
   _renderLcQuest();
 
-  // ── 3. ASCII 로켓 ────────────────────────────────────────
+  // ── 3. ASCII 로켓 (per-part 색상 HTML) ──────────────────────
   const rocketPre = document.getElementById('lc-rocket-pre');
-  if (rocketPre) rocketPre.textContent = _lcRocketArt(hasReady ? q.id : 'standby');
+  if (rocketPre) rocketPre.innerHTML = _lcRocketArtHtml();
 
   // ── 5. 상태 바 ───────────────────────────────────────────
   const sbarWrap = document.getElementById('lc-sbar-wrap');
@@ -300,8 +344,75 @@ function renderLaunchTab() {
         `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_moonstone')}</span></div>`;
     }
   }
+  // ── 발사 버튼 상태 ───────────────────────────────────────
   const launchBtn = document.getElementById('lc-btn-launch');
-  if (launchBtn) launchBtn.disabled = !allGo;
+  if (launchBtn) {
+    if (allGo) {
+      launchBtn.disabled = false;
+      launchBtn.textContent = '[ ▶▶ 발사 실행 ]';
+      launchBtn.className = 'lc-btn-launch-go';
+    } else {
+      launchBtn.disabled = true;
+      launchBtn.textContent = '[ ··· 발사 준비 중 ··· ]';
+      launchBtn.className = 'lc-btn-launch-standby';
+    }
+  }
+
+  // ── ABORT 버튼: 조립 진행 중일 때만 표시 ────────────────
+  const hasInProgress = gs.assembly && gs.assembly.jobs &&
+    gs.assembly.jobs.some(j => j && !j.ready && j.endAt);
+  const abortBtn = document.getElementById('lc-btn-abort');
+  if (abortBtn) abortBtn.style.display = hasInProgress ? '' : 'none';
+
+  // ── 조립 현황 패널 (LEFT 컬럼) ──────────────────────────
+  const lcAsmSlots = document.getElementById('lc-asm-slots');
+  if (lcAsmSlots) {
+    const now2 = Date.now();
+    const pd   = gs.parts || {};
+    const qSel = getQuality(gs.assembly.selectedQuality);
+    const asmCost = getAssemblyCost(qSel.id);
+    let asmHtml = '';
+    gs.assembly.jobs.forEach((job, idx) => {
+      if (!job) {
+        const canStart = PARTS.every(p2 => pd[p2.id]) && canAfford(asmCost);
+        asmHtml += `<div class="lc-asm-slot">
+          <div class="lc-asm-slot-hd">// 슬롯 ${idx + 1} — <span style="color:var(--green-dim)">대기</span></div>
+          <button class="btn btn-sm${canStart ? '' : ' btn-amber'}" onclick="startAssembly(${idx})" ${canStart ? '' : 'disabled'} style="width:100%;margin-top:4px;">
+            ${canStart ? '[ ▶ 조립 시작 ]' : '[ 부품/자원 부족 ]'}
+          </button>
+        </div>`;
+      } else if (job.ready) {
+        asmHtml += `<div class="lc-asm-slot lc-asm-ready">
+          <div class="lc-asm-slot-hd">// 슬롯 ${idx + 1} — <span style="color:var(--green);text-shadow:var(--glow);">발사 준비!</span></div>
+          <div style="font-size:10px;color:var(--green-dim);margin-bottom:4px;">${getQuality(job.qualityId).name}</div>
+          <button class="btn btn-sm" onclick="launchFromSlot(${idx})" style="width:100%;color:var(--amber);border-color:var(--amber);">[ ▶▶ 발사 ]</button>
+        </div>`;
+      } else {
+        const remain = Math.max(0, Math.floor((job.endAt - now2) / 1000));
+        const total2 = Math.max(1, Math.floor((job.endAt - job.startAt) / 1000));
+        const pct2   = Math.min(100, ((total2 - remain) / total2) * 100);
+        asmHtml += `<div class="lc-asm-slot lc-asm-busy">
+          <div class="lc-asm-slot-hd">// 슬롯 ${idx + 1} — <span style="color:var(--amber);">조립 중</span></div>
+          <div style="font-size:10px;color:var(--green-dim);margin-bottom:3px;">${getQuality(job.qualityId).name} — 잔여 ${fmtTime(remain)}</div>
+          <div class="lc-asm-prog-wrap"><div class="lc-asm-prog-fill" style="width:${pct2.toFixed(0)}%"></div></div>
+          <div style="font-size:10px;color:var(--amber);margin-top:2px;">${pct2.toFixed(0)}% 완료</div>
+        </div>`;
+      }
+    });
+
+    // Parts status summary
+    const partsDone2 = PARTS.filter(pt => pd[pt.id]).length;
+    asmHtml += `<div class="lc-parts-status">
+      <div class="lc-pnl-title" style="margin-top:6px;">// 부품 현황 ${partsDone2}/${PARTS.length}</div>`;
+    PARTS.forEach(pt => {
+      const done = pd[pt.id];
+      asmHtml += `<div style="font-size:10px;color:${done ? 'var(--green)' : 'var(--green-dim)'};padding:2px 0;">
+        <span style="min-width:28px;display:inline-block;">${done ? '[✓]' : '[○]'}</span>${pt.name}
+      </div>`;
+    });
+    asmHtml += `</div>`;
+    lcAsmSlots.innerHTML = asmHtml;
+  }
 
   // ── 8. 발사 이력 ────────────────────────────────────────
   const histEl = document.getElementById('lc-history');

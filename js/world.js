@@ -807,6 +807,54 @@ function initWorldDrag() {
     wb.scrollLeft = dragSL - (e.pageX - wb.offsetLeft - dragX) * 1.3;
   });
 
+  // ─── Building hover relay (works even when #world-bg is behind #app) ───
+  // #app (z-index 10) covers #world-bg (z-index 0), so mouseenter on world-bld
+  // pre elements never fires. Instead we use getBoundingClientRect hit-testing.
+  let _hoverBid = null;
+  document.addEventListener('mousemove', function(e) {
+    if (!document.body.classList.contains('tab-production')) {
+      if (_hoverBid) { _hoverBid = null; }
+      return;
+    }
+    if (drag) return; // skip during drag scroll
+
+    // If cursor is inside the building overlay, keep it open
+    const bldOvEl = document.getElementById('bld-ov');
+    if (bldOvEl && bldOvEl.style.display !== 'none') {
+      const or = bldOvEl.getBoundingClientRect();
+      if (e.clientX >= or.left && e.clientX <= or.right &&
+          e.clientY >= or.top  && e.clientY <= or.bottom) {
+        clearTimeout(_bldOvTimer);
+        return;
+      }
+    }
+
+    // Hit-test world building <pre> elements by their actual screen rect
+    let found = null;
+    document.querySelectorAll('.world-bld[data-bid]').forEach(pre => {
+      const bid = pre.dataset.bid;
+      if (!bid || bid.endsWith('_addon')) return;
+      const r = pre.getBoundingClientRect();
+      if (e.clientX >= r.left && e.clientX <= r.right &&
+          e.clientY >= r.top  && e.clientY <= r.bottom) {
+        found = { bid, pre };
+      }
+    });
+
+    const newBid = found ? found.bid : null;
+    if (newBid === _hoverBid) return;
+    _hoverBid = newBid;
+
+    if (found) {
+      const bld = BUILDINGS.find(b => b.id === found.bid);
+      if (bld && (gs.buildings[found.bid] || 0) > 0) {
+        openBldOv(bld, found.pre);
+      }
+    } else {
+      scheduleBldOvClose();
+    }
+  });
+
   document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeBldOv(); hideTechTip(); } });
 
   const bldOv = document.getElementById('bld-ov');
