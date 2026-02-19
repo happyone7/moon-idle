@@ -107,7 +107,7 @@ function renderProductionTab() {
   <span style="flex:1;color:var(--white)">${b.name} <span style="color:var(--green-dim)">×${cnt}</span></span>
   <span style="color:var(--green-mid);font-size:12px;min-width:120px;text-align:right">${rateStr}</span>
   <button class="btn btn-sm" style="min-width:70px;font-size:11px" onclick="buyBuilding('${b.id}');event.stopPropagation();" ${affordable ? '' : 'disabled'}>
-    ${cnt > 0 ? (affordable ? `+1동 (${costStr})` : `부족`) : (affordable ? `건설 (${costStr})` : `부족`)}
+    ${cnt > 0 ? (affordable ? `업그레이드 (${costStr})` : `부족`) : (affordable ? `건설 (${costStr})` : `부족`)}
   </button>
 </div>`;
   });
