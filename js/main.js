@@ -115,9 +115,9 @@ function startTitleSequence() {
 
 function startNewGame() {
   gs.res = { money:0, metal:0, fuel:0, electronics:0, research:0 };
-  gs.buildings = { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0, housing:0 };
-  gs.workers = 1;
-  gs.assignments = {};
+  gs.buildings = { ops_center:1, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
+  gs.workers = 1;  // 건물 구매마다 자동 +1
+  gs.assignments = { ops_center: 1 };  // 첫 워커는 ops_center 자동 배치
   gs.bldLevels = {};
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
   gs.assembly = { selectedQuality:'proto', jobs:[] };
@@ -134,7 +134,6 @@ function startNewGame() {
     bld_extractor: false, bld_refinery: false, bld_cryo_plant: false,
     bld_elec_lab: false, bld_fab_plant: false, bld_research_lab: true,
     bld_r_and_d: false, bld_solar_array: false, bld_launch_pad: false,
-    bld_housing: true,
   };
   prodMult = {}; globalMult = 1; partCostMult = 1;
   fusionBonus = 0; reliabilityBonus = 0; slotBonus = 0;

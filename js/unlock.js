@@ -11,6 +11,33 @@ function applyUnlocks(unlockList) {
   renderUnlocks();
 }
 
+const TAB_UNLOCK_NAMES = {
+  tab_production: '생산 시설',
+  tab_research:   '연구소',
+  tab_assembly:   '조립동',
+  tab_launch:     '발사 통제',
+  tab_mission:    '임무 현황',
+};
+
+function _showUnlockBanner(tabKey) {
+  const label = TAB_UNLOCK_NAMES[tabKey] || tabKey;
+  const banner = document.getElementById('tab-unlock-flash');
+  if (!banner) return;
+  banner.innerHTML = `
+    <div class="tuf-inner">
+      <div class="tuf-top">// SYSTEM UNLOCK</div>
+      <div class="tuf-main">[ ${label.toUpperCase()} ]</div>
+      <div class="tuf-sub">NEW TAB AVAILABLE</div>
+    </div>`;
+  banner.classList.remove('tuf-hidden');
+  banner.classList.add('tuf-visible');
+  playSfx('square', 880, 0.15, 0.06, 1200);
+  setTimeout(() => {
+    banner.classList.remove('tuf-visible');
+    banner.classList.add('tuf-hidden');
+  }, 2600);
+}
+
 function renderUnlocks() {
   // Map of tab id suffix -> element id
   const TAB_MAP = {
@@ -32,6 +59,8 @@ function renderUnlocks() {
         // Flash animation for newly revealed tab
         el.classList.add('new-unlock');
         setTimeout(() => el.classList.remove('new-unlock'), 800);
+        // Dramatic unlock banner
+        _showUnlockBanner(key);
       }
     } else {
       el.style.display = 'none';

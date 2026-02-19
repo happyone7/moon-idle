@@ -245,6 +245,18 @@ body::after {
 .nav-tab.new-unlock { animation: tab-unlock 0.8s ease; }
 @keyframes tab-unlock { 0% { color: var(--amber); text-shadow: 0 0 20px var(--amber); } 100% { color: var(--green); } }
 
+/* ── Tab Unlock Flash Banner ── */
+#tab-unlock-flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; pointer-events: none; text-align: center; }
+#tab-unlock-flash.tuf-hidden { display: none; }
+#tab-unlock-flash.tuf-visible { display: block; animation: tuf-in 0.3s ease, tuf-out 0.5s ease 2.1s forwards; }
+.tuf-inner { background: rgba(0,0,0,0.92); border: 1px solid var(--amber); padding: 28px 48px; box-shadow: 0 0 60px rgba(255,171,0,0.3), inset 0 0 30px rgba(255,171,0,0.05); }
+.tuf-top  { font-size: 11px; color: #7a5100; letter-spacing: 4px; margin-bottom: 10px; }
+.tuf-main { font-size: 28px; color: var(--amber); letter-spacing: 6px; text-shadow: 0 0 30px var(--amber), 0 0 60px rgba(255,171,0,0.5); margin-bottom: 8px; animation: tuf-pulse 0.6s ease infinite alternate; }
+.tuf-sub  { font-size: 12px; color: var(--green-mid); letter-spacing: 4px; }
+@keyframes tuf-in  { 0% { opacity:0; transform:scale(0.85); } 100% { opacity:1; transform:scale(1); } }
+@keyframes tuf-out { 0% { opacity:1; } 100% { opacity:0; } }
+@keyframes tuf-pulse { 0% { text-shadow: 0 0 20px var(--amber); } 100% { text-shadow: 0 0 40px var(--amber), 0 0 80px rgba(255,171,0,0.6); } }
+
 /* ===========================
    OFFLINE BANNER
    =========================== */
@@ -416,9 +428,48 @@ body::after {
 /* ===========================
    RESEARCH TAB
    =========================== */
-#research-layout { display: flex; height: 560px; min-height: 380px; gap: 0; }
-#panel-left-research { width: 22%; flex-shrink: 0; background: var(--panel-bg); border-right: var(--border); display: flex; flex-direction: column; overflow: hidden; }
-#panel-center-research { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+/* research layout — vertical scroll, no fixed height */
+#research-layout { min-height: 0; }
+.rsh-layout { display: flex; gap: 12px; align-items: flex-start; }
+.rsh-sidebar { width: 210px; flex-shrink: 0; background: var(--panel-bg); border: var(--border); padding: 10px; }
+.rsh-sb-hd { font-size: 10px; letter-spacing: 3px; color: var(--green-mid); text-transform: uppercase; border-bottom: var(--border); padding-bottom: 5px; margin-bottom: 8px; }
+.rsh-sb-sub { font-size: 10px; letter-spacing: 2px; color: var(--green-dim); text-transform: uppercase; margin: 10px 0 4px; }
+.rsh-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 6px; }
+.rsh-stat { border: var(--border); padding: 5px; }
+.rsh-stat-full { grid-column: span 2; }
+.rsh-stat-l { font-size: 10px; color: var(--green-dim); }
+.rsh-stat-v { font-size: 13px; color: var(--green); }
+.rsh-src-row, .rsh-recent-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--green-mid); padding: 2px 0; border-bottom: 1px solid #0a1a0a; }
+.rsh-empty { font-size: 11px; color: #1a3a1a; }
+.rsh-cards-area { flex: 1; min-width: 0; }
+.rsh-tier { margin-bottom: 10px; border: var(--border); }
+.rsh-tier-hd { font-size: 10px; letter-spacing: 3px; color: var(--green-mid); background: var(--panel-bg); padding: 6px 10px; text-transform: uppercase; border-bottom: var(--border); }
+.rsh-card { border-bottom: 1px solid #0a1a0a; cursor: pointer; transition: background 0.1s; padding: 0 10px; }
+.rsh-card:last-child { border-bottom: none; }
+.rsh-card:hover { background: rgba(0,230,118,0.03); }
+.rsh-card.open { background: rgba(0,200,100,0.05); }
+.rsh-card.done .rsh-card-row { opacity: 0.55; }
+.rsh-card-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; }
+.rsh-icon { color: var(--green-mid); font-size: 12px; min-width: 36px; }
+.rsh-name { flex: 1; color: var(--white); font-size: 13px; }
+.rsh-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+.rsh-cost-ok { font-size: 10px; color: var(--green-dim); }
+.rsh-cost-ng { font-size: 10px; color: var(--red); }
+.rsh-status { font-size: 10px; min-width: 72px; text-align: right; letter-spacing: 1px; }
+.rsh-ok   { color: var(--green); }
+.rsh-rdy  { color: var(--amber); }
+.rsh-lock { color: #2a3a2a; }
+.rsh-need { color: #1a4020; }
+.rsh-arrow { font-size: 10px; color: var(--green-dim); min-width: 12px; }
+.rsh-expand { padding: 10px 0 14px; border-top: 1px solid #0a2010; }
+.rsh-det-desc { font-size: 12px; color: var(--green-mid); margin-bottom: 8px; }
+.rsh-det-row { font-size: 11px; color: var(--green-dim); padding: 2px 0; }
+.rsh-det-cost { display: flex; justify-content: space-between; font-size: 12px; color: var(--green-mid); padding: 2px 0; }
+.rsh-det-sub { font-size: 10px; color: var(--green-dim); letter-spacing: 2px; text-transform: uppercase; margin: 8px 0 4px; }
+.rsh-viz-box { margin-top: 10px; border: 1px solid #3a2800; background: rgba(255,171,0,0.04); padding: 8px 10px; }
+.rsh-viz-hd { font-size: 10px; color: #7a5100; letter-spacing: 2px; margin-bottom: 5px; }
+.rsh-viz-bar { color: var(--amber); font-size: 12px; font-family: var(--font); margin: 2px 0; }
+.rsh-viz-stat { color: var(--amber); font-size: 13px; margin-top: 6px; letter-spacing: 1px; text-shadow: var(--amber-glow); }
 #panel-right-research { width: 25%; flex-shrink: 0; background: var(--panel-bg); border-left: var(--border); display: flex; flex-direction: column; overflow: hidden; }
 .r-panel-header { padding: 8px 12px; background: #041208; border-bottom: var(--border); font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--green); text-shadow: var(--glow); }
 .r-panel-header::before { content: '> '; }
@@ -555,6 +606,9 @@ body::after {
      APP (flex column, hidden until game starts)
      =========================== -->
 <div id="app">
+
+  <!-- ══ TAB UNLOCK FLASH BANNER ══ -->
+  <div id="tab-unlock-flash" class="tuf-hidden"></div>
 
   <!-- ══ TOP BAR ══ -->
   <div id="topbar">
