@@ -12,11 +12,9 @@ import urllib.request
 import urllib.error
 import io
 
-# Windows 콘솔 UTF-8 출력 설정
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-if sys.stderr.encoding != 'utf-8':
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+# Windows 콘솔 UTF-8 출력 강제 설정 (cp949 우회)
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 # ── 설정 ──────────────────────────────────────────────────────────────────
 API_KEY    = os.environ.get("SUNOAPI_KEY", "")
