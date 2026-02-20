@@ -127,6 +127,7 @@ function renderAll() {
   if (activeTab === 'automation') renderAutomationTab();
   updateWorldBuildings();
   if (typeof renderMilestonePanel === 'function') renderMilestonePanel();
+  if (typeof updateTopBarEra === 'function') updateTopBarEra(); // P4-6
   // BGM 페이즈 갱신 (unlock 상태 변화 반영)
   if (typeof BGM !== 'undefined' && BGM.playing) BGM.refreshPhase();
   // document.title 동적 업데이트
@@ -197,6 +198,9 @@ function startNewGame(slot) {
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};
   gs.msUpgrades = {};
+  gs.achievements = {};       // P4-2
+  gs.prestigeStars = {};      // P4-3
+  gs.prestigeCount = 0;       // P4-3
   gs.launches = 0;
   gs.moonstone = 0;
   gs.history = [];
