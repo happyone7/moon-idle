@@ -369,3 +369,229 @@ function sfxTabSwitch() {
   // 매우 짧고 미세한 삼각파 클릭 — UI 피드백
   playSfx('triangle', 220, 0.04, 0.02, 330);
 }
+
+/**
+ * 업적 달성 SFX  (S4-1)
+ * 축하하는 느낌의 상승 메이저 코드 아르페지오 (C5-E5-G5-C6)
+ * 총 ~600ms, OscillatorNode + GainNode attack-sustain-release 엔벨로프
+ *
+ * 연결점: 업적 언락 시점에서 호출
+ *         (예: js/tabs/achievements.js 또는 게임 상태 업적 체크 로직)
+ */
+function playSfx_achievementUnlock() {
+  if (typeof ensureAudio !== 'function') return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  if (typeof gs !== 'undefined' && gs.settings && !gs.settings.sound) return;
+
+  const now = ctx.currentTime;
+  // C5=523.25, E5=659.25, G5=783.99, C6=1046.50
+  const notes = [523.25, 659.25, 783.99, 1046.50];
+  const noteSpacing = 0.12;   // 각 음 간격 120ms
+  const attack  = 0.015;
+  const sustain = 0.10;
+  const release = 0.12;
+  const peakVol = 0.06;
+
+  notes.forEach((freq, i) => {
+    const startTime = now + i * noteSpacing;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = (i < 3) ? 'triangle' : 'sine';  // 마지막 음은 사인파로 부드럽게
+    osc.frequency.setValueAtTime(freq, startTime);
+
+    // attack → sustain → release 엔벨로프
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(peakVol, startTime + attack);
+    gain.gain.setValueAtTime(peakVol, startTime + attack + sustain);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + attack + sustain + release);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + attack + sustain + release + 0.01);
+  });
+
+  // 마지막에 쉬머 하모닉 (C6 옥타브 위 잔향)
+  const shimmerStart = now + notes.length * noteSpacing;
+  const shimOsc  = ctx.createOscillator();
+  const shimGain = ctx.createGain();
+  shimOsc.type = 'sine';
+  shimOsc.frequency.setValueAtTime(1046.50, shimmerStart);
+  shimOsc.frequency.linearRampToValueAtTime(1318.51, shimmerStart + 0.15); // E6까지 글라이드
+  shimGain.gain.setValueAtTime(0, shimmerStart);
+  shimGain.gain.linearRampToValueAtTime(peakVol * 0.5, shimmerStart + 0.02);
+  shimGain.gain.exponentialRampToValueAtTime(0.0001, shimmerStart + 0.18);
+  shimOsc.connect(shimGain);
+  shimGain.connect(ctx.destination);
+  shimOsc.start(shimmerStart);
+  shimOsc.stop(shimmerStart + 0.20);
+}
+window.playSfx_achievementUnlock = playSfx_achievementUnlock;
+
+/**
+ * 프레스티지 리셋 SFX  (S4-2)
+ * "우주적" 임팩트 — 깊은 하강음 + 상승 쉬머
+ * 총 ~1200ms, 다중 오실레이터: 베이스 스위프 다운 + 고주파 스위프 업
+ *
+ * 연결점: 프레스티지/리셋 실행 시점에서 호출
+ *         (예: js/tabs/prestige.js doPrestige() 또는 리셋 확인 후)
+ */
+function playSfx_prestigeReset() {
+  if (typeof ensureAudio !== 'function') return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  if (typeof gs !== 'undefined' && gs.settings && !gs.settings.sound) return;
+
+  const now = ctx.currentTime;
+
+  // ── 레이어 1: 베이스 스위프 다운 (깊고 묵직한 하강) ──
+  const bassOsc  = ctx.createOscillator();
+  const bassGain = ctx.createGain();
+  bassOsc.type = 'sawtooth';
+  bassOsc.frequency.setValueAtTime(220, now);                         // A3에서 시작
+  bassOsc.frequency.exponentialRampToValueAtTime(55, now + 0.6);      // A1까지 하강
+  bassGain.gain.setValueAtTime(0, now);
+  bassGain.gain.linearRampToValueAtTime(0.05, now + 0.03);            // 빠른 어택
+  bassGain.gain.setValueAtTime(0.05, now + 0.25);
+  bassGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);     // 페이드아웃
+  bassOsc.connect(bassGain);
+  bassGain.connect(ctx.destination);
+  bassOsc.start(now);
+  bassOsc.stop(now + 0.70);
+
+  // ── 레이어 2: 서브 베이스 럼블 (추가 깊이감) ──
+  const subOsc  = ctx.createOscillator();
+  const subGain = ctx.createGain();
+  subOsc.type = 'sine';
+  subOsc.frequency.setValueAtTime(110, now);
+  subOsc.frequency.exponentialRampToValueAtTime(30, now + 0.5);
+  subGain.gain.setValueAtTime(0, now);
+  subGain.gain.linearRampToValueAtTime(0.04, now + 0.02);
+  subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+  subOsc.connect(subGain);
+  subGain.connect(ctx.destination);
+  subOsc.start(now);
+  subOsc.stop(now + 0.60);
+
+  // ── 레이어 3: 상승 쉬머 (우주적 느낌, 딜레이 후 시작) ──
+  const shimmerDelay = 0.35;
+  const shimOsc1  = ctx.createOscillator();
+  const shimGain1 = ctx.createGain();
+  shimOsc1.type = 'sine';
+  shimOsc1.frequency.setValueAtTime(880, now + shimmerDelay);            // A5에서 시작
+  shimOsc1.frequency.exponentialRampToValueAtTime(3520, now + shimmerDelay + 0.7); // A7까지 상승
+  shimGain1.gain.setValueAtTime(0, now + shimmerDelay);
+  shimGain1.gain.linearRampToValueAtTime(0.03, now + shimmerDelay + 0.08);
+  shimGain1.gain.setValueAtTime(0.03, now + shimmerDelay + 0.45);
+  shimGain1.gain.exponentialRampToValueAtTime(0.0001, now + shimmerDelay + 0.80);
+  shimOsc1.connect(shimGain1);
+  shimGain1.connect(ctx.destination);
+  shimOsc1.start(now + shimmerDelay);
+  shimOsc1.stop(now + shimmerDelay + 0.85);
+
+  // ── 레이어 4: 두 번째 쉬머 (5도 위, 하모닉 보강) ──
+  const shimOsc2  = ctx.createOscillator();
+  const shimGain2 = ctx.createGain();
+  shimOsc2.type = 'sine';
+  shimOsc2.frequency.setValueAtTime(1320, now + shimmerDelay + 0.05);   // E6
+  shimOsc2.frequency.exponentialRampToValueAtTime(4400, now + shimmerDelay + 0.75); // 상승
+  shimGain2.gain.setValueAtTime(0, now + shimmerDelay + 0.05);
+  shimGain2.gain.linearRampToValueAtTime(0.02, now + shimmerDelay + 0.12);
+  shimGain2.gain.setValueAtTime(0.02, now + shimmerDelay + 0.50);
+  shimGain2.gain.exponentialRampToValueAtTime(0.0001, now + shimmerDelay + 0.85);
+  shimOsc2.connect(shimGain2);
+  shimGain2.connect(ctx.destination);
+  shimOsc2.start(now + shimmerDelay + 0.05);
+  shimOsc2.stop(now + shimmerDelay + 0.90);
+}
+window.playSfx_prestigeReset = playSfx_prestigeReset;
+
+/**
+ * 페이즈 클리어 팡파레 SFX  (S4-3)
+ * 승리의 팡파레 — 빠른 상승 노트 시퀀스 → 서스테인 코드
+ * 총 ~1000ms, 클래식 게임 "레벨 클리어" 스타일
+ *
+ * 연결점: 게임 페이즈(early→mid→late→post_moon) 전환 완료 시 호출
+ *         (예: BGM.refreshPhase() 내 페이즈 변경 감지 시,
+ *          또는 진행도 마일스톤 달성 시)
+ */
+function playSfx_phaseClear() {
+  if (typeof ensureAudio !== 'function') return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  if (typeof gs !== 'undefined' && gs.settings && !gs.settings.sound) return;
+
+  const now = ctx.currentTime;
+
+  // ── 파트 1: 빠른 상승 노트 시퀀스 (G4-B4-D5-G5) ──
+  const fanfareNotes = [
+    { freq: 392.00, time: 0,    dur: 0.08, type: 'square',   vol: 0.04 },  // G4
+    { freq: 493.88, time: 0.08, dur: 0.08, type: 'square',   vol: 0.045 }, // B4
+    { freq: 587.33, time: 0.16, dur: 0.08, type: 'square',   vol: 0.05 },  // D5
+    { freq: 783.99, time: 0.24, dur: 0.10, type: 'triangle', vol: 0.055 }, // G5 (약간 길게)
+  ];
+
+  fanfareNotes.forEach(note => {
+    const startTime = now + note.time;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = note.type;
+    osc.frequency.setValueAtTime(note.freq, startTime);
+
+    // 빠른 어택 + 짧은 릴리즈
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(note.vol, startTime + 0.01);
+    gain.gain.setValueAtTime(note.vol, startTime + note.dur * 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + note.dur);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + note.dur + 0.01);
+  });
+
+  // ── 파트 2: 서스테인 메이저 코드 (G5+B5+D6, 화음 동시 발음) ──
+  const chordStart = now + 0.38;
+  const chordNotes = [
+    { freq: 783.99, type: 'triangle', vol: 0.04 },  // G5
+    { freq: 987.77, type: 'sine',     vol: 0.03 },  // B5
+    { freq: 1174.66, type: 'sine',    vol: 0.025 },  // D6
+  ];
+  const chordAttack  = 0.02;
+  const chordSustain = 0.30;
+  const chordRelease = 0.28;
+
+  chordNotes.forEach(note => {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = note.type;
+    osc.frequency.setValueAtTime(note.freq, chordStart);
+
+    gain.gain.setValueAtTime(0, chordStart);
+    gain.gain.linearRampToValueAtTime(note.vol, chordStart + chordAttack);
+    gain.gain.setValueAtTime(note.vol, chordStart + chordAttack + chordSustain);
+    gain.gain.exponentialRampToValueAtTime(0.0001, chordStart + chordAttack + chordSustain + chordRelease);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(chordStart);
+    osc.stop(chordStart + chordAttack + chordSustain + chordRelease + 0.01);
+  });
+
+  // ── 파트 3: 마무리 옥타브 강조 (G6 — 짧은 스파클) ──
+  const sparkleStart = now + 0.42;
+  const sparkleOsc  = ctx.createOscillator();
+  const sparkleGain = ctx.createGain();
+  sparkleOsc.type = 'sine';
+  sparkleOsc.frequency.setValueAtTime(1567.98, sparkleStart); // G6
+  sparkleGain.gain.setValueAtTime(0, sparkleStart);
+  sparkleGain.gain.linearRampToValueAtTime(0.02, sparkleStart + 0.01);
+  sparkleGain.gain.exponentialRampToValueAtTime(0.0001, sparkleStart + 0.20);
+  sparkleOsc.connect(sparkleGain);
+  sparkleGain.connect(ctx.destination);
+  sparkleOsc.start(sparkleStart);
+  sparkleOsc.stop(sparkleStart + 0.22);
+}
+window.playSfx_phaseClear = playSfx_phaseClear;
