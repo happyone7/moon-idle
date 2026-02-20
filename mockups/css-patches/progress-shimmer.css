@@ -1,0 +1,90 @@
+/* ==============================================
+   Progress bar shimmer + leading edge
+   — 전 탭 공통 적용 (v7c mockup 기준)
+   Sprint 3 TA 패치
+   ============================================== */
+
+/* --- Shimmer animation: 좌→우 gradient 이동 --- */
+@keyframes progress-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* --- Base progress fill with shimmer --- */
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00994d, #00e676, #00994d);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  position: relative;
+}
+
+/* --- Leading edge: 2px white glow at fill tip --- */
+.prog-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: white;
+  box-shadow:
+    0 0 4px rgba(255, 255, 255, 0.9),
+    0 0 8px var(--green, #00e676);
+  pointer-events: none;
+}
+
+/* --- Amber variant (연구 열 관리 등) --- */
+.amber-fill {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  position: relative;
+}
+
+.amber-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #fff8e1;
+  box-shadow:
+    0 0 4px rgba(255, 248, 225, 0.9),
+    0 0 8px var(--amber, #ffc107);
+  pointer-events: none;
+}
+
+/* --- Risk tag: 위험 표시 + 펄스 애니메이션 --- */
+.risk-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid #5c0a15;
+  border-radius: 2px;
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--red, #ff1744);
+  margin-bottom: 3px;
+  animation: pulse-red 2.5s ease-in-out infinite;
+}
+
+.risk-tag::before {
+  content: '\26A0';  /* ⚠ */
+  font-size: 10px;
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    color: var(--red, #ff1744);
+    border-color: #5c0a15;
+    text-shadow: 0 0 4px rgba(255, 23, 68, 0.3);
+  }
+  50% {
+    color: #7a0020;
+    border-color: #2a0510;
+    text-shadow: none;
+  }
+}
