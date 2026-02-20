@@ -194,6 +194,14 @@ primordial-station/.worktrees/wt-dev-build\       ← dev/build
 - 에이전트/스킬 변경 시 노션 "에이전트 - 스킬 매핑" 페이지 동기화 필수
 - 스프린트 종료 후 각 팀장이 게임 플레이 후 개선점 보고서 PPT 3페이지 이내 작성
 
+## Skills
+
+| 스킬 | 설명 |
+|------|------|
+| verify-moonidle-core | MoonIdle 핵심 게임 로직 일관성 검증 (게임 상태, 데이터 정합성, 탭 시스템, 경제 밸런싱) |
+| verify-comfyui-workflows | ComfyUI 워크플로우 및 배치 스크립트 일관성 검증 (JSON 스키마, 시드 고정, 파일 명명 규칙) |
+| verify-design-consistency | 디자인 시스템 통일성 검증 (CSS 토큰, 아이콘 형식, 클래스 네이밍, ComfyUI 프롬프트) |
+
 ---
 
 ## CLAUDE.md / MEMORY.md 관리 원칙

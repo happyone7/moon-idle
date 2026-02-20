@@ -31,6 +31,7 @@ argument-hint: "[선택사항: 특정 verify 스킬 이름]"
 |---|------|------|
 | 1 | `verify-moonidle-core` | MoonIdle 핵심 게임 로직 일관성 검증 (게임 상태, 데이터 정합성, 탭 시스템, 경제 밸런싱) |
 | 2 | `verify-comfyui-workflows` | ComfyUI 워크플로우 및 배치 스크립트 일관성 검증 (JSON 스키마, 시드 고정, 파일 명명 규칙) |
+| 3 | `verify-design-consistency` | 디자인 시스템 통일성 검증 (CSS 토큰, 아이콘 형식, 클래스 네이밍, ComfyUI 프롬프트) |
 
 ## 워크플로우
 
