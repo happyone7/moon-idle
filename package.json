@@ -1,0 +1,16 @@
+{
+  "name": "wt-dev-qa",
+  "version": "1.0.0",
+  "description": "> 달에 가기 위한 로켓을 조립하는 방치형(Idle) 웹게임",
+  "main": "playwright.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
+  }
+}
