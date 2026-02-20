@@ -44,7 +44,7 @@
   --building-special: #081408;
   --solar-bg: #060f20;
   /* ─── UI 크기 표준 (U8-5) ─────────────────────── */
-  --fs-xs:   11px;   /* 레이트, 서브라벨, 극소 */
+  --fs-xs:   12px;   /* 게임 최소 글씨 크기 — 이 이하 금지 */
   --fs-sm:   12px;   /* 카테고리헤더, 보조정보 */
   --fs-md:   14px;   /* 이름, 본문, 일반텍스트 */
   --fs-lg:   16px;   /* 값, 강조수치 */
@@ -251,7 +251,7 @@ button:not(:disabled) { cursor: pointer; }
 }
 .rl-fund-title {
   font-size: var(--fs-xs);
-  color: var(--text-label);
+  color: var(--text-primary);
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-bottom: 5px;
@@ -369,6 +369,7 @@ body.tab-production #world-bg {
   overflow-y: hidden;
 }
 body.tab-production #world-bg:active { cursor: grabbing; }
+body.tab-production #ww { cursor: grab; }
 /* 발사 통제 탭에서는 좌측 자원 패널 + 우측 인원 패널 숨김 */
 body.tab-launch #res-left { display: none; }
 body.tab-launch #rp { display: none; }

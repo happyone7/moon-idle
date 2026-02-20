@@ -1329,12 +1329,12 @@ function initWorldDrag() {
     drag = true;
     dragX = e.pageX - wb.offsetLeft;
     dragSL = wb.scrollLeft;
-    wb.style.cursor = 'grabbing';
+    document.body.style.cursor = 'grabbing';
   });
 
   document.addEventListener('mouseup', () => {
     drag = false;
-    if (wb) wb.style.cursor = 'grab';
+    document.body.style.cursor = '';
   });
 
   document.addEventListener('mousemove', e => {

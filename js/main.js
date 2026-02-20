@@ -70,9 +70,9 @@ function renderResources() {
 
   let html = `
     <div class="rl-fund-sect">
-      <div class="rl-fund-title">자금 <span class="rl-en">(FUND)</span></div>
+      <div class="rl-fund-title">기금 <span class="rl-en">(FUND)</span></div>
       <div class="rl-fund-main">
-        <span class="rl-fund-val">&#8361; ${fmtComma(moneyVal)}</span>
+        <span class="rl-fund-val">$ ${fmtComma(moneyVal)}</span>
         <span class="rl-fund-rate">${moneyRateStr}</span>
       </div>
       <div class="rl-bar"><div class="rl-bar-fill amber" style="width:${moneyPct.toFixed(1)}%"></div></div>
