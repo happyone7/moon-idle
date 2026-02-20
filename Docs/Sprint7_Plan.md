@@ -102,18 +102,18 @@ const ADDON_POSITIONS = {
 
 ## 완료 기준 체크리스트
 
-- [ ] P7-1: 오버레이 팝업이 처음 열릴 때부터 올바른 위치에 표시됨
-- [ ] P7-1: 구매/업그레이드 후에도 팝업 위치 변화 없음
-- [ ] P7-2: 애드온 업그레이드 가격이 기본 업그레이드 후반 단계보다 훨씬 높음
-- [ ] P7-3: 애드온 건물이 부모 건물에 붙어있는 느낌으로 표시됨
+- [x] P7-1: 오버레이 팝업이 처음 열릴 때부터 올바른 위치에 표시됨
+- [x] P7-1: 구매/업그레이드 후에도 팝업 위치 변화 없음
+- [x] P7-2: 애드온 업그레이드 가격이 기본 업그레이드 후반 단계보다 훨씬 높음
+- [x] P7-3: 애드온 건물이 부모 건물에 붙어있는 느낌으로 표시됨
 - [x] P7-4: ops 업그레이드 6종 기반부 12자 맞춤 확인
 - [x] P7-4: refinery 3종 기반부 10자 맞춤 확인
 - [x] P7-4: scaffold 기반부 9자 맞춤 확인
 - [x] P7-5: world-bld font-family Courier New로 통일, 폴백 해소
-- [ ] P6-3: K/M/B 경제 밸런싱 QA 검증 (game-data/game-state/main.js)
-- [ ] QA: Playwright 스모크 테스트 (P7-5 + P6-3 포함 전체)
-- [ ] 총괄PD 시각 확인 (housing 우측 돌출 해소 여부)
-- [ ] 총괄PD 보고 후 master 머지 대기
+- [x] P6-3: K/M/B 경제 밸런싱 QA 검증 (game-data/game-state/main.js)
+- [x] QA: Playwright 스모크 테스트 전항목 PASS (sprint7_qa_final.md)
+- [x] 총괄PD 시각 확인 — Housing/OPS CTR 우측 돌출 해소 확인 (2026-02-21)
+- [x] master 머지 완료
 
 ---
 
