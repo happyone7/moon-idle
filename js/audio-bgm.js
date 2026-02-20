@@ -595,3 +595,208 @@ function playSfx_phaseClear() {
   sparkleOsc.stop(sparkleStart + 0.22);
 }
 window.playSfx_phaseClear = playSfx_phaseClear;
+
+/**
+ * 발사 실패 폭발 SFX  (S5-1)
+ * 저주파 폭발음 + 고주파 파편음 + 잔향 페이드아웃
+ * 총 ~1000ms, 다중 오실레이터: 베이스 폭발(sawtooth) + 파편 노이즈(square burst) + 잔향
+ *
+ * 사운드 디자인:
+ *   레이어 1: 저주파 폭발음 (60-120Hz sawtooth, 0.3초)
+ *   레이어 2: 고주파 파편음 (800-2000Hz square burst, 0.2초)
+ *   레이어 3: 잔향 페이드아웃 (서브 베이스 럼블, 0.5초)
+ *
+ * 연결점: 발사 실패 처리 시점에서 호출
+ *         (예: js/tabs/launch.js 발사 실패 판정 후)
+ */
+function playSfx_launchFail() {
+  if (typeof ensureAudio !== 'function') return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  if (typeof gs !== 'undefined' && gs.settings && !gs.settings.sound) return;
+
+  const now = ctx.currentTime;
+
+  // ── 레이어 1: 저주파 폭발음 (60-120Hz sawtooth, 0.3초) ──
+  // 묵직한 폭발 임팩트 — 120Hz에서 시작, 60Hz로 급강하
+  const boomOsc  = ctx.createOscillator();
+  const boomGain = ctx.createGain();
+  boomOsc.type = 'sawtooth';
+  boomOsc.frequency.setValueAtTime(120, now);
+  boomOsc.frequency.exponentialRampToValueAtTime(60, now + 0.30);
+  boomGain.gain.setValueAtTime(0, now);
+  boomGain.gain.linearRampToValueAtTime(0.07, now + 0.01);       // 극히 빠른 어택
+  boomGain.gain.setValueAtTime(0.07, now + 0.08);
+  boomGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.30); // 0.3초 디케이
+  boomOsc.connect(boomGain);
+  boomGain.connect(ctx.destination);
+  boomOsc.start(now);
+  boomOsc.stop(now + 0.32);
+
+  // ── 레이어 1b: 서브 베이스 보강 (40-80Hz sine, 깊이감) ──
+  const subOsc  = ctx.createOscillator();
+  const subGain = ctx.createGain();
+  subOsc.type = 'sine';
+  subOsc.frequency.setValueAtTime(80, now);
+  subOsc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+  subGain.gain.setValueAtTime(0, now);
+  subGain.gain.linearRampToValueAtTime(0.05, now + 0.01);
+  subGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+  subOsc.connect(subGain);
+  subGain.connect(ctx.destination);
+  subOsc.start(now);
+  subOsc.stop(now + 0.30);
+
+  // ── 레이어 2: 고주파 파편음 (800-2000Hz square burst, 0.2초) ──
+  // 금속 파편이 흩어지는 느낌 — 약간의 딜레이 후 시작
+  const debrisDelay = 0.04;
+  const debrisOsc  = ctx.createOscillator();
+  const debrisGain = ctx.createGain();
+  debrisOsc.type = 'square';
+  debrisOsc.frequency.setValueAtTime(2000, now + debrisDelay);
+  debrisOsc.frequency.exponentialRampToValueAtTime(800, now + debrisDelay + 0.20);
+  debrisGain.gain.setValueAtTime(0, now + debrisDelay);
+  debrisGain.gain.linearRampToValueAtTime(0.03, now + debrisDelay + 0.008);
+  debrisGain.gain.setValueAtTime(0.03, now + debrisDelay + 0.04);
+  debrisGain.gain.exponentialRampToValueAtTime(0.0001, now + debrisDelay + 0.20);
+  debrisOsc.connect(debrisGain);
+  debrisGain.connect(ctx.destination);
+  debrisOsc.start(now + debrisDelay);
+  debrisOsc.stop(now + debrisDelay + 0.22);
+
+  // ── 레이어 2b: 두 번째 파편 (1200-500Hz, 랜덤 느낌 보강) ──
+  const debris2Delay = 0.08;
+  const debris2Osc  = ctx.createOscillator();
+  const debris2Gain = ctx.createGain();
+  debris2Osc.type = 'sawtooth';
+  debris2Osc.frequency.setValueAtTime(1200, now + debris2Delay);
+  debris2Osc.frequency.exponentialRampToValueAtTime(500, now + debris2Delay + 0.15);
+  debris2Gain.gain.setValueAtTime(0, now + debris2Delay);
+  debris2Gain.gain.linearRampToValueAtTime(0.02, now + debris2Delay + 0.005);
+  debris2Gain.gain.exponentialRampToValueAtTime(0.0001, now + debris2Delay + 0.18);
+  debris2Osc.connect(debris2Gain);
+  debris2Gain.connect(ctx.destination);
+  debris2Osc.start(now + debris2Delay);
+  debris2Osc.stop(now + debris2Delay + 0.20);
+
+  // ── 레이어 3: 잔향 페이드아웃 (저주파 럼블 tail, 0.5초) ──
+  // 폭발 잔향이 서서히 사라지는 느낌
+  const tailDelay = 0.15;
+  const tailOsc  = ctx.createOscillator();
+  const tailGain = ctx.createGain();
+  tailOsc.type = 'sine';
+  tailOsc.frequency.setValueAtTime(55, now + tailDelay);            // A1
+  tailOsc.frequency.exponentialRampToValueAtTime(30, now + tailDelay + 0.50);
+  tailGain.gain.setValueAtTime(0, now + tailDelay);
+  tailGain.gain.linearRampToValueAtTime(0.04, now + tailDelay + 0.05);
+  tailGain.gain.setValueAtTime(0.04, now + tailDelay + 0.15);
+  tailGain.gain.exponentialRampToValueAtTime(0.0001, now + tailDelay + 0.50);
+  tailOsc.connect(tailGain);
+  tailGain.connect(ctx.destination);
+  tailOsc.start(now + tailDelay);
+  tailOsc.stop(now + tailDelay + 0.52);
+
+  // ── 레이어 3b: 고주파 잔향 쉬머 (사라지는 금속 울림) ──
+  const shimDelay = 0.20;
+  const shimOsc  = ctx.createOscillator();
+  const shimGain = ctx.createGain();
+  shimOsc.type = 'triangle';
+  shimOsc.frequency.setValueAtTime(600, now + shimDelay);
+  shimOsc.frequency.exponentialRampToValueAtTime(200, now + shimDelay + 0.40);
+  shimGain.gain.setValueAtTime(0, now + shimDelay);
+  shimGain.gain.linearRampToValueAtTime(0.015, now + shimDelay + 0.03);
+  shimGain.gain.exponentialRampToValueAtTime(0.0001, now + shimDelay + 0.45);
+  shimOsc.connect(shimGain);
+  shimGain.connect(ctx.destination);
+  shimOsc.start(now + shimDelay);
+  shimOsc.stop(now + shimDelay + 0.47);
+}
+window.playSfx_launchFail = playSfx_launchFail;
+
+/**
+ * 오프라인 복귀 알림 SFX  (S5-2)
+ * 긍정적인 알림음 — 상승 아르페지오 3음 (C5->E5->G5) + 글로우 tail
+ * 총 ~540ms, 밝고 환영하는 느낌의 사인파 시퀀스
+ *
+ * 사운드 디자인:
+ *   파트 1: 상승 아르페지오 3음 (C5=523.25, E5=659.25, G5=783.99)
+ *           각 0.08초, sine wave, 빠른 어택 + 짧은 릴리즈
+ *   파트 2: 글로우 tail (G5 서스테인 + 옥타브 하모닉, 0.3초 페이드)
+ *
+ * 연결점: 오프라인 복귀 보고서 모달 열릴 때 1회 재생
+ *         (예: js/main.js 또는 js/game-state.js 오프라인 수익 계산 후
+ *          모달 표시 시점에서 호출)
+ */
+function playSfx_offlineReturn() {
+  if (typeof ensureAudio !== 'function') return;
+  const ctx = ensureAudio();
+  if (!ctx) return;
+  if (typeof gs !== 'undefined' && gs.settings && !gs.settings.sound) return;
+
+  const now = ctx.currentTime;
+
+  // ── 파트 1: 상승 아르페지오 3음 (C5->E5->G5) ──
+  // 밝고 긍정적인 "돌아왔어요" 알림
+  const notes = [
+    { freq: 523.25, time: 0 },      // C5
+    { freq: 659.25, time: 0.08 },   // E5
+    { freq: 783.99, time: 0.16 },   // G5
+  ];
+  const noteDur = 0.08;
+  const noteAttack  = 0.008;
+  const noteSustain = 0.04;
+  const noteRelease = 0.028;  // noteDur = attack + sustain + release
+  const noteVol = 0.05;
+
+  notes.forEach(note => {
+    const startTime = now + note.time;
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(note.freq, startTime);
+
+    // attack -> sustain -> release 엔벨로프
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(noteVol, startTime + noteAttack);
+    gain.gain.setValueAtTime(noteVol, startTime + noteAttack + noteSustain);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + noteAttack + noteSustain + noteRelease);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + noteDur + 0.01);
+  });
+
+  // ── 파트 2: 글로우 tail (G5 서스테인 + 옥타브 하모닉 C6, 0.3초 페이드) ──
+  // 마지막 음이 부드럽게 퍼지는 잔향 — 따뜻하고 환영하는 느낌
+  const glowStart = now + 0.22;
+
+  // G5 서스테인 글로우
+  const glowOsc1  = ctx.createOscillator();
+  const glowGain1 = ctx.createGain();
+  glowOsc1.type = 'sine';
+  glowOsc1.frequency.setValueAtTime(783.99, glowStart);  // G5
+  glowGain1.gain.setValueAtTime(0, glowStart);
+  glowGain1.gain.linearRampToValueAtTime(0.035, glowStart + 0.02);
+  glowGain1.gain.setValueAtTime(0.035, glowStart + 0.10);
+  glowGain1.gain.exponentialRampToValueAtTime(0.0001, glowStart + 0.30);
+  glowOsc1.connect(glowGain1);
+  glowGain1.connect(ctx.destination);
+  glowOsc1.start(glowStart);
+  glowOsc1.stop(glowStart + 0.32);
+
+  // C6 옥타브 하모닉 (5도 위 보강 — 메이저 코드 느낌 유지)
+  const glowOsc2  = ctx.createOscillator();
+  const glowGain2 = ctx.createGain();
+  glowOsc2.type = 'sine';
+  glowOsc2.frequency.setValueAtTime(1046.50, glowStart + 0.03);  // C6
+  glowGain2.gain.setValueAtTime(0, glowStart + 0.03);
+  glowGain2.gain.linearRampToValueAtTime(0.02, glowStart + 0.06);
+  glowGain2.gain.setValueAtTime(0.02, glowStart + 0.12);
+  glowGain2.gain.exponentialRampToValueAtTime(0.0001, glowStart + 0.30);
+  glowOsc2.connect(glowGain2);
+  glowGain2.connect(ctx.destination);
+  glowOsc2.start(glowStart + 0.03);
+  glowOsc2.stop(glowStart + 0.32);
+}
+window.playSfx_offlineReturn = playSfx_offlineReturn;
