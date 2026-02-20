@@ -1,8 +1,8 @@
 # Sprint 7 계획서 — 팝업/애드온/밸런싱 버그 수정
 
-**기간**: 2026-02-20
+**기간**: 2026-02-20 ~ 2026-02-21
 **브랜치**: `sprint/7` (sprint/6 완료 후 master 기준 분기 예정)
-**목표**: 총괄PD 베타테스트 중 보고된 UI/게임플레이 버그 3종 수정
+**목표**: 총괄PD 베타테스트 중 보고된 UI/게임플레이 버그 3종 수정 + ASCII 기반부 우측 돌출 수정 + 폰트 렌더링 통일 + K/M/B 경제 밸런싱
 
 ---
 
@@ -64,6 +64,15 @@ const ADDON_POSITIONS = {
 // 수정 목표: 갭 최소화 (0~5px)
 ```
 
+### P7-5 (UI팀장): world-bld 폰트 통일 — 박스/블록 문자 동일 폭 보장
+**파일**: `index.html` (CSS)
+**내용**: `.world-bld` 요소의 font-family를 `var(--font)` (Share Tech Mono)에서 Courier New 기반 시스템 모노스페이스로 변경
+- **원인**: Share Tech Mono의 unicode-range(U+0000~00FF)가 박스 드로잉 문자(U+2500~257F)를 커버하지 않아 ╔═╗║╚╝가 Courier New로 폴백 → 블록 문자(█, U+2588)와 다른 폭 → 건물 아트 우측 돌출
+- **수정**: `font-family: 'Courier New', Consolas, 'DejaVu Sans Mono', monospace;`
+- **커밋**: `6eae7f9`, `f8b600f` (sprint/7 머지)
+
+---
+
 ### P7-4 (프로그래밍팀장): ASCII 건물 기반부 폭 불일치 추가 수정
 **파일**: `js/world.js`
 **내용**: Sprint 6에서 미처 발견하지 못한 MISMATCH 3개 그룹 (10개 인스턴스) 수정
@@ -83,6 +92,12 @@ const ADDON_POSITIONS = {
 | wb-refinery tier 0  | ~327 | `'███████████'` | 10 | 11 | `'██████████'` |
 | _scaffoldAscii      | ~632 | `'  ████████'` |  9 | 10 | `'  ███████'` |
 
+### P6-3 (프로그래밍팀장): K/M/B 경제 밸런싱 구현 *(다른 세션에서 sprint/7에 직접 커밋)*
+**파일**: `js/game-data.js`, `js/game-state.js`, `js/main.js`
+**내용**: RES_MAX 상향, BUILDING_EXPONENTS, baseRate/baseCost 전면 재조정 (K/M/B 단위 경제 밸런싱)
+- **커밋**: `92124cf` — 기획팀장 수치 설계서(706a1e2)에 기반한 구현
+- **비고**: Sprint 6 P6-3 작업이 sprint/7에 커밋됨. 별도 QA 필요.
+
 ---
 
 ## 완료 기준 체크리스트
@@ -91,10 +106,13 @@ const ADDON_POSITIONS = {
 - [ ] P7-1: 구매/업그레이드 후에도 팝업 위치 변화 없음
 - [ ] P7-2: 애드온 업그레이드 가격이 기본 업그레이드 후반 단계보다 훨씬 높음
 - [ ] P7-3: 애드온 건물이 부모 건물에 붙어있는 느낌으로 표시됨
-- [ ] P7-4: ops 업그레이드 6종 기반부 12자 맞춤 확인
-- [ ] P7-4: refinery 3종 기반부 10자 맞춤 확인
-- [ ] P7-4: scaffold 기반부 9자 맞춤 확인
-- [ ] QA: 시각 확인 (Playwright 스모크 테스트)
+- [x] P7-4: ops 업그레이드 6종 기반부 12자 맞춤 확인
+- [x] P7-4: refinery 3종 기반부 10자 맞춤 확인
+- [x] P7-4: scaffold 기반부 9자 맞춤 확인
+- [x] P7-5: world-bld font-family Courier New로 통일, 폴백 해소
+- [ ] P6-3: K/M/B 경제 밸런싱 QA 검증 (game-data/game-state/main.js)
+- [ ] QA: Playwright 스모크 테스트 (P7-5 + P6-3 포함 전체)
+- [ ] 총괄PD 시각 확인 (housing 우측 돌출 해소 여부)
 - [ ] 총괄PD 보고 후 master 머지 대기
 
 ---
@@ -104,5 +122,6 @@ const ADDON_POSITIONS = {
 ```
 master (sprint/6 머지 후)
 └── sprint/7 ← sprint/6 기준 신규 분기 (master 컨펌 전 착수)
-     └── dev/programmer (P7-1, P7-2, P7-3, P7-4)
+     ├── dev/programmer (P7-1, P7-2, P7-3, P7-4, P6-3)
+     └── dev/ui (P7-5)
 ```
