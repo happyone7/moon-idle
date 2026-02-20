@@ -388,7 +388,7 @@ function renderAssemblyTab() {
   renderBomTable(selClass);
 
   // Parts checklist
-  let partsHtml = '';
+  partsHtml = '';
   PARTS.forEach(p => {
     const done = gs.parts[p.id];
     const cost = getPartCost(p);
@@ -407,7 +407,7 @@ function renderAssemblyTab() {
   if (checklist) checklist.innerHTML = partsHtml;
 
   // Quality selector — with tier sub-labels (time + cost multiplier)
-  let qualHtml = '';
+  qualHtml = '';
   QUALITIES.forEach(q => {
     const active = gs.assembly.selectedQuality === q.id;
     const subLabel = `${fmtTime(q.timeSec)} · x${q.costMult} 비용`;
