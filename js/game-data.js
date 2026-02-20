@@ -270,3 +270,332 @@ const MILESTONES = [
     check: gs => Array.isArray(gs.history) && gs.history.some(h => h.qualityId === 'elite'),
   },
 ];
+
+// ============================================================
+//  ROCKET CLASSES — 로켓 클래스별 스펙 (D3-1)
+//  totalMassKg: 총중량(kg), thrustKN: 추력(kN),
+//  ispSec: 비추력(s), deltaVMs: 델타V(m/s)
+//  unlock: 해금 조건 (null = 즉시 해금)
+// ============================================================
+const ROCKET_CLASSES = [
+  { id:'nano',        name:'NANO',        icon:'[N]',  totalMassKg:850,    thrustKN:18,    ispSec:285, deltaVMs:2840,  unlock:null,            desc:'초소형 실험 로켓. 해금 조건 없이 즉시 사용 가능.' },
+  { id:'small',       name:'SMALL',       icon:'[S]',  totalMassKg:3200,   thrustKN:78,    ispSec:305, deltaVMs:4200,  unlock:'phase_2',       desc:'소형 발사체. Phase 2 완료 시 해금.' },
+  { id:'medium',      name:'MEDIUM',      icon:'[M]',  totalMassKg:12000,  thrustKN:310,   ispSec:320, deltaVMs:5800,  unlock:'phase_3',       desc:'중형 발사체. Phase 3 완료 시 해금.' },
+  { id:'heavy',       name:'HEAVY',       icon:'[H]',  totalMassKg:45000,  thrustKN:1200,  ispSec:335, deltaVMs:7200,  unlock:'phase_4',       desc:'대형 발사체. Phase 4 완료 시 해금.' },
+  { id:'super_heavy', name:'SUPER HEAVY', icon:'[SH]', totalMassKg:120000, thrustKN:3500,  ispSec:350, deltaVMs:9800,  unlock:'phase_5',       desc:'초대형 발사체. Phase 5 완료 시 해금.' },
+];
+
+// ============================================================
+//  ROCKET BOM (Bill of Materials) — 로켓 클래스별 부품 목록 (D3-2)
+//  baseBom: NANO 클래스 기준 부품 명세
+//  scaleFactor: 다른 클래스는 NANO 기준 중량 비례 스케일링
+// ============================================================
+const ROCKET_BOM = {
+  // NANO 클래스 기준 BOM (기본 부품 목록)
+  baseBom: [
+    {
+      id: 'fuselage_ring',
+      name: '기체 구조 링',
+      icon: '[RNG]',
+      material: 'Al-7075',
+      qty: 8,
+      unitMassKg: 30,
+      totalMassKg: 240,
+      category: 'structure',
+      desc: '로켓 동체를 구성하는 구조 링. 8개를 적층하여 기체 외벽 형성.',
+    },
+    {
+      id: 'lox_tank_shell',
+      name: 'LOX 탱크 쉘',
+      icon: '[LOX]',
+      material: 'Al-2219',
+      qty: 1,
+      unitMassKg: 80,
+      totalMassKg: 80,
+      category: 'propellant',
+      desc: '액체 산소 저장 탱크. 극저온 내성 알루미늄 합금 사용.',
+    },
+    {
+      id: 'rp1_tank_shell',
+      name: 'RP-1 탱크 쉘',
+      icon: '[RP1]',
+      material: 'Al-2219',
+      qty: 1,
+      unitMassKg: 60,
+      totalMassKg: 60,
+      category: 'propellant',
+      desc: '등유(RP-1) 연료 저장 탱크.',
+    },
+    {
+      id: 'propulsion_assembly',
+      name: '추진 어셈블리',
+      icon: '[PRP]',
+      material: 'Inconel-718',
+      qty: 1,
+      unitMassKg: 34,
+      totalMassKg: 34,
+      category: 'propulsion',
+      desc: '연소실 + 터보펌프 통합 어셈블리. 고온·고압 환경용 초합금.',
+      subParts: [
+        { id:'combustion_chamber', name:'연소실',          massKg:18, desc:'추진제 연소가 이루어지는 핵심 구성품.' },
+        { id:'turbopump_lox',      name:'터보펌프(LOX)',    massKg:8,  desc:'액체 산소를 연소실로 고압 공급.' },
+        { id:'turbopump_rp1',      name:'터보펌프(RP-1)',   massKg:8,  desc:'RP-1 연료를 연소실로 고압 공급.' },
+      ],
+    },
+    {
+      id: 'avionics',
+      name: '항전 장비',
+      icon: '[AVI]',
+      material: '회로기판',
+      qty: 5,
+      unitMassKg: 1,
+      totalMassKg: 5,
+      category: 'electronics',
+      desc: '비행 제어 컴퓨터, 관성 항법, 텔레메트리 등 전자 장비.',
+    },
+    {
+      id: 'interstage',
+      name: '인터스테이지',
+      icon: '[IST]',
+      material: 'CFRP',
+      qty: 1,
+      unitMassKg: 45,
+      totalMassKg: 45,
+      category: 'structure',
+      desc: '단 간 연결 어댑터. 탄소섬유 강화 플라스틱으로 경량화.',
+    },
+    {
+      id: 'payload_fairing',
+      name: '페이로드 페어링',
+      icon: '[FRG]',
+      material: 'Al-7075',
+      qty: 1,
+      unitMassKg: 28,
+      totalMassKg: 28,
+      category: 'payload',
+      desc: '탑재체 보호용 외피. 발사 후 분리.',
+    },
+  ],
+
+  // 클래스별 스케일 팩터 (NANO 기준 중량 비례)
+  scaleFactor: {
+    nano:        1,
+    small:       3.5,
+    medium:      12,
+    heavy:       45,
+    super_heavy: 120,
+  },
+};
+
+// ============================================================
+//  ASSEMBLY STAGES — 7단계 조립 스테이지 (D3-3)
+//  durationSec: 기본 소요 시간(초)
+//  reqResearch: 필요 연구 ID (null = 조건 없음)
+// ============================================================
+const ASSEMBLY_STAGES = [
+  { id:'raw_refine',       name:'원자재 정제',     icon:'[1/7]', stage:1, durationSec:60,  reqResearch:null,  desc:'원광석을 항공우주 등급 소재로 정제. 기본 공정.' },
+  { id:'structure_fab',    name:'구조물 제작',     icon:'[2/7]', stage:2, durationSec:120, reqResearch:null,  desc:'정제된 소재로 기체 구조 링 및 탱크 쉘 성형.' },
+  { id:'propulsion_asm',   name:'추진 계통 조립',  icon:'[3/7]', stage:3, durationSec:180, reqResearch:'P01', desc:'연소실, 터보펌프를 통합하여 추진 어셈블리 완성. 연구 P01 필요.' },
+  { id:'avionics_install', name:'항전 탑재',       icon:'[4/7]', stage:4, durationSec:150, reqResearch:'A01', desc:'비행 제어 컴퓨터 및 항법 장비를 기체에 탑재. 연구 A01 필요.' },
+  { id:'static_fire',      name:'연소 시험',       icon:'[5/7]', stage:5, durationSec:90,  reqResearch:null,  desc:'지상 고정 연소 시험. 추진 계통 정상 작동 확인.' },
+  { id:'stage_integration', name:'단 통합',        icon:'[6/7]', stage:6, durationSec:200, reqResearch:'S02', desc:'1단·2단·인터스테이지를 결합하여 완성체 조립. 연구 S02 필요.' },
+  { id:'launch_prep',      name:'발사 준비',       icon:'[7/7]', stage:7, durationSec:60,  reqResearch:null,  desc:'추진제 충전, 최종 점검, 카운트다운 시퀀스.' },
+];
+
+// ============================================================
+//  ACHIEVEMENTS — 업적 시스템 (D3-4)
+//  category: production | research | assembly | launch | mission
+//  condition: 프로그래밍팀장이 체크 로직 구현 시 참조할 키
+//  reward: { type:'rp'|'moonstone', amount:N }
+// ============================================================
+const ACHIEVEMENTS = [
+  // ── 생산 (Production) ──────────────────────────────────────
+  {
+    id: 'ach_first_building',
+    name: '첫 건물 건설',
+    icon: '[P01]',
+    category: 'production',
+    desc: '건물을 처음으로 1개 건설하라.',
+    condition: 'building_count_gte_1',
+    reward: { type:'rp', amount:5 },
+  },
+  {
+    id: 'ach_5_buildings',
+    name: '소규모 기지',
+    icon: '[P02]',
+    category: 'production',
+    desc: '건물을 총 5개 이상 보유하라.',
+    condition: 'building_count_gte_5',
+    reward: { type:'rp', amount:15 },
+  },
+  {
+    id: 'ach_resource_10k',
+    name: '자원 1만 돌파',
+    icon: '[P03]',
+    category: 'production',
+    desc: '단일 자원 누적 생산량 10,000 이상 달성.',
+    condition: 'any_resource_total_gte_10000',
+    reward: { type:'rp', amount:25 },
+  },
+  {
+    id: 'ach_resource_100k',
+    name: '산업 대국',
+    icon: '[P04]',
+    category: 'production',
+    desc: '전체 자원 누적 생산량 합계 100,000 이상.',
+    condition: 'all_resource_total_gte_100000',
+    reward: { type:'moonstone', amount:3 },
+  },
+  {
+    id: 'ach_all_bldg_upgraded',
+    name: '풀 업그레이드 기지',
+    icon: '[P05]',
+    category: 'production',
+    desc: '모든 건물 종류의 업그레이드를 1단계 이상 구매.',
+    condition: 'all_buildings_upgraded',
+    reward: { type:'moonstone', amount:5 },
+  },
+
+  // ── 연구 (Research) ────────────────────────────────────────
+  {
+    id: 'ach_first_research',
+    name: '호기심의 시작',
+    icon: '[R01]',
+    category: 'research',
+    desc: '연구를 처음으로 1개 완료하라.',
+    condition: 'research_count_gte_1',
+    reward: { type:'rp', amount:10 },
+  },
+  {
+    id: 'ach_5_research',
+    name: '연구 5종 달성',
+    icon: '[R02]',
+    category: 'research',
+    desc: '연구를 총 5개 이상 완료하라.',
+    condition: 'research_count_gte_5',
+    reward: { type:'rp', amount:30 },
+  },
+  {
+    id: 'ach_10_research',
+    name: '기술 선도자',
+    icon: '[R03]',
+    category: 'research',
+    desc: '연구를 총 10개 이상 완료하라.',
+    condition: 'research_count_gte_10',
+    reward: { type:'moonstone', amount:3 },
+  },
+  {
+    id: 'ach_all_branch_tier2',
+    name: '전 분야 Tier 2',
+    icon: '[R04]',
+    category: 'research',
+    desc: '모든 연구 브랜치에서 Tier 2 이상 달성.',
+    condition: 'all_branches_tier2',
+    reward: { type:'moonstone', amount:5 },
+  },
+  {
+    id: 'ach_rp_10k',
+    name: 'RP 10,000 축적',
+    icon: '[R05]',
+    category: 'research',
+    desc: '연구 포인트(RP)를 누적 10,000 이상 획득.',
+    condition: 'rp_total_gte_10000',
+    reward: { type:'moonstone', amount:2 },
+  },
+
+  // ── 조립 (Assembly) ────────────────────────────────────────
+  {
+    id: 'ach_first_rocket',
+    name: '첫 로켓 조립',
+    icon: '[A01]',
+    category: 'assembly',
+    desc: '로켓을 처음으로 1대 조립 완료하라.',
+    condition: 'rockets_assembled_gte_1',
+    reward: { type:'rp', amount:20 },
+  },
+  {
+    id: 'ach_3_rockets',
+    name: '양산 체제',
+    icon: '[A02]',
+    category: 'assembly',
+    desc: '로켓을 총 3대 이상 조립 완료하라.',
+    condition: 'rockets_assembled_gte_3',
+    reward: { type:'rp', amount:50 },
+  },
+  {
+    id: 'ach_small_class',
+    name: 'SMALL 클래스 해금',
+    icon: '[A03]',
+    category: 'assembly',
+    desc: 'SMALL 클래스 로켓을 해금하라.',
+    condition: 'rocket_class_small_unlocked',
+    reward: { type:'moonstone', amount:3 },
+  },
+  {
+    id: 'ach_bom_complete',
+    name: 'BOM 전체 확보',
+    icon: '[A04]',
+    category: 'assembly',
+    desc: '로켓 1대 분량의 BOM 부품을 모두 확보하라.',
+    condition: 'bom_all_parts_ready',
+    reward: { type:'moonstone', amount:5 },
+  },
+
+  // ── 발사 (Launch) ──────────────────────────────────────────
+  {
+    id: 'ach_first_launch',
+    name: '점화!',
+    icon: '[L01]',
+    category: 'launch',
+    desc: '로켓을 처음으로 발사하라.',
+    condition: 'launches_gte_1',
+    reward: { type:'rp', amount:30 },
+  },
+  {
+    id: 'ach_5_success',
+    name: '발사 성공 5회',
+    icon: '[L02]',
+    category: 'launch',
+    desc: '발사 성공을 5회 이상 달성하라.',
+    condition: 'launch_success_gte_5',
+    reward: { type:'moonstone', amount:3 },
+  },
+  {
+    id: 'ach_100km',
+    name: '카르만 라인 돌파',
+    icon: '[L03]',
+    category: 'launch',
+    desc: '발사 고도 100km 이상을 달성하라.',
+    condition: 'max_altitude_gte_100',
+    reward: { type:'moonstone', amount:5 },
+  },
+  {
+    id: 'ach_retry_after_fail',
+    name: '불굴의 의지',
+    icon: '[L04]',
+    category: 'launch',
+    desc: '발사 실패 후 다시 발사에 성공하라.',
+    condition: 'success_after_failure',
+    reward: { type:'rp', amount:50 },
+  },
+
+  // ── 임무 (Mission) ─────────────────────────────────────────
+  {
+    id: 'ach_phase1_clear',
+    name: 'Phase 1 완료',
+    icon: '[M01]',
+    category: 'mission',
+    desc: 'Phase 1의 모든 목표를 달성하라.',
+    condition: 'phase_1_complete',
+    reward: { type:'moonstone', amount:10 },
+  },
+  {
+    id: 'ach_phase2_clear',
+    name: 'Phase 2 완료',
+    icon: '[M02]',
+    category: 'mission',
+    desc: 'Phase 2의 모든 목표를 달성하라.',
+    condition: 'phase_2_complete',
+    reward: { type:'moonstone', amount:20 },
+  },
+];

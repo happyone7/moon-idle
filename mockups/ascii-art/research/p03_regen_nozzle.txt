@@ -1,0 +1,12 @@
+       ╔═══╗
+      ╔╝   ╚╗  COOLANT
+     ╔╝~   ~╚╗ CHANNELS
+    ╔╝~ ║║ ~ ╚╗  ↓↓
+   ╔╝ ~ ║║ ~  ╚╗
+  ║  ~  ║║  ~   ║← wall
+  ║~ IN ║║ OUT ~║
+   ╚╗ ~ ╚╝ ~ ╔╝
+    ╚╗~  ▼  ~╔╝
+     ╚╗ ▼▼▼╔╝ EXHAUST
+      ╚═════╝
+  REGEN TEMP DELTA: 820C
