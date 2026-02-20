@@ -35,6 +35,14 @@
   --green-deep: #003d1a;
   --text-muted: #4a6a4a;
   --locked: #1a2a1a;
+  /* 월드 건물 배경 토큰 */
+  --building-bg: #060f08;
+  --building-bg-dark: #0a1808;
+  --building-bg-darker: #0a1a08;
+  --building-roof: #0a2010;
+  --building-window: #0a1a10;
+  --building-special: #081408;
+  --solar-bg: #060f20;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -210,11 +218,11 @@ body::after {
 .rl-val { font-size:13px; font-weight:bold; min-width:44px; text-align:right; }
 .rl-rate { color:var(--green-dim); font-size:10px; min-width:46px; text-align:right; }
 .rl-worker-row { border-top:1px solid var(--green-dim); margin-top:3px; padding-top:5px; }
-.rl-bar { height:3px; background:#0a1a0a; margin-top:2px; border-radius:2px; overflow:hidden; }
+.rl-bar { height:3px; background:var(--panel-bg); margin-top:2px; border-radius:2px; overflow:hidden; }
 .rl-bar-fill { height:100%; background:var(--green-mid); transition:width 0.8s; border-radius:2px; }
 .rl-bar-fill.amber { background:var(--amber); }
 .rl-ms-row { margin-top: 8px; padding: 6px 4px; border: 1px solid #7a5100; background: rgba(255,171,0,0.05); }
-.rl-ms-label { color: #7a5100; font-size: 11px; letter-spacing: 1px; }
+.rl-ms-label { color: var(--amber-dim); font-size: 11px; letter-spacing: 1px; }
 .rl-ms-val { color: var(--amber); font-size: 16px; font-weight: bold; }
 
 /* ===========================
@@ -238,19 +246,21 @@ body::after {
   transition: opacity 0.5s, filter 0.5s;
   pointer-events: none;
 }
-/* 생산 탭에서는 선명하게 + 드래그 가능 */
+/* P4-4: 생산 탭에서는 완전 선명 + 스크롤 + 드래그 가능 (월드 씬 주인공) */
 body.tab-production #world-bg {
-  opacity: 0.5;
+  opacity: 1.0;
   filter: none;
   pointer-events: auto;
   cursor: grab;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 body.tab-production #world-bg:active { cursor: grabbing; }
 /* 발사 통제 탭에서는 좌측 자원 패널 + 우측 인원 패널 숨김 */
 body.tab-launch #res-left { display: none; }
 body.tab-launch #rp { display: none; }
 #world-bg::-webkit-scrollbar { height: 6px; }
-#world-bg::-webkit-scrollbar-track { background: #010800; border-top: 1px solid var(--green-dim); }
+#world-bg::-webkit-scrollbar-track { background: var(--bg); border-top: 1px solid var(--green-dim); }
 #world-bg::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
 
 #world-scene {
@@ -268,34 +278,34 @@ body.tab-launch #rp { display: none; }
 
 /* World buildings */
 .world-building { position: absolute; bottom: 0; }
-.wb-mine { width: 70px; height: 85px; background: #0a1808; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
-.wb-mine::before { content: ''; position: absolute; top: -8px; left: 10px; right: 10px; height: 8px; background: #0a2010; border: 2px solid var(--green-dim); border-bottom: none; }
-.wb-mine .conveyor { position: absolute; bottom: 20px; right: -20px; width: 22px; height: 8px; background: #0a1a08; border: 1px solid var(--green-dim); transform: rotate(-20deg); }
+.wb-mine { width: 70px; height: 85px; background: var(--building-bg-dark); border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.wb-mine::before { content: ''; position: absolute; top: -8px; left: 10px; right: 10px; height: 8px; background: var(--building-roof); border: 2px solid var(--green-dim); border-bottom: none; }
+.wb-mine .conveyor { position: absolute; bottom: 20px; right: -20px; width: 22px; height: 8px; background: var(--building-bg-darker); border: 1px solid var(--green-dim); transform: rotate(-20deg); }
 .mine-light { position: absolute; top: 6px; right: 8px; width: 6px; height: 6px; background: var(--amber); box-shadow: 0 0 6px var(--amber); animation: mine-blink 2s step-start infinite; }
 @keyframes mine-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
 .wb-refinery { width: 100px; height: 100px; display: flex; align-items: flex-end; gap: 6px; position: absolute; bottom: 0; }
-.refinery-tank { width: 40px; background: #081408; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.refinery-tank { width: 40px; background: var(--building-special); border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
 .refinery-tank.tall { height: 90px; }
 .refinery-tank.short { height: 65px; }
-.refinery-tank::before { content: ''; position: absolute; top: -6px; left: -2px; right: -2px; height: 6px; background: #0a1a08; border: 2px solid var(--green-dim); }
-.wb-research { width: 110px; height: 75px; background: #060f08; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
-.wb-research::before { content: ''; position: absolute; top: -10px; left: 30px; right: 30px; height: 10px; background: #0a1808; border: 2px solid var(--green-dim); border-bottom: none; }
+.refinery-tank::before { content: ''; position: absolute; top: -6px; left: -2px; right: -2px; height: 6px; background: var(--building-bg-darker); border: 2px solid var(--green-dim); }
+.wb-research { width: 110px; height: 75px; background: var(--building-bg); border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.wb-research::before { content: ''; position: absolute; top: -10px; left: 30px; right: 30px; height: 10px; background: var(--building-bg-dark); border: 2px solid var(--green-dim); border-bottom: none; }
 .research-windows { position: absolute; top: 10px; left: 6px; right: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
-.research-win { width: 16px; height: 14px; background: #0a1a10; border: 1px solid var(--green-dim); }
+.research-win { width: 16px; height: 14px; background: var(--building-window); border: 1px solid var(--green-dim); }
 .research-win.lit { background: var(--green-dim); box-shadow: 0 0 4px var(--green-dim); }
-.wb-ops { width: 90px; height: 70px; background: #060f08; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.wb-ops { width: 90px; height: 70px; background: var(--building-bg); border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
 .ops-windows { position: absolute; top: 8px; left: 4px; right: 4px; display: flex; flex-wrap: wrap; gap: 3px; }
-.ops-win { width: 14px; height: 12px; background: #0a1a10; border: 1px solid var(--green-dim); }
+.ops-win { width: 14px; height: 12px; background: var(--building-window); border: 1px solid var(--green-dim); }
 .ops-win.lit { background: var(--green-dim); }
 .ops-sign { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); width: 40px; height: 6px; background: var(--green-dim); opacity: 0.6; }
-.wb-eleclab { width: 90px; height: 70px; background: #060f08; border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
+.wb-eleclab { width: 90px; height: 70px; background: var(--building-bg); border: 2px solid var(--green-dim); border-bottom: none; position: relative; }
 .wb-solar { display: flex; align-items: flex-end; gap: 8px; position: absolute; bottom: 0; }
 .solar-pole { width: 4px; height: 50px; background: var(--green-dim); }
-.solar-panel { width: 30px; height: 20px; background: #060f20; border: 1px solid var(--green-dim); position: relative; top: -30px; }
+.solar-panel { width: 30px; height: 20px; background: var(--solar-bg); border: 1px solid var(--green-dim); position: relative; top: -30px; }
 .wb-launchpad { width: 80px; height: 110px; position: absolute; bottom: 0; }
 .lp-gantry { position: absolute; top: 0; left: 10px; width: 4px; height: 80px; background: var(--green-dim); }
-.lp-rocket { position: absolute; top: 10px; left: 16px; width: 20px; height: 60px; background: #0a2010; border: 1px solid var(--green); }
-.lp-base { position: absolute; bottom: 0; left: 0; width: 80px; height: 16px; background: #0a1a08; border: 2px solid var(--green-dim); }
+.lp-rocket { position: absolute; top: 10px; left: 16px; width: 20px; height: 60px; background: var(--building-roof); border: 1px solid var(--green); }
+.lp-base { position: absolute; bottom: 0; left: 0; width: 80px; height: 16px; background: var(--building-bg-darker); border: 2px solid var(--green-dim); }
 
 /* ===========================
    NAV TABS
@@ -334,7 +344,7 @@ body.tab-launch #rp { display: none; }
 #tab-unlock-flash.tuf-hidden { display: none; }
 #tab-unlock-flash.tuf-visible { display: block; animation: tuf-in 0.3s ease, tuf-out 0.5s ease 2.1s forwards; }
 .tuf-inner { background: rgba(0,0,0,0.92); border: 1px solid var(--amber); padding: 28px 48px; box-shadow: 0 0 60px rgba(255,171,0,0.3), inset 0 0 30px rgba(255,171,0,0.05); }
-.tuf-top  { font-size: 11px; color: #7a5100; letter-spacing: 4px; margin-bottom: 10px; }
+.tuf-top  { font-size: 11px; color: var(--amber-dim); letter-spacing: 4px; margin-bottom: 10px; }
 .tuf-main { font-size: 28px; color: var(--amber); letter-spacing: 6px; text-shadow: 0 0 30px var(--amber), 0 0 60px rgba(255,171,0,0.5); margin-bottom: 8px; animation: tuf-pulse 0.6s ease infinite alternate; }
 .tuf-sub  { font-size: 12px; color: var(--green-mid); letter-spacing: 4px; }
 @keyframes tuf-in  { 0% { opacity:0; transform:scale(0.85); } 100% { opacity:1; transform:scale(1); } }
@@ -391,9 +401,10 @@ body.tab-launch #rp { display: none; }
 #bgm-track-label { font-size: 11px; color: var(--green-dim); min-width: 80px; }
 
 /* Progress bars */
-.prog-wrap { border: 1px solid var(--green-dim); height: 8px; background: var(--bg); overflow: hidden; margin: 4px 0; }
+.prog-wrap { border: 1px solid var(--green-dim); height: 10px; background: var(--bg); overflow: hidden; margin: 6px 0 3px; }
 .prog-fill { height: 100%; background: var(--green-mid); transition: width 0.3s; }
-.prog-fill.amber { background: var(--amber); }
+.prog-fill.amber { background: var(--amber); box-shadow: 0 0 4px rgba(255,171,0,0.5); }
+.prog-pct  { font-size: 11px; color: var(--green-mid); text-align: right; }
 
 /* Notifications */
 #notif { position: fixed; bottom: 40px; right: 20px; z-index: 8000; display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
@@ -665,7 +676,7 @@ body.tab-launch #rp { display: none; }
 .rsh-det-cost { display: flex; justify-content: space-between; font-size: 12px; color: var(--green-mid); padding: 2px 0; }
 .rsh-det-sub { font-size: 10px; color: var(--green-dim); letter-spacing: 2px; text-transform: uppercase; margin: 8px 0 4px; }
 .rsh-viz-box { margin-top: 10px; border: 1px solid #3a2800; background: rgba(255,171,0,0.04); padding: 8px 10px; }
-.rsh-viz-hd { font-size: 10px; color: #7a5100; letter-spacing: 2px; margin-bottom: 5px; }
+.rsh-viz-hd { font-size: 10px; color: var(--amber-dim); letter-spacing: 2px; margin-bottom: 5px; }
 .rsh-viz-bar { color: var(--amber); font-size: 12px; font-family: var(--font); margin: 2px 0; }
 .rsh-viz-stat { color: var(--amber); font-size: 13px; margin-top: 6px; letter-spacing: 1px; text-shadow: var(--amber-glow); }
 #panel-right-research { width: 25%; flex-shrink: 0; background: var(--panel-bg); border-left: var(--border); display: flex; flex-direction: column; overflow: hidden; }
@@ -738,6 +749,10 @@ body.tab-launch #rp { display: none; }
 .rdp-viz-hd { font-size:10px; color:#7a5100; letter-spacing:2px; margin-bottom:3px; }
 .rdp-viz-bar { color:var(--amber); font-size:10px; margin:1px 0; }
 .rdp-viz-stat { color:var(--amber); font-size:11px; margin-top:3px; }
+/* P4-5: Research ASCII Art Panel */
+.rdp-ascii-panel { margin-top:8px; border:1px solid var(--green-dim); background:#010a02; padding:6px 8px; }
+.rdp-ascii-hd { font-size:10px; color:var(--green-dim); letter-spacing:2px; margin-bottom:4px; }
+.rdp-ascii-art { font-size:9px; color:var(--green-mid); line-height:1.2; white-space:pre; overflow-x:auto; margin:0; }
 .rdp-btn { display:block; width:100%; margin-top:10px; background:none; border:1px solid var(--green-mid); color:var(--green); font-family:var(--font); font-size:12px; letter-spacing:1px; padding:7px; cursor:pointer; text-transform:uppercase; transition:all 0.15s; }
 .rdp-btn:hover:not(:disabled) { border-color:var(--green); text-shadow:var(--glow); }
 .rdp-btn:disabled { opacity:0.3; cursor:not-allowed; }
@@ -746,25 +761,133 @@ body.tab-launch #rp { display: none; }
 /* ===========================
    ASSEMBLY TAB
    =========================== */
-.assembly-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.rocket-art-wrap { text-align: center; padding: 10px; border: var(--border); background: var(--bg); min-height: 280px; display: flex; align-items: center; justify-content: center; }
-#rocket-art-display { font-size: 13px; white-space: pre; line-height: 1.3; color: var(--green-dim); }
+/* pane-assembly: flex override는 tab-fade-in 섹션에서 정의 */
+.asm-col { overflow-y: auto; overflow-x: hidden; flex-shrink: 0; }
+.asm-col::-webkit-scrollbar { width: 3px; }
+.asm-col::-webkit-scrollbar-thumb { background: var(--green-dim); }
+.asm-col-left   { flex: 0 0 30%; max-width: 30%; border-right: 1px solid var(--green-dim); background: var(--panel-bg); }
+.asm-col-center { flex: 0 0 40%; max-width: 40%; background: var(--bg); }
+.asm-col-right  { flex: 0 0 30%; max-width: 30%; border-left: 1px solid var(--green-dim); background: var(--panel-bg); }
+.asm-panel { padding: 8px 10px; border-bottom: 1px solid var(--green-dim); }
+.asm-pnl-title { color: var(--green-dim); font-size: 10px; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px solid var(--green-dim); padding-bottom: 3px; }
+.asm-pnl-title.green { color: var(--green); text-shadow: var(--glow); border-bottom-color: var(--green-mid); }
+.asm-pnl-title.amber { color: var(--amber); border-bottom-color: #5a3c00; }
+
+/* 로켓 클래스 선택 그리드 */
+.asm-class-grid { display: flex; flex-direction: column; gap: 4px; }
+.asm-class-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--green-dim); color: var(--green-dim); font-family: var(--font); font-size: 11px; padding: 6px 8px; cursor: pointer; transition: all 0.15s; letter-spacing: .05em; text-align: left; }
+.asm-class-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+.asm-class-btn.selected { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 8px rgba(255,171,0,0.3); }
+.asm-class-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.asm-class-btn .asm-radio { display: inline-block; width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; flex-shrink: 0; }
+.asm-class-btn.selected .asm-radio { background: var(--amber); }
+.asm-class-btn .lock-icon { margin-left: auto; font-size: 9px; color: var(--green-dim); }
+
+/* 기체 스펙 */
+.asm-specs-row { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; color: #8aaa8a; }
+.asm-specs-row .val { color: var(--green); text-shadow: var(--glow); }
+.asm-specs-row .val.amber { color: var(--amber); }
+.asm-specs-divider { border: none; border-top: 1px solid var(--green-dim); margin: 4px 0; }
+
+/* 기존 로켓 아트/부품/품질/슬롯 스타일 */
+.rocket-art-wrap { text-align: center; padding: 10px; border-bottom: 1px solid var(--green-dim); background: var(--bg); min-height: 220px; display: flex; align-items: center; justify-content: center; }
+#rocket-art-display { font-size: 12px; white-space: pre; line-height: 1.3; color: var(--green-dim); }
 #rocket-art-display .done { color: var(--green); text-shadow: var(--glow); }
-.parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 6px 0; font-size: 13px; gap: 8px; }
-.part-done { color: var(--green); text-shadow: var(--glow); }
+
+/* Parts list — done vs pending clarity */
+.parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 7px 0; font-size: 13px; gap: 8px; }
+.parts-list-item.part-item-done { background: rgba(0,230,118,0.04); }
+.parts-list-item.part-item-missing { opacity: 0.72; }
+.part-done { color: var(--green); text-shadow: var(--glow); font-weight: bold; }
 .part-pending { color: var(--green-dim); }
-.quality-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.q-btn { flex: 1; min-width: 100px; }
-.q-btn.selected { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 8px var(--amber); }
-.slot-card { border: var(--border); background: var(--panel-bg); padding: 10px 14px; margin-bottom: 10px; }
-.slot-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.part-missing-badge { font-size: 10px; letter-spacing: .1em; color: var(--green-dim); border: 1px solid var(--green-dim); padding: 1px 5px; opacity: 0.6; }
+
+/* Quality selector — tiered visual design */
+.quality-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.q-btn {
+  flex: 1; min-width: 110px; min-height: 52px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 8px 10px;
+  border: 1px solid var(--green-dim); background: var(--bg);
+  transition: all 0.15s;
+}
+.q-btn:hover:not(:disabled) { border-color: var(--green); }
+.q-btn-label { font-size: 13px; letter-spacing: 1px; font-family: var(--font); }
+.q-btn-sub { font-size: 10px; color: var(--green-dim); letter-spacing: .05em; }
+/* Tier colours */
+.q-btn[data-qid="proto"]    { border-color: #1a5c34; }
+.q-btn[data-qid="standard"] { border-color: #2a6040; }
+.q-btn[data-qid="advanced"] { border-color: #3d5a28; }
+.q-btn[data-qid="elite"]    { border-color: var(--amber-dim); }
+/* Selected state — strong highlight */
+.q-btn.selected { background: rgba(0,230,118,0.07); border-width: 2px; }
+.q-btn[data-qid="proto"].selected    { border-color: var(--green-mid); color: var(--green-mid); }
+.q-btn[data-qid="standard"].selected { border-color: var(--green); color: var(--green); box-shadow: 0 0 8px rgba(0,230,118,0.3); }
+.q-btn[data-qid="advanced"].selected { border-color: #80ff60; color: #80ff60; box-shadow: 0 0 10px rgba(128,255,96,0.3); }
+.q-btn[data-qid="elite"].selected    { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 10px var(--amber-glow); background: rgba(255,171,0,0.07); }
+.q-btn-label.q-lbl-proto    { color: inherit; }
+.q-btn-label.q-lbl-standard { color: inherit; }
+.q-btn-label.q-lbl-advanced { color: inherit; }
+.q-btn-label.q-lbl-elite    { color: var(--amber); }
+
+/* Assembly slot cards */
+.slot-card {
+  border: var(--border); background: var(--panel-bg);
+  padding: 12px 14px; margin-bottom: 10px;
+  min-height: 88px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.slot-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .slot-title { font-size: 13px; color: var(--green); letter-spacing: 1px; }
-.slot-state.idle { color: var(--green-mid); }
-.slot-state.busy { color: var(--amber); }
-.slot-state.ready { color: var(--green); text-shadow: var(--glow); }
+
+/* Status badge replacing plain text */
+.slot-state {
+  font-size: 10px; letter-spacing: .12em; padding: 2px 7px;
+  border: 1px solid; border-radius: 0;
+}
+.slot-state.idle  { color: var(--green-dim); border-color: var(--green-dim); background: rgba(26,92,52,0.2); }
+.slot-state.busy  { color: var(--amber);     border-color: var(--amber-dim); background: rgba(255,171,0,0.08); }
+.slot-state.ready { color: var(--green);     border-color: var(--green);     background: rgba(0,230,118,0.1); text-shadow: var(--glow); }
+
+/* Ready slot — glowing pulse to draw attention */
+.slot-card.slot-ready {
+  border-color: var(--green);
+  box-shadow: 0 0 12px rgba(0,230,118,0.18);
+  animation: pulse-slot-ready 2.5s ease-in-out infinite;
+}
+@keyframes pulse-slot-ready {
+  0%,100% { box-shadow: 0 0 6px rgba(0,230,118,0.15); border-color: var(--green); }
+  50%     { box-shadow: 0 0 18px rgba(0,230,118,0.35); border-color: var(--green); }
+}
+/* Busy slot — subtle amber tint */
+.slot-card.slot-busy { border-color: var(--amber); }
+
 .science-box { border: var(--border); background: var(--bg); padding: 10px 14px; font-size: 12px; color: var(--green-mid); margin-top: 10px; line-height: 1.7; }
 .science-box .val { color: var(--green); }
 .science-box .ms-val { color: var(--amber); }
+
+/* 조립 스테이지 진행 ASCII 표시 */
+#asm-stage-progress { font-size: 10px; line-height: 1.4; white-space: pre; padding: 4px 0; }
+.ascii-prog-title { color: var(--green-dim); font-size: 10px; letter-spacing: .1em; }
+.ascii-prog-bar-done { color: var(--green); text-shadow: var(--glow); }
+.ascii-prog-bar-empty { color: var(--green-dim); }
+.ascii-prog-pct { color: var(--amber); }
+.ascii-stage-label-done { color: var(--green-mid); }
+.ascii-stage-done { color: var(--green); text-shadow: var(--glow); }
+.ascii-stage-label-active { color: var(--amber); }
+.ascii-stage-active { color: var(--amber); text-shadow: 0 0 6px #ffab0060; }
+.ascii-stage-label-locked { color: var(--green-dim); opacity: 0.4; }
+.ascii-stage-locked { color: var(--green-dim); opacity: 0.4; }
+
+/* BOM 테이블 */
+.bom-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.bom-table th { text-align: left; color: var(--green-dim); font-size: 9px; letter-spacing: .1em; text-transform: uppercase; padding: 4px 4px; border-bottom: 1px solid var(--green-dim); }
+.bom-table td { padding: 4px 4px; border-bottom: 1px solid #0a1a0a; color: var(--green-mid); }
+.bom-table tr:hover { background: rgba(0,230,118,0.03); }
+.bom-table .status-ok { color: var(--green); text-shadow: var(--glow); }
+.bom-table .status-in-progress { color: var(--amber); }
+.bom-table .status-missing { color: var(--red); }
+.bom-sub td:first-child { padding-left: 12px; }
 
 /* ===========================
    LAUNCH TAB — V7D 3-COLUMN
@@ -959,6 +1082,117 @@ body.tab-launch #rp { display: none; }
 .ms-card-btn:hover:not(.disabled) { background: rgba(255,171,0,0.2); }
 .ms-card-btn.disabled { border-color: #333; color: #555; cursor: not-allowed; }
 
+/* ── Mission Sub-tabs ── */
+#mission-sub-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--green-dim); padding: 0 10px; background: var(--panel-bg); flex-shrink: 0; }
+.msn-sub-tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--green-dim); font-family: var(--font); font-size: 11px; letter-spacing: .1em; padding: 8px 14px; cursor: pointer; text-transform: uppercase; transition: all 0.15s; }
+.msn-sub-tab:hover { color: var(--green); }
+.msn-sub-tab.active { color: var(--green); border-bottom-color: var(--green); text-shadow: var(--glow); }
+.msn-sub-screen { display: none; overflow-y: auto; flex: 1; padding: 10px 12px; }
+.msn-sub-screen.active { display: block; }
+/* mission tab overrides to flex column */
+#pane-mission { flex-direction: column; }
+#pane-mission.active { display: flex; flex-direction: column; height: 100%; overflow: hidden; animation: tab-fade-in 0.18s ease-out; }
+
+/* ── 마일스톤 리스트 ── */
+.msn-milestone-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #0e2a18; font-size: 12px; }
+.msn-milestone-icon { font-size: 14px; min-width: 30px; text-align: center; }
+.msn-milestone-name { flex: 1; color: var(--green-mid); }
+.msn-milestone-desc { flex: 2; color: var(--green-dim); font-size: 11px; }
+.msn-milestone-status { min-width: 60px; text-align: right; font-size: 11px; }
+.msn-milestone-status.done { color: var(--green); text-shadow: var(--glow); }
+.msn-milestone-status.pending { color: var(--green-dim); }
+
+/* ── P4-1: Phase Interactive Timeline ── */
+.ptl-nodes { display: flex; align-items: center; justify-content: center; gap: 0; padding: 16px 8px 12px; }
+.ptl-node { display: flex; flex-direction: column; align-items: center; cursor: pointer; position: relative; transition: all 0.15s; }
+.ptl-node:hover:not(.locked) { transform: translateY(-2px); }
+.ptl-dot { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--green-dim); background: var(--panel-bg); display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--green-dim); transition: all 0.15s; }
+.ptl-node.done .ptl-dot { border-color: var(--green); color: var(--green); background: #0a2a0f; text-shadow: var(--glow); }
+.ptl-node.current .ptl-dot { border-color: var(--amber); color: var(--amber); background: #1a1200; text-shadow: var(--amber-glow); animation: ptl-pulse 2s ease-in-out infinite; }
+.ptl-node.locked .ptl-dot { border-color: #1a2a1a; color: #1a2a1a; cursor: default; }
+.ptl-node.selected .ptl-dot { box-shadow: 0 0 10px var(--green), 0 0 20px var(--green); border-color: var(--green); }
+.ptl-label { font-size: 10px; color: var(--green-dim); margin-top: 4px; letter-spacing: 0.1em; }
+.ptl-node.done .ptl-label { color: var(--green-mid); }
+.ptl-node.current .ptl-label { color: var(--amber); }
+.ptl-line { width: 40px; height: 2px; background: var(--green-dim); margin: 0 2px; margin-bottom: 20px; }
+.ptl-line.done { background: var(--green); box-shadow: var(--glow); }
+@keyframes ptl-pulse { 0%,100% { box-shadow: 0 0 4px var(--amber); } 50% { box-shadow: 0 0 12px var(--amber), 0 0 20px #ffab0040; } }
+
+.ptl-detail { padding: 12px 0; }
+.ptl-detail-hd { font-size: 15px; color: var(--green); letter-spacing: 2px; text-shadow: var(--glow); margin-bottom: 4px; }
+.ptl-subtitle { font-size: 11px; color: var(--amber); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 6px; }
+.ptl-desc { font-size: 12px; color: var(--green-mid); margin-bottom: 6px; line-height: 1.5; }
+.ptl-flavor { font-size: 11px; color: var(--amber-dim); font-style: italic; margin-bottom: 10px; }
+.ptl-ascii { font-size: 11px; color: var(--green-mid); background: #010a02; border: 1px solid var(--green-dim); padding: 10px; margin: 8px 0; white-space: pre; overflow-x: auto; line-height: 1.3; }
+.ptl-target { font-size: 12px; color: var(--green-mid); margin: 8px 0; }
+.ptl-target-label { color: var(--amber); font-weight: bold; }
+.ptl-progress { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.ptl-prog-bar-wrap { flex: 1; height: 8px; background: var(--building-bg-darker); border: 1px solid var(--green-dim); border-radius: 2px; }
+.ptl-prog-fill { height: 100%; background: var(--green-dim); transition: width 0.3s; }
+.ptl-prog-fill.done { background: var(--green); box-shadow: var(--glow); }
+.ptl-prog-status { font-size: 12px; color: var(--green-mid); min-width: 50px; text-align: right; }
+
+/* ── P4-2: Achievement System ── */
+.ach-summary { font-size: 13px; color: var(--green-mid); margin-bottom: 10px; letter-spacing: 1px; }
+.ach-cat-hd { font-size: 11px; color: var(--amber); letter-spacing: 2px; text-transform: uppercase; margin: 12px 0 6px; border-bottom: 1px solid #1a2a1a; padding-bottom: 4px; }
+.ach-grid { display: flex; flex-direction: column; gap: 4px; }
+.ach-card { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #0e2a18; transition: all 0.15s; }
+.ach-card.earned { border-color: var(--green-dim); background: rgba(0, 230, 118, 0.03); }
+.ach-card.locked { border-color: #0a1a0e; opacity: 0.6; }
+.ach-icon { font-size: 16px; min-width: 36px; text-align: center; }
+.ach-card.earned .ach-icon { color: var(--green); text-shadow: var(--glow); }
+.ach-card.locked .ach-icon { color: var(--green-dim); }
+.ach-info { flex: 1; }
+.ach-name { font-size: 12px; color: var(--green); }
+.ach-card.locked .ach-name { color: var(--green-dim); }
+.ach-desc { font-size: 10px; color: var(--green-mid); margin-top: 2px; }
+.ach-card.locked .ach-desc { color: #1a3a1a; }
+.ach-reward { font-size: 10px; color: var(--amber-dim); margin-top: 2px; }
+.ach-card.earned .ach-reward { color: var(--amber); }
+.ach-status { font-size: 16px; min-width: 24px; text-align: center; }
+.ach-card.earned .ach-status { color: var(--green); text-shadow: var(--glow); }
+.ach-card.locked .ach-status { color: #1a2a1a; }
+
+/* ── P4-3: Prestige Star Tree ── */
+.pst-header { margin-bottom: 12px; }
+.pst-title { font-size: 14px; color: var(--amber); letter-spacing: 3px; text-shadow: var(--amber-glow); }
+.pst-summary { font-size: 11px; color: var(--green-mid); margin-top: 4px; }
+.pst-tier-label { font-size: 11px; color: var(--amber-dim); letter-spacing: 2px; margin: 12px 0 6px; border-bottom: 1px solid #1a2a1a; padding-bottom: 4px; }
+.pst-tier-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.pst-card { border: 1px solid #0e2a18; padding: 10px; transition: all 0.15s; }
+.pst-card.owned { border-color: var(--amber-dim); background: rgba(255, 171, 0, 0.04); }
+.pst-card.locked { border-color: #0a1a0e; opacity: 0.5; }
+.pst-card.available { border-color: var(--green-dim); }
+.pst-card.available:hover { border-color: var(--green); background: rgba(0, 230, 118, 0.04); }
+.pst-star { font-size: 20px; color: var(--green-dim); margin-bottom: 4px; }
+.pst-card.owned .pst-star { color: var(--amber); text-shadow: var(--amber-glow); }
+.pst-card.available .pst-star { color: var(--green); }
+.pst-node-name { font-size: 12px; color: var(--green); margin-bottom: 4px; }
+.pst-card.locked .pst-node-name { color: var(--green-dim); }
+.pst-card.owned .pst-node-name { color: var(--amber); }
+.pst-node-desc { font-size: 10px; color: var(--green-mid); line-height: 1.4; margin-bottom: 6px; }
+.pst-card.locked .pst-node-desc { color: #1a3a1a; }
+.pst-node-footer { display: flex; align-items: center; justify-content: space-between; }
+.pst-cost { font-size: 11px; color: var(--amber-dim); }
+.pst-card.owned .pst-cost { color: var(--green-mid); }
+.pst-buy-btn { background: none; border: 1px solid var(--green-dim); color: var(--green); font-family: var(--font); font-size: 10px; padding: 3px 10px; cursor: pointer; transition: all 0.15s; }
+.pst-buy-btn:hover:not(.disabled) { border-color: var(--green); text-shadow: var(--glow); }
+.pst-buy-btn.disabled { color: var(--green-dim); border-color: #0a1a0e; cursor: default; }
+
+.pst-reset-section { margin-top: 16px; border-top: 1px solid var(--green-dim); padding-top: 12px; }
+.pst-reset-hd { font-size: 12px; color: var(--amber); letter-spacing: 2px; margin-bottom: 8px; }
+.pst-reset-info { font-size: 12px; color: var(--green-mid); margin-bottom: 8px; line-height: 1.8; }
+.pst-reset-warn { font-size: 10px; color: var(--amber-dim); margin-bottom: 10px; line-height: 1.5; }
+.pst-hist-hd { font-size: 12px; color: var(--green-mid); letter-spacing: 1px; margin-top: 16px; margin-bottom: 6px; }
+
+/* ── P4-4: World Scene Enhanced Hover for Production Tab ── */
+body.tab-production .world-bld { cursor: pointer; transition: transform 0.1s, filter 0.1s; }
+body.tab-production .world-bld:hover { transform: scale(1.05); filter: brightness(1.3); }
+
+/* ── P4-6: ERA Badge + Subtitle ── */
+.tb-era { display: inline-block; background: var(--amber); color: var(--bg); font-size: 10px; font-weight: bold; letter-spacing: 2px; padding: 2px 8px; text-transform: uppercase; }
+.tb-subtitle { color: var(--green-mid); font-size: 12px; letter-spacing: 1px; }
+
 /* ===========================
    LAUNCH OVERLAY
    =========================== */
@@ -983,6 +1217,8 @@ body.tab-launch #rp { display: none; }
 }
 /* launch tab overrides to flex */
 #pane-launch.active { display: flex; animation: tab-fade-in 0.18s ease-out; }
+/* assembly tab overrides to flex (3-column) */
+#pane-assembly.active { display: flex; height: 100%; padding: 0; overflow: hidden; animation: tab-fade-in 0.18s ease-out; }
 
 /* ===========================
    BUILDING PRODUCTION PULSE
@@ -1150,6 +1386,1068 @@ body.tab-launch #rp { display: none; }
   to   { text-shadow: 0 0 12px var(--green), 0 0 24px rgba(0,230,118,0.6), 0 0 40px rgba(0,230,118,0.2); }
 }
 
+/* ── 플로팅 숫자 이펙트 ── */
+.float-num {
+  position: fixed;
+  pointer-events: none;
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: bold;
+  z-index: 9500;
+  animation: float-up 1.4s ease-out forwards;
+}
+.float-num.money    { color: #ffeb3b; text-shadow: 0 0 8px #ffeb3b80; }
+.float-num.metal    { color: #90caf9; text-shadow: 0 0 8px #90caf980; }
+.float-num.fuel     { color: #a5d6a7; text-shadow: 0 0 8px #a5d6a780; }
+.float-num.elec     { color: #ce93d8; text-shadow: 0 0 8px #ce93d880; }
+.float-num.research { color: var(--amber); text-shadow: 0 0 8px rgba(255,171,0,0.5); }
+.float-num.ms       { color: #80deea; text-shadow: 0 0 10px #80deea; }
+@keyframes float-up {
+  0%   { opacity: 1;   transform: translateY(0)    scale(1); }
+  60%  { opacity: 0.8; transform: translateY(-40px) scale(1.1); }
+  100% { opacity: 0;   transform: translateY(-80px) scale(0.8); }
+}
+
+/* ── ASCII 파티클 ── */
+.ascii-particle {
+  position: fixed;
+  pointer-events: none;
+  font-family: var(--font);
+  font-size: 12px;
+  color: var(--green);
+  z-index: 9400;
+  animation: particle-burst 0.8s ease-out forwards;
+}
+@keyframes particle-burst {
+  0%   { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--dx),var(--dy)) scale(0.5); }
+}
+
+/* ── 건물 건설 플래시 ── */
+@keyframes bld-build-flash {
+  0%   { filter: brightness(3) saturate(2); }
+  100% { filter: brightness(1) saturate(1); }
+}
+.bld-build-flash { animation: bld-build-flash 0.6s ease-out; }
+
+/* ===========================
+   [S3 U3-1] 조립 탭 3-column CSS (v7c 기준)
+   =========================== */
+.assembly-3col {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+.assembly-3col .asm-col-left {
+  width: 30%;
+  flex-shrink: 0;
+  border-right: 1px solid var(--green-dim);
+  background: var(--panel-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.assembly-3col .asm-col-center {
+  width: 40%;
+  flex-shrink: 0;
+  border-right: 1px solid var(--green-dim);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.assembly-3col .asm-col-right {
+  width: 30%;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.assembly-3col .asm-col-left::-webkit-scrollbar,
+.assembly-3col .asm-col-right::-webkit-scrollbar { width: 4px; background: var(--bg); }
+.assembly-3col .asm-col-left::-webkit-scrollbar-thumb,
+.assembly-3col .asm-col-right::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+/* Column header (v7c) */
+.asm-col-header {
+  background: #011005;
+  border-bottom: 2px solid var(--green-dim);
+  padding: 4px 12px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--green);
+  text-shadow: var(--glow);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+.asm-col-header::before { content: '//'; color: var(--green-mid); font-size: 12px; }
+
+/* Section blocks inside columns */
+.asm-section { padding: 8px 12px; border-bottom: var(--border); }
+.asm-section:last-child { border-bottom: none; }
+.asm-section-title {
+  font-size: 9px; letter-spacing: 2px; color: var(--green-mid);
+  margin-bottom: 6px; padding-bottom: 3px;
+  border-bottom: 1px solid #0a2e14; text-transform: uppercase;
+}
+
+/* Rocket class selector cards (v7c) */
+.class-card {
+  padding: 5px 6px;
+  border: 1px solid var(--green-dim);
+  background: var(--bg);
+  color: var(--green-mid);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  position: relative;
+}
+.class-card:hover:not(.locked) {
+  border-color: var(--green);
+  color: var(--green);
+  background: #030f05;
+}
+.class-card.selected {
+  border-color: var(--green);
+  background: #011a08;
+  color: var(--green);
+  text-shadow: var(--glow);
+  box-shadow: inset 0 0 8px #00e67620;
+}
+.class-card.locked {
+  border-color: #0a2e14;
+  color: #1a5c34;
+  cursor: not-allowed;
+  background: #010b03;
+}
+.class-card .lock-icon { float: right; font-size: 9px; color: #1a5c34; }
+.class-card .radio {
+  display: inline-block; width: 8px; height: 8px;
+  border: 1px solid currentColor; border-radius: 50%;
+  margin-right: 5px; vertical-align: middle; position: relative;
+}
+.class-card.selected .radio::after {
+  content: '';
+  position: absolute; inset: 2px;
+  background: var(--green); border-radius: 50%;
+  box-shadow: var(--glow);
+}
+.class-card-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 4px;
+}
+
+/* ===========================
+   [S3 U3-2] BOM 테이블 CSS + 호버 하이라이트 (v7c 기준)
+   =========================== */
+.bom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.bom-table th {
+  text-align: left;
+  color: var(--green-mid);
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 3px 4px;
+  border-bottom: 1px solid var(--green-dim);
+  white-space: nowrap;
+}
+.bom-table td {
+  padding: 3px 4px;
+  vertical-align: middle;
+  border-bottom: 1px solid #0a2e14;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Row hover — glow border highlight */
+.bom-table tr:hover td {
+  background: #011a08;
+  cursor: pointer;
+  box-shadow: inset 0 0 6px rgba(0,230,118,0.08);
+}
+.bom-table tr.bom-highlight td {
+  background: #011a08;
+  border-bottom-color: var(--green);
+  box-shadow: 0 0 8px rgba(0,230,118,0.15);
+}
+/* Sub rows (indented) */
+.bom-table tr.bom-sub td {
+  color: var(--green-mid);
+  font-size: 9px;
+  padding-left: 12px;
+}
+.bom-table tr.bom-sub:hover td {
+  background: #010e04;
+}
+/* Status icons */
+.bom-status-ok { color: var(--green); text-shadow: var(--glow); }
+.bom-status-ok::before { content: '\2713 '; /* checkmark */ }
+.bom-status-progress { color: var(--amber); text-shadow: var(--amber-glow); animation: pulse-amber 2s ease-in-out infinite; }
+.bom-status-pending { color: #1a5c34; }
+.bom-status-missing { color: var(--red); }
+.bom-status-missing::before { content: '\26A0 '; /* warning */ }
+
+/* ===========================
+   [S3 U3-3] 프로그레스 바 shimmer + leading edge 전 탭 적용
+   (TA progress-shimmer.css 패치 기반)
+   =========================== */
+@keyframes progress-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Override base .prog-fill with shimmer */
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00994d, #00e676, #00994d);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  transition: width 0.3s;
+  position: relative;
+}
+
+/* Leading edge: 2px white glow at fill tip */
+.prog-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: white;
+  box-shadow:
+    0 0 4px rgba(255,255,255,0.9),
+    0 0 8px var(--green);
+  pointer-events: none;
+}
+
+/* Also apply to rocket build phase bars */
+.rc-phase-bar-fill {
+  background: linear-gradient(90deg, #00994d, #00e676, #00994d);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  position: relative;
+}
+.rc-phase-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: white;
+  box-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px var(--green);
+  pointer-events: none;
+}
+.rc-phase-bar-fill.done {
+  background: var(--green);
+  box-shadow: 0 0 4px var(--green);
+  animation: none;
+}
+.rc-phase-bar-fill.done::after { display: none; }
+
+/* Resource bars shimmer */
+.rl-bar-fill {
+  background: linear-gradient(90deg, #005530, #00994d, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+  position: relative;
+}
+.rl-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 1px;
+  background: white;
+  box-shadow: 0 0 3px rgba(255,255,255,0.7), 0 0 6px var(--green);
+  pointer-events: none;
+}
+
+/* Staff panel bars shimmer */
+.gfill {
+  background: linear-gradient(90deg, #005530, #00e676, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+  position: relative;
+}
+.gfill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 1px;
+  background: white;
+  box-shadow: 0 0 3px rgba(255,255,255,0.7), 0 0 6px var(--green);
+  pointer-events: none;
+}
+.gfill.a {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+}
+
+/* Launch tab status bars shimmer */
+.lc-sbar-fill {
+  background: linear-gradient(90deg, #005530, #00e676, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  position: relative;
+}
+.lc-sbar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: white;
+  box-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px var(--green);
+  pointer-events: none;
+}
+.lc-sbar-fill.amber {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  box-shadow: 0 0 4px var(--amber);
+}
+.lc-sbar-fill.amber::after {
+  background: #fff8e1;
+  box-shadow: 0 0 4px rgba(255,248,225,0.9), 0 0 8px var(--amber);
+}
+.lc-sbar-fill.red {
+  background: linear-gradient(90deg, #5c0a15, #ff1744, #5c0a15);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  box-shadow: 0 0 4px var(--red);
+}
+
+/* Quest progress bar shimmer */
+.qs-progress-fill {
+  background: linear-gradient(90deg, #005530, #00e676, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+}
+
+/* Risk tag with pulse */
+.risk-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid #5c0a15;
+  font-size: 10px;
+  font-family: var(--font);
+  color: var(--red);
+  margin-bottom: 3px;
+  animation: pulse-red 2.5s ease-in-out infinite;
+}
+.risk-tag::before { content: '\26A0'; font-size: 10px; }
+@keyframes pulse-red {
+  0%, 100% { color: var(--red); border-color: #5c0a15; text-shadow: 0 0 4px rgba(255,23,68,0.3); }
+  50%      { color: #7a0020; border-color: #2a0510; text-shadow: none; }
+}
+
+/* ===========================
+   [S3 U3-4] 임무 탭 서브탭 CSS + 페이즈 타임라인 노드 스타일 (v7e 기준)
+   =========================== */
+/* Sub-tab navigation bar */
+.sub-tab-nav {
+  display: flex;
+  background: #010a02;
+  border-bottom: var(--border);
+  flex-shrink: 0;
+  padding: 0 16px;
+}
+.sub-tab-btn {
+  padding: 5px 16px;
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--green-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.sub-tab-btn:hover { color: var(--green-mid); }
+.sub-tab-btn.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+  text-shadow: var(--glow);
+}
+
+/* Phase timeline strip */
+.phase-timeline {
+  flex-shrink: 0;
+  background: #010d03;
+  border-bottom: 2px solid var(--green-dim);
+  padding: 14px 24px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.phase-timeline .zone-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--green-dim);
+  margin-bottom: 10px;
+}
+
+/* Timeline row container */
+.phase-timeline-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 80px;
+}
+
+/* Phase connector lines between nodes */
+.phase-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--green-dim);
+  position: relative;
+}
+.phase-connector.complete {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.phase-connector.partial {
+  background: linear-gradient(to right, var(--green) 60%, var(--green-dim) 60%);
+}
+.phase-connector.locked {
+  background: #0a1e0e;
+}
+
+/* Phase node wrapper */
+.phase-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  gap: 0;
+}
+
+/* Phase dot — the main node circle */
+.phase-dot {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--green-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: var(--bg);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.15s;
+}
+.phase-node:hover .phase-dot { transform: scale(1.1); }
+
+/* Phase dot states */
+.phase-dot.complete {
+  border-color: var(--green);
+  background: #010f05;
+  box-shadow: var(--glow-strong);
+  color: var(--green);
+  text-shadow: var(--glow-strong);
+}
+@keyframes progress-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--amber); }
+  50%      { box-shadow: 0 0 12px var(--amber), 0 0 20px #ffab0050; }
+}
+.phase-dot.in-progress {
+  border-color: var(--amber);
+  background: #0a0500;
+  box-shadow: 0 0 10px var(--amber), 0 0 20px #ffab0060;
+  color: var(--amber);
+  animation: progress-pulse 2s ease-in-out infinite;
+}
+.phase-dot.locked {
+  border-color: #0a2010;
+  background: #010800;
+  color: #1a3a20;
+}
+
+/* Phase info below dot */
+.phase-info {
+  position: absolute;
+  top: 44px; left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.phase-info .phase-name-label {
+  font-size: 10px; letter-spacing: 1.5px; display: block; margin-bottom: 2px;
+}
+.phase-info .phase-name-label.complete { color: var(--green); text-shadow: var(--glow); }
+.phase-info .phase-name-label.in-progress { color: var(--amber); text-shadow: var(--amber-glow); }
+.phase-info .phase-name-label.locked { color: #2a5c35; }
+
+.phase-status-text { font-size: 9px; letter-spacing: 1px; display: block; }
+.phase-status-text.complete { color: var(--green-mid); }
+.phase-status-text.in-progress { color: var(--amber-dim); }
+.phase-status-text.locked { color: #1a3a20; }
+
+.phase-sub-text { font-size: 8px; letter-spacing: 0.5px; margin-top: 2px; display: block; }
+.phase-sub-text.complete { color: #2a7a4a; }
+.phase-sub-text.in-progress { color: var(--amber-dim); }
+.phase-sub-text.locked { color: #0f2514; }
+
+/* Mini progress bar under active phase dot */
+.phase-mini-progress {
+  position: absolute;
+  bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+}
+.phase-mini-bar {
+  width: 100%; height: 3px;
+  background: var(--building-roof);
+  position: relative;
+}
+.phase-mini-fill {
+  height: 100%;
+  background: var(--amber);
+  box-shadow: 0 0 4px var(--amber);
+}
+
+/* ===========================
+   [S3 U3-5] 앰버 프로그레스 바 변형 CSS
+   =========================== */
+/* Amber variant for .prog-fill (heat/thermal management) */
+.prog-fill.amber,
+.prog-fill.progress-amber,
+.progress-amber .prog-fill {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  box-shadow: 0 0 4px rgba(255,171,0,0.5);
+}
+.prog-fill.amber::after,
+.prog-fill.progress-amber::after,
+.progress-amber .prog-fill::after {
+  background: #fff8e1;
+  box-shadow:
+    0 0 4px rgba(255,248,225,0.9),
+    0 0 8px var(--amber);
+}
+
+/* Standalone .progress-amber class for wrapping containers */
+.progress-amber .prog-wrap { border-color: var(--amber-dim); }
+
+/* Amber resource bar variant */
+.rl-bar-fill.amber {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+}
+.rl-bar-fill.amber::after {
+  background: #fff8e1;
+  box-shadow: 0 0 3px rgba(255,248,225,0.7), 0 0 6px var(--amber);
+}
+
+/* ===========================
+   [S4 U4-1] 페이즈 타임라인 CSS 보강 (v7e 기준)
+   =========================== */
+/* Alternate class aliases — programmer may use .completed / .current */
+.phase-dot.completed {
+  border-color: var(--green);
+  background: #010f05;
+  box-shadow: var(--glow-strong);
+  color: var(--green);
+  text-shadow: var(--glow-strong);
+}
+.phase-dot.current {
+  border-color: var(--amber);
+  background: #0a0500;
+  box-shadow: 0 0 10px var(--amber), 0 0 20px #ffab0060;
+  color: var(--amber);
+  animation: progress-pulse 2s ease-in-out infinite;
+}
+.phase-connector.completed {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+/* Dashed connector for locked phases */
+.phase-connector.locked {
+  background: none;
+  border-top: 2px dashed #0a2010;
+  height: 0;
+}
+/* Phase info expandable panel — ASCII scene display below timeline */
+.phase-info-expand {
+  background: #010a02;
+  border: 1px solid var(--green-dim);
+  border-top: none;
+  padding: 0 16px;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.25s ease, padding 0.35s ease;
+}
+.phase-info-expand.open {
+  max-height: 400px;
+  opacity: 1;
+  padding: 12px 16px;
+}
+.phase-info-expand .ascii-scene {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--green);
+  text-shadow: 0 0 6px rgba(0,230,118,0.3);
+  white-space: pre;
+  font-family: var(--font);
+  text-align: center;
+}
+.phase-info-expand .scene-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--green-mid);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  text-align: center;
+}
+.phase-info-expand .scene-desc {
+  font-size: 10px;
+  color: var(--green-dim);
+  margin-top: 8px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* ===========================
+   [S4 U4-2] 업적 카드 CSS (v7e 기준)
+   =========================== */
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 12px;
+  align-content: start;
+}
+.ach-card {
+  border: 1px solid #0a1e0e;
+  background: #010c03;
+  padding: 10px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.ach-card.earned {
+  border-color: var(--green-mid);
+  background: #010f04;
+  box-shadow: inset 0 0 10px rgba(0,230,118,0.06), 0 0 8px rgba(0,230,118,0.1);
+}
+.ach-card.earned::after {
+  content: '\2713';
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  color: var(--green);
+  font-size: 14px;
+  text-shadow: var(--glow);
+}
+.ach-card.locked {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+}
+.ach-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 6px var(--amber));
+}
+.ach-card.locked .ach-icon {
+  filter: none;
+  opacity: 0.4;
+}
+.ach-body { flex: 1; min-width: 0; }
+.ach-name {
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 3px;
+  color: var(--white);
+}
+.ach-card.earned .ach-name {
+  color: var(--amber);
+  text-shadow: var(--amber-glow);
+}
+.ach-card.locked .ach-name { color: #2a5c35; }
+.ach-desc {
+  font-size: 10px;
+  color: var(--green-dim);
+  margin-bottom: 5px;
+  line-height: 1.5;
+}
+.ach-card.locked .ach-desc { color: #1a3a20; }
+.ach-date {
+  font-size: 9px;
+  color: var(--green-mid);
+}
+.ach-card.locked .ach-date { color: #1a3a20; }
+
+/* ===========================
+   [S4 U4-3] 프레스티지 UI CSS (v7e 기준)
+   =========================== */
+/* Prestige header — large card */
+.prestige-header {
+  border: 2px solid var(--green-dim);
+  background: #010e03;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.prestige-header .ms-count {
+  font-size: 22px;
+  color: var(--amber);
+  text-shadow: var(--amber-glow);
+  letter-spacing: 2px;
+}
+.prestige-header .ms-label {
+  font-size: 10px;
+  color: var(--amber-dim);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.prestige-header .reset-btn {
+  padding: 8px 20px;
+  font-family: var(--font);
+  font-size: 13px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: rgba(255,171,0,0.08);
+  border: 2px solid var(--amber);
+  color: var(--amber);
+  cursor: pointer;
+  text-shadow: var(--amber-glow);
+  transition: all 0.15s;
+}
+.prestige-header .reset-btn:hover:not(:disabled) {
+  background: rgba(255,171,0,0.2);
+  box-shadow: 0 0 12px rgba(255,171,0,0.3);
+}
+.prestige-header .reset-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Season / era badge */
+.season-badge {
+  border: 2px solid var(--amber);
+  color: var(--amber);
+  text-shadow: var(--amber-glow);
+  padding: 8px 16px;
+  font-size: 18px;
+  letter-spacing: 3px;
+  box-shadow: 0 0 12px rgba(255,171,0,0.2);
+  display: inline-block;
+}
+
+/* Star upgrade tree — grid layout */
+.star-tree {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: #010a02;
+  border: 1px solid #0a1e0e;
+}
+.star-tree-hd {
+  width: 100%;
+  padding: 6px 12px;
+  border-bottom: 1px solid #0a1e0e;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--amber);
+  text-shadow: var(--amber-glow);
+  text-align: center;
+}
+.star-slot {
+  width: 64px;
+  height: 64px;
+  border: 2px solid #0a2010;
+  background: #010800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 2px;
+  cursor: not-allowed;
+  position: relative;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  border-radius: 50%;
+}
+.star-slot .slot-icon {
+  font-size: 20px;
+  color: #1a3a20;
+}
+.star-slot .slot-label {
+  font-size: 7px;
+  color: #1a3a20;
+  letter-spacing: 1px;
+  position: absolute;
+  bottom: -14px;
+  white-space: nowrap;
+}
+.star-slot.unlocked {
+  border-color: var(--amber);
+  background: #0a0500;
+  box-shadow: 0 0 10px rgba(255,171,0,0.35), 0 0 20px rgba(255,171,0,0.15);
+  cursor: default;
+}
+.star-slot.unlocked .slot-icon {
+  color: var(--amber);
+  text-shadow: var(--amber-glow);
+}
+.star-slot.unlocked .slot-label {
+  color: var(--amber);
+}
+.star-slot.locked {
+  border-color: #0a2010;
+  background: #010800;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.star-slot.locked .slot-icon { color: #1a3a20; }
+.star-slot.locked .slot-label { color: #1a3a20; }
+.star-slot.available {
+  border-color: var(--amber-dim);
+  cursor: pointer;
+  animation: star-available-pulse 2s ease-in-out infinite;
+}
+@keyframes star-available-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(255,171,0,0.2); border-color: var(--amber-dim); }
+  50%      { box-shadow: 0 0 14px rgba(255,171,0,0.5), 0 0 24px rgba(255,171,0,0.2); border-color: var(--amber); }
+}
+.star-slot.available .slot-icon { color: var(--amber-dim); }
+.star-slot.available:hover {
+  border-color: var(--amber);
+  box-shadow: 0 0 16px rgba(255,171,0,0.5);
+}
+.star-connector {
+  width: 24px;
+  height: 2px;
+  background: var(--building-roof);
+}
+.star-connector.active {
+  background: var(--amber);
+  box-shadow: 0 0 4px var(--amber);
+}
+
+/* Reset / Keep lists */
+.reset-list, .keep-list {
+  list-style: none;
+  padding: 8px 12px;
+}
+.reset-list li, .keep-list li {
+  font-size: 10px;
+  padding: 3px 0;
+  border-bottom: 1px solid #06100a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.reset-list li:last-child, .keep-list li:last-child { border-bottom: none; }
+.reset-list li { color: #703030; }
+.reset-list li::before { content: '\2717'; color: var(--red); font-size: 11px; }
+.keep-list li { color: var(--green-mid); }
+.keep-list li::before { content: '\2713'; color: var(--green); font-size: 11px; }
+
+/* Prestige history */
+.prestige-history {
+  border: 1px solid #0a1e0e;
+  background: #010a02;
+}
+.prestige-history .history-hd {
+  padding: 6px 12px;
+  border-bottom: 1px solid #0a1e0e;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--green-dim);
+}
+.prestige-history .history-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 10px;
+  border-bottom: 1px solid #060e07;
+}
+.prestige-history .history-row:last-child { border-bottom: none; }
+.prestige-history .h-season { color: var(--green); letter-spacing: 2px; }
+.prestige-history .h-start  { color: var(--green-dim); }
+.prestige-history .h-status {
+  font-size: 9px;
+  color: var(--amber);
+  border: 1px solid var(--amber-dim);
+  padding: 1px 6px;
+  letter-spacing: 1px;
+}
+
+/* ===========================
+   [S4 U4-4] 생산 탭 월드 씬 CSS 조정 (v7a 기준)
+   =========================== */
+/* Override production tab world-bg: full opacity, no filter */
+body.tab-production #world-bg {
+  opacity: 1.0;
+  filter: none;
+  pointer-events: auto;
+  cursor: grab;
+}
+body.tab-production #world-bg:active { cursor: grabbing; }
+
+/* Scrollable world container */
+.world-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.world-scroll-container::-webkit-scrollbar { height: 6px; }
+.world-scroll-container::-webkit-scrollbar-track { background: var(--bg); border-top: 1px solid var(--green-dim); }
+.world-scroll-container::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
+
+/* Building hover enhancement — stronger glow + info tooltip */
+body.tab-production .world-bld:hover {
+  color: var(--green);
+  text-shadow: 0 0 14px rgba(0,230,118,0.7), 0 0 28px rgba(0,230,118,0.3);
+  filter: brightness(1.3);
+}
+body.tab-production .world-bld:hover::after {
+  content: attr(data-name);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(1,8,0,0.95);
+  border: 1px solid var(--green);
+  padding: 3px 8px;
+  font-size: 10px;
+  color: var(--green);
+  text-shadow: var(--glow);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 100;
+  letter-spacing: 1px;
+}
+/* World-active class for production tab active state */
+.world-active #world-bg {
+  opacity: 1.0;
+  filter: none;
+  pointer-events: auto;
+}
+.world-active .world-bld {
+  cursor: pointer;
+}
+
+/* ===========================
+   [S4 U4-5] 리소스 바 경고 색상 CSS
+   =========================== */
+/* Amber fill for warning level resources */
+.gfill.amber {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+}
+.gfill.amber::after {
+  background: #fff8e1;
+  box-shadow: 0 0 3px rgba(255,248,225,0.7), 0 0 6px var(--amber);
+}
+/* Red fill for critical level resources */
+.gfill.red {
+  background: linear-gradient(90deg, #5c0a15, #ff1744, #5c0a15);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+}
+.gfill.red::after {
+  background: #ffcdd2;
+  box-shadow: 0 0 3px rgba(255,205,210,0.7), 0 0 6px var(--red);
+}
+/* "LOW" warning label badge */
+.tag-low {
+  display: inline-block;
+  font-size: 9px;
+  font-family: var(--font);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber);
+  border: 1px solid var(--amber-dim);
+  background: rgba(255,171,0,0.08);
+  padding: 1px 5px;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+/* "CRITICAL" label badge — red with pulse */
+.tag-crit {
+  display: inline-block;
+  font-size: 9px;
+  font-family: var(--font);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--red);
+  border: 1px solid #5c0a15;
+  background: rgba(255,23,68,0.08);
+  padding: 1px 5px;
+  vertical-align: middle;
+  line-height: 1.4;
+  animation: tag-crit-pulse 1.5s ease-in-out infinite;
+}
+@keyframes tag-crit-pulse {
+  0%, 100% { color: var(--red); border-color: #5c0a15; text-shadow: 0 0 4px rgba(255,23,68,0.3); }
+  50%      { color: #ff5252; border-color: var(--red); text-shadow: 0 0 8px rgba(255,23,68,0.6); box-shadow: 0 0 6px rgba(255,23,68,0.2); }
+}
+
+/* ===========================
+   [S4 U4-6] 커서 블링크 + ERA 뱃지 CSS (v7b 기준)
+   =========================== */
+/* Blinking terminal cursor */
+@keyframes cursor-blink-anim {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.cursor-blink {
+  display: inline-block;
+  width: 8px;
+  height: 13px;
+  background: var(--green);
+  vertical-align: middle;
+  animation: cursor-blink-anim 1s step-end infinite;
+  box-shadow: var(--glow);
+}
+/* ERA badge — styled for current era in top bar */
+.era-badge {
+  display: inline-block;
+  border: 1px solid var(--green-mid);
+  padding: 2px 8px;
+  color: var(--green);
+  text-shadow: var(--glow);
+  letter-spacing: 2px;
+  font-size: 10px;
+  text-transform: uppercase;
+  border-radius: 0px; /* CRT — no rounded corners */
+  transition: border-color 0.3s, color 0.3s;
+}
+/* Amber era variant */
+.era-badge.amber {
+  border-color: var(--amber-dim);
+  color: var(--amber);
+  text-shadow: var(--amber-glow);
+}
+/* Green era variant (default) */
+.era-badge.green {
+  border-color: var(--green-mid);
+  color: var(--green);
+  text-shadow: var(--glow);
+}
+
 </style>
 </head>
 <body>
@@ -1198,7 +2496,9 @@ body.tab-launch #rp { display: none; }
   <div id="topbar">
     <span class="logo">&#9654; MOON IDLE</span>
     <span class="sep">—</span>
-    <span style="color:var(--green-mid);font-size:13px" data-i18n="title_subtitle">Lunar Rocket Facility</span>
+    <span class="tb-era" id="tb-era-badge" title="Current Phase">PHASE 1</span>
+    <span class="sep">|</span>
+    <span class="tb-subtitle" id="tb-era-subtitle">Lunar Rocket Facility</span>
     <span class="sep">|</span>
     <span class="clk" id="tb-clock">00:00:00</span>
     <span class="sep">|</span>
@@ -1275,31 +2575,51 @@ body.tab-launch #rp { display: none; }
           </div>
         </div>
 
-        <!-- ===== ASSEMBLY TAB ===== -->
+        <!-- ===== ASSEMBLY TAB (v7c 3-column) ===== -->
         <div class="tab-pane" id="pane-assembly">
-          <div class="panel">
-            <div class="panel-header">로켓 조립동</div>
-            <div class="assembly-layout">
-              <div>
-                <div class="rocket-art-wrap"><pre id="rocket-art-display"></pre></div>
-                <div class="panel" style="margin-top:10px">
-                  <div class="panel-header">부품 현황</div>
-                  <div id="parts-checklist"></div>
-                </div>
-                <div class="science-box" id="science-box"></div>
-              </div>
-              <div>
-                <div class="panel">
-                  <div class="panel-header">품질 등급</div>
-                  <div class="quality-selector" id="quality-selector"></div>
-                </div>
-                <div class="panel" style="margin-top:10px">
-                  <div class="panel-header">조립 슬롯</div>
-                  <div id="assembly-slots-wrap"></div>
-                </div>
-              </div>
+
+          <!-- ── LEFT: 로켓 클래스 선택 + 스펙 ── -->
+          <div class="asm-col asm-col-left">
+            <div class="asm-panel">
+              <div class="asm-pnl-title green">// 로켓 클래스 선택</div>
+              <div id="asm-class-grid"></div>
+            </div>
+            <div class="asm-panel">
+              <div class="asm-pnl-title">// 기체 스펙</div>
+              <div id="asm-class-specs"></div>
+            </div>
+            <div class="asm-panel">
+              <div class="asm-pnl-title">// 품질 등급</div>
+              <div class="quality-selector" id="quality-selector"></div>
+            </div>
+            <div class="asm-panel">
+              <div class="asm-pnl-title">// 부품 현황</div>
+              <div id="parts-checklist"></div>
+            </div>
+            <div class="science-box" id="science-box"></div>
+          </div>
+
+          <!-- ── CENTER: 로켓 도면 + 조립 진행 + BOM ── -->
+          <div class="asm-col asm-col-center">
+            <div class="rocket-art-wrap"><pre id="rocket-art-display"></pre></div>
+            <div class="asm-panel">
+              <div class="asm-pnl-title amber">// 조립 진행 상황</div>
+              <pre id="asm-stage-progress"></pre>
+            </div>
+            <div class="asm-panel">
+              <div class="asm-pnl-title">// BOM — 부품 목록</div>
+              <div id="asm-bom-table-wrap"></div>
             </div>
           </div>
+
+          <!-- ── RIGHT: 조립 슬롯 + 페이로드 ── -->
+          <div class="asm-col asm-col-right">
+            <div class="asm-panel">
+              <div class="asm-pnl-title green">// 조립 슬롯</div>
+              <div id="assembly-slots-wrap"></div>
+            </div>
+          </div>
+
         </div>
 
         <!-- ===== LAUNCH TAB (v7d 3-column) ===== -->
@@ -1368,12 +2688,32 @@ body.tab-launch #rp { display: none; }
         <!-- ===== AUTOMATION TAB ===== -->
         <div class="tab-pane" id="pane-automation"></div>
 
-        <!-- ===== MISSION TAB ===== -->
+        <!-- ===== MISSION TAB (v7e sub-tabs) ===== -->
         <div class="tab-pane" id="pane-mission">
-          <div class="panel"><div class="panel-header">미션 진행 현황</div><div id="phase-progress-wrap"></div></div>
-          <div id="ms-shop-wrap"></div>
-          <div class="panel"><div class="panel-header">발사 기록</div><div id="history-wrap"></div></div>
-          <div id="prestige-wrap"></div>
+          <!-- Sub-tabs -->
+          <div id="mission-sub-tabs">
+            <button class="msn-sub-tab active" data-subtab="phases" onclick="switchMissionSubTab('phases')">&#9679; 페이즈</button>
+            <button class="msn-sub-tab" data-subtab="milestones" onclick="switchMissionSubTab('milestones')">&#9675; 마일스톤</button>
+            <button class="msn-sub-tab" data-subtab="achievements" onclick="switchMissionSubTab('achievements')">&#9675; 업적</button>
+            <button class="msn-sub-tab" data-subtab="prestige" onclick="switchMissionSubTab('prestige')">&#9675; 프레스티지</button>
+          </div>
+          <!-- Sub-screen: 페이즈 (P4-1 Interactive Timeline) -->
+          <div class="msn-sub-screen active" id="msn-sub-phases">
+            <div class="panel"><div class="panel-header">페이즈 타임라인</div><div id="phase-timeline-wrap"></div></div>
+          </div>
+          <!-- Sub-screen: 마일스톤 -->
+          <div class="msn-sub-screen" id="msn-sub-milestones">
+            <div class="panel"><div class="panel-header">마일스톤</div><div id="milestone-list-wrap"></div></div>
+            <div id="ms-shop-wrap"></div>
+          </div>
+          <!-- Sub-screen: 업적 (P4-2) -->
+          <div class="msn-sub-screen" id="msn-sub-achievements">
+            <div class="panel"><div class="panel-header">업적</div><div id="achievement-list-wrap"></div></div>
+          </div>
+          <!-- Sub-screen: 프레스티지 (P4-3 Star Tree) -->
+          <div class="msn-sub-screen" id="msn-sub-prestige">
+            <div id="prestige-star-tree-wrap"></div>
+          </div>
         </div>
 
       </div><!-- /#tab-area -->

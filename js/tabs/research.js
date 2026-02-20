@@ -1,4 +1,133 @@
 
+// ─── P4-5: RESEARCH ASCII ART PANELS (embedded from mockups/ascii-art/research/) ──
+const RESEARCH_ASCII_ART = {
+  // Structure branch
+  basic_prod: `    ___  WELDING ARC  ___
+   |   |     *      |   |
+   | W |    /|\\     | W |
+   | O |   / | \\    | O |
+   | R |  *  |  *   | R |
+   | K |.'*'.|.'*'. | K |
+   |   |=====+=====||   |
+   |___|  BASEPLATE |___|
+    )))  SPARK  (((
+   *  * TEMP: 3200C *  *`,
+  drill: `   +--- CNC MILL ----+
+   |  [SPINDLE]  RPM  |
+   |    ||    ||  14000  |
+   |    ||====||         |
+   |  --||----||--       |
+   |    ||####||  cut    |
+   |  +-||====||-+       |
+   |  |AL-6061 | feed->  |
+   |  |########|         |
+   |  +--------+         |
+   +-------------------+
+   TOLERANCE: +/-0.02mm`,
+  alloy: `  ///////  <- 0 deg ply
+ ///////
+///////
+=======  <- 90 deg ply
+=======
+=======
+ \\\\\\\\\\  <- +/-45 deg ply
+  \\\\\\\\
+-----------------------
+ LAYUP: 8 plies  RESIN
+ VACUUM BAG  -0.9 bar
+[CURE 140C ####-- 67%]`,
+
+  // Propulsion branch
+  fuel_chem: `  +==================+
+  ||  COMBUSTION CHMB ||
+  ||   +----------+   ||
+  ||   | O2 -> <- |   ||
+  ||   |    **    F|   ||
+  ||   |   *##*   U|   ||
+  ||   |  *####*  E|   ||
+  ||   | *######* L|   ||
+  ||   +----||-----+   ||
+  ||        ||  THROAT  ||
+  +==========+=========+
+  PRESS: 210 bar  FLAME`,
+  catalyst: `     +-----------+
+     | TURBOPUMP |
+  ---|  .  *  .  |---
+  IN | * \\|/ *   |OUT
+  >> |  --O--    |>>
+     | * /|\\ *   |
+  ---|  *  .  *  |---
+     | IMPELLER  |
+     +-----||----+
+       +=====+===+
+       | SHAFT   |
+       +=========+
+  RPM: 34,000  FLOW OK`,
+
+  // Electronics branch
+  electronics_basics: `      +----------+
+      |  GIMBAL  |
+   +==|===+===|==+
+   |  | +---+ |  |
+   |--| | O | |--|
+   |  | +---+ |  |
+   +==|===+===|==+
+      |  ROTOR |
+      +----||--+
+        +==++==+
+        |AXIS  |
+        +=====+
+  SPIN: 12,000 RPM LOCK`,
+  microchip: `  ======================
+  .... OUTER SHIELD ....
+  ----------------------
+  #### AEROGEL ########
+  #### BLANKET ########
+  ----------------------
+  .... INNER SKIN .....
+  ======================
+  HEAT FLUX >>> BLOCKED
+  K = 0.015 W/(m*K)`,
+
+  // Advanced
+  rocket_eng: `       +===+
+      +|   |+  COOLANT
+     +| ~  ~|+ CHANNELS
+    +|~ || ~ |+   vv
+   +| ~ || ~  |+
+  |  ~  ||  ~   |<- wall
+  |~ IN || OUT ~|
+   +| ~ +| ~ |+
+    +|~  v  ~|+
+     +| vvv|+ EXHAUST
+      +======+
+  REGEN TEMP DELTA: 820C`,
+  launch_ctrl: `        /\\
+       /  \\    RADAR
+      / /\\ \\   DISH
+     / /  \\ \\
+    /-/----\\-\\
+   +==+====+==+
+   |  +----+  |
+   |  | RX |  |
+   |  | TX |  |
+   |  +----+  |
+   +==========+
+  TRACK: 2.4GHz  LOCK
+  RANGE: 384,400 km`,
+
+  // Default lab visualization for techs without specific art
+  _default: `  RESEARCH LABORATORY
+  ========================
+  +============+ +======+
+  | TERMINAL A | |SAMPLE|
+  | >_ RUN SIM | | {##} |
+  | >_ COMPILE | +======+
+  +============+
+  [CPU 94%]  [POWER: 4.2kW]
+  STATUS: IN PROGRESS`,
+};
+
 // ─── ASCII TECH VISUALIZATIONS ──────────────────────────────
 const TECH_VIZ = {
   hire_worker_1:      { lines: ['▓▓▓▓▓▓▓▓▓ ← 인력 풀', '▓▓▓▓▓▓▓ ← 교육 기간', '▓▓▓▓▓▓▓▓▓▓ ← 역량'],   stat: '+1 WORKER' },
@@ -50,6 +179,8 @@ function buyUpgrade(uid) {
 
 function selectTech2(uid) {
   selectedTechId = uid;
+  // 기술 카드 선택음
+  playSfx('sine', 380, 0.05, 0.018);
   // Highlight selected card
   document.querySelectorAll('.rsh-card2').forEach(c => {
     c.classList.toggle('selected', c.dataset.uid === uid);
@@ -130,6 +261,15 @@ function renderTechDetail(uid) {
   <div class="rdp-viz-stat">${viz.stat}</div>
 </div>` : '';
 
+  // P4-5: Research ASCII art panel
+  const asciiArt = (typeof RESEARCH_ASCII_ART !== 'undefined')
+    ? (RESEARCH_ASCII_ART[uid] || RESEARCH_ASCII_ART._default)
+    : null;
+  const asciiHtml = asciiArt ? `<div class="rdp-ascii-panel">
+  <div class="rdp-ascii-hd">// SCHEMATIC</div>
+  <pre class="rdp-ascii-art">${asciiArt}</pre>
+</div>` : '';
+
   const btnDis = purchased || !reqMet || !affordable;
   const btnTxt = purchased ? '연구 완료' : !reqMet ? '선행 필요' : !affordable ? '자원 부족' : '연구 실행';
 
@@ -138,6 +278,7 @@ function renderTechDetail(uid) {
 <div class="rdp-name">${upg.name}</div>
 <div class="rdp-status" style="color:${statusColor}">${statusTxt}</div>
 <div class="rdp-desc">${upg.desc}</div>
+${asciiHtml}
 <div class="rdp-sub">연구 비용</div>
 ${costHtml}
 ${prereqHtml}

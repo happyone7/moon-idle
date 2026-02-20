@@ -1,0 +1,48 @@
+QA_RESULT=PASS
+Target: dev/ui [f0097c02ac617ef46eb5b417058efe79c3598a94]
+Sprint 1 UI Task: Quality Selector + Assembly Slot Readability
+
+Improvements:
+- index.html (CSS):
+  - .quality-selector: gap increased to 8px
+  - .q-btn: min-height 52px (touch-friendly), flex-column layout, gap for label+sub
+  - .q-btn-label / .q-btn-sub: two-line structure (name + "time · cost multiplier")
+  - .q-btn[data-qid=*]: per-tier border colours (proto=dim, standard=mid-green, advanced=lime, elite=amber-dim)
+  - .q-btn.selected: per-tier glow/border — elite gets amber box-shadow, others get green variants
+  - .q-btn-label.q-lbl-elite: amber accent for elite tier label
+  - .parts-list-item: padding increased to 7px, modifier classes part-item-done / part-item-missing
+  - .part-item-done: subtle green tint background (rgba 4%)
+  - .part-item-missing: opacity 0.72 so unbuilt parts read as "not yet done"
+  - .part-missing-badge: new bordered "미제작" badge beside craft button
+  - .slot-card: min-height 88px, transition added, padding 12px (was 10px)
+  - .slot-state: converted to badged pill (border + background per state, 10px font)
+    - idle: green-dim border + dim background ("빈 슬롯")
+    - busy: amber border + amber tint background ("조립 중...")
+    - ready: green border + green tint background + glow ("준비 완료!")
+  - .slot-card.slot-ready: green pulse animation (pulse-slot-ready keyframe, 2.5s)
+  - .slot-card.slot-busy: amber border class (replaces inline style)
+  - .prog-wrap: height 10px (was 8px), margin improved
+  - .prog-fill.amber: box-shadow glow added
+  - .prog-pct: new class for right-aligned percentage text
+
+- js/tabs/assembly.js (HTML generation only, no logic changed):
+  - Parts checklist: part-item-done / part-item-missing class on row
+  - Parts checklist: "미제작" badge added for unbuilt parts before craft button
+  - Quality selector: data-qid attribute on each button for CSS tier targeting
+  - Quality selector: q-btn-label + q-btn-sub spans (two-line: name, then time+cost info)
+  - Idle slot: state badge text changed "대기 중" → "빈 슬롯"
+  - Ready slot: class slot-ready (removes inline style), state badge "발사 준비!" → "준비 완료!", moonstone reward coloured green with glow
+  - Busy slot: class slot-busy (removes inline style), progress pct uses prog-pct class, "잔여 Xm" added to percentage line
+
+Self-QA:
+- Quality selector: selected state clearly visible (per-tier coloured border + glow) ✓
+- Quality selector: sub-label shows time and cost multiplier at a glance ✓
+- Quality selector: touch-friendly min-height 52px ✓
+- Slot status badge: readable at a glance (bordered pill, colour-coded) ✓
+- Slot idle: "빈 슬롯" label unambiguous ✓
+- Ready state: visually prominent (pulsing green glow animation) ✓
+- Busy state: amber progress bar with remaining time shown ✓
+- Parts list: 0-count parts dimmed + "미제작" badge ✓
+- Parts list: done parts have subtle green background tint ✓
+- No JS logic changed — only HTML string generation for badges/classes ✓
+- No other tabs affected — prog-wrap only used in assembly slot render ✓

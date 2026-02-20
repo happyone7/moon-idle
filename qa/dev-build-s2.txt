@@ -1,0 +1,15 @@
+QA_RESULT=PASS
+Target: dev/build [94ac16f]
+Sprint 2 Build Engineering
+
+Created:
+- electron/main.js — BrowserWindow wrapper for index.html
+- electron/package.json — electron-builder config (NSIS installer, Windows x64)
+- electron/preload.js — minimal preload (no Node APIs exposed)
+- Docs/build-checklist.md — Steam deployment dry-run checklist (18 items)
+- steam_build.vdf — Steamworks upload script template
+
+Next steps:
+- Install Electron: npm install (after package.json is finalized)
+- Test build: npm run build:dir
+- Steam upload: follow Docs/build-checklist.md

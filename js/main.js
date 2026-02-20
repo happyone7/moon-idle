@@ -2,6 +2,13 @@
 //  TAB SWITCHING
 // ============================================================
 function switchMainTab(tabId) {
+  // 탭 전환 클릭음
+  playSfx('triangle', 220, 0.05, 0.025, 330);
+  // BGM 탭 연동 — 페이즈 갱신 + 발사 탭 덕킹
+  if (typeof BGM !== 'undefined' && BGM.playing) {
+    BGM.duck(tabId === 'launch');
+    BGM.refreshPhase();
+  }
   activeTab = tabId;
   document.body.className = 'tab-' + tabId;
   document.querySelectorAll('.nav-tab').forEach(t => {
@@ -120,6 +127,9 @@ function renderAll() {
   if (activeTab === 'automation') renderAutomationTab();
   updateWorldBuildings();
   if (typeof renderMilestonePanel === 'function') renderMilestonePanel();
+  if (typeof updateTopBarEra === 'function') updateTopBarEra(); // P4-6
+  // BGM 페이즈 갱신 (unlock 상태 변화 반영)
+  if (typeof BGM !== 'undefined' && BGM.playing) BGM.refreshPhase();
   // document.title 동적 업데이트
   _updateDocTitle();
 }
@@ -174,7 +184,7 @@ function startTitleSequence() {
 
 function startNewGame(slot) {
   currentSaveSlot = slot || 1;
-  gs.res = { money:0, metal:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:5000, metal:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.workers = 2;  // 주거시설 1동 = 기본 1 + housing +1
   gs.assignments = {};
@@ -188,6 +198,9 @@ function startNewGame(slot) {
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.upgrades = {};
   gs.msUpgrades = {};
+  gs.achievements = {};       // P4-2
+  gs.prestigeStars = {};      // P4-3
+  gs.prestigeCount = 0;       // P4-3
   gs.launches = 0;
   gs.moonstone = 0;
   gs.history = [];
@@ -307,7 +320,7 @@ function enterGame() {
     if (rl) rl.classList.add('visible');
     if (typeof initWorldDrag === 'function') initWorldDrag();
     if (typeof BGM !== 'undefined' && gs.settings.sound) {
-      setTimeout(() => BGM.start(0), 1200);
+      setTimeout(() => BGM.start(), 1200);
     }
     calcOffline();
     if (typeof applyI18n === 'function') applyI18n();

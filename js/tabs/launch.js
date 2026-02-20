@@ -1,4 +1,6 @@
 
+let _prevAllGo = false; // ALL SYSTEMS GO 전환 감지용
+
 function launchFromSlot(slotIdx) {
   if (launchInProgress) return; // 중복 발사 방지
   ensureAssemblyState();
@@ -38,6 +40,8 @@ function launchFromSlot(slotIdx) {
 
 function _runLaunchAnimation(q, sci, earned, success = true) {
   launchInProgress = true;
+  // 발사 시퀀스 진입 → 발사 긴장감 이벤트 BGM
+  if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('launch');
 
   // 중앙 컬럼: 정적 패널 숨기고 애니메이션 존 표시
   const preLaunch = document.getElementById('lc-pre-launch');
@@ -122,6 +126,8 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   setTimeout(() => {
     launchInProgress = false;
     playLaunchSfx();
+    // 발사 결과 후 이벤트 BGM 종료 → 페이즈 트랙으로 복귀
+    if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.stopEvent();
     _showLaunchOverlay(q, sci, earned, success);
   }, 3500);
 }
@@ -146,9 +152,14 @@ function _showLaunchOverlay(q, sci, earned, success = true) {
     if (success) {
       loMs.textContent = `✓ 발사 성공 — 문스톤 +${earned}개`;
       loMs.style.color = 'var(--green)';
+      // 문스톤 획득 반짝임
+      playSfx('sine', 1200, 0.10, 0.03, 1600);
     } else {
       loMs.textContent = `✗ 발사 실패 — 신뢰도 부족 (${sci.reliability.toFixed(1)}%)`;
       loMs.style.color = 'var(--red)';
+      // 발사 실패음
+      playSfx('sawtooth', 220, 0.20, 0.06, 80);
+      setTimeout(() => playSfx('sawtooth', 160, 0.22, 0.05, 60), 200);
     }
   }
   const overlay = document.getElementById('launch-overlay');
@@ -294,6 +305,13 @@ function renderLaunchTab() {
     { key: 'chk_wx',   go: true },
   ];
   const allGo = hasReady && launchPadBuilt && hasFuel;
+  // ALL SYSTEMS GO 진입 전환 감지 → 알림음
+  if (allGo && !_prevAllGo) {
+    playSfx('sine', 440, 0.08, 0.04, 660);
+    setTimeout(() => playSfx('sine', 660, 0.08, 0.04, 880), 100);
+  }
+  _prevAllGo = allGo;
+
   let chkHtml = checks.map(c =>
     `<div class="chk-row"><span class="chk-name">${t(c.key)}</span><span class="chk-badge${c.go ? '' : ' nogo'}">${c.go ? 'GO &#10003;' : 'NO-GO &#10007;'}</span></div>`
   ).join('');

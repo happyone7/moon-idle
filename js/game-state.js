@@ -2,7 +2,7 @@
 //  GAME STATE
 // ============================================================
 let gs = {
-  res: { money:0, metal:0, fuel:0, electronics:0, research:0 },
+  res: { money:1500, metal:0, fuel:0, electronics:0, research:0 },
   buildings: { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldUpgrades: {},    // per-building named upgrades purchased
   bldLevels: {},      // { buildingId: statUpgradeCount } — 생산량 업그레이드 (getBldProdMult용)
@@ -12,11 +12,14 @@ let gs = {
   workers: 1,          // 총 인원
   assignments: {},     // { buildingId: workerCount }
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
-  assembly: { selectedQuality:'proto', jobs:[] },
+  assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
   upgrades: {},
   msUpgrades: {},
   autoEnabled: {},
   milestones: {},
+  achievements: {},       // P4-2: earned achievement IDs
+  prestigeStars: {},      // P4-3: purchased star tree node IDs
+  prestigeCount: 0,       // P4-3: total prestige count
   launches: 0,
   moonstone: 0,
   history: [],
@@ -33,7 +36,7 @@ let gs = {
     bld_housing: true,      // 처음부터 표시
     bld_ops_center: true,  // 처음부터 표시
     bld_supply_depot: false,
-    bld_mine: false,
+    bld_mine: true,        // 처음부터 표시 (채굴기는 초기 핵심 건물)
     bld_extractor: false,
     bld_refinery: false,
     bld_cryo_plant: false,
@@ -96,9 +99,10 @@ function getQuality(qid) { return QUALITIES.find(q => q.id === qid) || QUALITIES
 function getAssemblySlots() { return 1 + gs.buildings.launch_pad + slotBonus + getAddonSlotBonus(); }
 
 function ensureAssemblyState() {
-  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
+  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
   if (!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs = [];
   if (!gs.assembly.selectedQuality) gs.assembly.selectedQuality = 'proto';
+  if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
   const slots = getAssemblySlots();
   while (gs.assembly.jobs.length < slots) gs.assembly.jobs.push(null);
   if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
@@ -246,6 +250,19 @@ function getBuildingCost(bld) {
     cost[r] = Math.floor(v * Math.pow(1.15, gs.buildings[bld.id] || 0));
   });
   return cost;
+}
+
+// 지수형 건물 구매 비용: baseCost × 1.15^currentCount
+// buildingId로 직접 조회하는 헬퍼 (자동화/UI 등에서 사용)
+function getBldPurchaseCost(bldId) {
+  const bld = BUILDINGS.find(b => b.id === bldId);
+  if (!bld) return {};
+  return getBuildingCost(bld);
+}
+
+// 직원 고용 비용: 500 × 2.0^(workers-1)
+function getWorkerHireCost() {
+  return Math.floor(500 * Math.pow(2.0, (gs.workers || 1) - 1));
 }
 
 function getPartCost(part) {
@@ -453,7 +470,8 @@ function loadGame(slot) {
     gs.moonstone = saved.moonstone || 0;
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
-    gs.assembly = saved.assembly || { selectedQuality:'proto', jobs:[] };
+    gs.assembly = saved.assembly || { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
+    if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
     gs.settings = saved.settings || { sound: true, lang: 'en' };
     if (gs.settings.lang === undefined) gs.settings.lang = 'en';
     gs.lastTick = saved.lastTick || Date.now();
@@ -468,6 +486,9 @@ function loadGame(slot) {
     gs.msUpgrades = saved.msUpgrades || {};
     gs.autoEnabled = saved.autoEnabled || {};
     gs.milestones  = saved.milestones  || {};
+    gs.achievements = saved.achievements || {};         // P4-2
+    gs.prestigeStars = saved.prestigeStars || {};       // P4-3
+    gs.prestigeCount = saved.prestigeCount || 0;        // P4-3
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
@@ -481,7 +502,7 @@ function loadGame(slot) {
       bld_ops_center: true,
       bld_supply_depot: false,
 
-      bld_mine: false,
+      bld_mine: true,        // 처음부터 표시 (채굴기는 초기 핵심 건물)
       bld_extractor: false,
       bld_refinery: false,
       bld_cryo_plant: false,
@@ -689,15 +710,34 @@ function _showOfflineReport(report) {
 // ============================================================
 //  TICK / OFFLINE
 // ============================================================
+// 자원 한도 경고음 쿨다운 (연속 발생 방지)
+let _resCap_lastSfx = 0;
+const RES_CAP_COOLDOWN = 10000; // 10초 쿨다운
+
 function tick() {
   const now = Date.now();
   const dt = Math.min((now - gs.lastTick) / 1000, 1);
   gs.lastTick = now;
   if (dt < 0.001) return;  // 너무 짧은 tick 방지 (calcOffline 직후)
   const prod = getProduction();
+  const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
   RESOURCES.forEach(r => { gs.res[r.id] = Math.max(0, (gs.res[r.id] || 0) + prod[r.id] * dt); });
+  // 자원 한도 도달 경고음 (생산 중인 자원이 한도에 근접/도달 시)
+  if (now - _resCap_lastSfx > RES_CAP_COOLDOWN) {
+    const prod2 = getProduction();
+    const atCap = RESOURCES.some(r => {
+      const cap = RES_MAX[r.id];
+      if (!cap || !prod2[r.id] || prod2[r.id] <= 0) return false;
+      return (gs.res[r.id] || 0) >= cap * 0.99;
+    });
+    if (atCap) {
+      playSfx('square', 160, 0.12, 0.06, 120);
+      _resCap_lastSfx = now;
+    }
+  }
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
   if (typeof runAutomation === 'function') runAutomation();
+  if (typeof checkAchievements === 'function') checkAchievements(); // P4-2
 }
 

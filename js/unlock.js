@@ -112,12 +112,20 @@ function checkAutoUnlocks() {
 // ============================================================
 //  NOTIFICATIONS
 // ============================================================
-function notify(msg, type='') {
+function notify(msg, type='', silent=false) {
   const el = document.createElement('div');
   el.className = 'notif-item' + (type ? ' ' + type : '');
   el.textContent = msg;
   const notif = document.getElementById('notif');
   if (notif) notif.appendChild(el);
   setTimeout(() => el.remove(), 3200);
+  // 카테고리별 알림음 (silent 파라미터로 중복 방지)
+  if (!silent && typeof playSfx === 'function') {
+    if (type === 'green') {
+      playSfx('triangle', 520, 0.08, 0.03, 680);
+    } else if (type === 'red') {
+      playSfx('sawtooth', 180, 0.1, 0.05, 120);
+    }
+  }
 }
 

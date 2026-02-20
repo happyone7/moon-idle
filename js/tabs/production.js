@@ -6,6 +6,7 @@ function withdrawAllWorkers() {
   if (was === 0) { notify('배치된 인원이 없습니다', 'amber'); return; }
   Object.keys(gs.assignments).forEach(k => { gs.assignments[k] = 0; });
   notify(`// 전체 인원 철수 완료 (${was}명 회수)`, 'amber');
+  playSfx('triangle', 440, 0.12, 0.03, 220);
   renderAll();
 }
 
@@ -17,6 +18,7 @@ function quickAssign(bid) {
   if (assigned >= slotCap) { notify(`슬롯 수용 한도 초과 (${slotCap})`, 'amber'); return; }
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bid] = assigned + 1;
+  playSfx('triangle', 300, 0.04, 0.02, 400);
   renderAll();
 }
 
@@ -25,6 +27,7 @@ function quickUnassign(bid) {
   if (assigned <= 0) return;
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bid] = assigned - 1;
+  playSfx('triangle', 400, 0.04, 0.02, 300);
   renderAll();
 }
 
@@ -46,6 +49,21 @@ function buyBuilding(bid) {
   if (typeof _triggerBuildAnim === 'function') _triggerBuildAnim(bid);
   // 건물 오버레이 닫기 (ghost popup → actual building)
   if (typeof closeBldOv === 'function') closeBldOv();
+  // 파티클 이펙트: 건물 pre 위치 기준 버스트
+  if (typeof spawnAsciiParticles === 'function') {
+    setTimeout(() => {
+      const pre = document.querySelector('.world-bld[data-bid="' + bid + '"]');
+      if (pre) {
+        const rect = pre.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top  + rect.height / 2;
+        spawnAsciiParticles(cx, cy, 8, 'var(--green)');
+      } else {
+        // 월드 뷰 중앙 fallback
+        spawnAsciiParticles(window.innerWidth / 2, window.innerHeight * 0.6, 8, 'var(--green)');
+      }
+    }, 80);
+  }
 }
 // ============================================================
 //  MISSION GOAL PANEL

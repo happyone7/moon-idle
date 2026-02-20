@@ -1,0 +1,20 @@
+"AppBuild"
+{
+  "AppID" "4426340"
+  "Desc" "MoonIdle v0.2.0"
+  "BuildOutput" ".\steamcmd_output\"
+  "ContentRoot" ".\dist\win-unpacked\"
+  "SetLive" ""
+  "Depots"
+  {
+    "4426341"
+    {
+      "FileMapping"
+      {
+        "LocalPath" ".\*"
+        "DepotPath" "."
+        "recursive" "1"
+      }
+    }
+  }
+}
