@@ -14,6 +14,7 @@ let gs = {
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
   assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
   upgrades: {},
+  researchProgress: {},  // { upgradeId: { rpSpent: number } } — 진행 중인 연구
   msUpgrades: {},
   autoEnabled: {},
   milestones: {},
@@ -487,6 +488,7 @@ function loadGame(slot) {
     gs.moonstone = saved.moonstone || 0;
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
+    gs.researchProgress = saved.researchProgress || {};
     gs.assembly = saved.assembly || { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
     if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
     gs.settings = saved.settings || { sound: true, lang: 'en' };
@@ -728,6 +730,65 @@ function _showOfflineReport(report) {
 
 
 // ============================================================
+//  RESEARCH PROGRESS — 점진적 RP 소모 시스템
+// ============================================================
+/** 연구 시작 — 비RP 자원 즉시 차감, RP는 tick마다 점진 소모 */
+function startResearch(uid) {
+  const upg = UPGRADES.find(u => u.id === uid);
+  if (!upg || gs.upgrades[uid]) return;
+  if (gs.researchProgress && gs.researchProgress[uid]) return; // 이미 진행 중
+  if (upg.req && !gs.upgrades[upg.req]) { notify('선행 연구 필요', 'red'); return; }
+  // 비RP 자원 비용 확인 + 즉시 차감
+  const nonRpCost = {};
+  Object.entries(upg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
+  if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) { notify('자원 부족', 'red'); return; }
+  if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
+  if (!gs.researchProgress) gs.researchProgress = {};
+  gs.researchProgress[uid] = { rpSpent: 0 };
+  notify(`${upg.icon} ${upg.name} 연구 시작`);
+  playSfx('sine', 520, 0.06, 0.02);
+  renderAll();
+}
+
+/** 연구 완료 처리 (내부 호출) */
+function _completeResearch(uid) {
+  const upg = UPGRADES.find(u => u.id === uid);
+  if (!upg) return;
+  gs.upgrades[uid] = true;
+  delete gs.researchProgress[uid];
+  upg.effect();
+  if (upg.unlocks) applyUnlocks(upg.unlocks);
+  recentResearches.push({ name: upg.name, ts: Date.now() });
+  notify(`${upg.icon} ${upg.name} 연구 완료!`);
+  playSfx('sawtooth', 440, 0.1, 0.028, 700);
+}
+
+/** tick마다 호출 — 보유 RP를 진행 중인 연구들에 균등 분배 */
+function tickResearch() {
+  if (!gs.researchProgress) return;
+  const activeIds = Object.keys(gs.researchProgress);
+  if (activeIds.length === 0) return;
+  const rpHave = gs.res.research || 0;
+  if (rpHave <= 0.001) return;
+  const rpPerItem = rpHave / activeIds.length;
+  let totalConsumed = 0;
+  const completedIds = [];
+  activeIds.forEach(uid => {
+    const upg = UPGRADES.find(u => u.id === uid);
+    if (!upg) return;
+    const rpTotal = upg.cost.research || 0;
+    const prog = gs.researchProgress[uid];
+    const rpNeeded = rpTotal - (prog.rpSpent || 0);
+    const rpGiven = Math.min(rpPerItem, rpNeeded);
+    prog.rpSpent = (prog.rpSpent || 0) + rpGiven;
+    totalConsumed += rpGiven;
+    if (prog.rpSpent >= rpTotal) completedIds.push(uid);
+  });
+  gs.res.research = Math.max(0, rpHave - totalConsumed);
+  completedIds.forEach(uid => _completeResearch(uid));
+}
+
+// ============================================================
 //  TICK / OFFLINE
 // ============================================================
 // 자원 한도 경고음 쿨다운 (연속 발생 방지)
@@ -755,6 +816,7 @@ function tick() {
       _resCap_lastSfx = now;
     }
   }
+  tickResearch();  // 점진적 RP 소모
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
   if (typeof runAutomation === 'function') runAutomation();
