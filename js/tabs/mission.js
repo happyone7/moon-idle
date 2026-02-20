@@ -207,11 +207,11 @@ function switchMissionSubTab(subId) {
 // ============================================================
 const PHASES = [
   { id:'proto',    name:'PHASE 1: 프로토타입', targetAlt:50,  targetLaunches:1 },
-  { id:'sub',      name:'PHASE 2: 준궤도',     targetAlt:90,  targetLaunches:3 },
-  { id:'orbital',  name:'PHASE 3: 궤도',       targetAlt:105, targetLaunches:5 },
-  { id:'cislunar', name:'PHASE 4: 시스루나',   targetAlt:120, targetLaunches:8 },
-  { id:'lunar',    name:'PHASE 5: 달 착륙',    targetAlt:135, targetLaunches:12 },
-]; // targetAlt 현실화: ELITE 최대 도달 가능 고도 기준 (DESIGN-003)
+  { id:'sub',      name:'PHASE 2: 준궤도',     targetAlt:80,  targetLaunches:3 },
+  { id:'orbital',  name:'PHASE 3: 궤도',       targetAlt:100, targetLaunches:5 },
+  { id:'cislunar', name:'PHASE 4: 시스루나',   targetAlt:115, targetLaunches:8 },
+  { id:'lunar',    name:'PHASE 5: 달 착륙',    targetAlt:130, targetLaunches:12 },
+]; // targetAlt 재조정: 달성 가능 범위 축소 (D5-3)
 
 
 // ============================================================

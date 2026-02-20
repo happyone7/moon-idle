@@ -315,7 +315,7 @@ function getRocketScience(qualityId) {
   const deltaV = isp * 9.81 * Math.log(m0 / dryMass) / 1000;
   const twr = thrust / (m0 * 9.81);
   const reliability = clamp(
-    56 + gs.buildings.research_lab * 1.9 + gs.buildings.elec_lab * 0.8 + reliabilityBonus + q.relBonus + getAddonRelBonus(),
+    70 + gs.buildings.research_lab * 1.9 + gs.buildings.elec_lab * 0.8 + reliabilityBonus + q.relBonus + getAddonRelBonus(),
     0, 99.5
   );
   const altitude = clamp(deltaV * 22, 0, 400);

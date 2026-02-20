@@ -34,10 +34,10 @@ const PARTS = [
 ];
 
 const QUALITIES = [
-  { id:'proto',    name:'PROTO-MK1', icon:'[P1]', costMult:1.0, timeSec:20,  ispBonus:0,  dryMassMult:1.0,  relBonus:0,  reuseBonus:0,  rewardMult:1.0 },
+  { id:'proto',    name:'PROTO-MK1', icon:'[P1]', costMult:1.0, timeSec:20,  ispBonus:0,  dryMassMult:1.0,  relBonus:5,  reuseBonus:0,  rewardMult:1.0 },
   { id:'standard', name:'STD-MK2',  icon:'[S2]', costMult:2.0, timeSec:40,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:2.0 },
-  { id:'advanced', name:'ADV-MK3',  icon:'[A3]', costMult:4.0, timeSec:80, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:3.0 },
-  { id:'elite',    name:'ELITE-MK4',icon:'[E4]', costMult:8.0, timeSec:240, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:4.5 },
+  { id:'advanced', name:'ADV-MK3',  icon:'[A3]', costMult:4.0, timeSec:80, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:3.5 },
+  { id:'elite',    name:'ELITE-MK4',icon:'[E4]', costMult:8.0, timeSec:160, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:6.0 },
 ];
 
 // Each upgrade has optional 'unlocks' array: strings matching keys in gs.unlocks
@@ -58,6 +58,8 @@ const UPGRADES = [
   { id:'fusion',             name:'핵융합 엔진',       icon:'[FSN]', cost:{research:500,electronics:400},   req:'automation',         desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
   { id:'reliability',        name:'신뢰도 강화',       icon:'[REL]', cost:{research:300},                   req:'microchip',          desc:'발사 신뢰도 +15%',             effect:()=>{ reliabilityBonus+=15; } },
   { id:'multipad',           name:'복수 발사대',       icon:'[MUL]', cost:{research:400,metal:1000},        req:'alloy',              desc:'조립 슬롯 +1',                 effect:()=>{ slotBonus++; } },
+  { id:'auto_worker_assign', name:'인원 자동 배치 연구', icon:'[AWA]', cost:{research:500,electronics:300},  req:'automation',         desc:'인원 자동 배치 해금 (문스톤 불필요)', effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_worker']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_worker']=true; }, unlocks:[] },
+  { id:'auto_assemble_restart', name:'자동 조립 재시작 연구', icon:'[AAR]', cost:{research:600,electronics:400}, req:'auto_worker_assign', desc:'조립 자동 재시작 해금 (문스톤 불필요)', effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_assemble']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_assemble']=true; }, unlocks:[] },
 ];
 
 // ============================================================
@@ -239,11 +241,11 @@ const MILESTONES = [
   },
   {
     id:   'orbit_200',
-    name: '궤도 돌입',
+    name: '궤도 돌입 (고도 120km)',
     icon: '[ORB]',
-    desc: '발사 고도 115km 이상 달성',
+    desc: '발사 고도 120km 이상 달성',
     reward: '문스톤 +5 즉시 지급',
-    check: gs => Array.isArray(gs.history) && gs.history.some(h => (h.altitude || 0) >= 115),
+    check: gs => Array.isArray(gs.history) && gs.history.some(h => (h.altitude || 0) >= 120),
   },
   {
     id:   'ten_launches',
