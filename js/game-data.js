@@ -45,28 +45,28 @@ const QUALITIES = [
 // Within each branch, req chains are sequential (top→bottom)
 const UPGRADES = [
   // ── Branch S (구조 · STRUCTURE) ──────────────────────────────
-  { id:'basic_prod',   name:'기초 용접술',     icon:'S01', cost:{research:10},                   req:null,          desc:'광산·생산 시설 잠금 해제',       effect:()=>{},                                                      unlocks:['bld_mine'] },
-  { id:'drill',        name:'알루미늄 가공',   icon:'S02', cost:{research:50},                   req:'basic_prod',  desc:'금속 생산 +25%',                 effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.25; },            unlocks:['bld_extractor'] },
-  { id:'alloy',        name:'CFRP 적층',       icon:'S03', cost:{research:150,metal:300},        req:'drill',       desc:'부품 비용 -20%',                 effect:()=>{ partCostMult*=0.8; },                                  unlocks:['bld_r_and_d'] },
-  { id:'rocket_eng',   name:'티타늄 가공',     icon:'S04', cost:{research:200,metal:300},        req:'alloy',       desc:'조립동 해금 + 로켓 제조 시작',   effect:()=>{},                                                      unlocks:['tab_assembly','bld_launch_pad'] },
+  { id:'basic_prod',   name:'기초 용접술',     icon:'S01', cost:{research:10},                   req:null,          time:  60, desc:'광산·생산 시설 잠금 해제',       effect:()=>{},                                                      unlocks:['bld_mine'] },
+  { id:'drill',        name:'알루미늄 가공',   icon:'S02', cost:{research:50},                   req:'basic_prod',  time: 180, desc:'금속 생산 +25%',                 effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.25; },            unlocks:['bld_extractor'] },
+  { id:'alloy',        name:'CFRP 적층',       icon:'S03', cost:{research:150,metal:300},        req:'drill',       time: 360, desc:'부품 비용 -20%',                 effect:()=>{ partCostMult*=0.8; },                                  unlocks:['bld_r_and_d'] },
+  { id:'rocket_eng',   name:'티타늄 가공',     icon:'S04', cost:{research:200,metal:300},        req:'alloy',       time: 480, desc:'조립동 해금 + 로켓 제조 시작',   effect:()=>{},                                                      unlocks:['tab_assembly','bld_launch_pad'] },
   // ── Branch P (추진 · PROPULSION) ─────────────────────────────
-  { id:'fuel_chem',    name:'고압 연소실 I',   icon:'P01', cost:{research:60,metal:50},          req:null,          desc:'연료 정제 시설 해금',             effect:()=>{},                                                      unlocks:['bld_refinery'] },
-  { id:'catalyst',     name:'터보펌프 기초',   icon:'P02', cost:{research:80,fuel:100},          req:'fuel_chem',   desc:'연료 생산 +30%',                 effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; },               unlocks:['bld_cryo_plant'] },
-  { id:'lightweight',  name:'재생 냉각 노즐',  icon:'P03', cost:{research:250,metal:800},        req:'catalyst',    desc:'건조질량 -10%, 재활용 +8%',     effect:()=>{ /* handled in getRocketScience */ } },
-  { id:'fusion',       name:'핀치 연소',       icon:'P04', cost:{research:500,electronics:400},  req:'lightweight', desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
+  { id:'fuel_chem',    name:'고압 연소실 I',   icon:'P01', cost:{research:60,metal:50},          req:null,          time: 180, desc:'연료 정제 시설 해금',             effect:()=>{},                                                      unlocks:['bld_refinery'] },
+  { id:'catalyst',     name:'터보펌프 기초',   icon:'P02', cost:{research:80,fuel:100},          req:'fuel_chem',   time: 240, desc:'연료 생산 +30%',                 effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; },               unlocks:['bld_cryo_plant'] },
+  { id:'lightweight',  name:'재생 냉각 노즐',  icon:'P03', cost:{research:250,metal:800},        req:'catalyst',    time: 600, desc:'건조질량 -10%, 재활용 +8%',     effect:()=>{ /* handled in getRocketScience */ } },
+  { id:'fusion',       name:'핀치 연소',       icon:'P04', cost:{research:500,electronics:400},  req:'lightweight', time:1200, desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
   // ── Branch A (항전 · AVIONICS) ───────────────────────────────
-  { id:'electronics_basics', name:'자이로 안정화',   icon:'A01', cost:{research:80},                  req:null,                  desc:'전자 시설 해금',       effect:()=>{},                                                                       unlocks:['bld_elec_lab','bld_supply_depot'] },
-  { id:'microchip',          name:'관성 항법 (INS)', icon:'A02', cost:{research:100,electronics:80},  req:'electronics_basics',  desc:'전자부품 +35%',       effect:()=>{ prodMult.electronics=(prodMult.electronics||1)*1.35; },                 unlocks:['bld_fab_plant','bld_r_and_d'] },
-  { id:'reliability',        name:'GPS 보정',        icon:'A03', cost:{research:300},                 req:'microchip',           desc:'발사 신뢰도 +15%',   effect:()=>{ reliabilityBonus+=15; } },
-  { id:'automation',         name:'자율 비행',       icon:'A04', cost:{research:200,electronics:200}, req:'reliability',          desc:'전체 생산 ×1.5',     effect:()=>{ globalMult*=1.5; },                                                     unlocks:['bld_solar_array'] },
+  { id:'electronics_basics', name:'자이로 안정화',   icon:'A01', cost:{research:80},                  req:null,                  time: 240, desc:'전자 시설 해금',       effect:()=>{},                                                                       unlocks:['bld_elec_lab','bld_supply_depot'] },
+  { id:'microchip',          name:'관성 항법 (INS)', icon:'A02', cost:{research:100,electronics:80},  req:'electronics_basics',  time: 300, desc:'전자부품 +35%',       effect:()=>{ prodMult.electronics=(prodMult.electronics||1)*1.35; },                 unlocks:['bld_fab_plant','bld_r_and_d'] },
+  { id:'reliability',        name:'GPS 보정',        icon:'A03', cost:{research:300},                 req:'microchip',           time: 720, desc:'발사 신뢰도 +15%',   effect:()=>{ reliabilityBonus+=15; } },
+  { id:'automation',         name:'자율 비행',       icon:'A04', cost:{research:200,electronics:200}, req:'reliability',         time: 480, desc:'전체 생산 ×1.5',     effect:()=>{ globalMult*=1.5; },                                                     unlocks:['bld_solar_array'] },
   // ── Branch T (열보호 · THERMAL) ──────────────────────────────
-  { id:'hire_worker_1', name:'기초 절열재',       icon:'T01', cost:{research:20},                  req:null,            desc:'추가 인원 +1명',       effect:()=>{ gs.workers=(gs.workers||1)+1; },  unlocks:[] },
-  { id:'launch_ctrl',   name:'삭마 코팅',         icon:'T02', cost:{research:300,electronics:200}, req:'hire_worker_1', desc:'발사 통제 탭 해금',   effect:()=>{},                                 unlocks:['tab_launch'] },
-  { id:'mission_sys',   name:'능동 냉각',         icon:'T03', cost:{research:400},                 req:'launch_ctrl',   desc:'미션 현황 탭 해금',   effect:()=>{},                                 unlocks:['tab_mission'] },
-  { id:'multipad',      name:'열차폐 타일',       icon:'T04', cost:{research:400,metal:1000},      req:'mission_sys',   desc:'조립 슬롯 +1',       effect:()=>{ slotBonus++; } },
+  { id:'hire_worker_1', name:'기초 절열재',       icon:'T01', cost:{research:20},                  req:null,            time: 120, desc:'추가 인원 +1명',       effect:()=>{ gs.workers=(gs.workers||1)+1; },  unlocks:[] },
+  { id:'launch_ctrl',   name:'삭마 코팅',         icon:'T02', cost:{research:300,electronics:200}, req:'hire_worker_1', time: 720, desc:'발사 통제 탭 해금',   effect:()=>{},                                 unlocks:['tab_launch'] },
+  { id:'mission_sys',   name:'능동 냉각',         icon:'T03', cost:{research:400},                 req:'launch_ctrl',   time: 900, desc:'미션 현황 탭 해금',   effect:()=>{},                                 unlocks:['tab_mission'] },
+  { id:'multipad',      name:'열차폐 타일',       icon:'T04', cost:{research:400,metal:1000},      req:'mission_sys',   time: 900, desc:'조립 슬롯 +1',       effect:()=>{ slotBonus++; } },
   // ── Branch O (운영 · OPERATIONS) ─────────────────────────────
-  { id:'auto_worker_assign',    name:'인원 자동 배치',   icon:'O01', cost:{research:500,electronics:300},  req:null,                  desc:'인원 자동 배치 해금',   effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_worker']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_worker']=true; }, unlocks:[] },
-  { id:'auto_assemble_restart', name:'자동 조립 재시작', icon:'O02', cost:{research:600,electronics:400},  req:'auto_worker_assign',  desc:'조립 자동 재시작 해금', effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_assemble']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_assemble']=true; }, unlocks:[] },
+  { id:'auto_worker_assign',    name:'인원 자동 배치',   icon:'O01', cost:{research:500,electronics:300},  req:null,                  time:1200, desc:'인원 자동 배치 해금',   effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_worker']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_worker']=true; }, unlocks:[] },
+  { id:'auto_assemble_restart', name:'자동 조립 재시작', icon:'O02', cost:{research:600,electronics:400},  req:'auto_worker_assign',  time:1500, desc:'조립 자동 재시작 해금', effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_assemble']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_assemble']=true; }, unlocks:[] },
 ];
 
 // Research branch definitions for column layout
