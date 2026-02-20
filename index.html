@@ -74,6 +74,15 @@ body::after {
 * { scrollbar-width: thin; scrollbar-color: var(--green-dim) transparent; }
 
 /* ===========================
+   CURSOR CONVENTIONS
+   =========================== */
+/* 클릭 가능한 모든 버튼 — 포인터(손가락) 커서 */
+button:not(:disabled) { cursor: pointer; }
+/* 드래그 가능 영역 — 손바닥 커서 (생산 탭 월드 씬은 별도 룰에서 재정의) */
+[draggable="true"] { cursor: grab; }
+[draggable="true"]:active { cursor: grabbing; }
+
+/* ===========================
    TITLE SCREEN
    =========================== */
 #title-screen {
@@ -465,7 +474,7 @@ body.tab-launch #rp { display: none; }
 .world-bld {
   position: absolute;
   bottom: 0;
-  font-family: var(--font);
+  font-family: 'Courier New', Consolas, 'DejaVu Sans Mono', monospace;
   font-size: 11px;
   line-height: 1.25;
   color: var(--green-dim);
