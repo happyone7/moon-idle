@@ -94,6 +94,13 @@ function fmtTime(sec) {
   return `${r}s`;
 }
 
+function fmtComma(n) {
+  if (typeof n !== 'number' || !isFinite(n)) return '0';
+  if (n >= 1e9) return (n/1e9).toFixed(2)+'B';
+  if (n >= 1e6) return (n/1e6).toFixed(3)+'M';
+  return Math.floor(n).toLocaleString('en-US');
+}
+
 function clamp(v, mn, mx) { return Math.min(mx, Math.max(mn, v)); }
 
 function getQuality(qid) { return QUALITIES.find(q => q.id === qid) || QUALITIES[0]; }
