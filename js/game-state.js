@@ -15,6 +15,7 @@ let gs = {
   assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
   upgrades: {},
   researchProgress: {},  // { upgradeId: { rpSpent: number, timeSpent: number } } — 진행 중인 연구
+  opsRoles: { sales: 0, accounting: 0, consulting: 0 },
   selectedTech: null,
   msUpgrades: {},
   autoEnabled: {},
@@ -512,6 +513,15 @@ function loadGame(slot) {
         }
       });
     }
+    gs.opsRoles = saved.opsRoles || { sales: 0, accounting: 0, consulting: 0 };
+    if (!gs.opsRoles) gs.opsRoles = { sales: 0, accounting: 0, consulting: 0 };
+    // 기존 ops_center 배치 인원을 역할로 분배 (마이그레이션)
+    if (gs.assignments && gs.assignments.ops_center &&
+        gs.opsRoles.sales === 0 && gs.opsRoles.accounting === 0 && gs.opsRoles.consulting === 0) {
+      const total = gs.assignments.ops_center;
+      gs.opsRoles.sales = total; // 기존 배치는 전부 영업팀으로 이관
+    }
+
     gs.assembly = saved.assembly || { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
     if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
     gs.settings = saved.settings || { sound: true, lang: 'en' };
@@ -862,6 +872,40 @@ function getResearchETA(uid) {
   const speedRatio  = Math.min(1, myRpRate / rpPerSec);
   if (speedRatio <= 0) return Infinity;
   return timeLeft / speedRatio;
+}
+
+// ─── 운영 센터 역할 배치 ──────────────────────────────────────
+function assignOpsRole(roleId) {
+  const roleDef = (typeof OPS_ROLES !== 'undefined') && OPS_ROLES.find(r => r.id === roleId);
+  if (!roleDef) return;
+  const cnt = gs.buildings.ops_center || 0;
+  if (cnt === 0) { notify('운영 센터를 먼저 건설하세요', 'red'); return; }
+  const maxSlots = cnt * roleDef.maxSlotsPerBld;
+  const curRole = (gs.opsRoles && gs.opsRoles[roleId]) || 0;
+  if (curRole >= maxSlots) { notify(`${roleDef.name} 슬롯 한도 (${maxSlots}명)`, 'amber'); return; }
+  const avail = getAvailableWorkers();
+  if (avail <= 0) { notify('여유 인원 없음 — 직원 고용 필요', 'red'); return; }
+  if (!gs.opsRoles) gs.opsRoles = { sales: 0, accounting: 0, consulting: 0 };
+  gs.opsRoles[roleId] = curRole + 1;
+  if (!gs.assignments) gs.assignments = {};
+  gs.assignments.ops_center = (gs.assignments.ops_center || 0) + 1;
+  notify(`운영 센터 — ${roleDef.name} 배치 (${gs.opsRoles[roleId]}명)`);
+  playSfx('triangle', 320, 0.06, 0.03, 480);
+  renderAll();
+}
+
+function unassignOpsRole(roleId) {
+  const roleDef = (typeof OPS_ROLES !== 'undefined') && OPS_ROLES.find(r => r.id === roleId);
+  if (!roleDef) return;
+  const curRole = (gs.opsRoles && gs.opsRoles[roleId]) || 0;
+  if (curRole <= 0) { notify(`${roleDef.name} 배치 인원 없음`, 'amber'); return; }
+  gs.opsRoles[roleId] = curRole - 1;
+  if (!gs.assignments) gs.assignments = {};
+  gs.assignments.ops_center = Math.max(0, (gs.assignments.ops_center || 0) - 1);
+  if (gs.assignments.ops_center === 0) delete gs.assignments.ops_center;
+  notify(`운영 센터 — ${roleDef.name} 철수 (${gs.opsRoles[roleId]}명)`);
+  playSfx('triangle', 400, 0.04, 0.02, 280);
+  renderAll();
 }
 
 // ============================================================

@@ -9,6 +9,26 @@ const RESOURCES = [
   { id:'research',    name:'연구',     symbol:'RP', color:'var(--green-mid)' },
 ];
 
+const OPS_ROLES = [
+  { id: 'sales',      name: '영업팀 직원',  maxSlotsPerBld: 3 },
+  { id: 'accounting', name: '회계팀 직원',  maxSlotsPerBld: 3 },
+  { id: 'consulting', name: '상담팀 직원',  maxSlotsPerBld: 3 },
+];
+
+const BLD_STAFF_NAMES = {
+  supply_depot:  '물류 직원',
+  mine:          '채굴 직원',
+  extractor:     '추출 직원',
+  refinery:      '정제 직원',
+  cryo_plant:    '냉각 직원',
+  elec_lab:      '전자 기술자',
+  fab_plant:     '제작 기술자',
+  research_lab:  '연구원',
+  r_and_d:       '수석 연구원',
+  solar_array:   '패널 관리자',
+  launch_pad:    '발사 기술자',
+};
+
 const BUILDINGS = [
   { id:'housing',      name:'주거 시설',        icon:'[HSG]', produces:'bonus',       baseRate:0,   baseCost:{money:200},                                    desc:'인원 상한 +1',      wbClass:'wb-housing' },
   { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:35,  baseCost:{metal:150},                                    desc:'수익 창출 허브',    wbClass:'wb-ops' },
