@@ -42,7 +42,13 @@ function buyBuilding(bid) {
   // 모든 건물 구매마다 워커 상한 +1
   gs.workers = (gs.workers || 1) + 1;
   if (typeof syncWorkerDots === 'function') syncWorkerDots();
-  notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]}) — 인원 +1`);
+  // P5-11: housing 구매 시 유휴 인원 안내
+  const idleAfterBuy = getAvailableWorkers();
+  if (bid === 'housing') {
+    notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]}) — 배치 가능 인원 증가 — 유휴 인원: ${idleAfterBuy}명`);
+  } else {
+    notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]}) — 인원 +1`);
+  }
   playSfx('triangle', 360, 0.08, 0.03, 520);
   renderAll();
   // 건설 애니메이션
@@ -147,7 +153,8 @@ function renderProductionTab() {
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
     let rateStr = '';
     if (b.produces !== 'bonus') {
-      const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * (typeof getBldProdMult === 'function' ? getBldProdMult(b.id) : 1) * (typeof getBldUpgradeMult === 'function' ? getBldUpgradeMult(b.id) : 1) * (typeof getAddonMult === 'function' ? getAddonMult(b.id) : 1);
+      const msBonus = typeof getMilestoneProdBonus === 'function' ? getMilestoneProdBonus() : 1;
+      const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * (typeof getBldProdMult === 'function' ? getBldProdMult(b.id) : 1) * (typeof getBldUpgradeMult === 'function' ? getBldUpgradeMult(b.id) : 1) * (typeof getAddonMult === 'function' ? getAddonMult(b.id) : 1) * msBonus;
       rateStr = cnt > 0
         ? (assigned > 0 ? `<span style="color:var(--green)">+${fmtDec(rate, 2)}/s</span>` : `<span style="color:var(--amber)">대기</span>`)
         : `<span style="color:#1a3a1a">미건설</span>`;

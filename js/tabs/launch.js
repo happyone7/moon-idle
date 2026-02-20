@@ -13,6 +13,15 @@ function launchFromSlot(slotIdx) {
   const rollSuccess = gs.launches === 0 || Math.random() * 100 < sci.reliability;
   const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
 
+  // P5-1: 실패 시 부품 일부 손실 (50% 확률로 각 부품 소실)
+  if (!rollSuccess) {
+    PARTS.forEach(p => {
+      if (gs.parts[p.id] && Math.random() < 0.5) {
+        gs.parts[p.id] = 0;
+      }
+    });
+  }
+
   gs.assembly.jobs[slotIdx] = null;
   gs.launches++;
   if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches || 0) + 1;
@@ -82,27 +91,76 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   telemDiv.className = 'telemetry-wrap';
   if (telemWrap) telemWrap.appendChild(telemDiv);
 
-  const steps = [
+  // P5-1: 성공/실패 분기 텔레메트리
+  const steps = success ? [
     { delay: 0,    label: 'T+0',  event: 'IGNITION',             pct: 15 },
     { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',            pct: 35 },
     { delay: 1200, label: 'T+8',  event: 'MECO',                 pct: 60 },
     { delay: 1800, label: 'T+12', event: '단계 분리',              pct: 78 },
     { delay: 2400, label: 'T+20', event: `목표 고도 달성 ${Math.floor(sci.altitude)}km`, pct: 100 },
+  ] : [
+    { delay: 0,    label: 'T+0',  event: 'IGNITION',                     pct: 15 },
+    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',                    pct: 35 },
+    { delay: 1200, label: 'T+7',  event: '!! ANOMALY DETECTED !!',       pct: 48, fail: true },
+    { delay: 1800, label: 'T+8',  event: '!! STRUCTURAL FAILURE !!',     pct: 48, fail: true },
+    { delay: 2400, label: 'T+14', event: '// MISSION LOST — RUD',        pct: 0,  fail: true },
   ];
 
   steps.forEach((step, i) => {
     setTimeout(() => {
       const line = document.createElement('div');
-      line.className = 'telem-line';
+      line.className = 'telem-line' + (step.fail ? ' telem-fail' : '');
+      const barColor = step.fail ? 'var(--red)' : '';
       line.innerHTML = `
         <span class="telem-time">${step.label}</span>
-        <span class="telem-event">${step.event}</span>
-        <div class="telem-bar"><div class="telem-bar-fill" style="width:${step.pct}%"></div></div>
+        <span class="telem-event" ${step.fail ? 'style="color:var(--red)"' : ''}>${step.event}</span>
+        <div class="telem-bar"><div class="telem-bar-fill" style="width:${step.pct}%;${barColor ? 'background:'+barColor : ''}"></div></div>
         <span class="telem-pct">${step.pct}%</span>`;
       telemDiv.appendChild(line);
-      playSfx('triangle', 300 + i * 40, 0.06, 0.02, 400 + i * 30);
+      if (step.fail) {
+        playSfx('sawtooth', 180 - i * 20, 0.14, 0.05, 80);
+      } else {
+        playSfx('triangle', 300 + i * 40, 0.06, 0.02, 400 + i * 30);
+      }
     }, step.delay);
   });
+
+  // P5-1: 실패 시 폭발 ASCII 아트 프레임 순차 표시
+  if (!success) {
+    const FAIL_FRAMES = [
+      // Frame 1: Destabilized
+      '       *\n' +
+      '     /\\!\\  GYRO ALERT\n' +
+      '    / !! \\\n' +
+      '   / WARN \\\n' +
+      '  |  ROLL  |\n' +
+      '  |__+47°__|',
+      // Frame 2: Explosion
+      '    \\  * . /\n' +
+      '  . * ╔═╗ * .\n' +
+      ' * ░░░║!║░░░ *\n' +
+      '  ░▒▓▓███▓▓▒░\n' +
+      '   ░▒▓████▓▒░\n' +
+      '  ~~ FIRE ~~',
+      // Frame 3: Aftermath
+      '     .   ·   .\n' +
+      '   ·   .   ·\n' +
+      '    ░  ▒▓▒  ░\n' +
+      '  ░░▒▓█████▓▒░░\n' +
+      '  ───══╤══───\n' +
+      '  ▓▓ DAMAGED ▓▓',
+    ];
+    FAIL_FRAMES.forEach((frame, fi) => {
+      setTimeout(() => {
+        const rocketEl = document.getElementById('launch-rocket-pre');
+        if (rocketEl) {
+          rocketEl.classList.remove('launching');
+          rocketEl.style.color = 'var(--red)';
+          rocketEl.textContent = frame;
+        }
+      }, 1400 + fi * 700);
+    });
+  }
 
   // After last telemetry (3000ms), show result panel
   setTimeout(() => {
@@ -114,18 +172,31 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
         <span class="launch-result-stat-lbl">기체</span><span class="launch-result-stat-val">${q.name}</span>
         <span class="launch-result-stat-lbl">Δv</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>
         <span class="launch-result-stat-lbl">TWR</span><span class="launch-result-stat-val">${sci.twr.toFixed(2)}</span>
-        <span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${Math.floor(sci.altitude)} km</span>
+        <span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${success ? Math.floor(sci.altitude) : '---'} km</span>
         <span class="launch-result-stat-lbl">신뢰도</span><span class="launch-result-stat-val">${sci.reliability.toFixed(1)}%</span>
       `;
       const lrMs = document.getElementById('lr-ms');
-      if (lrMs) lrMs.textContent = `문스톤 보상: +${earned}개`;
+      if (lrMs) {
+        if (success) {
+          lrMs.textContent = `문스톤 보상: +${earned}개`;
+          lrMs.style.color = '';
+        } else {
+          lrMs.textContent = `발사 실패 — 문스톤 0 / 부품 일부 손실`;
+          lrMs.style.color = 'var(--red)';
+        }
+      }
     }
   }, 3000);
 
   // After 3.5s show overlay
   setTimeout(() => {
     launchInProgress = false;
-    playLaunchSfx();
+    if (success) {
+      playLaunchSfx();
+    } else {
+      // P5-1: 발사 실패 SFX
+      if (typeof playSfx_launchFail === 'function') playSfx_launchFail();
+    }
     // 발사 결과 후 이벤트 BGM 종료 → 페이즈 트랙으로 복귀
     if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.stopEvent();
     _showLaunchOverlay(q, sci, earned, success);

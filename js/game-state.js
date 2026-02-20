@@ -640,6 +640,9 @@ function calcOffline() {
 }
 
 function _showOfflineReport(report) {
+  // P5-3: 오프라인 복귀 SFX
+  if (typeof playSfx_offlineReturn === 'function') playSfx_offlineReturn();
+
   const h = Math.floor(report.elapsed / 3600);
   const m = Math.floor((report.elapsed % 3600) / 60);
   const s = Math.floor(report.elapsed % 60);
