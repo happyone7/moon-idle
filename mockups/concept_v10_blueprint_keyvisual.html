@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>MOON IDLE — Blueprint to Reality Key Visual</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+  }
+  .canvas-wrapper {
+    width: 1920px;
+    height: 1080px;
+    position: relative;
+    overflow: hidden;
+  }
+  svg#keyvisual {
+    width: 1920px;
+    height: 1080px;
+    display: block;
+  }
+
+  /* ── Animations ── */
+  @keyframes blueprint-pulse {
+    0%, 100% { opacity: 0.15; }
+    50%       { opacity: 0.28; }
+  }
+  @keyframes creation-glow {
+    0%, 100% { opacity: 0.7; r: 55px; }
+    40%       { opacity: 1.0; r: 85px; }
+    60%       { opacity: 0.9; r: 72px; }
+  }
+  @keyframes creation-outer {
+    0%, 100% { opacity: 0.15; r: 140px; }
+    50%       { opacity: 0.40; r: 180px; }
+  }
+  @keyframes steam-drift-a {
+    0%   { transform: translate(0, 0) scale(1);   opacity: 0.22; }
+    50%  { transform: translate(-18px, -55px) scale(1.3); opacity: 0.12; }
+    100% { transform: translate(-30px, -110px) scale(1.6); opacity: 0; }
+  }
+  @keyframes steam-drift-b {
+    0%   { transform: translate(0, 0) scale(1);   opacity: 0.18; }
+    50%  { transform: translate(12px, -60px) scale(1.2); opacity: 0.10; }
+    100% { transform: translate(22px, -115px) scale(1.5); opacity: 0; }
+  }
+  @keyframes steam-drift-c {
+    0%   { transform: translate(0, 0) scale(0.8); opacity: 0.20; }
+    50%  { transform: translate(-8px, -70px) scale(1.1); opacity: 0.10; }
+    100% { transform: translate(-14px,-130px) scale(1.4); opacity: 0; }
+  }
+  @keyframes floodlight-flicker {
+    0%, 100% { opacity: 0.82; }
+    20%       { opacity: 0.78; }
+    45%       { opacity: 0.92; }
+    70%       { opacity: 0.75; }
+    85%       { opacity: 0.88; }
+  }
+  @keyframes annotation-draw-a {
+    from { stroke-dashoffset: 300; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes annotation-draw-b {
+    from { stroke-dashoffset: 220; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes annotation-draw-c {
+    from { stroke-dashoffset: 180; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes annotation-draw-d {
+    from { stroke-dashoffset: 260; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes annotation-draw-e {
+    from { stroke-dashoffset: 150; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes star-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+  @keyframes dim-line-a {
+    0%   { stroke-dashoffset: 0; opacity: 0; }
+    20%  { opacity: 1; }
+    80%  { stroke-dashoffset: 0; opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  .grid-layer    { animation: blueprint-pulse 4s ease-in-out infinite; }
+  .creation-core { animation: creation-glow 1.5s ease-in-out infinite; }
+  .creation-ring { animation: creation-outer 1.5s ease-in-out infinite; }
+  .steam-a       { animation: steam-drift-a 4.2s ease-in-out infinite; transform-origin: 920px 995px; }
+  .steam-b       { animation: steam-drift-b 3.8s 0.7s ease-in-out infinite; transform-origin: 960px 1000px; }
+  .steam-c       { animation: steam-drift-c 4.8s 1.4s ease-in-out infinite; transform-origin: 995px 990px; }
+  .flood-group   { animation: floodlight-flicker 3.5s ease-in-out infinite; }
+  .ann-line-a    { stroke-dasharray: 300; animation: annotation-draw-a 2.0s 0.3s ease-out forwards; stroke-dashoffset: 300; }
+  .ann-line-b    { stroke-dasharray: 220; animation: annotation-draw-b 1.8s 0.8s ease-out forwards; stroke-dashoffset: 220; }
+  .ann-line-c    { stroke-dasharray: 180; animation: annotation-draw-c 1.6s 1.2s ease-out forwards; stroke-dashoffset: 180; }
+  .ann-line-d    { stroke-dasharray: 260; animation: annotation-draw-d 2.2s 0.5s ease-out forwards; stroke-dashoffset: 260; }
+  .ann-line-e    { stroke-dasharray: 150; animation: annotation-draw-e 1.4s 1.6s ease-out forwards; stroke-dashoffset: 150; }
+  .dim-line-a    { stroke-dasharray: 400; animation: dim-line-a 3s 0.1s ease-out forwards; stroke-dashoffset: 0; opacity: 0; }
+  .dim-line-b    { stroke-dasharray: 400; animation: dim-line-a 3s 0.6s ease-out forwards; stroke-dashoffset: 0; opacity: 0; }
+  .dim-line-c    { stroke-dasharray: 400; animation: dim-line-a 3s 1.0s ease-out forwards; stroke-dashoffset: 0; opacity: 0; }
+  .dim-line-d    { stroke-dasharray: 400; animation: dim-line-a 3s 1.4s ease-out forwards; stroke-dashoffset: 0; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="canvas-wrapper">
+<svg id="keyvisual" viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+<defs>
+
+  <!-- ══ FILTERS ══ -->
+  <!-- Cyan glow for blueprint lines -->
+  <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur"/>
+    <feMerge>
+      <feMergeNode in="blur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+
+  <!-- Warm amber glow for floodlight -->
+  <filter id="glow-warm" x="-100%" y="-100%" width="300%" height="300%">
+    <feColorMatrix type="matrix" values="1.5 0.5 0   0 0.1
+                                          0.4 0.8 0   0 0.05
+                                          0   0   0.2 0 0
+                                          0   0   0   1 0" result="warmed"/>
+    <feGaussianBlur in="warmed" stdDeviation="12" result="blur"/>
+    <feMerge>
+      <feMergeNode in="blur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+
+  <!-- Extreme creation point glow -->
+  <filter id="filter-creation" x="-200%" y="-200%" width="500%" height="500%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="blur1"/>
+    <feGaussianBlur in="SourceGraphic" stdDeviation="8"  result="blur2"/>
+    <feMerge>
+      <feMergeNode in="blur1"/>
+      <feMergeNode in="blur2"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+
+  <!-- Blueprint paper grain texture -->
+  <filter id="paper-grain" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.65 0.65" numOctaves="4" seed="2" result="noise"/>
+    <feColorMatrix in="noise" type="saturate" values="0" result="gray"/>
+    <feBlend in="SourceGraphic" in2="gray" mode="overlay" result="blend"/>
+    <feComposite in="blend" in2="SourceGraphic" operator="in"/>
+  </filter>
+
+  <!-- Steel surface texture -->
+  <filter id="steel-texture" x="0%" y="0%" width="100%" height="100%">
+    <feTurbulence type="turbulence" baseFrequency="0.02 0.8" numOctaves="2" seed="5" result="noise"/>
+    <feColorMatrix in="noise" type="matrix"
+      values="0  0  0  0  0.15
+              0  0  0  0  0.22
+              0  0  0  0  0.35
+              0  0  0  4 -1.5" result="streaks"/>
+    <feBlend in="SourceGraphic" in2="streaks" mode="soft-light"/>
+  </filter>
+
+  <!-- Soft edge blur for transition zone -->
+  <filter id="soft-edge" x="-20%" y="-10%" width="140%" height="120%">
+    <feGaussianBlur stdDeviation="30 5"/>
+  </filter>
+
+  <!-- Glow for annotation text -->
+  <filter id="text-glow-cyan" x="-30%" y="-30%" width="160%" height="160%">
+    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- ══ GRADIENTS ══ -->
+  <!-- Main background gradient: left blueprint → right reality -->
+  <linearGradient id="bg-main" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#071428"/>
+    <stop offset="40%"  stop-color="#0d1a30"/>
+    <stop offset="50%"  stop-color="#0f1e38"/>
+    <stop offset="60%"  stop-color="#0d1826"/>
+    <stop offset="100%" stop-color="#050810"/>
+  </linearGradient>
+
+  <!-- Blueprint side overlay -->
+  <linearGradient id="blueprint-overlay" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#071e40" stop-opacity="0.5"/>
+    <stop offset="45%"  stop-color="#071e40" stop-opacity="0.2"/>
+    <stop offset="55%"  stop-color="#071e40" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#071e40" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Reality side warm overlay -->
+  <linearGradient id="reality-overlay" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#ff8c00" stop-opacity="0"/>
+    <stop offset="45%"  stop-color="#ff8c00" stop-opacity="0"/>
+    <stop offset="55%"  stop-color="#ff6000" stop-opacity="0.04"/>
+    <stop offset="100%" stop-color="#ff4400" stop-opacity="0.12"/>
+  </linearGradient>
+
+  <!-- Transition zone gradient mask -->
+  <linearGradient id="trans-mask-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="white" stop-opacity="1"/>
+    <stop offset="35%"  stop-color="white" stop-opacity="1"/>
+    <stop offset="47%"  stop-color="white" stop-opacity="0.7"/>
+    <stop offset="53%"  stop-color="white" stop-opacity="0.7"/>
+    <stop offset="65%"  stop-color="white" stop-opacity="1"/>
+    <stop offset="100%" stop-color="white" stop-opacity="1"/>
+  </linearGradient>
+
+  <!-- Rocket body fill gradient (reality side) -->
+  <linearGradient id="rocket-fill-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#1a2a40" stop-opacity="0"/>
+    <stop offset="30%"  stop-color="#1a2a40" stop-opacity="0"/>
+    <stop offset="48%"  stop-color="#2a3a5a" stop-opacity="0.6"/>
+    <stop offset="55%"  stop-color="#3a4a6a" stop-opacity="0.9"/>
+    <stop offset="100%" stop-color="#4a5a7a" stop-opacity="1"/>
+  </linearGradient>
+
+  <!-- Rocket surface highlight (reality) -->
+  <linearGradient id="rocket-highlight" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#cce8ff" stop-opacity="0"/>
+    <stop offset="48%"  stop-color="#cce8ff" stop-opacity="0"/>
+    <stop offset="52%"  stop-color="#ffffff" stop-opacity="0.7"/>
+    <stop offset="58%"  stop-color="#cce8ff" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="#aaaacc" stop-opacity="0.1"/>
+  </linearGradient>
+
+  <!-- Floodlight radial gradient -->
+  <radialGradient id="flood-light-grad" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"   stop-color="#fff8e0" stop-opacity="0.95"/>
+    <stop offset="30%"  stop-color="#ffcc44" stop-opacity="0.5"/>
+    <stop offset="100%" stop-color="#ff8c00" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Warm floor lighting (reality side) -->
+  <radialGradient id="floor-warm" cx="65%" cy="100%" r="55%">
+    <stop offset="0%"   stop-color="#ff8c00" stop-opacity="0.18"/>
+    <stop offset="50%"  stop-color="#ff4400" stop-opacity="0.07"/>
+    <stop offset="100%" stop-color="#ff4400" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Creation point radial glow -->
+  <radialGradient id="creation-radial" cx="50%" cy="50%" r="50%">
+    <stop offset="0%"   stop-color="#ffffff" stop-opacity="1"/>
+    <stop offset="20%"  stop-color="#88ddff" stop-opacity="0.9"/>
+    <stop offset="60%"  stop-color="#4488cc" stop-opacity="0.4"/>
+    <stop offset="100%" stop-color="#001133" stop-opacity="0"/>
+  </radialGradient>
+
+  <!-- Vertical sky gradient -->
+  <linearGradient id="sky-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#000810" stop-opacity="0.7"/>
+    <stop offset="100%" stop-color="#000810" stop-opacity="0"/>
+  </linearGradient>
+
+  <!-- Blueprint grid pattern -->
+  <pattern id="blueprint-grid-small" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+    <line x1="10" y1="0" x2="10" y2="10" stroke="#4db8ff" stroke-width="0.25" opacity="0.35"/>
+    <line x1="0" y1="10" x2="10" y2="10" stroke="#4db8ff" stroke-width="0.25" opacity="0.35"/>
+  </pattern>
+  <pattern id="blueprint-grid-large" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+    <rect width="100" height="100" fill="url(#blueprint-grid-small)"/>
+    <line x1="100" y1="0" x2="100" y2="100" stroke="#4db8ff" stroke-width="0.7" opacity="0.45"/>
+    <line x1="0" y1="100" x2="100" y2="100" stroke="#4db8ff" stroke-width="0.7" opacity="0.45"/>
+  </pattern>
+
+  <!-- Arrow marker for dimension lines -->
+  <marker id="arrow-cyan" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L6,3 L0,6 Z" fill="#4db8ff" opacity="0.9"/>
+  </marker>
+  <marker id="arrow-cyan-rev" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+    <path d="M6,0 L0,3 L6,6 Z" fill="#4db8ff" opacity="0.9"/>
+  </marker>
+  <marker id="arrow-yellow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L6,3 L0,6 Z" fill="#ffeb3b" opacity="0.9"/>
+  </marker>
+  <marker id="arrow-yellow-rev" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+    <path d="M6,0 L0,3 L6,6 Z" fill="#ffeb3b" opacity="0.9"/>
+  </marker>
+
+  <!-- Clip paths -->
+  <clipPath id="left-half-clip">
+    <rect x="0" y="0" width="960" height="1080"/>
+  </clipPath>
+  <clipPath id="right-half-clip">
+    <rect x="960" y="0" width="960" height="1080"/>
+  </clipPath>
+  <clipPath id="full-canvas">
+    <rect x="0" y="0" width="1920" height="1080"/>
+  </clipPath>
+  <!-- Left-leaning clip for blueprint (bleeds into center) -->
+  <clipPath id="blueprint-zone-clip">
+    <rect x="0" y="0" width="1050" height="1080"/>
+  </clipPath>
+  <!-- Right-leaning clip for reality -->
+  <clipPath id="reality-zone-clip">
+    <rect x="870" y="0" width="1050" height="1080"/>
+  </clipPath>
+
+  <!-- Masks -->
+  <mask id="blueprint-fade-mask">
+    <linearGradient id="bfm-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="white" stop-opacity="1"/>
+      <stop offset="75%"  stop-color="white" stop-opacity="1"/>
+      <stop offset="90%"  stop-color="white" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <rect x="0" y="0" width="1080" height="1080" fill="url(#bfm-grad)"/>
+  </mask>
+
+  <mask id="reality-fade-mask">
+    <linearGradient id="rfm-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%"   stop-color="white" stop-opacity="0"/>
+      <stop offset="10%"  stop-color="white" stop-opacity="0.3"/>
+      <stop offset="25%"  stop-color="white" stop-opacity="1"/>
+      <stop offset="100%" stop-color="white" stop-opacity="1"/>
+    </linearGradient>
+    <rect x="840" y="0" width="1080" height="1080" fill="url(#rfm-grad)"/>
+  </mask>
+
+  <!-- Rocket body clip for steel texture -->
+  <clipPath id="rocket-body-clip">
+    <!-- Nosecone -->
+    <polygon points="935,55 985,55 1000,180 920,180"/>
+    <!-- Upper body -->
+    <rect x="918" y="180" width="84" height="200"/>
+    <!-- Main tanks -->
+    <rect x="912" y="380" width="96" height="380"/>
+    <!-- Engine section -->
+    <polygon points="910,760 1010,760 1020,830 900,830"/>
+    <!-- Engine nozzles -->
+    <ellipse cx="960" cy="855" rx="65" ry="28"/>
+  </clipPath>
+
+</defs>
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 1: BACKGROUND
+══════════════════════════════════════════════════════════════════ -->
+<rect x="0" y="0" width="1920" height="1080" fill="url(#bg-main)"/>
+
+<!-- Blueprint overlay (left side) -->
+<rect x="0" y="0" width="1920" height="1080" fill="url(#blueprint-overlay)"/>
+
+<!-- Reality warm overlay (right side) -->
+<rect x="0" y="0" width="1920" height="1080" fill="url(#reality-overlay)"/>
+
+<!-- Sky vignette top -->
+<rect x="0" y="0" width="1920" height="320" fill="url(#sky-grad)"/>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 2: BLUEPRINT GRID (LEFT HALF)
+══════════════════════════════════════════════════════════════════ -->
+<g class="grid-layer" clip-path="url(#blueprint-zone-clip)">
+  <rect x="0" y="0" width="1080" height="1080" fill="url(#blueprint-grid-large)" opacity="1"/>
+</g>
+
+<!-- Blueprint paper grain -->
+<rect x="0" y="0" width="1080" height="1080" fill="#071e40" opacity="0.08" filter="url(#paper-grain)" clip-path="url(#blueprint-zone-clip)"/>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 3: GANTRY STRUCTURE (REALITY SIDE, BEHIND ROCKET)
+══════════════════════════════════════════════════════════════════ -->
+<g clip-path="url(#reality-zone-clip)" mask="url(#reality-fade-mask)">
+  <!-- Main gantry towers -->
+  <rect x="1060" y="180" width="18" height="830" fill="#1a2535" opacity="0.9"/>
+  <rect x="1140" y="220" width="14" height="790" fill="#152030" opacity="0.85"/>
+  <rect x="1230" y="260" width="12" height="750" fill="#121a28" opacity="0.7"/>
+  <rect x="1350" y="300" width="16" height="720" fill="#0f1620" opacity="0.55"/>
+
+  <!-- Horizontal gantry cross-beams -->
+  <rect x="1060" y="200" width="300" height="8"  fill="#1a2535" opacity="0.7"/>
+  <rect x="1060" y="320" width="270" height="6"  fill="#1a2535" opacity="0.65"/>
+  <rect x="1060" y="440" width="250" height="6"  fill="#1a2535" opacity="0.60"/>
+  <rect x="1060" y="560" width="240" height="5"  fill="#1a2535" opacity="0.55"/>
+  <rect x="1060" y="660" width="220" height="5"  fill="#1a2535" opacity="0.50"/>
+  <rect x="1060" y="740" width="200" height="5"  fill="#1a2535" opacity="0.45"/>
+  <rect x="1060" y="820" width="180" height="5"  fill="#1a2535" opacity="0.40"/>
+
+  <!-- Diagonal gantry braces -->
+  <line x1="1060" y1="200" x2="1140" y2="320" stroke="#1a2535" stroke-width="4" opacity="0.6"/>
+  <line x1="1140" y1="200" x2="1060" y2="320" stroke="#1a2535" stroke-width="3" opacity="0.5"/>
+  <line x1="1060" y1="320" x2="1140" y2="440" stroke="#1a2535" stroke-width="4" opacity="0.55"/>
+  <line x1="1140" y1="320" x2="1060" y2="440" stroke="#1a2535" stroke-width="3" opacity="0.45"/>
+  <line x1="1060" y1="440" x2="1140" y2="560" stroke="#1a2535" stroke-width="3" opacity="0.5"/>
+  <line x1="1140" y1="440" x2="1060" y2="560" stroke="#1a2535" stroke-width="2.5" opacity="0.4"/>
+  <line x1="1140" y1="220" x2="1230" y2="320" stroke="#152030" stroke-width="3" opacity="0.45"/>
+  <line x1="1230" y1="220" x2="1140" y2="320" stroke="#152030" stroke-width="2.5" opacity="0.38"/>
+
+  <!-- Service arm platforms -->
+  <rect x="1000" y="310" width="60" height="10" fill="#1e2f44" opacity="0.8"/>
+  <rect x="1000" y="430" width="60" height="10" fill="#1e2f44" opacity="0.75"/>
+  <rect x="1000" y="550" width="55" height="8"  fill="#1e2f44" opacity="0.70"/>
+  <rect x="1000" y="650" width="50" height="8"  fill="#1e2f44" opacity="0.65"/>
+
+  <!-- Ground platform -->
+  <rect x="900" y="990" width="600" height="90" fill="#0d1420" opacity="0.9"/>
+  <rect x="900" y="985" width="600" height="10" fill="#1a2535" opacity="0.8"/>
+
+  <!-- Floor warm lighting -->
+  <rect x="840" y="0" width="1080" height="1080" fill="url(#floor-warm)"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 4: ROCKET — BLUEPRINT SIDE (stroke only, left)
+══════════════════════════════════════════════════════════════════ -->
+<g clip-path="url(#blueprint-zone-clip)" mask="url(#blueprint-fade-mask)" filter="url(#glow-cyan)">
+  <!-- ROCKET BLUEPRINT OUTLINE — stroke only, no fill -->
+  <g fill="none" stroke="#4db8ff" stroke-width="1.5" opacity="0.92">
+
+    <!-- Nosecone -->
+    <polygon points="960,52 978,52 996,182 924,182"/>
+    <!-- Nosecone center line -->
+    <line x1="960" y1="52" x2="960" y2="182" stroke-width="0.7" stroke-dasharray="6,4" opacity="0.5"/>
+
+    <!-- Payload fairing section -->
+    <rect x="924" y="182" width="72" height="85"/>
+    <!-- Fairing separation line (dashed) -->
+    <line x1="924" y1="210" x2="996" y2="210" stroke-dasharray="5,4" stroke-width="0.8" opacity="0.6"/>
+    <!-- Fairing hatches -->
+    <rect x="930" y="218" width="18" height="46" stroke-width="0.9"/>
+    <rect x="951" y="218" width="18" height="46" stroke-width="0.9"/>
+    <rect x="972" y="218" width="18" height="46" stroke-width="0.9"/>
+
+    <!-- Upper body tube -->
+    <rect x="924" y="267" width="72" height="115"/>
+    <!-- Antenna/sensor protrusion -->
+    <line x1="924" y1="295" x2="898" y2="295" stroke-width="1.2"/>
+    <circle cx="896" cy="295" r="5" stroke-width="1.2"/>
+    <line x1="924" y1="320" x2="900" y2="310" stroke-width="1.0"/>
+    <circle cx="898" cy="308" r="4" stroke-width="1.0"/>
+
+    <!-- Tank separation ring -->
+    <rect x="920" y="382" width="80" height="12" stroke-width="1.8"/>
+
+    <!-- LOX oxidizer tank -->
+    <rect x="920" y="394" width="80" height="198"/>
+    <!-- LOX internal detail lines -->
+    <line x1="922" y1="440" x2="998" y2="440" stroke-dasharray="3,5" stroke-width="0.6" opacity="0.5"/>
+    <line x1="922" y1="490" x2="998" y2="490" stroke-dasharray="3,5" stroke-width="0.6" opacity="0.5"/>
+    <line x1="922" y1="540" x2="998" y2="540" stroke-dasharray="3,5" stroke-width="0.6" opacity="0.5"/>
+
+    <!-- Inter-tank structure ring -->
+    <rect x="918" y="592" width="84" height="16" stroke-width="2.0"/>
+
+    <!-- RP-1 Fuel tank -->
+    <rect x="920" y="608" width="80" height="158"/>
+    <!-- Fuel internal detail lines -->
+    <line x1="922" y1="645" x2="998" y2="645" stroke-dasharray="3,5" stroke-width="0.6" opacity="0.5"/>
+    <line x1="922" y1="685" x2="998" y2="685" stroke-dasharray="3,5" stroke-width="0.6" opacity="0.5"/>
+    <line x1="922" y1="725" x2="998" y2="725" stroke-dasharray="3,5" stroke-width="0.6" opacity="0.5"/>
+
+    <!-- Engine section conical skirt -->
+    <polygon points="916,766 1004,766 1022,838 898,838"/>
+
+    <!-- Engine nozzle bell -->
+    <path d="M898,838 Q895,870 888,900 L1032,900 Q1025,870 1022,838 Z"/>
+    <!-- Nozzle throat line -->
+    <line x1="900" y1="860" x2="1020" y2="860" stroke-dasharray="5,4" stroke-width="0.9" opacity="0.6"/>
+
+    <!-- Leg struts blueprint -->
+    <line x1="898" y1="838" x2="850" y2="940" stroke-width="1.4"/>
+    <line x1="1022" y1="838" x2="1070" y2="940" stroke-width="1.4"/>
+    <!-- Leg foot pads -->
+    <line x1="838" y1="940" x2="862" y2="940" stroke-width="2.5"/>
+    <line x1="1058" y1="940" x2="1082" y2="940" stroke-width="2.5"/>
+
+    <!-- Section partition cross-marks -->
+    <line x1="956" y1="380" x2="964" y2="380" stroke-width="2" opacity="0.8"/>
+    <line x1="960" y1="376" x2="960" y2="384" stroke-width="2" opacity="0.8"/>
+    <line x1="956" y1="592" x2="964" y2="592" stroke-width="2" opacity="0.8"/>
+    <line x1="960" y1="588" x2="960" y2="596" stroke-width="2" opacity="0.8"/>
+    <line x1="956" y1="766" x2="964" y2="766" stroke-width="2" opacity="0.8"/>
+    <line x1="960" y1="762" x2="960" y2="770" stroke-width="2" opacity="0.8"/>
+  </g>
+
+  <!-- Section boundary triangular part marks -->
+  <polygon points="997,382 1005,386 1005,378" fill="none" stroke="#ffeb3b" stroke-width="1.2" opacity="0.8"/>
+  <polygon points="997,592 1005,596 1005,588" fill="none" stroke="#ffeb3b" stroke-width="1.2" opacity="0.8"/>
+  <polygon points="997,766 1005,770 1005,762" fill="none" stroke="#ffeb3b" stroke-width="1.2" opacity="0.8"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 5: ROCKET — REALITY SIDE (filled, right half)
+══════════════════════════════════════════════════════════════════ -->
+<g clip-path="url(#reality-zone-clip)" mask="url(#reality-fade-mask)">
+
+  <!-- Steel texture base rect behind rocket -->
+  <g filter="url(#steel-texture)">
+    <!-- Nosecone -->
+    <polygon points="960,52 978,52 996,182 924,182" fill="#2a3a5a" opacity="0.95"/>
+    <!-- Payload fairing -->
+    <rect x="924" y="182" width="72" height="85" fill="#263548" opacity="0.95"/>
+    <!-- Upper body -->
+    <rect x="924" y="267" width="72" height="115" fill="#223042" opacity="0.95"/>
+    <!-- Tank ring -->
+    <rect x="920" y="382" width="80" height="12" fill="#1e2c3e" opacity="0.95"/>
+    <!-- LOX tank -->
+    <rect x="920" y="394" width="80" height="198" fill="#243345" opacity="0.95"/>
+    <!-- Inter-tank ring -->
+    <rect x="918" y="592" width="84" height="16" fill="#1e2c3e" opacity="0.95"/>
+    <!-- Fuel tank -->
+    <rect x="920" y="608" width="80" height="158" fill="#223042" opacity="0.95"/>
+    <!-- Engine skirt -->
+    <polygon points="916,766 1004,766 1022,838 898,838" fill="#1e2a3a" opacity="0.95"/>
+    <!-- Engine nozzle -->
+    <path d="M898,838 Q895,870 888,900 L1032,900 Q1025,870 1022,838 Z" fill="#182030" opacity="0.95"/>
+  </g>
+
+  <!-- Panel seam/rivet lines (horizontal lines suggesting paneling) -->
+  <g stroke="#4a6080" stroke-width="0.8" opacity="0.6" fill="none">
+    <line x1="924" y1="200" x2="996" y2="200"/>
+    <line x1="924" y1="220" x2="996" y2="220"/>
+    <line x1="924" y1="240" x2="996" y2="240"/>
+    <line x1="924" y1="260" x2="996" y2="260"/>
+    <line x1="924" y1="280" x2="996" y2="280"/>
+    <line x1="924" y1="300" x2="996" y2="300"/>
+    <line x1="924" y1="320" x2="996" y2="320"/>
+    <line x1="924" y1="340" x2="996" y2="340"/>
+    <line x1="924" y1="360" x2="996" y2="360"/>
+    <line x1="920" y1="420" x2="1000" y2="420"/>
+    <line x1="920" y1="450" x2="1000" y2="450"/>
+    <line x1="920" y1="480" x2="1000" y2="480"/>
+    <line x1="920" y1="510" x2="1000" y2="510"/>
+    <line x1="920" y1="540" x2="1000" y2="540"/>
+    <line x1="920" y1="570" x2="1000" y2="570"/>
+    <line x1="920" y1="635" x2="1000" y2="635"/>
+    <line x1="920" y1="660" x2="1000" y2="660"/>
+    <line x1="920" y1="685" x2="1000" y2="685"/>
+    <line x1="920" y1="710" x2="1000" y2="710"/>
+    <line x1="920" y1="735" x2="1000" y2="735"/>
+  </g>
+
+  <!-- Edge highlight (the cyan annotation lines become edge-lights) -->
+  <g stroke="#aad4ff" stroke-width="1.2" fill="none" opacity="0.55">
+    <line x1="996" y1="182" x2="1004" y2="766"/> <!-- right edge of rocket solid form -->
+  </g>
+  <g stroke="#ffffff" stroke-width="0.8" fill="none" opacity="0.35">
+    <line x1="1000" y1="230" x2="1000" y2="760"/>
+  </g>
+
+  <!-- Leg struts (reality) -->
+  <line x1="898" y1="838" x2="850" y2="940" stroke="#2a3a5a" stroke-width="5" opacity="0.9"/>
+  <line x1="1022" y1="838" x2="1070" y2="940" stroke="#2a3a5a" stroke-width="5" opacity="0.9"/>
+  <!-- Foot pads -->
+  <rect x="835" y="936" width="30" height="8" fill="#2a3a5a" opacity="0.9"/>
+  <rect x="1058" y="936" width="30" height="8" fill="#2a3a5a" opacity="0.9"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 6: FLOODLIGHT (REALITY SIDE, UPPER)
+══════════════════════════════════════════════════════════════════ -->
+<g class="flood-group" clip-path="url(#reality-zone-clip)">
+  <!-- Floodlight housing -->
+  <rect x="1095" y="168" width="52" height="22" rx="4" fill="#2a3a50" opacity="0.9"/>
+  <rect x="1097" y="172" width="48" height="14" rx="2" fill="#ffe580" opacity="0.7"/>
+
+  <!-- Light cone rays -->
+  <path d="M1121,190 L970,520 L1272,520 Z" fill="url(#flood-light-grad)" opacity="0.10"/>
+  <path d="M1121,190 L980,420 L1262,420 Z" fill="url(#flood-light-grad)" opacity="0.08"/>
+
+  <!-- Individual light rays -->
+  <line x1="1121" y1="190" x2="960"  y2="1080" stroke="#ffcc44" stroke-width="0.5" opacity="0.08"/>
+  <line x1="1121" y1="190" x2="1000" y2="1080" stroke="#ffcc44" stroke-width="0.5" opacity="0.08"/>
+  <line x1="1121" y1="190" x2="1100" y2="1080" stroke="#ffcc44" stroke-width="0.5" opacity="0.06"/>
+  <line x1="1121" y1="190" x2="1200" y2="1080" stroke="#ffcc44" stroke-width="0.5" opacity="0.06"/>
+  <line x1="1121" y1="190" x2="1300" y2="1080" stroke="#ffcc44" stroke-width="0.5" opacity="0.05"/>
+  <line x1="1121" y1="190" x2="850"  y2="1000" stroke="#ffcc44" stroke-width="0.5" opacity="0.07"/>
+
+  <!-- Floodlight source glow -->
+  <ellipse cx="1121" cy="182" rx="38" ry="22" fill="url(#flood-light-grad)" opacity="0.85" filter="url(#glow-warm)"/>
+  <ellipse cx="1121" cy="182" rx="16" ry="9"  fill="#fff8e0" opacity="0.95"/>
+
+  <!-- Warm rocket surface lighting (caught light from floodlight) -->
+  <radialGradient id="rocket-warm-light" cx="55%" cy="30%" r="70%">
+    <stop offset="0%"   stop-color="#ff8c00" stop-opacity="0.20"/>
+    <stop offset="100%" stop-color="#ff8c00" stop-opacity="0"/>
+  </radialGradient>
+  <rect x="900" y="52" width="200" height="900" fill="url(#rocket-warm-light)" clip-path="url(#rocket-body-clip)"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 7: BLUEPRINT ANNOTATIONS (LEFT HALF)
+══════════════════════════════════════════════════════════════════ -->
+<g clip-path="url(#blueprint-zone-clip)" mask="url(#blueprint-fade-mask)">
+
+  <!-- ── TOTAL HEIGHT DIMENSION LINE ── -->
+  <g class="dim-line-a" stroke="#4db8ff" stroke-width="1.0" fill="none" opacity="0.85" filter="url(#glow-cyan)">
+    <!-- Left vertical dimension bracket -->
+    <line x1="875" y1="52" x2="875" y2="900" marker-start="url(#arrow-cyan-rev)" marker-end="url(#arrow-cyan)"/>
+    <!-- Horizontal tick marks -->
+    <line x1="870" y1="52"  x2="924" y2="52"/>
+    <line x1="870" y1="900" x2="898" y2="900"/>
+    <!-- Dimension text background -->
+    <rect x="824" y="462" width="42" height="16" fill="#071428" opacity="0.8"/>
+  </g>
+  <text x="845" y="474" font-family="'Courier New', monospace" font-size="11" fill="#ffeb3b" text-anchor="middle" filter="url(#text-glow-cyan)" class="dim-line-a" opacity="0">48.6m</text>
+
+  <!-- ── DIAMETER DIMENSION (MAIN TANK) ── -->
+  <g class="dim-line-b" stroke="#4db8ff" stroke-width="1.0" fill="none" opacity="0.8" filter="url(#glow-cyan)">
+    <line x1="920" y1="490" x2="780" y2="490" marker-end="url(#arrow-cyan)"/>
+    <line x1="920" y1="490" x2="1000" y2="490" marker-end="url(#arrow-cyan)"/>
+    <line x1="780" y1="485" x2="780" y2="495"/>
+    <line x1="1000" y1="485" x2="1000" y2="495"/>
+  </g>
+  <text x="780" y="484" font-family="'Courier New', monospace" font-size="10" fill="#ffeb3b" text-anchor="middle" class="dim-line-b" opacity="0">Ø 3.7m</text>
+
+  <!-- ── SECTION A-A LABEL ── -->
+  <g class="dim-line-c" fill="none" stroke="#4db8ff" stroke-width="0.8" opacity="0.7">
+    <line x1="850" y1="592" x2="918" y2="592"/>
+    <line x1="850" y1="766" x2="916" y2="766"/>
+  </g>
+  <text x="848" y="590" font-family="'Courier New', monospace" font-size="10" fill="#cce8ff" text-anchor="end" class="dim-line-c" opacity="0">A</text>
+  <text x="848" y="768" font-family="'Courier New', monospace" font-size="10" fill="#cce8ff" text-anchor="end" class="dim-line-c" opacity="0">A</text>
+  <text x="796" y="682" font-family="'Courier New', monospace" font-size="11" fill="#cce8ff" text-anchor="middle"
+    transform="rotate(-90, 796, 682)" class="dim-line-c" opacity="0">CROSS SECTION A-A</text>
+
+  <!-- ── LOX TANK LABEL ── -->
+  <g class="dim-line-d" fill="none" stroke="#4db8ff" stroke-width="0.8" opacity="0.75">
+    <line x1="860" y1="493" x2="920" y2="493"/>
+  </g>
+  <text x="855" y="496" font-family="'Courier New', monospace" font-size="10" fill="#cce8ff" text-anchor="end" class="dim-line-d" opacity="0">LOX 4,800L</text>
+
+  <!-- ── FUEL TANK LABEL ── -->
+  <text x="855" y="690" font-family="'Courier New', monospace" font-size="10" fill="#cce8ff" text-anchor="end" class="dim-line-d" opacity="0">RP-1 3,200L</text>
+  <g class="dim-line-d" fill="none" stroke="#4db8ff" stroke-width="0.8" opacity="0.75">
+    <line x1="856" y1="687" x2="920" y2="687"/>
+  </g>
+
+  <!-- ── ANNOTATION LEADER LINES ── -->
+  <!-- S-001 Nose callout -->
+  <line class="ann-line-a" x1="986" y1="100" x2="750" y2="80"
+    stroke="#4db8ff" stroke-width="1.2" fill="none" opacity="0.9" filter="url(#glow-cyan)"/>
+  <circle cx="748" cy="80" r="20" fill="none" stroke="#4db8ff" stroke-width="1.2" opacity="0.9" filter="url(#glow-cyan)"/>
+  <text x="748" y="76" font-family="'Courier New', monospace" font-size="9" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">S</text>
+  <text x="748" y="86" font-family="'Courier New', monospace" font-size="8" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">001</text>
+
+  <!-- P-003 Engine callout -->
+  <line class="ann-line-b" x1="898" y1="860" x2="720" y2="890"
+    stroke="#4db8ff" stroke-width="1.2" fill="none" opacity="0.9" filter="url(#glow-cyan)"/>
+  <circle cx="700" cy="890" r="22" fill="none" stroke="#4db8ff" stroke-width="1.2" opacity="0.9" filter="url(#glow-cyan)"/>
+  <text x="700" y="886" font-family="'Courier New', monospace" font-size="9" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">P</text>
+  <text x="700" y="896" font-family="'Courier New', monospace" font-size="8" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">003</text>
+
+  <!-- T-002 Tank separation callout -->
+  <line class="ann-line-c" x1="1000" y1="388" x2="700" y2="355"
+    stroke="#4db8ff" stroke-width="1.2" fill="none" opacity="0.9" filter="url(#glow-cyan)"/>
+  <circle cx="680" cy="354" r="22" fill="none" stroke="#4db8ff" stroke-width="1.2" opacity="0.9" filter="url(#glow-cyan)"/>
+  <text x="680" y="350" font-family="'Courier New', monospace" font-size="9" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">T</text>
+  <text x="680" y="360" font-family="'Courier New', monospace" font-size="8" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">002</text>
+
+  <!-- F-005 Fairing callout -->
+  <line class="ann-line-d" x1="924" y1="220" x2="750" y2="200"
+    stroke="#4db8ff" stroke-width="1.2" fill="none" opacity="0.85" filter="url(#glow-cyan)"/>
+  <circle cx="730" cy="200" r="20" fill="none" stroke="#4db8ff" stroke-width="1.2" opacity="0.85" filter="url(#glow-cyan)"/>
+  <text x="730" y="196" font-family="'Courier New', monospace" font-size="9" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">F</text>
+  <text x="730" y="206" font-family="'Courier New', monospace" font-size="8" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">005</text>
+
+  <!-- A-008 Antenna callout -->
+  <line class="ann-line-e" x1="898" y1="295" x2="740" y2="310"
+    stroke="#4db8ff" stroke-width="1.2" fill="none" opacity="0.85" filter="url(#glow-cyan)"/>
+  <circle cx="720" cy="312" r="20" fill="none" stroke="#4db8ff" stroke-width="1.2" opacity="0.85" filter="url(#glow-cyan)"/>
+  <text x="720" y="308" font-family="'Courier New', monospace" font-size="9" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">A</text>
+  <text x="720" y="318" font-family="'Courier New', monospace" font-size="8" fill="#4db8ff" text-anchor="middle" filter="url(#text-glow-cyan)">008</text>
+
+  <!-- ── TECHNICAL SPEC TEXT ANNOTATIONS ── -->
+  <!-- Scattered throughout left half -->
+  <g font-family="'Courier New', monospace" font-size="10" fill="#cce8ff" opacity="0.75" filter="url(#text-glow-cyan)">
+    <!-- Upper left cluster -->
+    <text x="120" y="155">PROPELLANT MASS: 8,200 kg</text>
+    <text x="120" y="170">DRY MASS: 1,640 kg</text>
+    <text x="120" y="185">GROSS LIFTOFF MASS: 9,840 kg</text>
+
+    <text x="120" y="215">TOTAL Δv: 3,240 m/s</text>
+    <text x="120" y="230">ISP (VAC): 311 s</text>
+    <text x="120" y="245">ISP (SL):  282 s</text>
+
+    <text x="120" y="278">THRUST (VAC): 845 kN</text>
+    <text x="120" y="293">THRUST (SL):  720 kN</text>
+    <text x="120" y="308">T/W RATIO:    0.87</text>
+
+    <!-- Mid-left cluster -->
+    <text x="145" y="420">STRUCTURAL MARGIN: 1.47</text>
+    <text x="145" y="435">SAFETY FACTOR: 1.25×</text>
+
+    <!-- Lower left small cluster -->
+    <text x="165" y="780">NOZZLE EXIT RATIO: 25:1</text>
+    <text x="165" y="795">COMBUSTION P: 9.7 MPa</text>
+    <text x="165" y="810">CHAMBER TEMP: 3,460K</text>
+  </g>
+
+  <!-- Separator lines for spec clusters -->
+  <g stroke="#4db8ff" stroke-width="0.6" opacity="0.4" fill="none">
+    <line x1="116" y1="148" x2="340" y2="148"/>
+    <line x1="116" y1="200" x2="300" y2="200"/>
+    <line x1="116" y1="260" x2="320" y2="260"/>
+    <line x1="116" y1="316" x2="280" y2="316"/>
+    <line x1="140" y1="410" x2="305" y2="410"/>
+    <line x1="140" y1="446" x2="295" y2="446"/>
+    <line x1="160" y1="773" x2="340" y2="773"/>
+    <line x1="160" y1="820" x2="335" y2="820"/>
+  </g>
+
+  <!-- ── REVISION CLOUD (upper left area) ── -->
+  <g stroke="#ffeb3b" stroke-width="0.9" fill="none" opacity="0.7" font-family="'Courier New', monospace" font-size="10" filter="url(#text-glow-cyan)">
+    <!-- Cloud bubble shape (simplified as rounded rect) -->
+    <rect x="116" y="338" width="190" height="60" rx="12" stroke-dasharray="4,3"/>
+    <text x="128" y="356" fill="#ffeb3b" font-size="9">⚡ REV A: ENGINE MOUNT UPDATED</text>
+    <text x="128" y="370" fill="#ffeb3b" font-size="9">   LOX FILL PORT RELOCATED</text>
+    <text x="128" y="384" fill="#ffeb3b" font-size="9">   APPROVAL: ENGR-7714</text>
+  </g>
+
+</g><!-- end blueprint annotations -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 8: ENGINEER SILHOUETTES
+══════════════════════════════════════════════════════════════════ -->
+
+<!-- ── BLUEPRINT ENGINEERS (left half, stroke-only outline forms) ── -->
+<g clip-path="url(#blueprint-zone-clip)" mask="url(#blueprint-fade-mask)"
+   fill="none" stroke="#4db8ff" stroke-width="1.4" opacity="0.78" filter="url(#glow-cyan)">
+
+  <!-- Engineer 1: kneeling, examining base — far left -->
+  <g transform="translate(810, 900)">
+    <!-- Head -->
+    <circle cx="0" cy="-55" r="9"/>
+    <!-- Torso (kneeling, bent forward) -->
+    <path d="M0,-46 C0,-30 -12,-18 -18,-8"/>
+    <!-- Arms reaching forward -->
+    <line x1="-5" y1="-38" x2="14" y2="-24"/>
+    <line x1="-5" y1="-38" x2="-20" y2="-20"/>
+    <!-- Kneeling legs -->
+    <path d="M-8,-8 L-14,0 L-10,10"/>
+    <path d="M-18,-8 L-22,0 L-18,10"/>
+    <!-- Helmet detail -->
+    <path d="M-9,-62 A9,9 0 0,1 9,-62" stroke-width="2"/>
+    <!-- Clipboard -->
+    <rect x="12" y="-28" width="12" height="16" rx="1"/>
+    <line x1="13" y1="-24" x2="23" y2="-24" stroke-width="0.7"/>
+    <line x1="13" y1="-20" x2="23" y2="-20" stroke-width="0.7"/>
+    <line x1="13" y1="-16" x2="20" y2="-16" stroke-width="0.7"/>
+  </g>
+
+  <!-- Engineer 2: standing, clipboard, left of center -->
+  <g transform="translate(860, 870)">
+    <!-- Head -->
+    <circle cx="0" cy="-88" r="10"/>
+    <!-- Helmet -->
+    <path d="M-10,-96 A10,10 0 0,1 10,-96" stroke-width="2.2"/>
+    <!-- Torso -->
+    <line x1="0" y1="-78" x2="0" y2="-30"/>
+    <!-- Shoulder line -->
+    <line x1="-16" y1="-68" x2="16" y2="-68"/>
+    <!-- Left arm holding clipboard -->
+    <line x1="-16" y1="-68" x2="-20" y2="-44"/>
+    <rect x="-30" y="-48" width="14" height="18" rx="1"/>
+    <line x1="-29" y1="-44" x2="-17" y2="-44" stroke-width="0.7"/>
+    <line x1="-29" y1="-40" x2="-17" y2="-40" stroke-width="0.7"/>
+    <line x1="-29" y1="-36" x2="-22" y2="-36" stroke-width="0.7"/>
+    <!-- Right arm raised, pointing at rocket -->
+    <line x1="16" y1="-68" x2="34" y2="-50"/>
+    <line x1="34" y1="-50" x2="48" y2="-38"/>
+    <!-- Legs -->
+    <line x1="-6" y1="-30" x2="-8" y2="0"/>
+    <line x1="6" y1="-30" x2="8" y2="0"/>
+    <!-- Feet -->
+    <line x1="-12" y1="0" x2="-4" y2="0"/>
+    <line x1="4" y1="0" x2="12" y2="0"/>
+  </g>
+
+  <!-- Engineer 3: standing upright, facing rocket, hands on hips -->
+  <g transform="translate(905, 880)">
+    <!-- Head -->
+    <circle cx="0" cy="-90" r="10"/>
+    <path d="M-10,-98 A10,10 0 0,1 10,-98" stroke-width="2.2"/>
+    <!-- Torso -->
+    <line x1="0" y1="-80" x2="0" y2="-35"/>
+    <line x1="-18" y1="-70" x2="18" y2="-70"/>
+    <!-- Arms at sides / hands on hips -->
+    <path d="M-18,-70 C-22,-55 -20,-48 -16,-40"/>
+    <path d="M18,-70 C22,-55 20,-48 16,-40"/>
+    <!-- Legs slightly apart -->
+    <line x1="-5" y1="-35" x2="-7" y2="0"/>
+    <line x1="5" y1="-35" x2="7" y2="0"/>
+    <line x1="-12" y1="0" x2="-2" y2="0"/>
+    <line x1="2" y1="0" x2="12" y2="0"/>
+  </g>
+
+</g><!-- end blueprint engineers -->
+
+<!-- ── REALITY ENGINEERS (right half, solid dark silhouettes) ── -->
+<g clip-path="url(#reality-zone-clip)" mask="url(#reality-fade-mask)">
+
+  <!-- Engineer A: standing, right of rocket, lit from above -->
+  <g transform="translate(1030, 900)">
+    <!-- Solid silhouette -->
+    <!-- Head -->
+    <ellipse cx="0" cy="-88" rx="10" ry="11" fill="#1a2535"/>
+    <!-- Helmet shape -->
+    <path d="M-10,-97 A10,8 0 0,1 10,-97 L10,-88 L-10,-88 Z" fill="#253545"/>
+    <!-- Body -->
+    <polygon points="-14,-78 14,-78 18,-30 -18,-30" fill="#1a2535"/>
+    <!-- Arms -->
+    <polygon points="-14,-78 -20,-55 -16,-30 -14,-30" fill="#1a2535"/>
+    <polygon points="14,-78 20,-55 16,-30 14,-30" fill="#1a2535"/>
+    <!-- Legs -->
+    <polygon points="-10,-30 -6,-30 -4,0 -12,0" fill="#1a2535"/>
+    <polygon points="10,-30 6,-30 4,0 12,0" fill="#1a2535"/>
+    <!-- Edge light from floodlight (top of helmet/shoulder) -->
+    <path d="M-10,-97 A10,8 0 0,1 10,-97" stroke="#ff8c00" stroke-width="1.5" fill="none" opacity="0.5"/>
+    <line x1="-14" y1="-78" x2="14" y2="-78" stroke="#ff8c00" stroke-width="1.0" opacity="0.4"/>
+  </g>
+
+  <!-- Engineer B: slightly farther right, pointing upward -->
+  <g transform="translate(1075, 905)">
+    <ellipse cx="0" cy="-86" rx="9" ry="10" fill="#1a2535"/>
+    <path d="M-9,-94 A9,8 0 0,1 9,-94 L9,-86 L-9,-86 Z" fill="#253545"/>
+    <polygon points="-12,-76 12,-76 14,-28 -14,-28" fill="#1a2535"/>
+    <!-- Raised arm pointing UP at rocket -->
+    <polygon points="12,-76 18,-76 30,-30 24,-28" fill="#1a2535"/>
+    <polygon points="30,-30 36,-4 28,0 24,-28" fill="#1a2535"/>
+    <!-- Other arm -->
+    <polygon points="-12,-76 -18,-60 -14,-28 -12,-28" fill="#1a2535"/>
+    <!-- Legs -->
+    <polygon points="-8,-28 -4,-28 -2,0 -10,0" fill="#1a2535"/>
+    <polygon points="8,-28 4,-28 2,0 10,0" fill="#1a2535"/>
+    <!-- Edge lighting -->
+    <path d="M-9,-94 A9,8 0 0,1 9,-94" stroke="#ff8c00" stroke-width="1.2" fill="none" opacity="0.45"/>
+  </g>
+
+  <!-- Engineer C: crouching at base, checking equipment -->
+  <g transform="translate(1010, 955)">
+    <!-- Low profile crouching figure -->
+    <ellipse cx="0" cy="-36" rx="9" ry="10" fill="#1a2535"/>
+    <path d="M-9,-44 A9,8 0 0,1 9,-44 L9,-36 L-9,-36 Z" fill="#253545"/>
+    <!-- Crouched torso -->
+    <polygon points="-12,-26 12,-26 16,-8 -16,-8" fill="#1a2535"/>
+    <!-- Arm reaching forward -->
+    <polygon points="12,-20 20,-20 24,-8 16,-8" fill="#1a2535"/>
+    <!-- Crouched legs -->
+    <polygon points="-14,-8 0,-8 -2,0 -16,0" fill="#1a2535"/>
+    <polygon points="14,-8 0,-8 2,0 16,0" fill="#1a2535"/>
+    <!-- Edge lighting -->
+    <line x1="-12" y1="-26" x2="12" y2="-26" stroke="#ff8c00" stroke-width="0.9" opacity="0.4"/>
+  </g>
+
+</g><!-- end reality engineers -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 9: TRANSITION ZONE — DISSOLVE FX
+══════════════════════════════════════════════════════════════════ -->
+<!-- Blueprint grid dissolving into floor at center -->
+<g opacity="0.5">
+  <!-- Grid lines that bleed from left into center then dissolve -->
+  <line x1="960" y1="0" x2="960" y2="1080" stroke="#4db8ff" stroke-width="0.5" opacity="0.12"/>
+
+  <!-- Dissolve overlay (blurred edge at transition) -->
+  <rect x="880" y="0" width="160" height="1080" fill="url(#blueprint-overlay)" filter="url(#soft-edge)" opacity="0.4"/>
+</g>
+
+<!-- Sparks/rays emanating from creation point -->
+<g filter="url(#glow-cyan)" opacity="0.6">
+  <!-- Radial rays from center point -->
+  <line x1="960" y1="540" x2="750" y2="120"  stroke="#4db8ff" stroke-width="0.7" opacity="0.5"/>
+  <line x1="960" y1="540" x2="680" y2="350"  stroke="#4db8ff" stroke-width="0.6" opacity="0.45"/>
+  <line x1="960" y1="540" x2="680" y2="600"  stroke="#4db8ff" stroke-width="0.6" opacity="0.40"/>
+  <line x1="960" y1="540" x2="750" y2="820"  stroke="#4db8ff" stroke-width="0.7" opacity="0.45"/>
+  <line x1="960" y1="540" x2="1180" y2="160" stroke="#cce8ff" stroke-width="0.5" opacity="0.30"/>
+  <line x1="960" y1="540" x2="1250" y2="420" stroke="#cce8ff" stroke-width="0.5" opacity="0.28"/>
+  <line x1="960" y1="540" x2="1280" y2="700" stroke="#cce8ff" stroke-width="0.5" opacity="0.25"/>
+  <line x1="960" y1="540" x2="1150" y2="880" stroke="#cce8ff" stroke-width="0.5" opacity="0.28"/>
+</g>
+
+<!-- ── CREATION POINT (center of canvas, the magic origin) ── -->
+<g filter="url(#filter-creation)">
+  <!-- Outer soft ring -->
+  <circle class="creation-ring" cx="960" cy="540" r="140"
+    fill="url(#creation-radial)" opacity="0.18"/>
+  <!-- Mid ring -->
+  <circle cx="960" cy="540" r="90"
+    fill="none" stroke="#88ddff" stroke-width="1.5" opacity="0.35"/>
+  <!-- Core glow -->
+  <circle class="creation-core" cx="960" cy="540" r="60"
+    fill="url(#creation-radial)" opacity="0.8"/>
+  <!-- Brilliant center point -->
+  <circle cx="960" cy="540" r="12" fill="#ffffff" opacity="0.98"/>
+  <circle cx="960" cy="540" r="5"  fill="#ffffff" opacity="1.0"/>
+</g>
+
+<!-- Star burst at creation point -->
+<g transform="translate(960, 540)" opacity="0.55" filter="url(#glow-cyan)">
+  <line x1="0" y1="-80" x2="0" y2="80"   stroke="#4db8ff" stroke-width="0.8"/>
+  <line x1="-80" y1="0" x2="80" y2="0"   stroke="#4db8ff" stroke-width="0.8"/>
+  <line x1="-55" y1="-55" x2="55" y2="55" stroke="#4db8ff" stroke-width="0.6"/>
+  <line x1="55" y1="-55" x2="-55" y2="55" stroke="#4db8ff" stroke-width="0.6"/>
+  <!-- Inner star -->
+  <line x1="0" y1="-40" x2="0" y2="40"   stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+  <line x1="-40" y1="0" x2="40" y2="0"   stroke="#ffffff" stroke-width="1.5" opacity="0.7"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 10: STEAM / VAPOR AT ROCKET BASE
+══════════════════════════════════════════════════════════════════ -->
+<g opacity="0.9">
+  <!-- Left side steam (blueprint tinted) -->
+  <ellipse class="steam-a" cx="920" cy="995" rx="52" ry="22" fill="#aaccee" opacity="0.22"/>
+  <!-- Center steam -->
+  <ellipse class="steam-b" cx="960" cy="1000" rx="65" ry="25" fill="#c8ddf0" opacity="0.18"/>
+  <!-- Right side steam (warm tinted) -->
+  <ellipse class="steam-c" cx="998" cy="990" rx="48" ry="20" fill="#dde8f0" opacity="0.20"/>
+  <!-- Secondary smaller puffs -->
+  <ellipse cx="895" cy="978" rx="30" ry="14" fill="#aaccee" opacity="0.14"/>
+  <ellipse cx="1020" cy="980" rx="35" ry="16" fill="#d0c8b0" opacity="0.12"/>
+  <ellipse cx="940" cy="960" rx="25" ry="12" fill="#c8ddf0" opacity="0.16"/>
+  <ellipse cx="980" cy="965" rx="28" ry="13" fill="#d0c8b0" opacity="0.14"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 11: GROUND PLANE
+══════════════════════════════════════════════════════════════════ -->
+<!-- Concrete pad, extends across full bottom -->
+<rect x="0" y="1010" width="1920" height="70" fill="#0a1220" opacity="0.95"/>
+<!-- Ground line -->
+<line x1="0" y1="1010" x2="1920" y2="1010" stroke="#1e3050" stroke-width="1.5" opacity="0.8"/>
+
+<!-- Blueprint floor grid (left side) -->
+<g clip-path="url(#left-half-clip)" opacity="0.5" class="grid-layer">
+  <rect x="0" y="1010" width="960" height="70" fill="url(#blueprint-grid-large)"/>
+</g>
+
+<!-- Floor grid divisions (physical, right side) -->
+<g clip-path="url(#right-half-clip)" stroke="#1e3050" stroke-width="0.8" opacity="0.5">
+  <line x1="960" y1="1010" x2="1920" y2="1010"/>
+  <line x1="1060" y1="1010" x2="1060" y2="1080"/>
+  <line x1="1160" y1="1010" x2="1160" y2="1080"/>
+  <line x1="1260" y1="1010" x2="1260" y2="1080"/>
+  <line x1="1360" y1="1010" x2="1360" y2="1080"/>
+  <line x1="1460" y1="1010" x2="1460" y2="1080"/>
+  <line x1="1560" y1="1010" x2="1560" y2="1080"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 12: TITLE BLOCK (lower left, blueprint formal style)
+══════════════════════════════════════════════════════════════════ -->
+<g filter="url(#glow-cyan)" opacity="0.92">
+  <!-- Title block outer border -->
+  <rect x="42" y="916" width="410" height="110" fill="#050e1e" stroke="#4db8ff" stroke-width="1.5"/>
+
+  <!-- Internal grid lines of title block -->
+  <line x1="42"  y1="946" x2="452" y2="946" stroke="#4db8ff" stroke-width="0.8"/>
+  <line x1="42"  y1="976" x2="452" y2="976" stroke="#4db8ff" stroke-width="0.8"/>
+  <line x1="42"  y1="1006" x2="452" y2="1006" stroke="#4db8ff" stroke-width="0.8"/>
+  <line x1="200" y1="946" x2="200" y2="1026" stroke="#4db8ff" stroke-width="0.6"/>
+
+  <!-- Title block text -->
+  <g font-family="'Courier New', monospace" fill="#cce8ff">
+    <!-- Row 1: Main title -->
+    <text x="52"  y="940" font-size="13" font-weight="bold" fill="#4db8ff" letter-spacing="1">MOON IDLE LAUNCH FACILITY</text>
+    <!-- Row 2: Sub title -->
+    <text x="52"  y="970" font-size="11" fill="#cce8ff">VEHICLE ASSEMBLY — BETA mk.2</text>
+    <!-- Row 3 col A: drawing number -->
+    <text x="52"  y="995" font-size="9" fill="#88aacc">DWG NO.</text>
+    <text x="52"  y="1007" font-size="10" fill="#4db8ff">MI-KEYVISUAL-001</text>
+    <!-- Row 3 col B: revision -->
+    <text x="210" y="995" font-size="9" fill="#88aacc">REV</text>
+    <text x="210" y="1007" font-size="10" fill="#ffeb3b">A</text>
+    <!-- Row 4: status -->
+    <text x="52"  y="1020" font-size="9" fill="#88aacc">STATUS</text>
+    <text x="52"  y="1030" font-size="10" fill="#4db8ff">ASSEMBLY 57% → <tspan fill="#00ff88">COMPLETE</tspan></text>
+  </g>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 13: STARS / ATMOSPHERE (upper sky)
+══════════════════════════════════════════════════════════════════ -->
+<!-- Left side stars (blueprint tinted, sparse) -->
+<g clip-path="url(#left-half-clip)" fill="#4db8ff" opacity="0.4">
+  <circle cx="120" cy="45"  r="0.8"/>
+  <circle cx="245" cy="78"  r="1.0"/>
+  <circle cx="380" cy="32"  r="0.7"/>
+  <circle cx="530" cy="60"  r="0.9"/>
+  <circle cx="680" cy="20"  r="0.8"/>
+  <circle cx="750" cy="95"  r="0.6"/>
+  <circle cx="150" cy="130" r="0.7"/>
+  <circle cx="310" cy="155" r="0.8"/>
+  <circle cx="460" cy="110" r="0.6"/>
+  <circle cx="600" cy="140" r="0.7"/>
+  <circle cx="820" cy="70"  r="0.9"/>
+  <circle cx="88"  cy="200" r="0.6"/>
+  <circle cx="192" cy="260" r="0.7"/>
+  <circle cx="420" cy="185" r="0.6"/>
+  <circle cx="558" cy="230" r="0.8"/>
+  <circle cx="720" cy="180" r="0.6"/>
+</g>
+
+<!-- Right side stars (white/amber, sparse) -->
+<g clip-path="url(#right-half-clip)" fill="#ccd0d8" opacity="0.5">
+  <circle cx="1050" cy="55"  r="0.9"/>
+  <circle cx="1200" cy="30"  r="1.1"/>
+  <circle cx="1380" cy="70"  r="0.8"/>
+  <circle cx="1550" cy="42"  r="0.7"/>
+  <circle cx="1700" cy="88"  r="0.9"/>
+  <circle cx="1850" cy="35"  r="0.6"/>
+  <circle cx="1100" cy="140" r="0.7"/>
+  <circle cx="1280" cy="120" r="0.8"/>
+  <circle cx="1450" cy="160" r="0.6"/>
+  <circle cx="1620" cy="105" r="0.7"/>
+  <circle cx="1780" cy="150" r="0.8"/>
+  <circle cx="1920" cy="90"  r="0.6"/>
+  <circle cx="1160" cy="210" r="0.6"/>
+  <circle cx="1340" cy="195" r="0.7"/>
+  <circle cx="1510" cy="225" r="0.6"/>
+  <circle cx="1680" cy="200" r="0.8"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 14: ROCKET EDGE LIGHTS (cyan annotation becoming real)
+══════════════════════════════════════════════════════════════════ -->
+<!-- At the center transition, the left-rocket's cyan lines merge into edge lighting on right rocket -->
+<g filter="url(#glow-cyan)" opacity="0.6">
+  <!-- Left edge of the rocket body (where blueprint meets real) -->
+  <line x1="924" y1="182" x2="920" y2="766" stroke="#88ddff" stroke-width="1.8"/>
+  <line x1="960" y1="52"  x2="960" y2="1010" stroke="#4db8ff" stroke-width="0.6" stroke-dasharray="8,12" opacity="0.3"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 15: AMBIENT STAR FIELD SPECKLE (very subtle, everywhere)
+══════════════════════════════════════════════════════════════════ -->
+<g fill="#ffffff" opacity="0.18">
+  <circle cx="80"   cy="500" r="0.5"/>
+  <circle cx="180"  cy="620" r="0.4"/>
+  <circle cx="290"  cy="440" r="0.5"/>
+  <circle cx="410"  cy="580" r="0.4"/>
+  <circle cx="540"  cy="380" r="0.5"/>
+  <circle cx="670"  cy="520" r="0.4"/>
+  <circle cx="1300" cy="450" r="0.5"/>
+  <circle cx="1420" cy="580" r="0.4"/>
+  <circle cx="1550" cy="380" r="0.5"/>
+  <circle cx="1680" cy="520" r="0.4"/>
+  <circle cx="1800" cy="440" r="0.5"/>
+  <circle cx="1880" cy="600" r="0.4"/>
+</g>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 16: NOSECONE LABEL / HEADER TITLE
+══════════════════════════════════════════════════════════════════ -->
+<!-- Main title "MOON IDLE — VEHICLE ASSEMBLY COMPLETE" lower left in blueprint font area -->
+<!-- Already handled by title block above. Add sub-labels on rocket -->
+
+<!-- Rocket top fading into dark sky (both sides) -->
+<rect x="900" y="0" width="120" height="80"
+  fill="url(#sky-grad)" opacity="0.7"/>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     LAYER 17: FINAL CHROMATIC OVERLAY
+══════════════════════════════════════════════════════════════════ -->
+<!-- Very subtle vignette around entire image -->
+<radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+  <stop offset="0%"   stop-color="#000000" stop-opacity="0"/>
+  <stop offset="70%"  stop-color="#000000" stop-opacity="0"/>
+  <stop offset="100%" stop-color="#000000" stop-opacity="0.7"/>
+</radialGradient>
+<rect x="0" y="0" width="1920" height="1080" fill="url(#vignette)"/>
+
+<!-- Blueprint side subtle blue haze -->
+<rect x="0" y="0" width="960" height="1080" fill="#07142a" opacity="0.15"/>
+
+<!-- RIGHT HALF: subtle warm amber noise/haze at extreme right edge -->
+<linearGradient id="right-edge-warm" x1="0%" y1="0%" x2="100%" y2="0%">
+  <stop offset="0%"   stop-color="#ff6600" stop-opacity="0"/>
+  <stop offset="100%" stop-color="#ff2200" stop-opacity="0.08"/>
+</linearGradient>
+<rect x="960" y="0" width="960" height="1080" fill="url(#right-edge-warm)"/>
+
+</svg>
+</div>
+</body>
+</html>

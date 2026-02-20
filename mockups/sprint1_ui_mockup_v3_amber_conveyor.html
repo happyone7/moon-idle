@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle v3 Amber Conveyor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#090402;
+      --panel:#1f1107db;
+      --line:#ffaf5c4f;
+      --txt:#ffe1bb;
+      --muted:#ca9356;
+      --btn:url("./assets/moonidle_btn_amber_plate.svg");
+      --btn2:url("./assets/moonidle_btn_warn.svg");
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;min-height:100vh;color:var(--txt);
+      font-family:Oxanium,"Malgun Gothic",sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%,#ff8c2e1f 0,transparent 36%),
+        radial-gradient(circle at 88% 84%,#ffb66d1c 0,transparent 28%),
+        linear-gradient(165deg,#050201,var(--bg));
+    }
+    .app{max-width:1540px;margin:0 auto;padding:14px}
+    .top{
+      border:1px solid var(--line);border-radius:12px;background:var(--panel);
+      padding:11px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px
+    }
+    .top h1{margin:0;font-size:1.08rem;letter-spacing:.08em}
+    .top small{color:var(--muted);font-size:.7rem}
+    .chips{display:flex;gap:7px;flex-wrap:wrap}
+    .chips span{border:1px solid #ffb66a4d;border-radius:999px;padding:4px 9px;font-size:.7rem;color:#ffd9ae;background:#ffb86812}
+
+    .belt{
+      margin-top:10px;border:1px solid var(--line);border-radius:14px;background:var(--panel);
+      padding:10px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;align-items:stretch
+    }
+    .stage{
+      border:1px solid #ffc4833a;border-radius:10px;background:#ffffff08;padding:9px;position:relative
+    }
+    .stage::after{
+      content:"";position:absolute;right:-15px;top:50%;transform:translateY(-50%);
+      width:20px;height:2px;background:#ffbf7b66
+    }
+    .stage:last-child::after{display:none}
+    .stage h2{margin:0;font-size:.82rem;letter-spacing:.07em}
+    .stage p{margin:5px 0 0;color:var(--muted);font-size:.68rem;line-height:1.4}
+    .num{margin-top:8px;font-family:"Share Tech Mono",monospace;font-size:1.02rem}
+    .btn{
+      margin-top:8px;border:0;border-radius:8px;padding:8px;width:100%;
+      background:var(--btn) center/100% 100% no-repeat;color:#fff4e5;
+      font-family:"Share Tech Mono",monospace;font-size:.69rem;text-align:left;cursor:pointer
+    }
+    .btn.hot{background-image:var(--btn2)}
+
+    .grid{
+      margin-top:10px;display:grid;grid-template-columns:1.2fr .9fr;gap:10px
+    }
+    .panel{border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden}
+    .hd{padding:10px 11px;border-bottom:1px solid #ffffff1f;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#ffc889}
+    .hero{
+      height:220px;position:relative;border-bottom:1px solid #ffffff1a;overflow:hidden
+    }
+    .hero::before{
+      content:"";position:absolute;inset:0;
+      background:linear-gradient(180deg,transparent,#120903d6 65%,#100702ef),url("./assets/moonidle_hangar_bg_lab_xenon.svg") center/cover no-repeat;
+      filter:sepia(.5) saturate(1.15) hue-rotate(-10deg) brightness(.58)
+    }
+    .hero .txt{position:absolute;left:12px;right:12px;bottom:12px;border-left:3px solid #ffb36f;background:#180d06dd;padding:9px}
+    .hero .txt b{display:block;font-size:.95rem}
+    .hero .txt span{font-size:.72rem;color:var(--muted);line-height:1.4}
+    .stats{padding:10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+    .s{border:1px solid #ffc98b30;border-radius:9px;background:#ffffff07;padding:7px}
+    .s b{font-size:.9rem}
+    .s div{font-size:.64rem;color:var(--muted);margin-top:3px}
+
+    .q{padding:10px;display:grid;gap:8px}
+    .slot{border:1px solid #ffc98a32;border-radius:9px;background:#ffffff08;padding:8px}
+    .line{display:flex;justify-content:space-between;font-size:.78rem}
+    .bar{height:6px;border-radius:99px;background:#ffffff19;margin-top:6px;overflow:hidden}
+    .fill{height:100%;width:58%;background:linear-gradient(90deg,#ff9f4f,#ffd69d);animation:load 2.8s ease-in-out infinite}
+    .cam{margin:0 10px 10px;height:130px;border:1px solid #ffc98b2e;border-radius:9px;background:url("./assets/moonidle_cam_feed_lab_xenon.svg") center/cover no-repeat;filter:sepia(.5) brightness(.58)}
+    @media (max-width:1260px){
+      .belt{grid-template-columns:1fr 1fr}
+      .grid{grid-template-columns:1fr}
+    }
+    @media (max-width:760px){
+      .belt{grid-template-columns:1fr}
+      .stats{grid-template-columns:1fr 1fr}
+      .top{flex-direction:column;align-items:flex-start}
+    }
+    @keyframes load{0%{width:44%}50%{width:70%}100%{width:58%}}
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <div>
+        <h1>MoonIdle // Amber Conveyor Deck</h1>
+        <small>제작 파이프라인을 컨베이어 스테이지로 표현한 고밀도 시안</small>
+      </div>
+      <div class="chips">
+        <span>Moonstone 126</span><span>DAY 03:18</span><span>Launches 4</span>
+      </div>
+    </header>
+
+    <section class="belt">
+      <article class="stage"><h2>01 RAW INPUT</h2><p>광물, 산소, 촉매 수급을 안정화해 생산손실을 제어</p><div class="num">2.41M / +15.8K/s</div><button class="btn">채굴 라인 업그레이드</button></article>
+      <article class="stage"><h2>02 ENGINEERING</h2><p>점화 시퀀스와 열팽창 보정으로 결함률 감소</p><div class="num">RELIABILITY 93.1%</div><button class="btn">엔진베이 보강</button></article>
+      <article class="stage"><h2>03 ASSEMBLY</h2><p>조립 슬롯 확장으로 동시 생산량 증대</p><div class="num">SLOTS 2 / 3</div><button class="btn hot">조립 도크 확장</button></article>
+      <article class="stage"><h2>04 LAUNCH</h2><p>발사 큐 자동화로 장기 성장곡선 확보</p><div class="num">NEXT 14m 08s</div><button class="btn hot">발사 대기열 투입</button></article>
+    </section>
+
+    <section class="grid">
+      <section class="panel">
+        <div class="hd">Mission Visual</div>
+        <div class="hero"><div class="txt"><b>초기 2시간 내 첫 우주선 완성 후, 슬롯 확장 기반 지수 성장</b><span>Revolution Idle 스타일의 누적 성장감을 우주선 제작 공정으로 치환한 컨셉입니다.</span></div></div>
+        <div class="stats">
+          <div class="s"><b>9.48 km/s</b><div>Delta-v</div></div>
+          <div class="s"><b>1.61</b><div>TWR</div></div>
+          <div class="s"><b>51%</b><div>품질</div></div>
+          <div class="s"><b>+37%</b><div>연료 보너스</div></div>
+        </div>
+      </section>
+      <aside class="panel">
+        <div class="hd">Launch Queue</div>
+        <div class="q">
+          <div class="slot"><div class="line"><span>Slot 1 · Block-I</span><span>진행중</span></div><div class="bar"><div class="fill"></div></div></div>
+          <div class="slot"><div class="line"><span>Slot 2 · Heavy</span><span>대기</span></div><button class="btn">큐 등록</button></div>
+          <div class="slot"><div class="line"><span>Slot 3</span><span>잠금</span></div><button class="btn hot">잠금 해제</button></div>
+        </div>
+        <div class="cam"></div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

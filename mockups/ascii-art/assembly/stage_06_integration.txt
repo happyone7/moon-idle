@@ -1,0 +1,14 @@
+        ╔═╗
+        ║P║ PAYLOAD
+       ╔╝ ╚╗
+       ║ 2S ║ STAGE 2
+       ║    ║
+      ╔╝    ╚╗
+      ║ INTERSTAGE
+      ╠══════╣
+      ║  1S  ║ STAGE 1
+      ║      ║
+      ║      ║
+      ╚══╤╤══╝
+        ──┘└──
+  SECTIONS MATED  BOLT OK

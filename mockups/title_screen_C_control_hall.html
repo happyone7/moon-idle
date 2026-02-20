@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920">
+<title>MOON IDLE — TERMINAL BOOT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #010800;
+    --green:     #00e676;
+    --green-dim: #1a5c34;
+    --green-mid: #00994d;
+    --amber:     #ffab00;
+    --red:       #ff1744;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; border-radius: 0 !important; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+  }
+
+  /* CRT scanlines */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 9998; pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px, transparent 2px,
+      rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px
+    );
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed; inset: 0; z-index: 9997; pointer-events: none;
+    background: radial-gradient(ellipse at center,
+      transparent 50%,
+      rgba(0,0,0,0.55) 80%,
+      rgba(0,0,0,0.88) 100%
+    );
+  }
+
+  /* CRT flicker */
+  @keyframes flicker {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    93%  { opacity: 0.92; }
+    94%  { opacity: 1; }
+    96%  { opacity: 0.96; }
+    97%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+
+  @keyframes blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  #wrapper {
+    width: 1920px; height: 1080px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 60px 120px 40px;
+    animation: flicker 6s infinite;
+  }
+
+  /* ─── ASCII LOGO ─── */
+  #logo-block {
+    width: 100%;
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 0;
+  }
+
+  #logo-block pre {
+    display: inline-block;
+    font-size: 19px;
+    line-height: 1.25;
+    color: var(--green);
+    text-shadow:
+      0 0 8px var(--green),
+      0 0 18px rgba(0,230,118,0.45),
+      0 0 36px rgba(0,230,118,0.18);
+    letter-spacing: 0;
+    white-space: pre;
+  }
+
+  /* ─── SUBTITLE ─── */
+  #subtitle {
+    margin-top: 14px;
+    font-size: 18px;
+    color: var(--green-mid);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-shadow: 0 0 8px rgba(0,153,77,0.6);
+  }
+
+  /* ─── DIVIDER ─── */
+  .h-rule {
+    width: 100%;
+    border: none;
+    border-top: 1px solid var(--green-dim);
+    margin: 18px 0;
+    box-shadow: 0 0 6px rgba(0,230,118,0.12);
+  }
+
+  /* ─── BOOT LOG ─── */
+  #boot-panel {
+    width: 900px;
+    max-width: 900px;
+    border: 1px solid var(--green-dim);
+    background: rgba(0,20,8,0.6);
+    padding: 18px 28px;
+    min-height: 340px;
+    box-shadow: 0 0 18px rgba(0,230,118,0.06), inset 0 0 18px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+
+  #boot-log {
+    list-style: none;
+    font-size: 14.5px;
+    line-height: 1.75;
+    flex: 1;
+  }
+
+  #boot-log li {
+    white-space: pre;
+    opacity: 0;
+    transition: opacity 0.08s;
+  }
+
+  #boot-log li.visible { opacity: 1; }
+
+  #boot-log li.ok    { color: var(--green); }
+  #boot-log li.chk   { color: var(--green-mid); }
+  #boot-log li.sys   { color: var(--amber); text-shadow: 0 0 8px rgba(255,171,0,0.5); }
+  #boot-log li.rule  { color: var(--green-dim); }
+  #boot-log li.ready {
+    color: var(--green);
+    text-shadow: 0 0 8px var(--green), 0 0 16px rgba(0,230,118,0.4);
+    font-size: 15px;
+  }
+
+  #cursor {
+    display: inline-block;
+    color: var(--green);
+    text-shadow: 0 0 8px var(--green);
+    animation: blink 0.9s step-end infinite;
+  }
+
+  /* ─── MISSION STATS ─── */
+  #mission-stats {
+    width: 900px;
+    border: 1px solid var(--green-dim);
+    background: rgba(0,20,8,0.5);
+    padding: 10px 28px;
+    font-size: 14px;
+    color: var(--green-mid);
+    letter-spacing: 0.08em;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-top: 14px;
+    box-shadow: 0 0 10px rgba(0,230,118,0.05);
+  }
+
+  #mission-stats span.val {
+    color: var(--green);
+    text-shadow: 0 0 6px rgba(0,230,118,0.4);
+  }
+
+  #mission-stats .sep {
+    margin: 0 18px;
+    color: var(--green-dim);
+  }
+
+  /* ─── MENU BUTTONS ─── */
+  #menu-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+    opacity: 0;
+  }
+
+  #menu-buttons.shown {
+    animation: fadeIn 0.6s ease forwards;
+  }
+
+  .menu-btn {
+    width: 420px;
+    border: 1px solid var(--green-dim);
+    background: transparent;
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 0.14em;
+    padding: 12px 28px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, text-shadow 0.15s, color 0.15s;
+    box-shadow: 0 0 8px rgba(0,230,118,0.04);
+  }
+
+  .menu-btn:hover {
+    border-color: var(--green);
+    background: rgba(0,230,118,0.06);
+    color: #fff;
+    text-shadow: 0 0 8px var(--green), 0 0 18px rgba(0,230,118,0.35);
+    box-shadow: 0 0 16px rgba(0,230,118,0.18), inset 0 0 10px rgba(0,230,118,0.05);
+  }
+
+  .menu-btn.primary {
+    border-color: var(--green-mid);
+    color: var(--green);
+    text-shadow: 0 0 8px var(--green), 0 0 16px rgba(0,230,118,0.4);
+  }
+
+  /* ─── FOOTER ─── */
+  #footer {
+    position: absolute;
+    bottom: 28px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--green-dim);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+<div id="wrapper">
+
+  <!-- ASCII LOGO -->
+  <div id="logo-block">
+    <pre>
+ ███╗   ███╗ ██████╗  ██████╗ ███╗   ██╗    ██╗██████╗ ██╗     ███████╗
+ ████╗ ████║██╔═══██╗██╔═══██╗████╗  ██║    ██║██╔══██╗██║     ██╔════╝
+ ██╔████╔██║██║   ██║██║   ██║██╔██╗ ██║    ██║██║  ██║██║     █████╗
+ ██║╚██╔╝██║██║   ██║██║   ██║██║╚██╗██║    ██║██║  ██║██║     ██╔══╝
+ ██║ ╚═╝ ██║╚██████╔╝╚██████╔╝██║ ╚████║    ██║██████╔╝███████╗███████╗
+ ╚═╝     ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝    ╚═╝╚═════╝ ╚══════╝╚══════╝</pre>
+  </div>
+
+  <!-- SUBTITLE -->
+  <div id="subtitle">달 탐사 로켓 제조 방치형 시뮬레이션 &nbsp; v0.1.0-alpha</div>
+
+  <hr class="h-rule">
+
+  <!-- BOOT LOG PANEL -->
+  <div id="boot-panel">
+    <ul id="boot-log"></ul>
+  </div>
+
+  <!-- MISSION STATS -->
+  <div id="mission-stats">
+    <span>총 발사: <span class="val">3회</span></span>
+    <span class="sep">│</span>
+    <span>최고도: <span class="val">89.4 km</span></span>
+    <span class="sep">│</span>
+    <span>현재 기체: <span class="val">BETA mk.2</span></span>
+    <span class="sep">│</span>
+    <span>조립: <span class="val">57%</span></span>
+    <span class="sep">│</span>
+    <span>경과: <span class="val">D+52</span></span>
+  </div>
+
+  <!-- MENU BUTTONS -->
+  <div id="menu-buttons">
+    <button class="menu-btn primary">[ ▶  게임 시작 (새 시즌) ]</button>
+    <button class="menu-btn">[ ▶  이어하기 &nbsp; D+52 ]</button>
+    <button class="menu-btn">[ ▶  설정 ]</button>
+  </div>
+
+  <!-- FOOTER -->
+  <div id="footer">
+    MOON IDLE LAUNCH FACILITY &nbsp;//&nbsp; MISSION CONTROL SYSTEM &nbsp;//&nbsp; 2026
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var lines = [
+    { cls: 'sys', text: '> [SYS] MOON IDLE LAUNCH FACILITY — INITIALIZING...' },
+    { cls: 'chk', text: '> [CHK] 저장 데이터 확인 중...' },
+    { cls: 'ok',  text: '> [OK]  세이브 버전 v2 — 마이그레이션 완료' },
+    { cls: 'chk', text: '> [CHK] 자원 시스템 로드 중...' },
+    { cls: 'ok',  text: '> [OK]  Al-7075, CFRP, Ti-6Al-4V, LOX, RP-1 — 확인' },
+    { cls: 'chk', text: '> [CHK] 제조 파이프라인 복원 중...' },
+    { cls: 'ok',  text: '> [OK]  추진 계통 조립 57% 재개' },
+    { cls: 'chk', text: '> [CHK] 발사 이력 로드 중...' },
+    { cls: 'ok',  text: '> [OK]  ML-001~ML-003 기록 복원 완료' },
+    { cls: 'chk', text: '> [CHK] 텔레메트리 시스템 — NOMINAL' },
+    { cls: 'ok',  text: '> [OK]  카르만선 목표 89.4km / 100km' },
+    { cls: 'rule',text: '> ──────────────────────────────────────────────────' },
+    { cls: 'sys', text: '> [SYS] 시스템 준비 완료. 발사 대기 중...' },
+    { cls: 'ready',text:'> [SYS] 모든 시스템 NOMINAL ', cursor: true },
+  ];
+
+  var log = document.getElementById('boot-log');
+  var menu = document.getElementById('menu-buttons');
+  var idx = 0;
+  var DELAY = 130; // ms per line
+
+  function showNextLine() {
+    if (idx >= lines.length) {
+      // blink cursor then show menu
+      setTimeout(function () {
+        menu.classList.add('shown');
+      }, 900);
+      return;
+    }
+
+    var data = lines[idx];
+    var li = document.createElement('li');
+    li.className = data.cls;
+
+    if (data.cursor) {
+      li.textContent = data.text;
+      var cur = document.createElement('span');
+      cur.id = 'cursor';
+      cur.textContent = '█';
+      li.appendChild(cur);
+    } else {
+      li.textContent = data.text;
+    }
+
+    log.appendChild(li);
+    // force reflow then show
+    requestAnimationFrame(function () {
+      li.classList.add('visible');
+    });
+
+    idx++;
+    setTimeout(showNextLine, DELAY);
+  }
+
+  // small initial delay before boot starts
+  setTimeout(showNextLine, 400);
+})();
+</script>
+</body>
+</html>

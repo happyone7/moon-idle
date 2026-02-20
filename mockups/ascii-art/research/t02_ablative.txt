@@ -1,0 +1,10 @@
+   ___________
+  /  RE-ENTRY  \
+ |  >>>>>>>>>>>|<- heat flux
+ |[=ABLATIVE==]|<- char layer
+ |[============]<- virgin mat
+ |   CAPSULE   |
+  \___________/
+ ~~ 1,640C ~~ PLASMA ~~
+ CHAR DEPTH: 4.2mm
+[COAT ████████░░  80%]

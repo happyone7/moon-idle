@@ -1,0 +1,14 @@
+       ┌───┐
+       │INJ│ INJECTOR
+       └─┬─┘
+      ╔══╧══╗
+      ║CHAM ║ CHAMBER
+      ║ *#* ║
+      ╚══╤══╝
+       ╔═╧═╗
+       ║NOZ║ NOZZLE
+      ╔╝   ╚╗
+     ╔╝ ▼▼▼ ╚╗
+    ╔╝  ▼▼▼▼  ╚╗
+    ╚═══════════╝
+  ENGINE ASSY COMPLETE

@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoonIdle — Orbital Operations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #000008;
+  --panel-bg: rgba(10,20,40,0.8);
+  --border: rgba(40,120,200,0.3);
+  --border-bright: rgba(40,120,200,0.6);
+  --text: #c8dff0;
+  --text-dim: rgba(200,223,240,0.4);
+  --accent: #58a8ff;
+  --active: #00ff9a;
+  --warn: #ffaa00;
+  --critical: #ff3344;
+  --font-ui: 'Rajdhani', sans-serif;
+  --font-data: 'Courier New', monospace;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-weight: 300;
+  font-size: 12px;
+  line-height: 1.4;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* === TOP HUD === */
+#hud {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 36px;
+  background: rgba(5,15,35,0.95);
+  border-bottom: 0.5px solid var(--border-bright);
+  display: flex;
+  align-items: center;
+  z-index: 100;
+  padding: 0 12px;
+  gap: 0;
+}
+.hud-cell {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-right: 0.5px solid var(--border);
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+.hud-cell:first-child { border-left: none; }
+.hud-cell .hud-label { color: var(--text-dim); margin-right: 6px; font-size: 10px; }
+.hud-cell .hud-value { color: var(--text); font-weight: 500; }
+.hud-cell.program { color: var(--accent); font-weight: 700; font-size: 12px; letter-spacing: 0.15em; }
+.hud-cell .nominal { color: var(--active); }
+.hud-status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--active);
+  margin-right: 5px;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+#mission-clock { font-family: var(--font-data); font-size: 12px; color: var(--accent); letter-spacing: 0.1em; }
+
+/* === MAIN LAYOUT === */
+#main {
+  position: fixed;
+  top: 36px; left: 0; right: 0; bottom: 50px;
+  display: flex;
+  gap: 0;
+}
+
+.column {
+  height: 100%;
+  border-right: 0.5px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 1.2s cubic-bezier(0.4,0,0.2,1);
+}
+.col-1 { width: 18%; }
+.col-2 { width: 22%; }
+.col-3 { width: 35%; }
+.col-4 { width: 25%; border-right: none; }
+
+.col-header {
+  padding: 6px 10px;
+  border-bottom: 0.5px solid var(--border-bright);
+  background: rgba(10,30,60,0.6);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.col-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.col-body::-webkit-scrollbar { width: 3px; }
+.col-body::-webkit-scrollbar-track { background: transparent; }
+.col-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* === SECTION LABELS === */
+.section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  padding: 6px 0 4px;
+  border-bottom: 0.5px solid rgba(40,120,200,0.15);
+  margin-bottom: 6px;
+}
+
+/* === ARC GAUGES (COL 1) === */
+.gauge-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.gauge-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 3px;
+  border: 0.5px solid var(--border);
+  background: rgba(10,20,40,0.5);
+}
+.gauge-svg-wrap {
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+.gauge-svg-wrap svg { transform: rotate(-90deg); }
+.gauge-track { fill: none; stroke: rgba(40,120,200,0.12); stroke-width: 3; }
+.gauge-fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease; }
+.gauge-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-data);
+  font-size: 9px;
+  font-weight: bold;
+  transform: none;
+}
+.gauge-name {
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.2;
+}
+.gauge-qty {
+  font-family: var(--font-data);
+  font-size: 8px;
+  color: var(--text-dim);
+  text-align: center;
+}
+.g-blue { stroke: var(--accent); }
+.g-green { stroke: var(--active); }
+.g-amber { stroke: var(--warn); }
+.g-red { stroke: var(--critical); }
+.gtext-blue { color: var(--accent); }
+.gtext-green { color: var(--active); }
+.gtext-amber { color: var(--warn); }
+.gtext-red { color: var(--critical); }
+
+/* PRODUCTION RATES */
+.rate-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  border-bottom: 0.5px solid rgba(40,120,200,0.08);
+  font-size: 10px;
+}
+.rate-name { color: var(--text-dim); font-size: 9px; }
+.rate-val { font-family: var(--font-data); font-size: 9px; color: var(--active); }
+
+/* === ASSEMBLY PIPELINE (COL 2) === */
+.pipeline-stage {
+  margin-bottom: 6px;
+  border: 0.5px solid var(--border);
+  background: rgba(10,20,40,0.4);
+  padding: 5px 7px;
+}
+.pipeline-stage.complete { border-color: rgba(0,255,154,0.25); background: rgba(0,255,154,0.03); }
+.pipeline-stage.inprogress { border-color: rgba(88,168,255,0.5); background: rgba(88,168,255,0.06); }
+.pipeline-stage.locked { border-color: rgba(40,120,200,0.12); opacity: 0.55; }
+
+.stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3px;
+}
+.stage-num { font-family: var(--font-data); font-size: 9px; color: var(--text-dim); margin-right: 5px; }
+.stage-name { font-size: 10px; font-weight: 600; letter-spacing: 0.05em; flex: 1; }
+.stage-name .ko { color: var(--text); font-size: 9.5px; }
+.stage-name .en { color: var(--text-dim); font-size: 8.5px; margin-left: 3px; }
+.stage-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 1px 5px;
+  border: 0.5px solid;
+}
+.badge-complete { color: var(--active); border-color: var(--active); }
+.badge-progress { color: var(--accent); border-color: var(--accent); }
+.badge-locked { color: var(--text-dim); border-color: var(--text-dim); }
+
+.stage-progress-bar {
+  height: 3px;
+  background: rgba(40,120,200,0.15);
+  margin: 4px 0;
+  position: relative;
+  overflow: hidden;
+}
+.stage-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3080d0 0%, var(--accent) 100%);
+  transition: width 2s ease;
+}
+
+.stage-components {
+  font-size: 8.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.stage-substep {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 8.5px;
+  padding: 1px 0;
+}
+.substep-dot { width: 4px; height: 4px; border-radius: 50%; flex-shrink: 0; }
+.substep-done .substep-dot { background: var(--active); }
+.substep-running .substep-dot { background: var(--accent); animation: pulse-dot 1s infinite; }
+.substep-waiting .substep-dot { background: var(--text-dim); }
+.substep-done { color: rgba(0,255,154,0.6); }
+.substep-running { color: var(--accent); }
+.substep-waiting { color: var(--text-dim); }
+
+/* === VEHICLE SCHEMATIC (COL 3) === */
+#schematic-wrap {
+  width: 100%;
+  border: 0.5px solid var(--border);
+  background: rgba(5,15,35,0.6);
+  margin-bottom: 6px;
+  position: relative;
+  overflow: hidden;
+}
+#rocket-schematic {
+  width: 100%;
+  height: 320px;
+}
+
+/* LOG */
+.log-area {
+  background: rgba(0,5,15,0.7);
+  border: 0.5px solid var(--border);
+  padding: 6px;
+  font-family: var(--font-data);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.log-line { display: flex; gap: 8px; }
+.log-time { color: var(--text-dim); flex-shrink: 0; }
+.log-msg { flex: 1; color: var(--text); }
+.log-warn .log-msg { color: var(--warn); }
+.log-alert .log-msg { color: var(--critical); }
+
+/* === FLIGHT RECORD (COL 4) === */
+.flight-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+  margin-bottom: 8px;
+}
+.flight-table th {
+  text-align: left;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  padding: 3px 4px;
+  border-bottom: 0.5px solid var(--border);
+}
+.flight-table td {
+  padding: 3px 4px;
+  font-family: var(--font-data);
+  font-size: 9px;
+  border-bottom: 0.5px solid rgba(40,120,200,0.08);
+  white-space: nowrap;
+}
+.row-fail { background: rgba(255,51,68,0.06); }
+.row-fail td { color: rgba(255,100,120,0.7); }
+.row-partial { background: rgba(255,170,0,0.06); }
+.row-partial td { color: rgba(255,200,80,0.8); }
+.row-prep { background: rgba(88,168,255,0.08); }
+.row-prep td { color: var(--accent); }
+.result-fail { color: var(--critical) !important; font-weight: bold; }
+.result-partial { color: var(--warn) !important; }
+.result-prep { color: var(--accent) !important; }
+
+/* FAILURE ANALYSIS */
+.failure-item {
+  padding: 4px 0;
+  border-bottom: 0.5px solid rgba(40,120,200,0.1);
+  font-size: 9.5px;
+}
+.failure-id { font-family: var(--font-data); font-size: 9px; color: var(--critical); }
+.failure-desc { color: var(--text); font-size: 9px; margin-top: 1px; }
+
+/* STATS */
+.stats-table {
+  width: 100%;
+  font-size: 9.5px;
+  margin-top: 4px;
+}
+.stats-table tr { border-bottom: 0.5px solid rgba(40,120,200,0.08); }
+.stats-table td { padding: 3px 0; }
+.stats-table .skey { color: var(--text-dim); font-size: 9px; letter-spacing: 0.05em; }
+.stats-table .sval { font-family: var(--font-data); color: var(--text); text-align: right; font-size: 9px; }
+.stats-table .sval.highlight { color: var(--active); }
+.stats-table .sval.warn { color: var(--warn); }
+.stats-table .sval.fail { color: var(--critical); }
+
+/* === BOTTOM ACTION BAR === */
+#action-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 50px;
+  background: rgba(5,12,30,0.97);
+  border-top: 0.5px solid var(--border-bright);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  z-index: 100;
+}
+.btn {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 7px 16px;
+  border: 0.5px solid;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  white-space: nowrap;
+  background: transparent;
+}
+.btn-warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+.btn-warn:hover { background: rgba(255,170,0,0.12); }
+.btn-hold {
+  border-color: var(--text-dim);
+  color: var(--text-dim);
+}
+.btn-hold:hover { background: rgba(200,223,240,0.06); }
+.btn-launch {
+  border-color: rgba(88,168,255,0.4);
+  color: rgba(88,168,255,0.5);
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.action-status {
+  flex: 1;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  text-align: center;
+}
+.action-status span { color: var(--warn); }
+
+/* === LAUNCH SEQUENCE OVERLAY === */
+#launch-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000008;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+}
+#launch-overlay.active { display: flex; }
+
+#launch-telemetry {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+  z-index: 1010;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s;
+}
+#launch-telemetry.visible { opacity: 1; }
+.tele-row {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+}
+.tele-item {
+  text-align: center;
+}
+.tele-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+.tele-value {
+  font-family: var(--font-data);
+  font-size: 22px;
+  color: var(--accent);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+.tele-unit { font-size: 11px; color: var(--text-dim); }
+
+#launch-event {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 1020;
+  display: none;
+}
+#launch-event.visible { display: block; }
+.event-msg {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  padding: 10px 24px;
+  border: 1px solid;
+  animation: event-flash 0.8s ease infinite;
+}
+.event-warn { color: var(--warn); border-color: var(--warn); background: rgba(255,170,0,0.08); }
+.event-critical { color: var(--critical); border-color: var(--critical); background: rgba(255,51,68,0.08); }
+@keyframes event-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+#result-card {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(5,15,40,0.97);
+  border: 1px solid var(--accent);
+  padding: 28px 36px;
+  text-align: center;
+  z-index: 1030;
+  display: none;
+  min-width: 500px;
+}
+#result-card.visible { display: block; }
+.result-title {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+.result-id {
+  font-family: var(--font-data);
+  font-size: 22px;
+  color: var(--critical);
+  font-weight: bold;
+  margin-bottom: 16px;
+  letter-spacing: 0.1em;
+}
+.result-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 20px;
+  margin-bottom: 16px;
+  text-align: left;
+}
+.result-stat-row { display: flex; justify-content: space-between; gap: 16px; }
+.result-stat-key { font-size: 10px; color: var(--text-dim); letter-spacing: 0.1em; }
+.result-stat-val { font-family: var(--font-data); font-size: 11px; color: var(--text); }
+.result-note {
+  font-size: 11px;
+  color: var(--warn);
+  line-height: 1.6;
+  border-top: 0.5px solid var(--border);
+  padding-top: 10px;
+  margin-bottom: 16px;
+}
+.result-action {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-bottom: 18px;
+}
+.btn-debrief {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  padding: 9px 24px;
+  border: 0.5px solid var(--active);
+  color: var(--active);
+  background: rgba(0,255,154,0.07);
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+.btn-debrief:hover { background: rgba(0,255,154,0.15); }
+
+/* === ROCKET ANIMATION === */
+#launch-rocket-wrap {
+  position: fixed;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1005;
+  animation: rocket-ascent 8s cubic-bezier(0.3,0,0.1,1) forwards;
+  display: none;
+}
+#launch-rocket-wrap.flying { display: block; }
+@keyframes rocket-ascent {
+  0% { transform: translateX(-50%) translateY(0); }
+  100% { transform: translateX(-50%) translateY(-130vh); }
+}
+
+.plume {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 22px;
+  animation: plume-flicker 0.08s steps(1) infinite;
+}
+@keyframes plume-flicker {
+  0% { opacity: 1; transform: translateX(-50%) scaleX(1) scaleY(1); }
+  25% { opacity: 0.85; transform: translateX(-50%) scaleX(0.92) scaleY(1.06); }
+  50% { opacity: 1; transform: translateX(-50%) scaleX(1.05) scaleY(0.96); }
+  75% { opacity: 0.9; transform: translateX(-50%) scaleX(0.96) scaleY(1.04); }
+}
+
+/* stars bg for launch */
+#stars-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1s;
+}
+#stars-bg.visible { opacity: 1; }
+
+/* Grid lines in schematic */
+.schematic-grid-line { stroke: rgba(40,120,200,0.08); stroke-width: 0.5; stroke-dasharray: 3,5; }
+.dim-line { stroke: rgba(88,168,255,0.4); stroke-width: 0.5; }
+.callout-line { stroke: rgba(88,168,255,0.3); stroke-width: 0.5; }
+.callout-text { fill: var(--text); font-family: 'Courier New', monospace; font-size: 9px; }
+.callout-label { fill: var(--accent); font-family: 'Courier New', monospace; font-size: 8.5px; }
+
+/* T+ counter in launch */
+#launch-clock {
+  position: fixed;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-data);
+  font-size: 14px;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  z-index: 1015;
+  display: none;
+}
+#launch-clock.visible { display: block; }
+
+/* Scanline subtle */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,30,0.04) 2px,
+    rgba(0,0,30,0.04) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Stage connector line (col 2) */
+.pipeline-connector {
+  width: 1px;
+  height: 5px;
+  background: var(--border);
+  margin: 0 auto;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP HUD -->
+<div id="hud">
+  <div class="hud-cell program">MOON IDLE ORBITAL PROGRAM</div>
+  <div class="hud-cell">
+    <span class="hud-label">VEHICLE</span>
+    <span class="hud-value">BETA mk.2</span>
+  </div>
+  <div class="hud-cell">
+    <span class="hud-label">STAGE</span>
+    <span class="hud-value">3/7 PROPULSION</span>
+  </div>
+  <div class="hud-cell">
+    <span class="hud-label">COMPLETION</span>
+    <span class="hud-value" style="color:var(--accent)">57.3%</span>
+  </div>
+  <div class="hud-cell">
+    <span class="hud-label">T+</span>
+    <span id="mission-clock">00:00:00</span>
+  </div>
+  <div class="hud-cell" style="margin-left:auto; border-right:none;">
+    <div class="hud-status-dot"></div>
+    <span class="hud-label">STATUS</span>
+    <span class="nominal" style="font-weight:600; letter-spacing:0.1em;">NOMINAL</span>
+  </div>
+</div>
+
+<!-- MAIN 4-COLUMN -->
+<div id="main">
+
+  <!-- COL 1: RESOURCE MONITOR -->
+  <div class="column col-1" id="col1">
+    <div class="col-header">PROPELLANT &amp; MATERIALS</div>
+    <div class="col-body">
+      <div class="section-label">STOCK LEVELS</div>
+      <div class="gauge-grid">
+        <!-- LOX -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-blue" cx="22" cy="22" r="17"
+                stroke-dasharray="71.6 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-blue">67%</div>
+          </div>
+          <div class="gauge-name">LOX<br>액체산소</div>
+          <div class="gauge-qty">3,350/5,000 kg</div>
+        </div>
+        <!-- RP-1 -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-green" cx="22" cy="22" r="17"
+                stroke-dasharray="95.1 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-green">89%</div>
+          </div>
+          <div class="gauge-name">RP-1<br>케로신</div>
+          <div class="gauge-qty">1,780/2,000 kg</div>
+        </div>
+        <!-- Al-7075 -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-amber" cx="22" cy="22" r="17"
+                stroke-dasharray="52.3 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-amber">49%</div>
+          </div>
+          <div class="gauge-name">Al-7075<br>알루미늄</div>
+          <div class="gauge-qty">245/500 kg</div>
+        </div>
+        <!-- CFRP -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-red" cx="22" cy="22" r="17"
+                stroke-dasharray="31.0 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-red">29%</div>
+          </div>
+          <div class="gauge-name">CFRP<br>T-300</div>
+          <div class="gauge-qty">87/300 kg</div>
+        </div>
+        <!-- Ti-6Al-4V -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-amber" cx="22" cy="22" r="17"
+                stroke-dasharray="44.9 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-amber">42%</div>
+          </div>
+          <div class="gauge-name">Ti-6Al-4V<br>티타늄</div>
+          <div class="gauge-qty">63/150 kg</div>
+        </div>
+        <!-- Inconel -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-amber" cx="22" cy="22" r="17"
+                stroke-dasharray="41.7 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-amber">39%</div>
+          </div>
+          <div class="gauge-name">인코넬 718</div>
+          <div class="gauge-qty">195/500 kg</div>
+        </div>
+        <!-- GH2 -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-green" cx="22" cy="22" r="17"
+                stroke-dasharray="106.8 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-green">100%</div>
+          </div>
+          <div class="gauge-name">GH2<br>기체수소</div>
+          <div class="gauge-qty">250/100 m³</div>
+        </div>
+        <!-- 에폭시 -->
+        <div class="gauge-item">
+          <div class="gauge-svg-wrap">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="gauge-track" cx="22" cy="22" r="17"/>
+              <circle class="gauge-fill g-red" cx="22" cy="22" r="17"
+                stroke-dasharray="19.2 106.8"
+                stroke-dashoffset="0"/>
+            </svg>
+            <div class="gauge-text gtext-red">18%</div>
+          </div>
+          <div class="gauge-name">에폭시<br>수지</div>
+          <div class="gauge-qty">9/50 kg</div>
+        </div>
+      </div>
+
+      <div class="section-label">PRODUCTION RATES</div>
+      <div class="rate-row"><span class="rate-name">LOX 액체산소</span><span class="rate-val">+12.4 kg/min</span></div>
+      <div class="rate-row"><span class="rate-name">RP-1 케로신</span><span class="rate-val">+4.8 kg/min</span></div>
+      <div class="rate-row"><span class="rate-name">Al-7075</span><span class="rate-val">+2.1 kg/min</span></div>
+      <div class="rate-row"><span class="rate-name">CFRP T-300</span><span class="rate-val" style="color:var(--warn)">+0.6 kg/min</span></div>
+      <div class="rate-row"><span class="rate-name">Ti-6Al-4V</span><span class="rate-val">+0.4 kg/min</span></div>
+      <div class="rate-row"><span class="rate-name">인코넬 718</span><span class="rate-val">+1.2 kg/min</span></div>
+      <div class="rate-row"><span class="rate-name">GH2 기체수소</span><span class="rate-val">+3.5 m³/min</span></div>
+      <div class="rate-row"><span class="rate-name">에폭시 수지</span><span class="rate-val" style="color:var(--critical)">+0.08 kg/min</span></div>
+    </div>
+  </div>
+
+  <!-- COL 2: ASSEMBLY PIPELINE -->
+  <div class="column col-2" id="col2">
+    <div class="col-header">MANUFACTURING SEQUENCE</div>
+    <div class="col-body">
+      <!-- Stage 01 -->
+      <div class="pipeline-stage complete">
+        <div class="stage-header">
+          <span class="stage-num">01</span>
+          <span class="stage-name">
+            <span class="ko">원자재 정제</span>
+            <span class="en">/ RAW PROCESSING</span>
+          </span>
+          <span class="stage-badge badge-complete">COMPLETE</span>
+        </div>
+        <div class="stage-components">Al-7075 &nbsp;·&nbsp; CFRP T-300 &nbsp;·&nbsp; Ti-6Al-4V &nbsp;·&nbsp; 인코넬 718</div>
+      </div>
+      <div class="pipeline-connector"></div>
+      <!-- Stage 02 -->
+      <div class="pipeline-stage complete">
+        <div class="stage-header">
+          <span class="stage-num">02</span>
+          <span class="stage-name">
+            <span class="ko">구조물 제작</span>
+            <span class="en">/ STRUCTURAL FAB</span>
+          </span>
+          <span class="stage-badge badge-complete">COMPLETE</span>
+        </div>
+        <div class="stage-components">탱크 쉘 &nbsp;·&nbsp; 동체 링 &nbsp;·&nbsp; 페어링 쉘</div>
+      </div>
+      <div class="pipeline-connector"></div>
+      <!-- Stage 03 IN PROGRESS -->
+      <div class="pipeline-stage inprogress">
+        <div class="stage-header">
+          <span class="stage-num">03</span>
+          <span class="stage-name">
+            <span class="ko">추진 계통</span>
+            <span class="en">/ PROPULSION ASS.</span>
+          </span>
+          <span class="stage-badge badge-progress">57.3%</span>
+        </div>
+        <div class="stage-progress-bar">
+          <div class="stage-progress-fill" style="width:57.3%"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:2px; margin-top:3px;">
+          <div class="stage-substep substep-done">
+            <div class="substep-dot"></div>
+            <span>연소실 가공: 완료</span>
+          </div>
+          <div class="stage-substep substep-running">
+            <div class="substep-dot"></div>
+            <span>터보펌프 조립: 진행중</span>
+          </div>
+          <div class="stage-substep substep-waiting">
+            <div class="substep-dot"></div>
+            <span>추진제 라인 배관: 대기</span>
+          </div>
+          <div class="stage-substep substep-waiting">
+            <div class="substep-dot"></div>
+            <span>TVC 액추에이터: 대기</span>
+          </div>
+        </div>
+      </div>
+      <div class="pipeline-connector"></div>
+      <!-- Stage 04 -->
+      <div class="pipeline-stage locked">
+        <div class="stage-header">
+          <span class="stage-num">04</span>
+          <span class="stage-name">
+            <span class="ko">항전 탑재</span>
+            <span class="en">/ AVIONICS INT.</span>
+          </span>
+          <span class="stage-badge badge-locked">LOCKED</span>
+        </div>
+        <div class="stage-components">INS 관성항법 &nbsp;·&nbsp; 원격측정 &nbsp;·&nbsp; 비행SW</div>
+      </div>
+      <div class="pipeline-connector"></div>
+      <!-- Stage 05 -->
+      <div class="pipeline-stage locked">
+        <div class="stage-header">
+          <span class="stage-num">05</span>
+          <span class="stage-name">
+            <span class="ko">정적 연소</span>
+            <span class="en">/ STATIC FIRE</span>
+          </span>
+          <span class="stage-badge badge-locked">LOCKED</span>
+        </div>
+        <div class="stage-components">5초 시험 &nbsp;·&nbsp; 15초 시험 &nbsp;·&nbsp; 전출력 시험</div>
+      </div>
+      <div class="pipeline-connector"></div>
+      <!-- Stage 06 -->
+      <div class="pipeline-stage locked">
+        <div class="stage-header">
+          <span class="stage-num">06</span>
+          <span class="stage-name">
+            <span class="ko">단 통합</span>
+            <span class="en">/ STAGE INTEGRATION</span>
+          </span>
+          <span class="stage-badge badge-locked">LOCKED</span>
+        </div>
+        <div class="stage-components">1단 &nbsp;·&nbsp; 2단 &nbsp;·&nbsp; 페이로드 스택</div>
+      </div>
+      <div class="pipeline-connector"></div>
+      <!-- Stage 07 -->
+      <div class="pipeline-stage locked">
+        <div class="stage-header">
+          <span class="stage-num">07</span>
+          <span class="stage-name">
+            <span class="ko">발사 준비</span>
+            <span class="en">/ LAUNCH PREP</span>
+          </span>
+          <span class="stage-badge badge-locked">LOCKED</span>
+        </div>
+        <div class="stage-components">연료주입 &nbsp;·&nbsp; 시스템점검 &nbsp;·&nbsp; T-0 카운트다운</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COL 3: VEHICLE SCHEMATIC + LOG -->
+  <div class="column col-3" id="col3">
+    <div class="col-header">VEHICLE — BETA mk.2</div>
+    <div class="col-body" style="padding:6px;">
+      <!-- Rocket Schematic SVG -->
+      <div id="schematic-wrap">
+        <svg id="rocket-schematic" viewBox="0 0 380 320" xmlns="http://www.w3.org/2000/svg">
+          <!-- Grid -->
+          <line x1="140" y1="0" x2="140" y2="320" class="schematic-grid-line"/>
+          <line x1="240" y1="0" x2="240" y2="320" class="schematic-grid-line"/>
+          <line x1="0" y1="40" x2="380" y2="40" class="schematic-grid-line"/>
+          <line x1="0" y1="280" x2="380" y2="280" class="schematic-grid-line"/>
+
+          <!-- TITLE -->
+          <text x="190" y="12" fill="rgba(88,168,255,0.5)" font-family="Courier New" font-size="8" text-anchor="middle" letter-spacing="2">BETA mk.2 — CROSS SECTION</text>
+
+          <!-- NOSECONE -->
+          <polygon points="190,22 168,58 212,58" fill="rgba(88,168,255,0.18)" stroke="rgba(88,168,255,0.8)" stroke-width="1"/>
+          <text x="190" y="44" fill="rgba(88,168,255,0.5)" font-family="Courier New" font-size="7" text-anchor="middle">Al-7075</text>
+
+          <!-- FAIRING callout right -->
+          <line x1="212" y1="40" x2="248" y2="28" class="callout-line"/>
+          <line x1="248" y1="28" x2="278" y2="28" class="callout-line"/>
+          <text x="280" y="31" class="callout-label">FAIRING SHELL</text>
+          <text x="280" y="40" class="callout-text">Al-7075 / CFRP</text>
+
+          <!-- STAGE 2 LOX TANK (67% filled) -->
+          <rect x="168" y="58" width="44" height="64" fill="rgba(10,20,50,0.6)" stroke="rgba(88,168,255,0.7)" stroke-width="1"/>
+          <!-- fill level 67% -->
+          <rect x="169" y="79.5" width="42" height="41.5" fill="rgba(88,168,255,0.22)"/>
+          <!-- wave line -->
+          <path d="M169,79.5 Q180,77 191,79.5 Q202,82 211,79.5" fill="none" stroke="rgba(88,168,255,0.6)" stroke-width="0.8"/>
+          <text x="190" y="72" fill="rgba(88,168,255,0.6)" font-family="Courier New" font-size="7" text-anchor="middle">LOX 67%</text>
+          <text x="190" y="104" fill="rgba(88,168,255,0.4)" font-family="Courier New" font-size="6.5" text-anchor="middle">3,350 kg</text>
+
+          <!-- LOX TANK callout left -->
+          <line x1="168" y1="75" x2="132" y2="68" class="callout-line"/>
+          <line x1="100" y1="68" x2="132" y2="68" class="callout-line"/>
+          <text x="98" y="65" class="callout-label" text-anchor="end">LOX TANK S2</text>
+          <text x="98" y="73" class="callout-text" text-anchor="end">5,000L capacity</text>
+
+          <!-- STAGE 2 RP-1 TANK (89%) -->
+          <rect x="168" y="124" width="44" height="50" fill="rgba(10,20,50,0.6)" stroke="rgba(0,255,154,0.6)" stroke-width="1"/>
+          <!-- fill level 89% -->
+          <rect x="169" y="129.5" width="42" height="43.5" fill="rgba(0,255,154,0.12)"/>
+          <path d="M169,129.5 Q180,127.5 191,129.5 Q202,131.5 211,129.5" fill="none" stroke="rgba(0,255,154,0.5)" stroke-width="0.8"/>
+          <text x="190" y="137" fill="rgba(0,255,154,0.7)" font-family="Courier New" font-size="7" text-anchor="middle">RP-1 89%</text>
+          <text x="190" y="156" fill="rgba(0,255,154,0.5)" font-family="Courier New" font-size="6.5" text-anchor="middle">1,780 kg</text>
+
+          <!-- RP-1 callout right -->
+          <line x1="212" y1="142" x2="248" y2="142" class="callout-line"/>
+          <text x="250" y="139" class="callout-label">RP-1 TANK S2</text>
+          <text x="250" y="148" class="callout-text">89% | 2,000L cap</text>
+
+          <!-- INTERSTAGE -->
+          <rect x="160" y="176" width="60" height="14" fill="rgba(30,60,100,0.4)" stroke="rgba(88,168,255,0.4)" stroke-width="0.5" stroke-dasharray="3,2"/>
+          <text x="190" y="186" fill="rgba(88,168,255,0.5)" font-family="Courier New" font-size="7" text-anchor="middle">INTERSTAGE · CFRP</text>
+
+          <!-- INTERSTAGE callout left -->
+          <line x1="160" y1="183" x2="132" y2="183" class="callout-line"/>
+          <line x1="100" y1="183" x2="132" y2="183" class="callout-line"/>
+          <text x="98" y="180" class="callout-label" text-anchor="end">INTERSTAGE</text>
+          <text x="98" y="188" class="callout-text" text-anchor="end">CFRP composite</text>
+
+          <!-- STAGE 1 LOX TANK (ghost - not started) -->
+          <rect x="164" y="192" width="52" height="38" fill="none" stroke="rgba(88,168,255,0.2)" stroke-width="0.5" stroke-dasharray="4,3"/>
+          <text x="190" y="208" fill="rgba(88,168,255,0.2)" font-family="Courier New" font-size="6.5" text-anchor="middle">S1 LOX</text>
+          <text x="190" y="217" fill="rgba(88,168,255,0.15)" font-family="Courier New" font-size="6" text-anchor="middle">PENDING</text>
+
+          <!-- STAGE 1 RP-1 (ghost) -->
+          <rect x="164" y="232" width="52" height="28" fill="none" stroke="rgba(0,255,154,0.15)" stroke-width="0.5" stroke-dasharray="4,3"/>
+          <text x="190" y="248" fill="rgba(0,255,154,0.2)" font-family="Courier New" font-size="6.5" text-anchor="middle">S1 RP-1 · PENDING</text>
+
+          <!-- ghost callout right -->
+          <line x1="216" y1="215" x2="248" y2="215" class="callout-line" stroke-opacity="0.3"/>
+          <text x="250" y="212" fill="rgba(88,168,255,0.3)" font-family="Courier New" font-size="8">STAGE 1 TANKS</text>
+          <text x="250" y="221" fill="rgba(88,168,255,0.25)" font-family="Courier New" font-size="7.5">NOT YET STARTED</text>
+
+          <!-- ENGINE SECTION -->
+          <!-- Nozzle flare -->
+          <polygon points="180,265 200,265 208,282 172,282" fill="rgba(88,168,255,0.08)" stroke="rgba(88,168,255,0.5)" stroke-width="0.8"/>
+          <!-- Turbopump housing -->
+          <rect x="182" y="262" width="16" height="10" fill="rgba(255,140,60,0.2)" stroke="rgba(255,140,60,0.6)" stroke-width="0.8"/>
+          <text x="190" y="270" fill="rgba(255,140,60,0.8)" font-family="Courier New" font-size="5.5" text-anchor="middle">PUMP</text>
+
+          <!-- Chamber body -->
+          <rect x="176" y="260" width="28" height="5" fill="rgba(180,100,30,0.25)" stroke="rgba(200,120,40,0.6)" stroke-width="0.8"/>
+
+          <!-- Engine callout left -->
+          <line x1="172" y1="272" x2="132" y2="272" class="callout-line"/>
+          <line x1="100" y1="272" x2="132" y2="272" class="callout-line"/>
+          <text x="98" y="268" class="callout-label" text-anchor="end">ENGINE — 인코넬 718</text>
+          <text x="98" y="276" class="callout-text" text-anchor="end">156 kN thrust</text>
+
+          <!-- Exhaust plume ghost -->
+          <ellipse cx="190" cy="292" rx="14" ry="6" fill="rgba(255,120,40,0.08)" stroke="none"/>
+          <ellipse cx="190" cy="300" rx="10" ry="4" fill="rgba(255,80,20,0.05)"/>
+
+          <!-- Fins -->
+          <polygon points="168,258 160,282 176,270" fill="rgba(88,168,255,0.12)" stroke="rgba(88,168,255,0.4)" stroke-width="0.5"/>
+          <polygon points="212,258 220,282 204,270" fill="rgba(88,168,255,0.12)" stroke="rgba(88,168,255,0.4)" stroke-width="0.5"/>
+
+          <!-- DIMENSION LINES (left side) -->
+          <!-- Total height bracket -->
+          <line x1="152" y1="22" x2="152" y2="282" class="dim-line"/>
+          <line x1="149" y1="22" x2="155" y2="22" class="dim-line"/>
+          <line x1="149" y1="282" x2="155" y2="282" class="dim-line"/>
+          <text x="144" y="155" fill="rgba(88,168,255,0.5)" font-family="Courier New" font-size="7" text-anchor="middle" transform="rotate(-90,144,155)">28.4 m TOTAL</text>
+
+          <!-- Scale indicator -->
+          <text x="8" y="298" fill="rgba(88,168,255,0.3)" font-family="Courier New" font-size="7">SCALE 1:280</text>
+          <text x="8" y="308" fill="rgba(88,168,255,0.25)" font-family="Courier New" font-size="6.5">STATUS: IN ASSEMBLY</text>
+        </svg>
+      </div>
+
+      <!-- System Log -->
+      <div class="section-label">SYSTEM LOG — REAL-TIME</div>
+      <div class="log-area" id="sys-log">
+        <div class="log-line"><span class="log-time">[14:32:07]</span><span class="log-msg">TURBO-PUMP LOX: bearing assembly IN WORK</span></div>
+        <div class="log-line"><span class="log-time">[14:33:15]</span><span class="log-msg">CFRP cure cycle 47/64 COMPLETE</span></div>
+        <div class="log-line"><span class="log-time">[14:34:02]</span><span class="log-msg">Propellant line routing: 3 of 8 segments done</span></div>
+        <div class="log-line log-warn"><span class="log-time">[14:35:44]</span><span class="log-msg">WARNING: Ti-6Al-4V stock below 50% threshold</span></div>
+        <div class="log-line"><span class="log-time">[14:36:11]</span><span class="log-msg">Inconel 718 casting #4: mold preparation</span></div>
+        <div class="log-line log-alert"><span class="log-time">[14:37:08]</span><span class="log-msg">ALERT: Epoxy resin stock CRITICAL (18%)</span></div>
+        <div class="log-line"><span class="log-time">[14:38:00]</span><span class="log-msg">Combustion chamber surface coating: PASS</span></div>
+        <div class="log-line"><span class="log-time">[14:39:27]</span><span class="log-msg">Auto-procurement: Al-7075 order placed (+500kg ETA 3h)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COL 4: MISSION HISTORY -->
+  <div class="column col-4" id="col4">
+    <div class="col-header">FLIGHT RECORD</div>
+    <div class="col-body">
+      <div class="section-label">LAUNCH HISTORY</div>
+      <table class="flight-table">
+        <thead>
+          <tr>
+            <th>#</th><th>VEHICLE</th><th>DATE</th><th>TARGET</th><th>ALT</th><th>ΔV</th><th>RESULT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-fail">
+            <td>001</td><td>Alpha mk.1</td><td>D+07</td><td>10km</td><td>2.3km</td><td>842</td>
+            <td class="result-fail">FAIL</td>
+          </tr>
+          <tr class="row-fail">
+            <td>002</td><td>Alpha mk.2</td><td>D+18</td><td>50km</td><td>12.7km</td><td>1,840</td>
+            <td class="result-fail">FAIL</td>
+          </tr>
+          <tr class="row-partial">
+            <td>003</td><td>Beta mk.1</td><td>D+35</td><td>100km</td><td>89.4km</td><td>2,970</td>
+            <td class="result-partial">PARTIAL</td>
+          </tr>
+          <tr class="row-prep">
+            <td>004</td><td>Beta mk.2</td><td>NOW</td><td>100km</td><td>—</td><td>—</td>
+            <td class="result-prep">PREP</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="section-label" style="margin-top:6px;">FAILURE ANALYSIS</div>
+      <div class="failure-item">
+        <div class="failure-id">ML-001</div>
+        <div class="failure-desc">구조 피로 파손 @ Max-Q (T+52s) — 동체 링 좌굴, 추력 과부하</div>
+      </div>
+      <div class="failure-item">
+        <div class="failure-id">ML-002</div>
+        <div class="failure-desc">터보펌프 공동현상 → 엔진 정지 (T+71s) — LOX 라인 압력 강하</div>
+      </div>
+      <div class="failure-item">
+        <div class="failure-id">ML-003</div>
+        <div class="failure-desc">자이로센서 오작동 → 제어 상실 (T+105s) — TVC 대응 실패</div>
+      </div>
+
+      <div class="section-label" style="margin-top:6px;">MISSION STATISTICS</div>
+      <table class="stats-table">
+        <tr><td class="skey">ATTEMPTS</td><td class="sval">3</td></tr>
+        <tr><td class="skey">SUCCESSES</td><td class="sval fail">0 (0.0%)</td></tr>
+        <tr><td class="skey">PARTIAL</td><td class="sval warn">1 (33.3%)</td></tr>
+        <tr><td class="skey">MAX ALTITUDE</td><td class="sval highlight">89,400 m</td></tr>
+        <tr><td class="skey">KÁRMÁN LINE</td><td class="sval fail">−10,600 m DEFICIT</td></tr>
+        <tr><td class="skey">PEAK ΔV</td><td class="sval">2,970 m/s</td></tr>
+        <tr><td class="skey">PEAK VELOCITY</td><td class="sval">2,340 m/s</td></tr>
+        <tr><td class="skey">TOTAL FLT TIME</td><td class="sval">847 s</td></tr>
+        <tr><td class="skey">PROP CONSUMED</td><td class="sval">11,200 kg</td></tr>
+      </table>
+
+      <div class="section-label" style="margin-top:8px;">NEXT MISSION BRIEF</div>
+      <div style="font-size:9px; color:var(--text-dim); line-height:1.7; border:0.5px solid var(--border); padding:6px;">
+        <div><span style="color:var(--accent)">TARGET :</span> 100km Kármán Line crossing</div>
+        <div><span style="color:var(--accent)">MODE   :</span> Single-stage ascent, max ΔV profile</div>
+        <div><span style="color:var(--accent)">PAYLOAD:</span> Telemetry pod 4.2 kg</div>
+        <div><span style="color:var(--accent)">RISK   :</span> <span style="color:var(--warn)">HIGH — propellant lines unverified</span></div>
+        <div><span style="color:var(--accent)">GO/NOGO:</span> <span style="color:var(--critical)">3 SYSTEMS NOT READY</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM ACTION BAR -->
+<div id="action-bar">
+  <button class="btn btn-warn" onclick="startLaunchSequence()">&#9888; EMERGENCY LAUNCH</button>
+  <div class="action-status">
+    LAUNCH INHIBITED — <span>3 SYSTEMS NOT READY</span> &nbsp;|&nbsp; PROPULSION 57.3% &nbsp;·&nbsp; AVIONICS OFFLINE &nbsp;·&nbsp; STATIC FIRE INCOMPLETE
+  </div>
+  <button class="btn btn-hold">&#9724; HOLD</button>
+  <button class="btn btn-launch">&#9654; INITIATE LAUNCH SEQUENCE</button>
+</div>
+
+<!-- LAUNCH SEQUENCE OVERLAY -->
+<div id="launch-overlay">
+  <!-- Starfield -->
+  <canvas id="stars-bg"></canvas>
+
+  <!-- Mission clock -->
+  <div id="launch-clock">T+ <span id="tplus-val">00:00</span></div>
+
+  <!-- Telemetry -->
+  <div id="launch-telemetry">
+    <div class="tele-row">
+      <div class="tele-item">
+        <div class="tele-label">ALTITUDE</div>
+        <div class="tele-value" id="tele-alt">0</div>
+        <div class="tele-unit">m</div>
+      </div>
+      <div class="tele-item">
+        <div class="tele-label">VELOCITY</div>
+        <div class="tele-value" id="tele-vel">0</div>
+        <div class="tele-unit">m/s</div>
+      </div>
+      <div class="tele-item">
+        <div class="tele-label">THROTTLE</div>
+        <div class="tele-value" id="tele-thr">100</div>
+        <div class="tele-unit">%</div>
+      </div>
+      <div class="tele-item">
+        <div class="tele-label">DOWNRANGE</div>
+        <div class="tele-value" id="tele-dr">0</div>
+        <div class="tele-unit">km</div>
+      </div>
+    </div>
+    <div style="margin-top:6px; text-align:center;">
+      <span style="font-family:var(--font-data); font-size:10px; color:var(--text-dim); letter-spacing:0.1em;" id="mission-phase">LIFT-OFF</span>
+    </div>
+  </div>
+
+  <!-- Event message -->
+  <div id="launch-event">
+    <div class="event-msg" id="event-msg-text">ANOMALY DETECTED</div>
+  </div>
+
+  <!-- Result card -->
+  <div id="result-card">
+    <div class="result-title">MISSION COMPLETE — ML-004</div>
+    <div class="result-id">FAILURE — VEHICLE LOST</div>
+    <div class="result-stats">
+      <div class="result-stat-row"><span class="result-stat-key">MAX ALTITUDE</span><span class="result-stat-val">91,800 m</span></div>
+      <div class="result-stat-row"><span class="result-stat-key">KÁRMÁN LINE</span><span class="result-stat-val" style="color:var(--critical)">−8,200 m</span></div>
+      <div class="result-stat-row"><span class="result-stat-key">PEAK VELOCITY</span><span class="result-stat-val">2,340 m/s</span></div>
+      <div class="result-stat-row"><span class="result-stat-key">FLIGHT TIME</span><span class="result-stat-val">T+94s</span></div>
+    </div>
+    <div class="result-note">
+      FAILURE MODE: Propellant line rupture @ T+94s<br>
+      LOX feed pressure loss → engine shutdown → uncontrolled reentry
+    </div>
+    <div class="result-action">
+      CORRECTIVE ACTION: Redesign propellant routing (PRO-002 Rev.D)<br>
+      Reinforce LOX line clamp brackets — 8 segments require update
+    </div>
+    <button class="btn-debrief" onclick="closeLaunchSequence()">DEBRIEF &amp; CONTINUE</button>
+  </div>
+
+  <!-- Rocket centered -->
+  <div id="launch-rocket-wrap">
+    <svg width="60" height="200" viewBox="0 0 60 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Exhaust plume (behind rocket) -->
+      <defs>
+        <radialGradient id="plumeGrad" cx="50%" cy="0%" r="100%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+          <stop offset="20%" stop-color="#ffee88" stop-opacity="0.8"/>
+          <stop offset="50%" stop-color="#ff8820" stop-opacity="0.6"/>
+          <stop offset="80%" stop-color="#ff4400" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#880000" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="plumeGrad2" cx="50%" cy="0%" r="100%">
+          <stop offset="0%" stop-color="#ffffcc" stop-opacity="1"/>
+          <stop offset="30%" stop-color="#ffaa00" stop-opacity="0.7"/>
+          <stop offset="70%" stop-color="#ff4400" stop-opacity="0.4"/>
+          <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <!-- Plume outer glow -->
+      <ellipse cx="30" cy="172" rx="18" ry="30" fill="url(#plumeGrad)" class="plume-outer"/>
+      <ellipse cx="30" cy="168" rx="10" ry="20" fill="url(#plumeGrad2)" class="plume-inner"/>
+      <!-- Core flame -->
+      <ellipse cx="30" cy="164" rx="5" ry="10" fill="rgba(255,255,200,0.95)" class="plume-core"/>
+
+      <!-- Rocket body -->
+      <!-- Nosecone -->
+      <polygon points="30,10 20,38 40,38" fill="#1a3a6a" stroke="#58a8ff" stroke-width="1"/>
+
+      <!-- Stage 2 body -->
+      <rect x="20" y="38" width="20" height="70" fill="#0d2040" stroke="#58a8ff" stroke-width="0.8"/>
+      <!-- LOX fill indicator -->
+      <rect x="21" y="58" width="18" height="28" fill="rgba(88,168,255,0.25)"/>
+      <text x="30" y="50" fill="#58a8ff" font-family="Courier New" font-size="5" text-anchor="middle">LOX</text>
+      <!-- RP-1 fill indicator -->
+      <rect x="21" y="89" width="18" height="17" fill="rgba(0,255,154,0.15)"/>
+      <text x="30" y="100" fill="rgba(0,255,154,0.6)" font-family="Courier New" font-size="5" text-anchor="middle">RP1</text>
+
+      <!-- Interstage -->
+      <rect x="18" y="108" width="24" height="8" fill="#0a1828" stroke="rgba(88,168,255,0.4)" stroke-width="0.5" stroke-dasharray="3,2"/>
+
+      <!-- Stage 1 body (ghost outline) -->
+      <rect x="18" y="116" width="24" height="42" fill="none" stroke="rgba(88,168,255,0.25)" stroke-width="0.5" stroke-dasharray="3,3"/>
+
+      <!-- Engine section -->
+      <rect x="22" y="158" width="16" height="6" fill="#1a3a6a" stroke="rgba(200,120,40,0.8)" stroke-width="0.8"/>
+
+      <!-- Nozzle -->
+      <polygon points="24,164 36,164 40,174 20,174" fill="#0d1a30" stroke="rgba(88,168,255,0.6)" stroke-width="0.8"/>
+
+      <!-- Fins -->
+      <polygon points="20,150 10,174 20,164" fill="#1a3a6a" stroke="#58a8ff" stroke-width="0.5"/>
+      <polygon points="40,150 50,174 40,164" fill="#1a3a6a" stroke="#58a8ff" stroke-width="0.5"/>
+    </svg>
+  </div>
+</div>
+
+<script>
+// === MISSION CLOCK ===
+let missionSeconds = 0;
+setInterval(() => {
+  missionSeconds++;
+  const h = String(Math.floor(missionSeconds/3600)).padStart(2,'0');
+  const m = String(Math.floor((missionSeconds%3600)/60)).padStart(2,'0');
+  const s = String(missionSeconds%60).padStart(2,'0');
+  document.getElementById('mission-clock').textContent = `${h}:${m}:${s}`;
+}, 1000);
+
+// === STARFIELD CANVAS ===
+function initStars() {
+  const canvas = document.getElementById('stars-bg');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for (let i = 0; i < 300; i++) {
+    const x = Math.random() * canvas.width;
+    const y = Math.random() * canvas.height;
+    const r = Math.random() * 1.2;
+    const opacity = Math.random() * 0.7 + 0.1;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(180,210,255,${opacity})`;
+    ctx.fill();
+  }
+}
+
+// === LAUNCH SEQUENCE ===
+let launchTimers = [];
+
+function clearLaunchTimers() {
+  launchTimers.forEach(t => clearTimeout(t));
+  launchTimers.forEach(t => clearInterval(t));
+  launchTimers = [];
+}
+
+function startLaunchSequence() {
+  clearLaunchTimers();
+  initStars();
+
+  // Show overlay
+  const overlay = document.getElementById('launch-overlay');
+  overlay.classList.add('active');
+
+  // Slide columns apart
+  const col1 = document.getElementById('col1');
+  const col2 = document.getElementById('col2');
+  const col3 = document.getElementById('col3');
+  const col4 = document.getElementById('col4');
+
+  col1.style.transform = 'translateX(-100vw)';
+  col2.style.transform = 'translateX(-100vw)';
+  col3.style.transform = 'translateX(100vw)';
+  col4.style.transform = 'translateX(100vw)';
+
+  // Show stars
+  const t1 = setTimeout(() => {
+    document.getElementById('stars-bg').style.opacity = '1';
+  }, 300);
+  launchTimers.push(t1);
+
+  // Show rocket
+  const t2 = setTimeout(() => {
+    document.getElementById('launch-rocket-wrap').classList.add('flying');
+    document.getElementById('launch-telemetry').classList.add('visible');
+    document.getElementById('launch-clock').classList.add('visible');
+  }, 800);
+  launchTimers.push(t2);
+
+  // Telemetry data sequence
+  const altitudes =  [0, 1240, 8400, 23700, 51200, 78400, 91800, 91800, 88200, 71400];
+  const velocities = [0,  380, 1240,  1840,  2150,  2340,  2340,  2340,  1800,   600];
+  const throttles  = [100,100,  100,   100,   100,   100,   100,     0,     0,     0];
+  const downranges = [0,   0.1,  0.8,   2.8,   6.4,  10.2,  14.1,  14.1,  14.1,  14.1];
+  const phases =     ['LIFT-OFF','MAX-Q','SUPERSONIC','MECO PREP','MACH 7+','APOAPSIS','PEAK ALT','ENGINE SHUTDOWN','DESCENT','IMPACT'];
+  let tick = 0;
+
+  const tluInterval = setInterval(() => {
+    if (tick < altitudes.length) {
+      document.getElementById('tele-alt').textContent = altitudes[tick].toLocaleString();
+      document.getElementById('tele-vel').textContent = velocities[tick].toLocaleString();
+      document.getElementById('tele-thr').textContent = throttles[tick];
+      document.getElementById('tele-dr').textContent = downranges[tick].toFixed(1);
+      document.getElementById('mission-phase').textContent = phases[tick] || '';
+
+      // T+ counter update
+      const tplusEl = document.getElementById('tplus-val');
+      const tSeconds = tick * 10;
+      const tm = String(Math.floor(tSeconds/60)).padStart(2,'0');
+      const ts = String(tSeconds%60).padStart(2,'0');
+      tplusEl.textContent = `${tm}:${ts}`;
+
+      tick++;
+    } else {
+      clearInterval(tluInterval);
+    }
+  }, 1000);
+  launchTimers.push(tluInterval);
+
+  // Warning at T+94 equivalent (after ~6.5 ticks ~ 6.5s into sequence)
+  const tWarn = setTimeout(() => {
+    const eventDiv = document.getElementById('launch-event');
+    const eventMsg = document.getElementById('event-msg-text');
+    eventMsg.textContent = 'ANOMALY DETECTED — ENGINE SHUTDOWN';
+    eventMsg.className = 'event-msg event-warn';
+    eventDiv.classList.add('visible');
+
+    const tCrit = setTimeout(() => {
+      eventMsg.textContent = 'VEHICLE LOST';
+      eventMsg.className = 'event-msg event-critical';
+
+      const tResult = setTimeout(() => {
+        eventDiv.classList.remove('visible');
+        document.getElementById('result-card').classList.add('visible');
+        document.getElementById('launch-telemetry').classList.remove('visible');
+        document.getElementById('launch-clock').classList.remove('visible');
+      }, 1800);
+      launchTimers.push(tResult);
+    }, 1500);
+    launchTimers.push(tCrit);
+  }, 7200);
+  launchTimers.push(tWarn);
+}
+
+function closeLaunchSequence() {
+  clearLaunchTimers();
+
+  // Restore columns
+  const col1 = document.getElementById('col1');
+  const col2 = document.getElementById('col2');
+  const col3 = document.getElementById('col3');
+  const col4 = document.getElementById('col4');
+
+  col1.style.transform = '';
+  col2.style.transform = '';
+  col3.style.transform = '';
+  col4.style.transform = '';
+
+  // Reset overlay state
+  const overlay = document.getElementById('launch-overlay');
+  overlay.classList.remove('active');
+  document.getElementById('launch-rocket-wrap').classList.remove('flying');
+  document.getElementById('launch-telemetry').classList.remove('visible');
+  document.getElementById('launch-clock').classList.remove('visible');
+  document.getElementById('launch-event').classList.remove('visible');
+  document.getElementById('result-card').classList.remove('visible');
+  document.getElementById('stars-bg').style.opacity = '0';
+
+  // Reset telemetry values
+  document.getElementById('tele-alt').textContent = '0';
+  document.getElementById('tele-vel').textContent = '0';
+  document.getElementById('tele-thr').textContent = '100';
+  document.getElementById('tele-dr').textContent = '0';
+  document.getElementById('mission-phase').textContent = 'LIFT-OFF';
+  document.getElementById('tplus-val').textContent = '00:00';
+}
+
+// === ANIMATE ARC GAUGES ON LOAD ===
+document.addEventListener('DOMContentLoaded', () => {
+  // Animate gauge fills from 0
+  const fills = document.querySelectorAll('.gauge-fill');
+  fills.forEach(f => {
+    const target = f.getAttribute('stroke-dasharray');
+    f.setAttribute('stroke-dasharray', '0 106.8');
+    setTimeout(() => {
+      f.style.transition = 'stroke-dasharray 1.8s ease';
+      f.setAttribute('stroke-dasharray', target);
+    }, 300);
+  });
+});
+
+// === LIVE LOG SIMULATION ===
+const logMessages = [
+  { cls: '', msg: 'Turbopump LOX side: bearing torque check OK' },
+  { cls: 'log-warn', msg: 'WARNING: CFRP cure temp 3°C below nominal' },
+  { cls: '', msg: 'Propellant line segment 4/8: pressure tested PASS' },
+  { cls: '', msg: 'Inconel 718 casting #5: pour initiated' },
+  { cls: 'log-warn', msg: 'WARNING: Epoxy resin auto-reorder triggered' },
+  { cls: '', msg: 'TVC actuator servo calibration: queued' },
+  { cls: '', msg: 'LOX insulation wrap: 78% complete' },
+  { cls: '', msg: 'Stage 2 structural load test: NOMINAL' },
+  { cls: 'log-alert', msg: 'ALERT: Propellant line segment 6 — micro-leak detected, isolating' },
+  { cls: '', msg: 'Al-7075 delivery confirmed: ETA 2h 47m' },
+];
+let logIdx = 0;
+setInterval(() => {
+  if (document.getElementById('launch-overlay').classList.contains('active')) return;
+  const logArea = document.getElementById('sys-log');
+  const item = logMessages[logIdx % logMessages.length];
+  logIdx++;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ss = String(now.getSeconds()).padStart(2,'0');
+  const line = document.createElement('div');
+  line.className = `log-line ${item.cls}`;
+  line.innerHTML = `<span class="log-time">[${hh}:${mm}:${ss}]</span><span class="log-msg">${item.msg}</span>`;
+  logArea.appendChild(line);
+  // keep only last 8
+  while (logArea.children.length > 8) logArea.removeChild(logArea.firstChild);
+}, 4500);
+
+// Animate pipeline progress bar on load
+document.addEventListener('DOMContentLoaded', () => {
+  const fill = document.querySelector('.stage-progress-fill');
+  if (fill) {
+    fill.style.width = '0';
+    setTimeout(() => {
+      fill.style.transition = 'width 2s ease';
+      fill.style.width = '57.3%';
+    }, 600);
+  }
+});
+</script>
+</body>
+</html>

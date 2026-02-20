@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1400">
+<title>MoonIdle — Blueprint UI v10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   RESET & BASE
+   ========================================================= */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #071428;
+  --grid-sm:   rgba(77,148,255,0.12);
+  --grid-lg:   rgba(77,148,255,0.22);
+  --line:      #4db8ff;
+  --text:      #cce8ff;
+  --hi:        #ffffff;
+  --warn:      #ffeb3b;
+  --ok:        #39ff9a;
+  --ghost:     rgba(255,255,255,0.28);
+  --red:       #ff4455;
+  --line-thin: rgba(77,184,255,0.45);
+  --font-mono: 'Courier Prime', 'Courier New', monospace;
+  --font-cond: 'Roboto Condensed', sans-serif;
+}
+
+html, body {
+  width: 100%; height: 100%; min-width: 1400px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow: hidden;
+}
+
+/* =========================================================
+   BLUEPRINT GRID BACKGROUND
+   ========================================================= */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 9px, var(--grid-sm) 9px, var(--grid-sm) 10px),
+    repeating-linear-gradient(90deg, transparent, transparent 9px, var(--grid-sm) 9px, var(--grid-sm) 10px),
+    repeating-linear-gradient(0deg, transparent, transparent 99px, var(--grid-lg) 99px, var(--grid-lg) 100px),
+    repeating-linear-gradient(90deg, transparent, transparent 99px, var(--grid-lg) 99px, var(--grid-lg) 100px);
+}
+
+/* vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(4,9,20,0.7) 100%);
+}
+
+/* =========================================================
+   ROOT LAYOUT
+   ========================================================= */
+#root {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  width: 100%; height: 100vh;
+  padding: 10px 12px 8px;
+  gap: 6px;
+}
+
+/* =========================================================
+   TITLE BAR (top)
+   ========================================================= */
+#titlebar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  flex-shrink: 0;
+  height: 52px;
+  border: 1.5px solid var(--line);
+  position: relative;
+}
+
+.tb-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 32px;
+  border-right: 1px solid var(--line-thin);
+}
+
+.tb-game-title {
+  font-family: var(--font-cond);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--hi);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  text-shadow: 0 0 20px var(--line);
+}
+
+.tb-subtitle {
+  font-size: 9px;
+  color: var(--text);
+  letter-spacing: 2px;
+  line-height: 1.6;
+}
+
+.tb-stats {
+  display: flex;
+  gap: 28px;
+  margin-left: auto;
+}
+
+.tb-stat {
+  text-align: center;
+}
+
+.tb-stat-label {
+  font-size: 8px;
+  color: var(--ghost);
+  letter-spacing: 1.5px;
+  display: block;
+}
+
+.tb-stat-value {
+  font-size: 13px;
+  color: var(--hi);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.tb-stat-value.ok   { color: var(--ok); }
+.tb-stat-value.warn { color: var(--warn); }
+
+/* Title block (engineering drawing style) */
+.title-block {
+  width: 380px;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  border-left: 1.5px solid var(--line);
+  font-size: 8.5px;
+}
+
+.tb-cell {
+  padding: 3px 6px;
+  border-right: 1px solid var(--line-thin);
+  border-bottom: 1px solid var(--line-thin);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.tb-cell:nth-child(2n) { border-right: none; }
+.tb-cell:nth-child(3), .tb-cell:nth-child(4) { border-bottom: none; }
+
+.tb-cell-label { color: var(--ghost); font-size: 7.5px; letter-spacing: 1px; }
+.tb-cell-value { color: var(--hi); font-weight: 700; letter-spacing: 0.5px; }
+.tb-cell-value.in-work { color: var(--warn); }
+
+/* border corner decorations */
+#titlebar::before, #titlebar::after {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  border-color: var(--hi);
+  border-style: solid;
+}
+#titlebar::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+#titlebar::after  { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+
+/* =========================================================
+   MAIN CONTENT AREA
+   ========================================================= */
+#main {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  min-height: 0;
+  position: relative;
+}
+
+/* =========================================================
+   PANELS (shared)
+   ========================================================= */
+.panel {
+  border: 1.5px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.panel::before, .panel::after {
+  content: '';
+  position: absolute;
+  width: 7px; height: 7px;
+  border-color: var(--hi);
+  border-style: solid;
+  z-index: 2;
+}
+.panel::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.panel::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+.panel-header {
+  background: rgba(77,184,255,0.08);
+  border-bottom: 1px solid var(--line-thin);
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.panel-header-title {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--hi);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}
+
+.panel-header-sub {
+  font-size: 8.5px;
+  color: var(--ghost);
+  margin-left: auto;
+  letter-spacing: 1px;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-thin) transparent;
+}
+
+/* =========================================================
+   LEFT PANEL — BOM
+   ========================================================= */
+#panel-left {
+  width: 35%;
+  flex-shrink: 0;
+  transition: transform 0.55s cubic-bezier(0.77,0,0.18,1);
+}
+
+/* BOM Table */
+.bom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9.5px;
+}
+
+.bom-table thead tr {
+  background: rgba(77,184,255,0.12);
+}
+
+.bom-table th {
+  padding: 4px 5px;
+  text-align: left;
+  color: var(--ghost);
+  font-family: var(--font-cond);
+  font-weight: 700;
+  font-size: 8px;
+  letter-spacing: 1.2px;
+  border: 1px solid var(--line-thin);
+  white-space: nowrap;
+}
+
+.bom-table td {
+  padding: 3.5px 5px;
+  border: 1px solid rgba(77,184,255,0.2);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.bom-table tbody tr:hover td {
+  background: rgba(77,184,255,0.07);
+}
+
+.bom-table .part-no {
+  color: var(--warn);
+  font-weight: 700;
+  font-size: 9px;
+}
+
+.bom-table .status-ok   { color: var(--ok); font-weight: 700; }
+.bom-table .status-fail { color: var(--red); }
+.bom-table .status-prog { color: var(--warn); }
+.bom-table .status-lock { color: var(--ghost); }
+
+.bom-section-header {
+  background: rgba(77,184,255,0.06);
+  border: 1px solid var(--line-thin);
+  margin: 10px 0 4px;
+  padding: 3px 6px;
+  font-family: var(--font-cond);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--hi);
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bom-section-header::before {
+  content: '▶';
+  font-size: 7px;
+  color: var(--line);
+}
+
+/* Raw material table */
+.mat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+
+.mat-table td {
+  padding: 3px 5px;
+  border: 1px solid rgba(77,184,255,0.18);
+}
+
+.mat-table .mat-name { color: var(--text); }
+.mat-table .mat-have { color: var(--hi); text-align: right; }
+.mat-table .mat-need { color: var(--ghost); text-align: right; }
+
+.mat-bar-cell { width: 80px; padding: 3px 5px; }
+
+.mat-bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--line-thin);
+  position: relative;
+  overflow: hidden;
+}
+
+.mat-bar-fill {
+  height: 100%;
+  background: var(--line);
+  position: absolute;
+  left: 0; top: 0;
+}
+
+.mat-bar-fill.low  { background: var(--red); }
+.mat-bar-fill.med  { background: var(--warn); }
+.mat-bar-fill.high { background: var(--ok); }
+
+.mat-pct { font-size: 8.5px; color: var(--ghost); text-align: right; white-space: nowrap; }
+.mat-pct.low  { color: var(--red); }
+.mat-pct.med  { color: var(--warn); }
+.mat-pct.high { color: var(--ok); }
+
+/* =========================================================
+   CENTER PANEL — ASSEMBLY DRAWING
+   ========================================================= */
+#panel-center {
+  flex: 1;
+  min-width: 0;
+  transition: transform 0.55s cubic-bezier(0.77,0,0.18,1);
+}
+
+.rocket-svg-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 8px 0;
+  flex-shrink: 0;
+}
+
+/* Assembly sequence */
+.asm-seq {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  gap: 0;
+  border-top: 1px solid var(--line-thin);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.asm-step {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.asm-node {
+  padding: 4px 8px;
+  border: 1px solid var(--line-thin);
+  font-size: 8.5px;
+  font-family: var(--font-cond);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--ghost);
+  background: transparent;
+  position: relative;
+}
+
+.asm-node.done {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+
+.asm-node.active {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: rgba(255,235,59,0.08);
+  box-shadow: 0 0 8px rgba(255,235,59,0.3);
+}
+
+.asm-arrow {
+  font-size: 12px;
+  color: var(--line-thin);
+  padding: 0 3px;
+}
+
+/* =========================================================
+   RIGHT PANEL — TEST LOG
+   ========================================================= */
+#panel-right {
+  width: 25%;
+  flex-shrink: 0;
+  transition: transform 0.55s cubic-bezier(0.77,0,0.18,1);
+}
+
+.test-log-entry {
+  border: 1px solid var(--line-thin);
+  padding: 7px 8px;
+  margin-bottom: 8px;
+  font-size: 9px;
+  line-height: 1.7;
+  background: rgba(7,20,40,0.5);
+  position: relative;
+}
+
+.test-log-entry::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+}
+
+.test-log-entry.fail::before { background: var(--red); }
+.test-log-entry.partial::before { background: var(--warn); }
+.test-log-entry.success::before { background: var(--ok); }
+
+.test-log-entry.new-entry {
+  border-color: var(--warn);
+  background: rgba(255,235,59,0.05);
+  animation: newEntryPulse 2s ease-in-out;
+}
+
+@keyframes newEntryPulse {
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: 0 0 12px rgba(255,235,59,0.4); }
+}
+
+.tl-run {
+  color: var(--hi);
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-bottom: 3px;
+}
+
+.tl-field { color: var(--ghost); }
+.tl-value { color: var(--text); }
+.tl-result-fail { color: var(--red); font-weight: 700; }
+.tl-result-partial { color: var(--warn); font-weight: 700; }
+.tl-result-ok { color: var(--ok); font-weight: 700; }
+.tl-note { color: var(--ghost); font-size: 8.5px; padding-left: 8px; }
+.tl-hr { border: none; border-top: 1px solid var(--line-thin); margin: 5px 0; }
+
+/* Cumulative stats box */
+.cum-stats {
+  border: 1.5px solid var(--line-thin);
+  padding: 8px;
+  font-size: 9px;
+  line-height: 1.8;
+  background: rgba(77,184,255,0.04);
+}
+
+.cum-stats-title {
+  color: var(--hi);
+  font-family: var(--font-cond);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid var(--line-thin);
+  padding-bottom: 3px;
+}
+
+.cum-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cum-label { color: var(--ghost); }
+.cum-val   { color: var(--hi); font-weight: 700; text-align: right; }
+.cum-val.ok { color: var(--ok); }
+.cum-val.warn { color: var(--warn); }
+.cum-val.hi { color: var(--line); }
+
+/* =========================================================
+   BOTTOM TOOLBAR
+   ========================================================= */
+#toolbar {
+  height: 38px;
+  border: 1.5px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 20px;
+  flex-shrink: 0;
+  background: rgba(7,20,40,0.7);
+  position: relative;
+}
+
+.toolbar-note {
+  font-size: 8px;
+  color: var(--ghost);
+  letter-spacing: 1.2px;
+  flex: 1;
+}
+
+.toolbar-note span { color: var(--text); }
+
+.toolbar-spacer { flex: 1; }
+
+/* LAUNCH BUTTON — blueprint stamp style */
+#btn-launch {
+  font-family: var(--font-cond);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--warn);
+  background: transparent;
+  border: 2px solid var(--warn);
+  padding: 6px 24px;
+  cursor: pointer;
+  position: relative;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+}
+
+#btn-launch::before {
+  content: '▶ ';
+  font-size: 10px;
+}
+
+#btn-launch:hover {
+  background: rgba(255,235,59,0.1);
+  box-shadow: 0 0 16px rgba(255,235,59,0.5);
+  color: var(--hi);
+  border-color: var(--hi);
+}
+
+#btn-launch:active { transform: scale(0.97); }
+
+/* =========================================================
+   LAUNCH THEATER (overlay)
+   ========================================================= */
+#launch-theater {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex;
+  pointer-events: none;
+  opacity: 0;
+}
+
+#launch-theater.active {
+  pointer-events: all;
+  opacity: 1;
+}
+
+/* Left door */
+#door-left {
+  width: 50%;
+  height: 100%;
+  background: var(--bg);
+  border-right: 2px solid var(--line);
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 9px, var(--grid-sm) 9px, var(--grid-sm) 10px),
+    repeating-linear-gradient(90deg, transparent, transparent 9px, var(--grid-sm) 9px, var(--grid-sm) 10px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  transform: translateX(0);
+  transition: transform 0.7s cubic-bezier(0.77,0,0.18,1);
+  position: relative;
+  overflow: hidden;
+}
+
+#door-left.open { transform: translateX(-100%); }
+
+/* door content: mimic left panel silhouette */
+#door-left::after {
+  content: 'BILL OF MATERIALS\A─────────────────\A STR-001 ✓ COMP\A STR-002 ✓ COMP\A STR-003 ✓ COMP\A STR-004 ✗ 미제작\A PRO-001 ✗ 57%\A PRO-002 ✗ 57%\A AVI-001 ✗ LOCK\A AVI-002 ✗ LOCK\A PAY-001 ✗ LOCK';
+  white-space: pre;
+  position: absolute;
+  top: 60px; left: 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--line-thin);
+  line-height: 1.8;
+}
+
+#door-right {
+  width: 50%;
+  height: 100%;
+  background: var(--bg);
+  border-left: 2px solid var(--line);
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 9px, var(--grid-sm) 9px, var(--grid-sm) 10px),
+    repeating-linear-gradient(90deg, transparent, transparent 9px, var(--grid-sm) 9px, var(--grid-sm) 10px);
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  transform: translateX(0);
+  transition: transform 0.7s cubic-bezier(0.77,0,0.18,1);
+  position: relative;
+  overflow: hidden;
+}
+
+#door-right.open { transform: translateX(100%); }
+
+#door-right::after {
+  content: 'FLIGHT TEST LOG\A─────────────────\A TEST RUN: ML-001\A RESULT: FAILURE\A─────────────────\A TEST RUN: ML-002\A RESULT: FAILURE\A─────────────────\A TEST RUN: ML-003\A RESULT: PARTIAL';
+  white-space: pre;
+  position: absolute;
+  top: 60px; right: 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--line-thin);
+  line-height: 1.8;
+  text-align: right;
+}
+
+/* Center launch area */
+#launch-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  background: radial-gradient(ellipse 60% 80% at 50% 100%, rgba(255,140,0,0.08) 0%, transparent 70%);
+  padding-bottom: 60px;
+  z-index: 0;
+}
+
+/* Authorization dialog */
+#auth-dialog {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--warn);
+  background: rgba(7,20,40,0.97);
+  padding: 24px 32px;
+  text-align: center;
+  min-width: 380px;
+  z-index: 200;
+  display: none;
+  box-shadow: 0 0 40px rgba(255,235,59,0.2);
+}
+
+#auth-dialog.visible { display: block; }
+
+.auth-title {
+  font-family: var(--font-cond);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--warn);
+  letter-spacing: 4px;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.auth-keybox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 12px 0 20px;
+  font-size: 10px;
+  color: var(--ghost);
+  letter-spacing: 2px;
+}
+
+.key-slot {
+  width: 32px; height: 32px;
+  border: 2px solid var(--line-thin);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  color: var(--ghost);
+  transition: all 0.4s;
+}
+
+.key-slot.turned {
+  border-color: var(--ok);
+  color: var(--ok);
+  box-shadow: 0 0 10px rgba(57,255,154,0.5);
+  transform: rotate(180deg);
+}
+
+.auth-btn {
+  font-family: var(--font-cond);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--bg);
+  background: var(--warn);
+  border: none;
+  padding: 8px 28px;
+  cursor: pointer;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.auth-btn:hover { background: var(--hi); }
+
+/* Rocket shape */
+#launch-rocket {
+  width: 80px;
+  flex-shrink: 0;
+  transform: translateY(0);
+  transition: none;
+  position: relative;
+  z-index: 10;
+}
+
+#launch-rocket.flying {
+  animation: rocketFly 4s ease-in forwards;
+}
+
+@keyframes rocketFly {
+  0%   { transform: translateY(0) scale(1); }
+  20%  { transform: translateY(-40px) scale(1); }
+  100% { transform: translateY(-120vh) scale(0.4); }
+}
+
+/* Exhaust plume */
+.plume {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 80px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.plume.active {
+  opacity: 1;
+  animation: plumeFlicker 0.12s infinite alternate;
+}
+
+@keyframes plumeFlicker {
+  from { transform: translateX(-50%) scaleX(1) scaleY(1); }
+  to   { transform: translateX(-50%) scaleX(1.12) scaleY(1.05); }
+}
+
+/* Telemetry readout */
+#telemetry {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 140px;
+  border: 1px solid var(--line-thin);
+  background: rgba(7,20,40,0.9);
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--ok);
+  overflow: hidden;
+  display: none;
+}
+
+#telemetry.visible { display: block; }
+
+#telemetry-text { white-space: pre-wrap; }
+
+/* Stars background in launch theater */
+#launch-stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+.panel-body::-webkit-scrollbar { width: 4px; }
+.panel-body::-webkit-scrollbar-track { background: transparent; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--line-thin); border-radius: 2px; }
+
+/* =========================================================
+   UTILITY
+   ========================================================= */
+.dim-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  color: var(--ghost);
+  margin: 4px 0 2px;
+}
+.dim-line::before, .dim-line::after {
+  content: ''; flex: 1;
+  height: 1px;
+  border-top: 1px dashed rgba(77,184,255,0.3);
+}
+
+.leader {
+  font-size: 8px;
+  color: var(--ghost);
+  letter-spacing: 1px;
+}
+
+.callout-bubble {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 7.5px;
+  color: var(--line);
+  font-weight: 700;
+  vertical-align: middle;
+  margin-right: 3px;
+}
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     ROOT LAYOUT
+     ========================================================= -->
+<div id="root">
+
+  <!-- TITLE BAR -->
+  <div id="titlebar">
+    <div class="tb-main">
+      <div>
+        <div class="tb-game-title">MOON IDLE</div>
+        <div class="tb-subtitle">LAUNCH FACILITY COMMAND &amp; CONTROL</div>
+      </div>
+      <div class="tb-stats">
+        <div class="tb-stat">
+          <span class="tb-stat-label">LUNAR CREDITS</span>
+          <span class="tb-stat-value">LC 48,320</span>
+        </div>
+        <div class="tb-stat">
+          <span class="tb-stat-label">FACILITY TIER</span>
+          <span class="tb-stat-value hi">T-3 / 7</span>
+        </div>
+        <div class="tb-stat">
+          <span class="tb-stat-label">PRODUCTION</span>
+          <span class="tb-stat-value ok">ACTIVE</span>
+        </div>
+        <div class="tb-stat">
+          <span class="tb-stat-label">NEXT LAUNCH</span>
+          <span class="tb-stat-value warn">ML-004</span>
+        </div>
+        <div class="tb-stat">
+          <span class="tb-stat-label">SESSION TIME</span>
+          <span class="tb-stat-value">04:27:13</span>
+        </div>
+      </div>
+    </div>
+    <div class="title-block">
+      <div class="tb-cell">
+        <div class="tb-cell-label">DRAWING TITLE</div>
+        <div class="tb-cell-value">MOON IDLE LAUNCH FACILITY</div>
+      </div>
+      <div class="tb-cell">
+        <div class="tb-cell-label">DWG NO / REV</div>
+        <div class="tb-cell-value">MI-004-ASM-001 / REV.C</div>
+      </div>
+      <div class="tb-cell">
+        <div class="tb-cell-label">SCALE / DATE</div>
+        <div class="tb-cell-value">NTS / 2026-02-19</div>
+      </div>
+      <div class="tb-cell">
+        <div class="tb-cell-label">STATUS</div>
+        <div class="tb-cell-value in-work">IN WORK — STAGE 3/7</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div id="main">
+
+    <!-- =====================================================
+         LEFT PANEL — BOM
+         ===================================================== -->
+    <div class="panel" id="panel-left">
+      <div class="panel-header">
+        <div class="panel-header-title">BILL OF MATERIALS</div>
+        <div class="panel-header-sub">DOC: MI-BOM-003 | 11 LINE ITEMS</div>
+      </div>
+      <div class="panel-body">
+
+        <div class="bom-section-header">STRUCTURAL (STR)</div>
+
+        <table class="bom-table">
+          <thead>
+            <tr>
+              <th>PART NO</th>
+              <th>DESCRIPTION</th>
+              <th>MATL</th>
+              <th>REQ</th>
+              <th>HAVE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="part-no">STR-001</td>
+              <td>동체 주 구조 링</td>
+              <td>Al-7075-T6</td>
+              <td>24 ea</td>
+              <td>24 ea</td>
+              <td class="status-ok">✓ COMP</td>
+            </tr>
+            <tr>
+              <td class="part-no">STR-002</td>
+              <td>LOX 탱크 쉘</td>
+              <td>Al-2219-T87</td>
+              <td>1 ea</td>
+              <td>1 ea</td>
+              <td class="status-ok">✓ COMP</td>
+            </tr>
+            <tr>
+              <td class="part-no">STR-003</td>
+              <td>RP-1 탱크 쉘</td>
+              <td>Al-2219-T87</td>
+              <td>1 ea</td>
+              <td>1 ea</td>
+              <td class="status-ok">✓ COMP</td>
+            </tr>
+            <tr>
+              <td class="part-no">STR-004</td>
+              <td>인터스테이지</td>
+              <td>CFRP T-300</td>
+              <td>1 ea</td>
+              <td>0 ea</td>
+              <td class="status-fail">✗ 미제작</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="bom-section-header">PROPULSION (PRO)</div>
+
+        <table class="bom-table">
+          <thead>
+            <tr>
+              <th>PART NO</th>
+              <th>DESCRIPTION</th>
+              <th>MATL</th>
+              <th>REQ</th>
+              <th>HAVE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="part-no">PRO-001</td>
+              <td>주엔진 어셈블리</td>
+              <td>인코넬 718</td>
+              <td>1 ea</td>
+              <td>0 ea</td>
+              <td class="status-prog">✗ 57%</td>
+            </tr>
+            <tr>
+              <td class="part-no">PRO-002</td>
+              <td>터보펌프 LOX</td>
+              <td>Ti-6Al-4V</td>
+              <td>1 ea</td>
+              <td>0 ea</td>
+              <td class="status-prog">✗ 57%</td>
+            </tr>
+            <tr>
+              <td class="part-no">PRO-003</td>
+              <td>터보펌프 RP-1</td>
+              <td>Ti-6Al-4V</td>
+              <td>1 ea</td>
+              <td>0 ea</td>
+              <td class="status-prog">✗ 57%</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="bom-section-header">AVIONICS (AVI) — LOCKED</div>
+
+        <table class="bom-table">
+          <thead>
+            <tr>
+              <th>PART NO</th>
+              <th>DESCRIPTION</th>
+              <th>MATL</th>
+              <th>REQ</th>
+              <th>HAVE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="part-no" style="color:var(--ghost)">AVI-001</td>
+              <td style="color:var(--ghost)">관성항법장치</td>
+              <td style="color:var(--ghost)">—</td>
+              <td style="color:var(--ghost)">1 ea</td>
+              <td style="color:var(--ghost)">0 ea</td>
+              <td class="status-lock">🔒 LOCK</td>
+            </tr>
+            <tr>
+              <td class="part-no" style="color:var(--ghost)">AVI-002</td>
+              <td style="color:var(--ghost)">자세제어 시스템</td>
+              <td style="color:var(--ghost)">—</td>
+              <td style="color:var(--ghost)">1 ea</td>
+              <td style="color:var(--ghost)">0 ea</td>
+              <td class="status-lock">🔒 LOCK</td>
+            </tr>
+            <tr>
+              <td class="part-no" style="color:var(--ghost)">AVI-003</td>
+              <td style="color:var(--ghost)">원격측정 장치</td>
+              <td style="color:var(--ghost)">—</td>
+              <td style="color:var(--ghost)">1 ea</td>
+              <td style="color:var(--ghost)">0 ea</td>
+              <td class="status-lock">🔒 LOCK</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="bom-section-header">PAYLOAD (PAY) — LOCKED</div>
+
+        <table class="bom-table">
+          <thead>
+            <tr>
+              <th>PART NO</th>
+              <th>DESCRIPTION</th>
+              <th>MATL</th>
+              <th>REQ</th>
+              <th>HAVE</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="part-no" style="color:var(--ghost)">PAY-001</td>
+              <td style="color:var(--ghost)">페이로드 어댑터</td>
+              <td style="color:var(--ghost)">Al-7075</td>
+              <td style="color:var(--ghost)">1 ea</td>
+              <td style="color:var(--ghost)">0 ea</td>
+              <td class="status-lock">🔒 LOCK</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- RAW MATERIAL STOCK -->
+        <div class="bom-section-header" style="margin-top:14px">RAW MATERIAL STOCK</div>
+
+        <table class="mat-table">
+          <tbody>
+            <tr>
+              <td class="mat-name">Al-7075 합금</td>
+              <td class="mat-have">2,340 kg</td>
+              <td class="mat-need">/ 4,800 kg</td>
+              <td class="mat-bar-cell">
+                <div class="mat-bar-wrap"><div class="mat-bar-fill med" style="width:49%"></div></div>
+              </td>
+              <td class="mat-pct med">▼49%</td>
+            </tr>
+            <tr>
+              <td class="mat-name">Al-2219 합금</td>
+              <td class="mat-have">890 kg</td>
+              <td class="mat-need">/ 1,200 kg</td>
+              <td class="mat-bar-cell">
+                <div class="mat-bar-wrap"><div class="mat-bar-fill med" style="width:74%"></div></div>
+              </td>
+              <td class="mat-pct med">▼74%</td>
+            </tr>
+            <tr>
+              <td class="mat-name">CFRP T-300</td>
+              <td class="mat-have">187 kg</td>
+              <td class="mat-need">/ 640 kg</td>
+              <td class="mat-bar-cell">
+                <div class="mat-bar-wrap"><div class="mat-bar-fill low" style="width:29%"></div></div>
+              </td>
+              <td class="mat-pct low">▼29%</td>
+            </tr>
+            <tr>
+              <td class="mat-name">Ti-6Al-4V</td>
+              <td class="mat-have">89 kg</td>
+              <td class="mat-need">/ 210 kg</td>
+              <td class="mat-bar-cell">
+                <div class="mat-bar-wrap"><div class="mat-bar-fill low" style="width:42%"></div></div>
+              </td>
+              <td class="mat-pct low">▼42%</td>
+            </tr>
+            <tr>
+              <td class="mat-name">인코넬 718</td>
+              <td class="mat-have">34 kg</td>
+              <td class="mat-need">/ 88 kg</td>
+              <td class="mat-bar-cell">
+                <div class="mat-bar-wrap"><div class="mat-bar-fill low" style="width:39%"></div></div>
+              </td>
+              <td class="mat-pct low">▼39%</td>
+            </tr>
+            <tr>
+              <td class="mat-name">LOX (액체산소)</td>
+              <td class="mat-have">3,200 L</td>
+              <td class="mat-need">/ 4,800 L</td>
+              <td class="mat-bar-cell">
+                <div class="mat-bar-wrap"><div class="mat-bar-fill med" style="width:67%"></div></div>
+              </td>
+              <td class="mat-pct med">▼67%</td>
+            </tr>
+            <tr>
+              <td class="mat-name">RP-1 케로신</td>
+              <td class="mat-have">2,860 L</td>
+              <td class="mat-need">/ 3,200 L</td>
+              <td class="mat-bar-cell">
+                <div class="mat-bar-wrap"><div class="mat-bar-fill high" style="width:89%"></div></div>
+              </td>
+              <td class="mat-pct high">89%</td>
+            </tr>
+          </tbody>
+        </table>
+
+      </div><!-- /panel-body -->
+    </div><!-- /panel-left -->
+
+    <!-- =====================================================
+         CENTER PANEL — ASSEMBLY DRAWING
+         ===================================================== -->
+    <div class="panel" id="panel-center">
+      <div class="panel-header">
+        <div class="panel-header-title">VEHICLE ASSEMBLY DRAWING</div>
+        <div class="panel-header-sub">DWG: MI-VEH-ASM-001 | SCALE: 1:80 | UNITS: METERS</div>
+      </div>
+
+      <!-- ROCKET TECHNICAL DRAWING SVG -->
+      <div class="rocket-svg-wrap">
+        <svg width="640" height="440" viewBox="0 0 640 440" style="display:block">
+          <!-- Grid background inside SVG -->
+          <defs>
+            <pattern id="sgrid" width="10" height="10" patternUnits="userSpaceOnUse">
+              <path d="M10 0 L0 0 0 10" fill="none" stroke="rgba(77,148,255,0.08)" stroke-width="0.5"/>
+            </pattern>
+            <pattern id="lgrid" width="100" height="100" patternUnits="userSpaceOnUse">
+              <rect width="100" height="100" fill="url(#sgrid)"/>
+              <path d="M100 0 L0 0 0 100" fill="none" stroke="rgba(77,148,255,0.15)" stroke-width="1"/>
+            </pattern>
+            <marker id="arr-end" markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#4db8ff" opacity="0.7"/>
+            </marker>
+            <marker id="arr-start" markerWidth="6" height="6" refX="0" refY="3" orient="auto">
+              <polygon points="6 0, 0 3, 6 6" fill="#4db8ff" opacity="0.7"/>
+            </marker>
+            <marker id="arr-end-sm" markerWidth="5" markerHeight="5" refX="5" refY="2.5" orient="auto">
+              <polygon points="0 0, 5 2.5, 0 5" fill="rgba(77,184,255,0.6)"/>
+            </marker>
+            <marker id="arr-start-sm" markerWidth="5" markerHeight="5" refX="0" refY="2.5" orient="auto">
+              <polygon points="5 0, 0 2.5, 5 5" fill="rgba(77,184,255,0.6)"/>
+            </marker>
+          </defs>
+
+          <!-- background -->
+          <rect width="640" height="440" fill="rgba(4,9,24,0.6)"/>
+          <rect width="640" height="440" fill="url(#lgrid)"/>
+
+          <!-- === ROCKET BODY CENTERED AT x=320 === -->
+          <!-- Rocket dims: total ~380px tall, bottom at y=420, top at y=40 -->
+          <!-- cx=320, rocket body width=70, half=35 -->
+
+          <!-- NOSECONE (y=40 to y=90, triangle/ogive) -->
+          <!-- Nosecone is a pointed tip -->
+          <polygon points="320,38 285,90 355,90"
+            fill="none" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- Nosecone hatch lines -->
+          <line x1="285" y1="90" x2="295" y2="62" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+          <line x1="285" y1="90" x2="305" y2="49" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+          <line x1="285" y1="90" x2="315" y2="42" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+
+          <!-- PAYLOAD FAIRING (y=90 to y=130) -->
+          <rect x="285" y="90" width="70" height="40"
+            fill="none" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- section label line (inside) -->
+          <line x1="285" y1="110" x2="355" y2="110" stroke="rgba(77,184,255,0.3)" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+          <!-- PAYLOAD BAY SEPARATOR -->
+          <line x1="280" y1="130" x2="360" y2="130" stroke="#4db8ff" stroke-width="2"/>
+
+          <!-- STAGE 2 OXIDIZER TANK (y=130 to y=200) -->
+          <rect x="285" y="130" width="70" height="70"
+            fill="none" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- LOX tank interior detail: wavy line suggesting liquid -->
+          <path d="M 290 185 Q 305 180 320 185 Q 335 190 350 185"
+            fill="none" stroke="rgba(77,184,255,0.4)" stroke-width="1" stroke-dasharray="3,2"/>
+
+          <!-- INTERTANK (y=200 to y=220) -->
+          <rect x="285" y="200" width="70" height="20"
+            fill="rgba(77,184,255,0.06)" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- intertank cross-bracing detail -->
+          <line x1="285" y1="200" x2="355" y2="220" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+          <line x1="355" y1="200" x2="285" y2="220" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+
+          <!-- STAGE 2 FUEL TANK (y=220 to y=280) -->
+          <rect x="285" y="220" width="70" height="60"
+            fill="none" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- fuel level line -->
+          <path d="M 290 264 Q 305 260 320 264 Q 335 268 350 264"
+            fill="none" stroke="rgba(77,184,255,0.4)" stroke-width="1" stroke-dasharray="3,2"/>
+
+          <!-- INTERSTAGE separator (y=280 to y=300) -->
+          <rect x="282" y="280" width="76" height="20"
+            fill="rgba(77,184,255,0.06)" stroke="#ffeb3b" stroke-width="1.5" stroke-dasharray="4,2"/>
+          <!-- interstage cross bracing -->
+          <line x1="282" y1="280" x2="358" y2="300" stroke="rgba(255,235,59,0.3)" stroke-width="0.8"/>
+          <line x1="358" y1="280" x2="282" y2="300" stroke="rgba(255,235,59,0.3)" stroke-width="0.8"/>
+
+          <!-- STAGE 1 LOX TANK (y=300 to y=360) -->
+          <rect x="285" y="300" width="70" height="60"
+            fill="none" stroke="#4db8ff" stroke-width="1.5"/>
+
+          <!-- STAGE 1 ENGINE SECTION (y=360 to y=400) -->
+          <!-- Bell/skirt wider than tank -->
+          <rect x="278" y="360" width="84" height="35"
+            fill="rgba(77,184,255,0.04)" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- Engine mounting frame details -->
+          <line x1="278" y1="375" x2="362" y2="375" stroke="rgba(77,184,255,0.4)" stroke-width="1"/>
+          <line x1="300" y1="360" x2="300" y2="395" stroke="rgba(77,184,255,0.25)" stroke-width="0.8"/>
+          <line x1="340" y1="360" x2="340" y2="395" stroke="rgba(77,184,255,0.25)" stroke-width="0.8"/>
+
+          <!-- ENGINE BELL (y=395 to y=425) -->
+          <!-- Trapezoidal nozzle bell -->
+          <polygon points="295,395 325,395 335,425 285,425"
+            fill="rgba(77,184,255,0.06)" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- nozzle throat detail -->
+          <ellipse cx="310" cy="400" rx="12" ry="5"
+            fill="none" stroke="rgba(77,184,255,0.5)" stroke-width="0.8"/>
+
+          <!-- GRID FINS (decorative) -->
+          <rect x="258" y="365" width="18" height="24" rx="1"
+            fill="none" stroke="#4db8ff" stroke-width="1.2"/>
+          <line x1="264" y1="365" x2="264" y2="389" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+          <line x1="270" y1="365" x2="270" y2="389" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+          <rect x="364" y="365" width="18" height="24" rx="1"
+            fill="none" stroke="#4db8ff" stroke-width="1.2"/>
+          <line x1="370" y1="365" x2="370" y2="389" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+          <line x1="376" y1="365" x2="376" y2="389" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+
+          <!-- LAUNCH STAND LEGS -->
+          <line x1="285" y1="425" x2="265" y2="440" stroke="#4db8ff" stroke-width="1.5"/>
+          <line x1="285" y1="425" x2="255" y2="440" stroke="#4db8ff" stroke-width="1.5"/>
+          <line x1="355" y1="425" x2="375" y2="440" stroke="#4db8ff" stroke-width="1.5"/>
+          <line x1="355" y1="425" x2="385" y2="440" stroke="#4db8ff" stroke-width="1.5"/>
+          <!-- ground line -->
+          <line x1="245" y1="440" x2="395" y2="440" stroke="#4db8ff" stroke-width="1.5"/>
+
+          <!-- =========================================
+               DIMENSION LINES (right side)
+               ========================================= -->
+          <!-- Vertical overall dim line -->
+          <line x1="380" y1="38" x2="380" y2="425"
+            stroke="rgba(77,184,255,0.5)" stroke-width="1"
+            marker-start="url(#arr-start)" marker-end="url(#arr-end)"/>
+          <line x1="355" y1="38" x2="385" y2="38" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+          <line x1="355" y1="425" x2="385" y2="425" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+          <text x="390" y="235" fill="#4db8ff" font-size="9" font-family="Courier Prime" transform="rotate(90,390,232)">48.6 m TOTAL HEIGHT</text>
+
+          <!-- Section dim: nosecone -->
+          <line x1="370" y1="38" x2="370" y2="90"
+            stroke="rgba(77,184,255,0.35)" stroke-width="0.8"
+            marker-start="url(#arr-start-sm)" marker-end="url(#arr-end-sm)"/>
+          <text x="375" y="67" fill="rgba(77,184,255,0.7)" font-size="7.5" font-family="Courier Prime">6.2m</text>
+
+          <!-- Section dim: payload -->
+          <line x1="370" y1="90" x2="370" y2="130"
+            stroke="rgba(77,184,255,0.35)" stroke-width="0.8"
+            marker-start="url(#arr-start-sm)" marker-end="url(#arr-end-sm)"/>
+          <text x="375" y="113" fill="rgba(77,184,255,0.7)" font-size="7.5" font-family="Courier Prime">5.4m</text>
+
+          <!-- Section dim: S2 LOX -->
+          <line x1="370" y1="130" x2="370" y2="200"
+            stroke="rgba(77,184,255,0.35)" stroke-width="0.8"
+            marker-start="url(#arr-start-sm)" marker-end="url(#arr-end-sm)"/>
+          <text x="375" y="168" fill="rgba(77,184,255,0.7)" font-size="7.5" font-family="Courier Prime">9.6m</text>
+
+          <!-- Section dim: S2 fuel -->
+          <line x1="370" y1="220" x2="370" y2="280"
+            stroke="rgba(77,184,255,0.35)" stroke-width="0.8"
+            marker-start="url(#arr-start-sm)" marker-end="url(#arr-end-sm)"/>
+          <text x="375" y="253" fill="rgba(77,184,255,0.7)" font-size="7.5" font-family="Courier Prime">8.1m</text>
+
+          <!-- Width dim (top) -->
+          <line x1="285" y1="25" x2="355" y2="25"
+            stroke="rgba(77,184,255,0.45)" stroke-width="1"
+            marker-start="url(#arr-start-sm)" marker-end="url(#arr-end-sm)"/>
+          <line x1="285" y1="20" x2="285" y2="92" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+          <line x1="355" y1="20" x2="355" y2="92" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+          <text x="310" y="20" fill="rgba(77,184,255,0.7)" font-size="7.5" font-family="Courier Prime" text-anchor="middle">Ø 3.7 m</text>
+
+          <!-- Width dim (engine) -->
+          <line x1="278" y1="412" x2="362" y2="412"
+            stroke="rgba(77,184,255,0.45)" stroke-width="1"
+            marker-start="url(#arr-start-sm)" marker-end="url(#arr-end-sm)"/>
+          <line x1="278" y1="408" x2="278" y2="430" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+          <line x1="362" y1="408" x2="362" y2="430" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+          <text x="320" y="408" fill="rgba(77,184,255,0.7)" font-size="7.5" font-family="Courier Prime" text-anchor="middle">Ø 4.5 m SKIRT</text>
+
+          <!-- =========================================
+               CALLOUT BUBBLES + LEADER LINES (left side)
+               ========================================= -->
+          <!-- NOSECONE -->
+          <line x1="285" y1="64" x2="200" y2="55" stroke="rgba(77,184,255,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="52" r="8" fill="none" stroke="#4db8ff" stroke-width="1"/>
+          <text x="187" y="56" fill="#4db8ff" font-size="7" font-family="Courier Prime" font-weight="bold" text-anchor="middle">N/C</text>
+          <text x="110" y="46" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">NOSECONE / FAIRING</text>
+          <line x1="173" y1="52" x2="110" y2="52" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+          <line x1="80" y1="52" x2="110" y2="52" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+
+          <!-- PAYLOAD BAY -->
+          <line x1="285" y1="110" x2="200" y2="110" stroke="rgba(77,184,255,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="110" r="8" fill="none" stroke="#4db8ff" stroke-width="1"/>
+          <text x="187" y="114" fill="#4db8ff" font-size="6.5" font-family="Courier Prime" font-weight="bold" text-anchor="middle">PAY</text>
+          <text x="80" y="105" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">PAYLOAD BAY</text>
+          <line x1="175" y1="110" x2="80" y2="110" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+
+          <!-- S2 LOX -->
+          <line x1="285" y1="165" x2="200" y2="165" stroke="rgba(77,184,255,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="165" r="9" fill="none" stroke="#4db8ff" stroke-width="1"/>
+          <text x="187" y="162" fill="#4db8ff" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">STR</text>
+          <text x="187" y="171" fill="#4db8ff" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">002</text>
+          <text x="65" y="160" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">STAGE 2</text>
+          <text x="65" y="170" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">OXIDIZER</text>
+          <line x1="174" y1="165" x2="115" y2="165" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+
+          <!-- INTERTANK -->
+          <line x1="285" y1="210" x2="200" y2="210" stroke="rgba(255,235,59,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="210" r="9" fill="none" stroke="#ffeb3b" stroke-width="1.2"/>
+          <text x="187" y="207" fill="#ffeb3b" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">STR</text>
+          <text x="187" y="215" fill="#ffeb3b" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">004</text>
+          <text x="65" y="205" fill="#ffeb3b" font-size="8" font-family="Courier Prime">INTERTANK</text>
+          <text x="65" y="215" fill="rgba(255,235,59,0.6)" font-size="7" font-family="Courier Prime">✗ 미제작</text>
+          <line x1="174" y1="210" x2="115" y2="210" stroke="rgba(255,235,59,0.4)" stroke-width="0.8"/>
+
+          <!-- S2 FUEL -->
+          <line x1="285" y1="250" x2="200" y2="250" stroke="rgba(77,184,255,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="250" r="9" fill="none" stroke="#4db8ff" stroke-width="1"/>
+          <text x="187" y="247" fill="#4db8ff" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">STR</text>
+          <text x="187" y="256" fill="#4db8ff" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">003</text>
+          <text x="65" y="245" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">STAGE 2</text>
+          <text x="65" y="255" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">FUEL TANK</text>
+          <line x1="174" y1="250" x2="115" y2="250" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+
+          <!-- INTERSTAGE -->
+          <line x1="282" y1="290" x2="200" y2="290" stroke="rgba(255,235,59,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="290" r="9" fill="none" stroke="#ffeb3b" stroke-width="1.2"/>
+          <text x="187" y="294" fill="#ffeb3b" font-size="6.5" font-family="Courier Prime" font-weight="bold" text-anchor="middle">I/S</text>
+          <text x="55" y="285" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">INTERSTAGE</text>
+          <line x1="174" y1="290" x2="110" y2="290" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+
+          <!-- S1 SECTION -->
+          <line x1="285" y1="340" x2="200" y2="340" stroke="rgba(77,184,255,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="340" r="9" fill="none" stroke="#4db8ff" stroke-width="1"/>
+          <text x="187" y="337" fill="#4db8ff" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">STR</text>
+          <text x="187" y="345" fill="#4db8ff" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">001</text>
+          <text x="55" y="335" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">STAGE 1</text>
+          <text x="55" y="345" fill="rgba(204,232,255,0.8)" font-size="8" font-family="Courier Prime">STRUCTURE</text>
+          <line x1="174" y1="340" x2="110" y2="340" stroke="rgba(77,184,255,0.4)" stroke-width="0.8"/>
+
+          <!-- ENGINE -->
+          <line x1="278" y1="380" x2="200" y2="395" stroke="rgba(255,235,59,0.5)" stroke-width="0.9"/>
+          <circle cx="187" cy="398" r="9" fill="none" stroke="#ffeb3b" stroke-width="1.2"/>
+          <text x="187" y="395" fill="#ffeb3b" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">PRO</text>
+          <text x="187" y="403" fill="#ffeb3b" font-size="6" font-family="Courier Prime" font-weight="bold" text-anchor="middle">001</text>
+          <text x="55" y="390" fill="#ffeb3b" font-size="8" font-family="Courier Prime">ENGINE</text>
+          <text x="55" y="400" fill="rgba(255,235,59,0.6)" font-size="7" font-family="Courier Prime">IN PROGRESS 57%</text>
+          <line x1="174" y1="398" x2="110" y2="398" stroke="rgba(255,235,59,0.4)" stroke-width="0.8"/>
+
+          <!-- CENTER LINE (vertical axis) -->
+          <line x1="320" y1="10" x2="320" y2="430"
+            stroke="rgba(77,184,255,0.25)" stroke-width="0.8" stroke-dasharray="8,4"/>
+          <text x="323" y="15" fill="rgba(77,184,255,0.45)" font-size="7" font-family="Courier Prime">℄</text>
+
+          <!-- DRAWING TITLE / NOTE in SVG -->
+          <rect x="430" y="390" width="200" height="42" fill="rgba(4,9,20,0.8)" stroke="rgba(77,184,255,0.4)" stroke-width="1"/>
+          <text x="437" y="402" fill="rgba(77,184,255,0.6)" font-size="7" font-family="Courier Prime">NOTES:</text>
+          <text x="437" y="412" fill="rgba(204,232,255,0.5)" font-size="6.5" font-family="Courier Prime">1. ALL DIMS IN METERS</text>
+          <text x="437" y="421" fill="rgba(204,232,255,0.5)" font-size="6.5" font-family="Courier Prime">2. MATL PER MI-MAT-SPEC-001</text>
+          <text x="437" y="430" fill="rgba(204,232,255,0.5)" font-size="6.5" font-family="Courier Prime">3. REF: MI-VEH-ASM-001 REV.C</text>
+
+          <!-- SECTION LABEL: A-A indicator -->
+          <text x="432" y="350" fill="rgba(77,184,255,0.5)" font-size="8" font-family="Courier Prime" font-style="italic">SECTION A-A</text>
+          <line x1="430" y1="353" x2="540" y2="353" stroke="rgba(77,184,255,0.3)" stroke-width="0.8"/>
+
+          <!-- Detail callout for engine -->
+          <circle cx="490" cy="375" r="30" fill="none" stroke="rgba(77,184,255,0.35)" stroke-width="0.8" stroke-dasharray="4,3"/>
+          <text x="490" y="360" fill="rgba(77,184,255,0.4)" font-size="7" font-family="Courier Prime" text-anchor="middle">SEE DETAIL B</text>
+          <text x="490" y="375" fill="rgba(77,184,255,0.3)" font-size="7" font-family="Courier Prime" text-anchor="middle">PRO-001</text>
+          <text x="490" y="385" fill="rgba(255,235,59,0.5)" font-size="7" font-family="Courier Prime" text-anchor="middle">57% COMPLETE</text>
+          <line x1="305" y1="395" x2="460" y2="373" stroke="rgba(77,184,255,0.25)" stroke-width="0.8" stroke-dasharray="3,3"/>
+        </svg>
+      </div>
+
+      <!-- ASSEMBLY SEQUENCE -->
+      <div class="asm-seq">
+        <div style="font-size:8.5px;color:var(--ghost);letter-spacing:1px;margin-right:8px;white-space:nowrap">ASM SEQ:</div>
+        <div class="asm-step">
+          <div class="asm-node done">① 원자재</div>
+          <div class="asm-arrow">→</div>
+        </div>
+        <div class="asm-step">
+          <div class="asm-node done">② 구조제작</div>
+          <div class="asm-arrow">→</div>
+        </div>
+        <div class="asm-step">
+          <div class="asm-node active">③ 추진계통 ★</div>
+          <div class="asm-arrow">→</div>
+        </div>
+        <div class="asm-step">
+          <div class="asm-node">④ 항전</div>
+          <div class="asm-arrow">→</div>
+        </div>
+        <div class="asm-step">
+          <div class="asm-node">⑤ 연소시험</div>
+          <div class="asm-arrow">→</div>
+        </div>
+        <div class="asm-step">
+          <div class="asm-node">⑥ 단통합</div>
+          <div class="asm-arrow">→</div>
+        </div>
+        <div class="asm-step">
+          <div class="asm-node">⑦ 발사준비</div>
+        </div>
+      </div>
+
+    </div><!-- /panel-center -->
+
+    <!-- =====================================================
+         RIGHT PANEL — TEST LOG
+         ===================================================== -->
+    <div class="panel" id="panel-right">
+      <div class="panel-header">
+        <div class="panel-header-title">FLIGHT TEST LOG</div>
+        <div class="panel-header-sub">REF: MI-TEST-FLT-LOG</div>
+      </div>
+      <div class="panel-body" id="test-log-body">
+
+        <div class="test-log-entry fail" id="entry-ml001">
+          <div class="tl-run">TEST RUN: ML-001</div>
+          <hr class="tl-hr">
+          <div><span class="tl-field">DATE:          </span><span class="tl-value">D+07</span></div>
+          <div><span class="tl-field">VEHICLE:       </span><span class="tl-value">Alpha mk.1 (REV.A)</span></div>
+          <div><span class="tl-field">TARGET ALT:    </span><span class="tl-value">10,000 m</span></div>
+          <div><span class="tl-field">MAX ALT:       </span><span class="tl-value">2,300 m</span></div>
+          <div><span class="tl-field">MAX VELOCITY:  </span><span class="tl-value">842 m/s</span></div>
+          <div><span class="tl-field">FLIGHT TIME:   </span><span class="tl-value">87 s</span></div>
+          <div><span class="tl-field">RESULT:        </span><span class="tl-result-fail">FAILURE</span></div>
+          <hr class="tl-hr">
+          <div><span class="tl-field">FAILURE MODE: </span></div>
+          <div class="tl-note">Structural fatigue fracture</div>
+          <div class="tl-note">at Max-Q (dynamic pressure</div>
+          <div class="tl-note">exceeded design limit)</div>
+          <div style="margin-top:3px"><span class="tl-field">CORR ACTION:  </span></div>
+          <div class="tl-note">Increased wall thickness</div>
+          <div class="tl-note">STR-001 Rev.B</div>
+        </div>
+
+        <div class="test-log-entry fail" id="entry-ml002">
+          <div class="tl-run">TEST RUN: ML-002</div>
+          <hr class="tl-hr">
+          <div><span class="tl-field">DATE:          </span><span class="tl-value">D+21</span></div>
+          <div><span class="tl-field">VEHICLE:       </span><span class="tl-value">Alpha mk.1 (REV.B)</span></div>
+          <div><span class="tl-field">TARGET ALT:    </span><span class="tl-value">10,000 m</span></div>
+          <div><span class="tl-field">MAX ALT:       </span><span class="tl-value">7,840 m</span></div>
+          <div><span class="tl-field">MAX VELOCITY:  </span><span class="tl-value">1,240 m/s</span></div>
+          <div><span class="tl-field">FLIGHT TIME:   </span><span class="tl-value">174 s</span></div>
+          <div><span class="tl-field">RESULT:        </span><span class="tl-result-fail">FAILURE</span></div>
+          <hr class="tl-hr">
+          <div><span class="tl-field">FAILURE MODE: </span></div>
+          <div class="tl-note">TVC actuator failure T+142s</div>
+          <div class="tl-note">Loss of attitude control</div>
+          <div style="margin-top:3px"><span class="tl-field">CORR ACTION:  </span></div>
+          <div class="tl-note">Redundant TVC actuators</div>
+          <div class="tl-note">installed Rev.C</div>
+        </div>
+
+        <div class="test-log-entry partial" id="entry-ml003">
+          <div class="tl-run">TEST RUN: ML-003</div>
+          <hr class="tl-hr">
+          <div><span class="tl-field">DATE:          </span><span class="tl-value">D+38</span></div>
+          <div><span class="tl-field">VEHICLE:       </span><span class="tl-value">Alpha mk.2 (REV.C)</span></div>
+          <div><span class="tl-field">TARGET ALT:    </span><span class="tl-value">100,000 m</span></div>
+          <div><span class="tl-field">MAX ALT:       </span><span class="tl-value">89,400 m</span></div>
+          <div><span class="tl-field">MAX VELOCITY:  </span><span class="tl-value">2,970 m/s</span></div>
+          <div><span class="tl-field">FLIGHT TIME:   </span><span class="tl-value">586 s</span></div>
+          <div><span class="tl-field">RESULT:        </span><span class="tl-result-partial">PARTIAL SUCCESS</span></div>
+          <hr class="tl-hr">
+          <div><span class="tl-field">FAILURE MODE: </span></div>
+          <div class="tl-note">Stage 2 ignition failed</div>
+          <div class="tl-note">Coasted to 89.4km suborbital</div>
+          <div style="margin-top:3px"><span class="tl-field">CORR ACTION:  </span></div>
+          <div class="tl-note">Redesign S2 igniter system</div>
+          <div class="tl-note">PRO-001 igniter Rev.D</div>
+        </div>
+
+        <!-- CUMULATIVE STATS -->
+        <div class="cum-stats">
+          <div class="cum-stats-title">CUMULATIVE TEST STATISTICS</div>
+          <div class="cum-row"><span class="cum-label">TESTS CONDUCTED:</span><span class="cum-val">3</span></div>
+          <div class="cum-row"><span class="cum-label">SUCCESS:</span><span class="cum-val ok">0</span></div>
+          <div class="cum-row"><span class="cum-label">PARTIAL SUCCESS:</span><span class="cum-val warn">1</span></div>
+          <div class="cum-row"><span class="cum-label">FAILURE:</span><span class="cum-val" style="color:var(--red)">2</span></div>
+          <hr class="tl-hr" style="margin:4px 0">
+          <div class="cum-row"><span class="cum-label">MAX ALTITUDE:</span><span class="cum-val hi">89,400 m</span></div>
+          <div class="cum-row"><span class="cum-label">DELTA-V RECORD:</span><span class="cum-val hi">2,970 m/s</span></div>
+          <div class="cum-row"><span class="cum-label">FLT TIME TOTAL:</span><span class="cum-val">847 s</span></div>
+          <div class="cum-row"><span class="cum-label">PROPELLANT USED:</span><span class="cum-val">11,200 kg</span></div>
+          <hr class="tl-hr" style="margin:4px 0">
+          <div class="cum-row"><span class="cum-label">NEXT TEST:</span><span class="cum-val warn">ML-004</span></div>
+        </div>
+
+      </div><!-- /panel-body -->
+    </div><!-- /panel-right -->
+
+  </div><!-- /main -->
+
+  <!-- BOTTOM TOOLBAR -->
+  <div id="toolbar">
+    <div class="toolbar-note">
+      NOTE: <span>ALL DIMS IN METERS UNLESS NOTED.</span>
+      &nbsp;|&nbsp;
+      <span>MATL SPEC PER MI-MAT-SPEC-001.</span>
+      &nbsp;|&nbsp;
+      <span>DO NOT SCALE DRAWING.</span>
+      &nbsp;|&nbsp;
+      ENGR: <span>MOON IDLE SYS ENG</span>
+      &nbsp;|&nbsp;
+      APPROVED: <span>PENDING</span>
+    </div>
+    <div class="toolbar-spacer"></div>
+    <div style="font-size:8.5px;color:var(--ghost);letter-spacing:1px;margin-right:16px">
+      PROPELLANT: <span style="color:var(--ok)">LOADED</span> &nbsp;|&nbsp;
+      WEATHER: <span style="color:var(--ok)">GO</span> &nbsp;|&nbsp;
+      RANGE: <span style="color:var(--ok)">CLEAR</span>
+    </div>
+    <button id="btn-launch" onclick="startLaunchSequence()">LAUNCH TEST ML-004</button>
+  </div>
+
+</div><!-- /root -->
+
+<!-- =========================================================
+     LAUNCH THEATER
+     ========================================================= -->
+<div id="launch-theater">
+
+  <!-- Left door -->
+  <div id="door-left"></div>
+
+  <!-- Right door -->
+  <div id="door-right"></div>
+
+  <!-- Center launch area (revealed when doors open) -->
+  <div id="launch-center">
+    <!-- Stars -->
+    <div id="launch-stars"></div>
+
+    <!-- Rocket -->
+    <div id="launch-rocket">
+      <!-- Exhaust plume -->
+      <div class="plume" id="plume">
+        <svg width="40" height="80" viewBox="0 0 40 80">
+          <defs>
+            <radialGradient id="plumeGrad" cx="50%" cy="0%" r="100%">
+              <stop offset="0%" stop-color="#fff8e1" stop-opacity="1"/>
+              <stop offset="20%" stop-color="#ff9800" stop-opacity="0.9"/>
+              <stop offset="60%" stop-color="#ff4455" stop-opacity="0.6"/>
+              <stop offset="100%" stop-color="transparent" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="20" cy="15" rx="12" ry="18" fill="url(#plumeGrad)"/>
+          <ellipse cx="20" cy="35" rx="18" ry="30" fill="url(#plumeGrad)" opacity="0.5"/>
+          <ellipse cx="20" cy="55" rx="20" ry="30" fill="url(#plumeGrad)" opacity="0.2"/>
+        </svg>
+      </div>
+
+      <svg width="80" height="200" viewBox="0 0 80 200">
+        <!-- launch rocket silhouette -->
+        <!-- nosecone -->
+        <polygon points="40,2 20,40 60,40" fill="#4db8ff" opacity="0.8"/>
+        <!-- body -->
+        <rect x="20" y="40" width="40" height="100" fill="#4db8ff" opacity="0.7"/>
+        <!-- engine section -->
+        <rect x="16" y="140" width="48" height="28" fill="#4db8ff" opacity="0.7"/>
+        <!-- nozzle bell -->
+        <polygon points="22,168 58,168 65,190 15,190" fill="#4db8ff" opacity="0.7"/>
+        <!-- window detail -->
+        <circle cx="40" cy="60" r="8" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5"/>
+        <circle cx="40" cy="60" r="5" fill="rgba(77,184,255,0.3)"/>
+        <!-- grid fins -->
+        <rect x="4" y="148" width="12" height="18" fill="none" stroke="#4db8ff" stroke-width="1.2"/>
+        <rect x="64" y="148" width="12" height="18" fill="none" stroke="#4db8ff" stroke-width="1.2"/>
+        <!-- center line -->
+        <line x1="40" y1="2" x2="40" y2="190" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" stroke-dasharray="4,3"/>
+      </svg>
+    </div>
+
+    <!-- Telemetry -->
+    <div id="telemetry">
+      <div id="telemetry-text"></div>
+    </div>
+  </div>
+
+  <!-- Auth dialog -->
+  <div id="auth-dialog">
+    <div class="auth-title">LAUNCH AUTHORIZATION REQUIRED</div>
+    <div style="font-size:9px;color:var(--ghost);letter-spacing:1.5px;margin-bottom:10px">
+      DWG NO: ML-004 / REV.D — CONFIRM LAUNCH COMMIT
+    </div>
+    <div class="auth-keybox">
+      <div>KEY A</div>
+      <div class="key-slot" id="key-a">⚿</div>
+      <div style="width:40px;text-align:center;font-size:9px;color:var(--ghost)">TURN TO<br>COMMIT</div>
+      <div class="key-slot" id="key-b">⚿</div>
+      <div>KEY B</div>
+    </div>
+    <div style="font-size:9px;color:var(--ghost);margin-bottom:16px;letter-spacing:1px">
+      CONFIRM: ALL SYSTEMS GO — RANGE CLEAR
+    </div>
+    <button class="auth-btn" onclick="confirmLaunch()">COMMIT LAUNCH ▶</button>
+    <div style="margin-top:10px">
+      <span style="font-size:8.5px;color:var(--ghost);cursor:pointer;letter-spacing:1px" onclick="cancelLaunch()">✕ ABORT / RETURN TO DRAWING</span>
+    </div>
+  </div>
+
+</div><!-- /launch-theater -->
+
+<script>
+/* =========================================================
+   STARS
+   ========================================================= */
+(function generateStars(){
+  const container = document.getElementById('launch-stars');
+  const count = 180;
+  let html = '';
+  for(let i=0;i<count;i++){
+    const x = Math.random()*100;
+    const y = Math.random()*100;
+    const s = Math.random()*1.8+0.4;
+    const op = Math.random()*0.7+0.2;
+    const dur = Math.random()*3+2;
+    html += `<div style="
+      position:absolute;
+      left:${x}%;top:${y}%;
+      width:${s}px;height:${s}px;
+      background:#fff;
+      border-radius:50%;
+      opacity:${op};
+      animation:starTwinkle ${dur.toFixed(1)}s ease-in-out infinite alternate;
+    "></div>`;
+  }
+  container.innerHTML = html;
+})();
+
+/* =========================================================
+   LAUNCH SEQUENCE
+   ========================================================= */
+let launchPhase = 'idle'; // idle | auth | launching | result
+
+function startLaunchSequence(){
+  if(launchPhase !== 'idle') return;
+  launchPhase = 'auth';
+
+  // Show theater overlay
+  const theater = document.getElementById('launch-theater');
+  theater.classList.add('active');
+
+  // Show auth dialog
+  setTimeout(()=>{
+    document.getElementById('auth-dialog').classList.add('visible');
+  }, 200);
+}
+
+function confirmLaunch(){
+  // Key turn animation
+  document.getElementById('key-a').classList.add('turned');
+  setTimeout(()=>{
+    document.getElementById('key-b').classList.add('turned');
+  }, 400);
+
+  // Change dialog content briefly
+  setTimeout(()=>{
+    document.getElementById('auth-dialog').innerHTML = `
+      <div style="font-family:var(--font-cond);font-size:18px;font-weight:700;color:var(--ok);letter-spacing:4px;margin-bottom:10px">LAUNCH COMMIT CONFIRMED</div>
+      <div style="font-size:10px;color:var(--ghost);letter-spacing:2px;">ML-004 — IGNITION AUTHORIZED</div>
+      <div style="font-size:9px;color:var(--ghost);margin-top:12px;letter-spacing:1px;">OPENING HANGAR DOORS...</div>
+    `;
+  }, 900);
+
+  // Slide doors open
+  setTimeout(()=>{
+    document.getElementById('auth-dialog').style.display = 'none';
+    document.getElementById('door-left').classList.add('open');
+    document.getElementById('door-right').classList.add('open');
+  }, 1800);
+
+  // Start engine + telemetry
+  setTimeout(()=>{
+    document.getElementById('plume').classList.add('active');
+    document.getElementById('telemetry').classList.add('visible');
+    runTelemetry();
+  }, 2700);
+
+  // Launch rocket
+  setTimeout(()=>{
+    document.getElementById('launch-rocket').classList.add('flying');
+    launchPhase = 'launching';
+  }, 3000);
+
+  // Result
+  setTimeout(()=>{
+    showLaunchResult();
+  }, 7200);
+}
+
+function cancelLaunch(){
+  document.getElementById('auth-dialog').classList.remove('visible');
+  document.getElementById('launch-theater').classList.remove('active');
+  launchPhase = 'idle';
+}
+
+/* Telemetry print-out */
+const TELEM_LINES = [
+  { t: 0,   text: 'T+0.0s  IGNITION SEQUENCE START...', color: '#cce8ff' },
+  { t: 600, text: 'T+0.6s  MAIN ENGINE START', color: '#cce8ff' },
+  { t: 1200, text: 'T+1.2s  LIFTOFF CONFIRMED', color: '#39ff9a' },
+  { t: 1800, text: 'T+12s   ROLL MANEUVER COMPLETE', color: '#cce8ff' },
+  { t: 2300, text: 'T+30s   MAX-Q APPROACHING... 18.4 kPa', color: '#ffeb3b' },
+  { t: 2800, text: 'T+44s   MAX-Q 22.7 kPa — NOMINAL', color: '#cce8ff' },
+  { t: 3200, text: 'T+62s   ANOMALY DETECTED: PRO-001', color: '#ff4455' },
+  { t: 3600, text: 'T+78s   CHAMBER PRESSURE DROPPING...', color: '#ff4455' },
+  { t: 4000, text: 'T+94s   ENGINE SHUTDOWN — COAST PHASE', color: '#ff4455' },
+  { t: 4200, text: 'T+94s   ALT: 71.2 km  V: 2,147 m/s', color: '#ffeb3b' },
+  { t: 4400, text: 'FLIGHT COMPUTER: INITIATING SAFING', color: '#cce8ff' },
+];
+
+function runTelemetry(){
+  const el = document.getElementById('telemetry-text');
+  el.textContent = '';
+  TELEM_LINES.forEach(line=>{
+    setTimeout(()=>{
+      el.textContent += `\n${line.text}`;
+      el.parentElement.scrollTop = el.parentElement.scrollHeight;
+    }, line.t);
+  });
+}
+
+function showLaunchResult(){
+  // Close theater
+  document.getElementById('door-left').classList.remove('open');
+  document.getElementById('door-right').classList.remove('open');
+  document.getElementById('plume').classList.remove('active');
+  document.getElementById('launch-rocket').classList.remove('flying');
+  document.getElementById('telemetry').classList.remove('visible');
+
+  setTimeout(()=>{
+    document.getElementById('launch-theater').classList.remove('active');
+    // Reset rocket position
+    document.getElementById('launch-rocket').style.transform = '';
+
+    // Insert new test entry
+    addTestEntry();
+    launchPhase = 'idle';
+
+    // Re-enable launch button for next iteration demo
+    const btn = document.getElementById('btn-launch');
+    btn.textContent = '★ NEXT TEST: ML-005';
+    btn.style.borderColor = 'var(--ok)';
+    btn.style.color = 'var(--ok)';
+  }, 900);
+}
+
+function addTestEntry(){
+  const logBody = document.getElementById('test-log-body');
+  const entry = document.createElement('div');
+  entry.className = 'test-log-entry fail new-entry';
+  entry.id = 'entry-ml004';
+  entry.innerHTML = `
+    <div class="tl-run">TEST RUN: ML-004 ★ NEW</div>
+    <hr class="tl-hr">
+    <div><span class="tl-field">DATE:          </span><span class="tl-value">D+52</span></div>
+    <div><span class="tl-field">VEHICLE:       </span><span class="tl-value">Alpha mk.2 (REV.D)</span></div>
+    <div><span class="tl-field">TARGET ALT:    </span><span class="tl-value">100,000 m</span></div>
+    <div><span class="tl-field">MAX ALT:       </span><span class="tl-value">71,200 m</span></div>
+    <div><span class="tl-field">MAX VELOCITY:  </span><span class="tl-value">2,147 m/s</span></div>
+    <div><span class="tl-field">FLIGHT TIME:   </span><span class="tl-value">94 s</span></div>
+    <div><span class="tl-field">RESULT:        </span><span class="tl-result-fail">FAILURE</span></div>
+    <hr class="tl-hr">
+    <div><span class="tl-field">FAILURE MODE: </span></div>
+    <div class="tl-note">Engine shutdown T+94s</div>
+    <div class="tl-note">Chamber pressure loss</div>
+    <div class="tl-note">PRO-001 igniter degradation</div>
+    <div style="margin-top:3px"><span class="tl-field">CORR ACTION:  </span></div>
+    <div class="tl-note">Redesign igniter coating</div>
+    <div class="tl-note">PRO-001 Rev.E pending</div>
+  `;
+  // Insert before cumulative stats
+  const cumStats = logBody.querySelector('.cum-stats');
+  logBody.insertBefore(entry, cumStats);
+  logBody.scrollTop = logBody.scrollHeight;
+
+  // Update cumulative stats
+  cumStats.querySelector('.cum-stats-title').insertAdjacentHTML('afterend',
+    '<div style="font-size:8px;color:var(--warn);letter-spacing:1px;margin-bottom:4px">UPDATED — ML-004 COMPLETE</div>'
+  );
+}
+
+/* =========================================================
+   CSS ANIMATION for star twinkle
+   ========================================================= */
+const styleTag = document.createElement('style');
+styleTag.textContent = `
+@keyframes starTwinkle {
+  from { opacity: 0.2; transform: scale(0.8); }
+  to   { opacity: 1;   transform: scale(1.2); }
+}
+`;
+document.head.appendChild(styleTag);
+
+/* =========================================================
+   IDLE ANIMATION: subtle BOM row highlight cycling
+   ========================================================= */
+(function bomHighlight(){
+  const rows = document.querySelectorAll('.bom-table tbody tr');
+  if(!rows.length) return;
+  let idx = 0;
+  setInterval(()=>{
+    rows.forEach(r=>r.style.background='');
+    if(rows[idx]) rows[idx].style.background = 'rgba(77,184,255,0.05)';
+    idx = (idx+1) % rows.length;
+  }, 1200);
+})();
+
+/* =========================================================
+   SESSION TIMER
+   ========================================================= */
+(function sessionTimer(){
+  const el = document.querySelector('.tb-stat-value:last-of-type');
+  let secs = 4*3600 + 27*60 + 13;
+  setInterval(()=>{
+    secs++;
+    const h = String(Math.floor(secs/3600)).padStart(2,'0');
+    const m = String(Math.floor((secs%3600)/60)).padStart(2,'0');
+    const s = String(secs%60).padStart(2,'0');
+    el.textContent = `${h}:${m}:${s}`;
+  }, 1000);
+})();
+</script>
+</body>
+</html>

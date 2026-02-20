@@ -1,0 +1,40 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#04162d"/>
+      <stop offset="50%" stop-color="#082a4c"/>
+      <stop offset="100%" stop-color="#02203f"/>
+    </linearGradient>
+    <linearGradient id="r" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5ef7ff66"/>
+      <stop offset="100%" stop-color="#5ef7ff04"/>
+    </linearGradient>
+    <radialGradient id="a" cx="55%" cy="18%" r="50%">
+      <stop offset="0%" stop-color="#86ffff66"/>
+      <stop offset="100%" stop-color="#86ffff00"/>
+    </radialGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#base)"/>
+  <rect width="1920" height="1080" fill="url(#a)"/>
+  <g stroke="#9bffee66" stroke-width="1.8" opacity="0.7">
+    <rect x="250" y="170" width="690" height="360" rx="22"/>
+    <rect x="980" y="170" width="690" height="360" rx="22"/>
+    <rect x="120" y="590" width="1680" height="370" rx="16"/>
+  </g>
+  <g fill="none" stroke="#7be8ff66" stroke-width="2">
+    <line x1="200" y1="360" x2="1730" y2="360"/>
+    <line x1="200" y1="430" x2="1730" y2="430"/>
+    <line x1="200" y1="690" x2="1730" y2="690"/>
+    <line x1="300" y1="840" x2="1620" y2="840"/>
+  </g>
+  <g fill="#6ffff5" opacity="0.55">
+    <circle cx="430" cy="300" r="12"/><circle cx="930" cy="290" r="8"/>
+    <circle cx="1450" cy="320" r="10"/><circle cx="1710" cy="340" r="6"/>
+    <circle cx="1180" cy="590" r="12"/><circle cx="820" cy="880" r="9"/>
+  </g>
+  <g stroke="#7dffff" stroke-width="2" fill="none" opacity="0.7">
+    <path d="M450 620 Q700 500 940 620 T1400 620 T1750 620"/>
+    <path d="M250 780 Q580 730 960 790 T1700 745"/>
+  </g>
+  <rect x="0" y="0" width="1920" height="1080" fill="url(#r)" opacity="0.08"/>
+</svg>

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle v3 Amber Reforge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800&family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#080401;
+      --bg2:#170b02;
+      --panel:#1a0d04db;
+      --line:#ff9a3a4f;
+      --line2:#ffd38c66;
+      --txt:#ffe6bc;
+      --muted:#c49051;
+      --btn:url("./assets/moonidle_btn_amber_plate.svg");
+      --btn2:url("./assets/moonidle_btn_warn.svg");
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--txt);
+      font-family: "Chakra Petch", "Malgun Gothic", sans-serif;
+      background:
+        radial-gradient(circle at 50% 20%, #ff9b2f24 0, transparent 38%),
+        radial-gradient(circle at 8% 90%, #ff6a001f 0, transparent 28%),
+        radial-gradient(circle at 90% 88%, #ffb86b1a 0, transparent 24%),
+        linear-gradient(165deg, var(--bg), var(--bg2));
+      overflow-x: hidden;
+    }
+    .scan {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(180deg, transparent 48%, #ff9d3f13 50%, transparent 52%);
+      transform: translateY(-100%);
+      animation: scan 7s linear infinite;
+    }
+    .shell {
+      max-width: 1540px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .top {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: linear-gradient(180deg, #311705cc, #1f0f04dd);
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: inset 0 1px 0 #ffd2a629, 0 12px 22px #0009;
+    }
+    .brand h1 {
+      margin: 0;
+      font-family: Orbitron, sans-serif;
+      font-size: 1.18rem;
+      letter-spacing: .08em;
+      color: #ffcf8b;
+    }
+    .brand p {
+      margin: 3px 0 0;
+      font-size: .72rem;
+      color: var(--muted);
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .chips { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+    .chip {
+      border: 1px solid #f5b26558;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: .72rem;
+      color: #ffd8a7;
+      background: #ffab4c12;
+    }
+    .arena {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 290px 1fr 290px;
+      gap: 10px;
+      align-items: start;
+    }
+    .rail {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      box-shadow: inset 0 1px 0 #ffd4ac1f;
+      overflow: hidden;
+    }
+    .hd {
+      padding: 10px 11px;
+      border-bottom: 1px solid #ffffff1c;
+      font-size: .77rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #ffc176;
+      font-family: Orbitron, sans-serif;
+      display: flex;
+      justify-content: space-between;
+    }
+    .list { padding: 10px; display: grid; gap: 8px; }
+    .row {
+      border: 1px solid #ffba6930;
+      border-radius: 9px;
+      background: #ffffff07;
+      padding: 8px;
+    }
+    .line { display: flex; justify-content: space-between; gap: 8px; font-size: .82rem; }
+    .sub { margin-top: 3px; font-size: .67rem; color: var(--muted); }
+
+    .core {
+      border: 1px solid var(--line2);
+      border-radius: 16px;
+      background: linear-gradient(180deg, #201105d8, #150a03df);
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 #ffd5a524, 0 16px 32px #000a;
+      position: relative;
+    }
+    .core::before {
+      content: "";
+      position: absolute;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      left: 50%;
+      top: 46%;
+      transform: translate(-50%, -50%);
+      background:
+        radial-gradient(circle, #ffb05f2f 0, #ff7b0010 46%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .core-hd {
+      position: relative;
+      z-index: 2;
+      padding: 12px;
+      border-bottom: 1px solid #ffffff1c;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .core-hd h2 {
+      margin: 0;
+      font-family: Orbitron, sans-serif;
+      font-size: 1rem;
+      letter-spacing: .08em;
+      color: #ffd499;
+    }
+    .ring-zone {
+      position: relative;
+      z-index: 2;
+      padding: 16px 14px 10px;
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 10px;
+      align-items: center;
+    }
+    .ring {
+      margin: 0 auto;
+      width: 360px;
+      height: 360px;
+      border-radius: 50%;
+      border: 1px solid #ffb87055;
+      position: relative;
+      background:
+        radial-gradient(circle at center, #ffbd7a1f 0 28%, transparent 29%),
+        radial-gradient(circle at center, transparent 0 43%, #ff9e4333 44% 45%, transparent 46%),
+        radial-gradient(circle at center, transparent 0 59%, #ffd9a526 60% 61%, transparent 62%);
+      animation: spin 26s linear infinite;
+    }
+    .ring::before, .ring::after {
+      content: "";
+      position: absolute;
+      inset: 14%;
+      border-radius: 50%;
+      border: 1px dashed #ffcc8f44;
+    }
+    .ring::after { inset: 29%; border-style: solid; opacity: .8; }
+    .ring-center {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      width: 150px;
+    }
+    .ring-center b {
+      display: block;
+      font-family: Orbitron, sans-serif;
+      font-size: 1.5rem;
+      color: #ffd8a0;
+    }
+    .ring-center span {
+      font-size: .68rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .notes { display: grid; gap: 8px; }
+    .note {
+      border: 1px solid #ffbd7731;
+      border-radius: 10px;
+      background: #ffffff08;
+      padding: 9px;
+    }
+    .note b { font-size: .82rem; color: #ffd7a2; }
+    .note p { margin: 3px 0 0; font-size: .7rem; color: var(--muted); line-height: 1.4; }
+    .kpis {
+      position: relative;
+      z-index: 2;
+      margin: 0 14px 14px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .k {
+      border: 1px solid #ffc78933;
+      border-radius: 9px;
+      background: #ffffff07;
+      padding: 7px;
+    }
+    .k b { font-family: Orbitron, sans-serif; font-size: .94rem; }
+    .k div { margin-top: 3px; color: var(--muted); font-size: .65rem; }
+    .btn {
+      margin-top: 8px;
+      width: 100%;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px;
+      color: #fff2df;
+      font-family: Orbitron, sans-serif;
+      font-size: .68rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      text-align: left;
+      background: var(--btn) center/100% 100% no-repeat;
+      cursor: pointer;
+    }
+    .btn.hot { background-image: var(--btn2); }
+    .cam {
+      margin: 0 10px 10px;
+      border: 1px solid #ffbd742f;
+      border-radius: 10px;
+      height: 140px;
+      background: url("./assets/moonidle_hub_cam_industrial.svg") center/cover no-repeat;
+      filter: sepia(.5) hue-rotate(-10deg) saturate(1.2) brightness(.56);
+      position: relative;
+    }
+    .cam::after {
+      content: "HEAT CAM // TEST STAND";
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      font-size: .67rem;
+      color: #ffe1bc;
+      letter-spacing: .08em;
+    }
+    @media (max-width: 1260px) {
+      .arena { grid-template-columns: 1fr; }
+      .ring-zone { grid-template-columns: 1fr; }
+      .ring { width: 320px; height: 320px; }
+      .kpis { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 760px) {
+      .kpis { grid-template-columns: 1fr; }
+      .top { flex-direction: column; align-items: flex-start; }
+      .chips { justify-content: flex-start; }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes scan { to { transform: translateY(100%); } }
+  </style>
+</head>
+<body>
+  <div class="scan"></div>
+  <main class="shell">
+    <header class="top">
+      <div class="brand">
+        <h1>MoonIdle // Amber Reforge Command</h1>
+        <p>Prototype Lab to Launch Fleet - Engineering Control Core</p>
+      </div>
+      <div class="chips">
+        <span class="chip">Moonstone 126</span>
+        <span class="chip">Day 03:18</span>
+        <span class="chip">Reliability 93.1%</span>
+      </div>
+    </header>
+
+    <section class="arena">
+      <aside class="rail">
+        <div class="hd">Resource Rail <span>inputs</span></div>
+        <div class="list">
+          <article class="row"><div class="line"><span>Moonstone</span><strong>2.41M</strong></div><div class="sub">+15.8K/s · Mine Grid A-12</div></article>
+          <article class="row"><div class="line"><span>액체 산소</span><strong>802K</strong></div><div class="sub">+8.7K/s · Cryo Plant</div></article>
+          <article class="row"><div class="line"><span>촉매제</span><strong>193K</strong></div><div class="sub">+2.6K/s · Engine Bay B</div></article>
+          <article class="row"><div class="line"><span>연산 파워</span><strong>101K</strong></div><div class="sub">+1.2K/s · Sim Cluster</div></article>
+          <button class="btn">Pipeline Upgrade</button>
+        </div>
+      </aside>
+
+      <section class="core">
+        <div class="core-hd">
+          <h2>Mission Reactor Core</h2>
+          <span style="font-size:.68rem;color:var(--muted);letter-spacing:.12em;">BLOCK-I TO HEAVY PROGRESSION</span>
+        </div>
+        <div class="ring-zone">
+          <div class="ring">
+            <div class="ring-center">
+              <b>14m</b>
+              <span>Next Launch</span>
+            </div>
+          </div>
+          <aside class="notes">
+            <article class="note"><b>열팽창 보정 링</b><p>엔진 벽면 편차 감소, 제작 품질 안정화</p><button class="btn">Buy 1.6M</button></article>
+            <article class="note"><b>AI 고장 예측</b><p>비정상 패턴 조기 탐지, 실패율 감소</p><button class="btn">Buy 180K</button></article>
+            <article class="note"><b>복합 차폐재</b><p>장기 미션 온도 편차 완화</p><button class="btn hot">Buy 520K</button></article>
+          </aside>
+        </div>
+        <div class="kpis">
+          <div class="k"><b>9.48 km/s</b><div>Delta-v</div></div>
+          <div class="k"><b>1.61</b><div>TWR</div></div>
+          <div class="k"><b>93.1%</b><div>신뢰도</div></div>
+          <div class="k"><b>51%</b><div>품질</div></div>
+        </div>
+      </section>
+
+      <aside class="rail">
+        <div class="hd">Launch Rail <span>slots</span></div>
+        <div class="list">
+          <article class="row"><div class="line"><span>Slot 1 · Block-I</span><span>진행 14m 08s</span></div><div class="sub">회수율 44% · 안정적</div></article>
+          <article class="row"><div class="line"><span>Slot 2 · Heavy</span><span>발사 대기</span></div><button class="btn">Queue Launch</button></article>
+          <article class="row"><div class="line"><span>Slot 3</span><span>잠금</span></div><button class="btn hot">Expand Dock</button></article>
+        </div>
+        <div class="cam"></div>
+        <button class="btn hot" style="margin:0 10px 10px;width:calc(100% - 20px);">Run Daily Briefing</button>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,23 @@
+  ASSEMBLY TOOLS — SECTOR 7
+  ═══════════════════════════════
+
+  [TORQUE     ]  [WELDING    ]  [PRESSURE   ]
+  [ WRENCH    ]  [  ARC      ]  [  TEST     ]
+  |     ╔═╗   |   )  ))) )     ┌──────────┐
+  |  ═══╬═╬═══|   )  ))) )     │  ↑  ↑  ↑ │
+  |  ───╬═╬── |   ) *))) )     │  │  │  │ │
+  |     ╚═╝   |    \)  ) /     │  gauge   │
+  |___________|   \_____/      └──────────┘
+   42 N*m SET    6000C ARC      3.2 bar OK
+
+  [ALIGNMENT  ]  [RIVET GUN  ]  [SEALANT   ]
+  [  LASER    ]  [  PNEUM    ]  [ DISPENSER ]
+  |   ─*──────|  |  ╔═╗ (!)  |  |  ┌─┐    |
+  |    *      |  |  ║█║ POP  |  |  │~│→→  |
+  |   ─*──────|  |  ║█╠──*   |  |  │~│→→  |
+  |   BEAM    |  |  ╚═╝      |  |  └─┘    |
+  |___________|  |___________|  |__________|
+   0.01mm TOL    1200 riv/hr    SILICONE OK
+
+  LAST CALIBRATED: D+51 14:22
+  STATUS: ALL TOOLS NOMINAL

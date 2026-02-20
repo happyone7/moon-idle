@@ -1,0 +1,296 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoonIdle Mockup - Lunar Ops Arcade</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;700&family=Titillium+Web:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#060c14;
+      --bg-grad:radial-gradient(circle at 15% -12%, #2f6bff66 0, transparent 52%), radial-gradient(circle at 85% 118%, #ff7b3c55 0, transparent 48%), linear-gradient(160deg,#05070f 0,#070f1b 35%, #0a1523 100%);
+      --panel:#0d162bcc;
+      --panel2:#12203acc;
+      --line:#ff9a56;
+      --line2:#7ef2ff;
+      --text:#ecf8ff;
+      --muted:#aec7d9;
+      --good:#58f6b6;
+      --warn:#ff8b6a;
+      --bad:#ff5967;
+      --frame:url("./assets/moonidle_panel_frame.svg");
+      --frameDark:url("./assets/moonidle_panel_border_dark.svg");
+      --btn-primary:url("./assets/moonidle_btn_primary.svg");
+      --btn-secondary:url("./assets/moonidle_btn_secondary.svg");
+      --btn-warn:url("./assets/moonidle_btn_warn.svg");
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;min-height:100%;}
+    body{
+      color:var(--text);
+      font-family: "Titillium Web", "Malgun Gothic", sans-serif;
+      background:var(--bg);
+      overflow-x:hidden;
+      position:relative;
+    }
+    .stage{position:fixed;inset:0;z-index:-3;background:var(--bg-grad)}
+    .stage::after{
+      content:"";
+      position:absolute;inset:0;
+      background-image:linear-gradient(#fff2 1px,transparent 1px),linear-gradient(90deg,#fff1 1px,transparent 1px);
+      background-size:42px 42px;
+      opacity:.08;
+      animation:gridShift 48s linear infinite;
+    }
+    .scan{
+      position:fixed;inset:0;pointer-events:none;z-index:-2;
+      background:linear-gradient(180deg,transparent 50%,#ff9d4d11 50%,transparent 52%);
+      transform:translateY(-100%);
+      animation:scanline 6.5s linear infinite;
+    }
+    .noise{
+      position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.07;
+      background:repeating-linear-gradient(0deg,#fff2 0 1px,transparent 1px 3px);
+      mix-blend-mode:screen;animation:flicker .1s steps(2) infinite;
+    }
+    .aurora{position:fixed;inset:0;z-index:-2;pointer-events:none;filter:blur(60px);opacity:.4;
+      background:radial-gradient(circle at 75% 15%,#ff7f3a66,transparent 45%),radial-gradient(circle at 28% 86%,#53e9ff66,transparent 40%),radial-gradient(circle at 52% 52%,#ffdd9c40,transparent 48%);
+    }
+
+    .page{max-width:1480px;margin:0 auto;padding:14px;}
+    .header{
+      border:1px solid var(--line);
+      border-radius:18px;background:linear-gradient(180deg,#1f2b45ee,#121b2de0),var(--frame);
+      background-size:cover,250px 250px;
+      padding:10px 12px;display:flex;justify-content:space-between;align-items:center;
+      gap:10px;box-shadow:0 10px 32px #0009, inset 0 1px 0 #fff3;
+      position:relative;overflow:hidden;
+    }
+    .header::after{
+      content:"";position:absolute;left:16px;top:8px;width:190px;height:140px;
+      border-radius:50%;border:1px solid #ffae6f44;transform:rotate(22deg);animation:spin 24s linear infinite;
+    }
+    .brand{font-family:Oxanium,sans-serif;letter-spacing:.9px;font-size:1.25rem;color:#fff;text-transform:uppercase;text-shadow:0 2px 10px #ff9e4c55;}
+    .tagRow{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+    .tag{border:1px solid #95c9ff52;border-radius:999px;padding:4px 10px;font-size:.76rem;background:#66a4ff17;color:#d4ecff}
+    .tag.hot{border-color:#ff9272;color:#ffd5c8;background:#ff6b3d22}
+
+    .layout{margin-top:12px;display:grid;grid-template-columns:320px 1.1fr 390px;gap:10px;}
+    .panel{border:1px solid #ffffff24;border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--panel2)),var(--frameDark);background-size:cover,260px 260px;box-shadow:0 10px 28px #0009, inset 0 1px 0 #fff2;overflow:hidden;position:relative;}
+    .panel::before{
+      content:"";position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(120deg,transparent 0, #ffffff10 38%, transparent 58%);
+      transform:translateX(-110%);
+      animation:panelSweep 6s linear infinite;
+    }
+    .panelHead{position:relative;display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px 9px;border-bottom:1px solid #ffffff2a;font-family:Oxanium,sans-serif;letter-spacing:1px;font-size:.86rem;color:#9fd6ff;}
+    .panelHead small{font-size:.64rem;color:var(--muted);letter-spacing:.6px;font-family:"Titillium Web",sans-serif}
+
+    .resource{padding:10px;display:grid;gap:8px}
+    .tile{border:1px solid #ffffff23;border-radius:10px;padding:8px;background:#ffffff0c}
+    .tile-row{display:flex;justify-content:space-between;gap:10px}
+    .tile-title{font-size:.82rem}
+    .tile-sub{margin-top:3px;font-size:.72rem;color:var(--muted)}
+
+    .center{min-height:680px}
+    .hero{position:relative;height:246px;overflow:hidden;border-bottom:1px solid #ff9e5b24}
+    .heroBg{position:absolute;inset:0;background:
+      linear-gradient(180deg,transparent,#0d172eff 45%, #050f26db 100%),
+      url("./assets/moonidle_hangar_bg_lab_arcade.svg") center/cover no-repeat;
+      filter:saturate(1.05) contrast(1.04) brightness(.58);
+      transform:scale(1.03);
+      animation:heroFloat 14s ease-in-out infinite;
+    }
+    .heroPanel{position:absolute;left:12px;right:12px;bottom:12px;padding:12px;background:linear-gradient(90deg,#112140ed 0,transparent 100%);border-left:3px solid #ffb26e;z-index:3}
+    .heroPanel h1{margin:0 0 4px;font-family:Oxanium,sans-serif;font-size:1.24rem;letter-spacing:.9px;color:#fff}
+    .heroPanel p{margin:0;color:#d1e5ff;font-size:.82rem;line-height:1.45}
+
+    .ticker{margin:10px;border:1px solid #ff8c5c40;border-radius:10px;padding:9px;background:#091b32cc;position:relative;min-height:62px}
+    .ticker ul{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:.76rem;color:#d8e8ff}
+
+    .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 10px 0 10px}
+    .kpi{border:1px solid #ffffff24;border-radius:10px;padding:8px;background:#ffffff09}
+    .kpi b{font-family:Oxanium,sans-serif;font-size:.99rem;letter-spacing:.9px;color:#ffde98}
+    .kpi .label{font-size:.65rem;color:#b5cada;margin-top:4px}
+
+    .upgrades{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px}
+    .card{border:1px solid #ffffff24;border-radius:10px;padding:8px;background:linear-gradient(180deg,#ffffff03,#ffffff00);display:flex;flex-direction:column;justify-content:space-between;min-height:135px}
+    .card .name{font-size:.84rem;font-family:Oxanium,sans-serif;}
+    .card .desc{color:var(--muted);font-size:.71rem;line-height:1.38;margin-top:2px}
+    .btn{
+      margin-top:8px;border:1px solid #7df5a66b;background:var(--btn-primary);
+      background-size:100% 100%;
+      background-repeat:no-repeat;
+      background-position:center;
+      border-radius:9px;padding:7px 8px;color:#fef4e8;font-size:.72rem;box-shadow:inset 0 0 0 1px #ffe4bc35;text-align:left;cursor:pointer
+    }
+    .btn.alt{background:var(--btn-secondary)}
+
+    .right .panelHead small{color:#ffc0a0}
+    .status{margin:10px;border:1px solid #ffffff22;border-radius:10px;padding:9px;background:#ffffff07}
+    .row{display:flex;justify-content:space-between;font-size:.8rem;gap:8px}
+    .row + .row{margin-top:5px}
+    .queue{padding:0 10px}
+    .queueItem{margin-bottom:8px;border:1px solid #ffffff27;border-radius:10px;padding:8px;background:#ffffff08;position:relative}
+    .queueItem::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#ffbf8b22,transparent 42%);opacity:0;transition:opacity .2s ease}
+    .queueItem.active::before{opacity:1}
+    .chip{border:1px solid #ffffff36;border-radius:999px;padding:2px 8px;font-size:.64rem}
+    .progress{height:6px;border-radius:999px;background:#ffffff18;margin-top:6px;overflow:hidden}
+    .fill{height:100%;width:58%;background:linear-gradient(90deg,#ff9966,#ffd56f);animation:progress 2.6s ease-in-out infinite}
+    .screen{margin:0 10px;height:132px;border:1px solid #ffffff22;border-radius:10px;background:url("./assets/moonidle_hub_cam_lab_arcade.svg") center/cover no-repeat;filter:brightness(.52) saturate(.75);position:relative}
+    .screen:after{content:"LIVE CAM :: REENTRY GRID";position:absolute;left:9px;top:7px;color:#c9e2ff;font-size:.72rem;font-family:Oxanium,sans-serif;letter-spacing:.75px}
+    .audio{margin:0 10px;padding:8px 9px;border:1px solid #ffffff24;border-radius:10px;background:#0a1a36e0}
+    .audio label{font-size:.72rem;color:#b7ceee;display:block;margin-bottom:4px}
+    audio{width:100%;height:29px}
+    .cta{margin:10px 10px 12px;width:calc(100% - 20px);border:0;border-radius:10px;padding:11px 12px;font-family:Oxanium,sans-serif;letter-spacing:.8px;color:#fff;background:var(--btn-warn);background-size:100% 100%;background-repeat:no-repeat;background-position:center;box-shadow:inset 0 0 0 1px #ffd7aa;cursor:pointer}
+
+    @media (max-width:1180px){
+      .layout{grid-template-columns:1fr}
+      .kpis{grid-template-columns:1fr 1fr}
+      .upgrades{grid-template-columns:1fr}
+    }
+    @media (max-width:760px){
+      .brand{font-size:1.02rem}.header{flex-direction:column;align-items:flex-start}.tagRow{justify-content:flex-start}
+      .kpis{grid-template-columns:1fr}
+    }
+    @keyframes gridShift{0%{background-position:0 0,0 0}100%{background-position:42px 42px,-42px -42px}}
+    @keyframes scanline{to{transform:translateY(100%)}}
+    @keyframes flicker{0%,88%{opacity:.03}89%,90%{opacity:.07}100%{opacity:.02}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes panelSweep{0%{transform:translateX(-120%)}100%{transform:translateX(130%)}}
+    @keyframes heroFloat{0%,100%{transform:scale(1.04)}50%{transform:scale(1.01)}}
+    @keyframes progress{0%{width:44%}50%{width:68%}100%{width:58%}}
+  </style>
+</head>
+<body>
+  <div class="aurora"></div>
+  <div class="stage"></div>
+  <div class="scan"></div>
+  <div class="noise"></div>
+
+  <main class="page">
+    <header class="header">
+      <div>
+        <div class="brand">MoonIdle // ORBITAL FACTORY // LAB ORB-01</div>
+      </div>
+      <div class="tagRow">
+        <span class="tag">Moonstone 126</span>
+        <span class="tag">연구일지 03:18</span>
+        <span class="tag hot">수율 +8.8%</span>
+      </div>
+    </header>
+
+    <section class="layout">
+      <section class="panel">
+        <div class="panelHead">리소스 허브 <small>연료, 탄소계, 계산능력</small></div>
+        <div class="resource">
+          <div class="tile">
+            <div class="tile-row"><span>Moonstone</span><strong>2.41M</strong></div>
+            <div class="tile-sub tile-row"><span>+15.8K/s</span><span>Mine Grid A-12</span></div>
+          </div>
+          <div class="tile">
+            <div class="tile-row"><span>액체 산소</span><strong>802K</strong></div>
+            <div class="tile-sub tile-row"><span>+8.7K/s</span><span>Cryo Refinery</span></div>
+          </div>
+          <div class="tile">
+            <div class="tile-row"><span>촉매제</span><strong>193K</strong></div>
+            <div class="tile-sub tile-row"><span>+2.6K/s</span><span>Engine Bay B</span></div>
+          </div>
+          <div class="tile">
+            <div class="tile-row"><span>연산 파워</span><strong>101K</strong></div>
+            <div class="tile-sub tile-row"><span>+1.2K/s</span><span>Mission Sim Farm</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel center">
+        <div class="panelHead">미션 제어부 <small>학술 로그 + 발사 통합 대시보드</small></div>
+        <div class="hero">
+          <div class="heroBg"></div>
+          <div class="heroPanel">
+            <h1>첫 발사 1~2시간, 이후 3배 성장 설계</h1>
+            <p>랩 스테이션은 실제 공정값 기반으로 동작합니다. 발사 슬롯, 회수율, 오차 허용치, 연료 배합 계수는 플레이 루프 전체를 결정합니다.</p>
+          </div>
+        </div>
+        <div class="ticker">
+          <ul>
+            <li>고정점 보정: 회수 캡슐 착륙 궤도 오차가 1.8m에서 1.1m로 감소</li>
+            <li>점화 제어: 엔진 이완 프로파일 업데이트 완료, 안전율 98.4%</li>
+            <li>다음 미션: 2단 고추력 노즐 세트 완성 시 탑재량 +2.4t</li>
+          </ul>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><b>9.48 km/s</b><div class="label">Δv</div></div>
+          <div class="kpi"><b>1.61</b><div class="label">TWR</div></div>
+          <div class="kpi"><b>93.1%</b><div class="label">신뢰성</div></div>
+          <div class="kpi"><b>51%</b><div class="label">품질</div></div>
+        </div>
+        <div class="upgrades">
+          <article class="card">
+            <div>
+              <div class="name">고압 산소 펌프 업그레이드</div>
+              <div class="desc">점화 구간 열부하를 낮춰 초기 상승 구간의 엔진 케미컬 변동을 줄입니다.</div>
+            </div>
+            <button class="btn">구매: Moonstone 1.6M / 촉매 260K</button>
+          </article>
+          <article class="card">
+            <div>
+              <div class="name">AI 고장 예측 코어</div>
+              <div class="desc">실시간 센서 피드백으로 이상 징후를 탐지해 정지 시간을 반으로 줄입니다.</div>
+            </div>
+            <button class="btn alt">구매: Moonstone 180K</button>
+          </article>
+          <article class="card">
+            <div>
+              <div class="name">리브 하우징 강화</div>
+              <div class="desc">착륙 충격 흡수를 높여 회수 성공 확률과 재사용 횟수를 개선합니다.</div>
+            </div>
+            <button class="btn">구매: Moonstone 90K</button>
+          </article>
+          <article class="card">
+            <div>
+              <div class="name">차폐 복합체</div>
+              <div class="desc">열 편차를 잡아 구조 응력을 낮추고 연속 발사 페이스를 높입니다.</div>
+            </div>
+            <button class="btn alt">구매: Moonstone 520K / Moonstone 72K</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel right">
+        <div class="panelHead">발사 큐 <small>슬롯 확장·운용 모듈</small></div>
+        <div class="status">
+          <div class="row"><span>주간 우선 과제</span><span>Moonstone Heavy</span></div>
+          <div class="row"><span>다음 발사까지</span><span>4h 00m</span></div>
+          <div class="row"><span>연료 효율</span><span>+37%</span></div>
+          <div class="row"><span>현재 안정도</span><span style="color:var(--good)">93.1%</span></div>
+        </div>
+        <div class="queue">
+          <div class="queueItem active">
+            <div class="row"><span>슬롯 1 · Block-I</span><span class="chip" style="color:var(--good)">진행 14m08s</span></div>
+            <div class="progress"><div class="fill"></div></div>
+          </div>
+          <div class="queueItem">
+            <div class="row"><span>슬롯 2 · Moonstone Heavy</span><span class="chip" style="color:var(--good);border-color:#61f6b0">대기 완료</span></div>
+            <button class="btn">발사 큐 등록</button>
+          </div>
+          <div class="queueItem">
+            <div class="row"><span>슬롯 3 · 연구형 실험체</span><span class="chip" style="color:#c7d9ee">잠금 해제 조건</span></div>
+            <button class="btn alt">기계실 확장</button>
+          </div>
+        </div>
+        <div class="screen"></div>
+        <div class="audio">
+          <label>Lab BGM (local)</label>
+          <audio controls loop><source src="./assets/moonidle_industrial_bgm_v1.wav" type="audio/wav" /></audio>
+        </div>
+        <button class="cta">일일 브리핑 보고 후 즉시 업그레이드</button>
+      </section>
+    </section>
+  </main>
+</body>
+</html>
+
+

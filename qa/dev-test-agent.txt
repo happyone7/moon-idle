@@ -1,0 +1,2 @@
+﻿QA_RESULT=PASS
+notes=smoke ok
