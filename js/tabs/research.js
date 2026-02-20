@@ -153,13 +153,27 @@ const TECH_VIZ = {
 // Legacy compat stubs
 const TIER_GROUPS = [];
 function buyUpgrade(uid) { startResearch(uid); }
-function selectTech(uid) { /* legacy stub */ }
 function selectTech2(uid) { /* legacy stub */ }
 function _updateTechDetailBtnState() { /* legacy stub */ }
 function renderTechDetail(uid) { /* legacy stub */ }
 
+// ─── 기술 선택 함수 ─────────────────────────────────────
+function selectTech(uid) {
+  if (typeof gs !== 'undefined') gs.selectedTech = uid;
+  renderResearchTab();
+}
+
+// ─── 연구 취소 함수 ─────────────────────────────────────
+function cancelResearch(uid) {
+  if (!gs.researchProgress || !gs.researchProgress[uid]) return;
+  delete gs.researchProgress[uid];
+  if (gs.selectedTech === uid) gs.selectedTech = null;
+  notify('연구 취소됨', 'red');
+  renderAll();
+}
+
 // ============================================================
-//  RENDER: RESEARCH TAB — branch column layout
+//  RENDER: RESEARCH TAB — 3-column full layout
 // ============================================================
 function renderResearchTab() {
   const layout = document.getElementById('research-layout');
@@ -168,18 +182,69 @@ function renderResearchTab() {
   const prod = getProduction();
   const rpRate = prod.research || 0;
   const researchedCount = Object.keys(gs.upgrades).filter(k => gs.upgrades[k]).length;
-  const activeCount = gs.researchProgress ? Object.keys(gs.researchProgress).length : 0;
-
-  // ── TOP BAR: RP 현황 ────────────────────────────────────
+  const activeIds = gs.researchProgress ? Object.keys(gs.researchProgress) : [];
   const maxSlots = gs.maxResearchSlots || 2;
-  const topbarHtml = `<div class="rsh-topbar">
-  <span>RP <b>${fmt(gs.res.research || 0)}</b></span>
-  <span>+${fmtDec(rpRate,2)}/s</span>
-  <span>완료 ${researchedCount}/${UPGRADES.length}</span>
-  ${activeCount > 0 ? `<span style="color:var(--amber)">연구 중 [${activeCount}/${maxSlots} 슬롯]</span>` : `<span style="color:var(--dim)">슬롯 비어있음 [0/${maxSlots}]</span>`}
+  const selectedUid = gs.selectedTech || null;
+
+  // ── 좌측: 연구 큐 ────────────────────────────────────────
+  let queueHtml = `<div class="rsh-queue-header">// 연구 현황 [${activeIds.length}/${maxSlots} 슬롯]</div>`;
+
+  if (activeIds.length === 0) {
+    queueHtml += `<div class="rsh-queue-empty">진행 중인 연구 없음<br>기술 트리에서 연구를 선택하세요</div>`;
+  } else {
+    activeIds.forEach(uid => {
+      const upg = UPGRADES.find(u => u.id === uid);
+      if (!upg) return;
+      const prog = gs.researchProgress[uid];
+      const techTime = upg.time || 60;
+      const timeSpent = prog.timeSpent || 0;
+      const pct = Math.min(100, Math.floor((timeSpent / techTime) * 100));
+
+      // branch 이름 찾기
+      let branchLabel = '';
+      RESEARCH_BRANCHES.forEach(b => { if (b.nodes.includes(uid)) branchLabel = b.label; });
+
+      // ETA
+      let etaStr = '';
+      if (typeof getResearchETA === 'function') {
+        const etaSec = getResearchETA(uid);
+        if (!isFinite(etaSec)) etaStr = '일시정지 — RP 없음';
+        else {
+          const h = Math.floor(etaSec / 3600);
+          const m = Math.floor((etaSec % 3600) / 60);
+          const s = Math.floor(etaSec % 60);
+          etaStr = 'ETA: ' + (h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`);
+        }
+      }
+
+      // ASCII 아트
+      const asciiArt = (RESEARCH_ASCII_ART && (RESEARCH_ASCII_ART[uid] || RESEARCH_ASCII_ART._default)) || '';
+      const asciiHtml = asciiArt
+        ? `<div class="rsh-ascii-panel"><pre class="rsh-ascii-art">${asciiArt}</pre><div class="rsh-ascii-scanline"></div></div>`
+        : '';
+
+      const amberBar = branchLabel === '열보호' ? ' amber-fill' : '';
+
+      queueHtml += `<div class="rsh-queue-item">
+  <div class="rsh-queue-item-hd">${upg.icon} ${upg.name}</div>
+  <div class="rsh-queue-item-branch">${branchLabel} 브랜치</div>
+  ${asciiHtml}
+  <div class="rsh-bc-bar"><div class="rsh-bc-bar-fill${amberBar}" style="width:${pct}%"></div></div>
+  <div style="font-size:10px;color:var(--green-mid);margin-top:3px">${pct}% · ${etaStr}</div>
+  <span class="rsh-queue-cancel" onclick="cancelResearch('${uid}')">■ 취소</span>
+</div>`;
+    });
+  }
+
+  // RP 생산 현황
+  const labCount = gs.buildings.research_lab || 0;
+  queueHtml += `<div class="rsh-rp-panel" style="margin-top:8px">
+  RP: <b>${fmt(gs.res.research || 0)}</b> (+${fmtDec(rpRate,2)}/s)<br>
+  ${labCount > 0 ? `연구소 ×${labCount}` : '연구소 없음'}
+  · 완료 ${researchedCount}/${UPGRADES.length}
 </div>`;
 
-  // ── BRANCH COLUMNS ──────────────────────────────────────
+  // ── 중앙: 기술 브랜치 컬럼 ───────────────────────────────
   let branchesHtml = '';
   RESEARCH_BRANCHES.forEach(branch => {
     let cardsHtml = '';
@@ -191,61 +256,41 @@ function renderResearchTab() {
       const purchased  = !!gs.upgrades[uid];
       const inProgress = !!(gs.researchProgress && gs.researchProgress[uid]);
       const reqMet     = !upg.req || !!gs.upgrades[upg.req];
+      const isSelected = uid === selectedUid;
 
-      // Card state
       let cardClass, stateHtml;
       if (purchased) {
         cardClass = 'rsh-bcard-complete';
         stateHtml = `<div class="rsh-bc-status">✓ 완료</div>`;
       } else if (inProgress) {
+        // 진행 중은 좌측 큐에서 표시 — 중앙에선 간략히
         const prog = gs.researchProgress[uid];
-        const rpTotal = upg.cost.research || 1;
-        const pct = Math.min(100, Math.floor((prog.rpSpent / rpTotal) * 100));
-        const amberClass = branch.id === 'T' ? ' amber-fill' : '';
-        // ETA 계산 (getResearchETA가 있으면 사용)
-        let etaStr = '';
-        if (typeof getResearchETA === 'function') {
-          const etaSec = getResearchETA(uid);
-          if (etaSec === Infinity || etaSec > 864000) etaStr = ' · ∞';
-          else {
-            const h = Math.floor(etaSec / 3600);
-            const m = Math.floor((etaSec % 3600) / 60);
-            const s = Math.floor(etaSec % 60);
-            etaStr = h > 0 ? ` · ${h}h ${m}m` : ` · ${m}m ${s}s`;
-          }
-        }
-        // ASCII 아트 패널
-        const asciiArt = (RESEARCH_ASCII_ART && (RESEARCH_ASCII_ART[uid] || RESEARCH_ASCII_ART._default)) || '';
-        const asciiHtml = asciiArt
-          ? `<div class="rsh-ascii-panel"><pre class="rsh-ascii-art">${asciiArt}</pre><div class="rsh-ascii-scanline"></div></div>`
-          : '';
+        const techTime = upg.time || 60;
+        const pct = Math.min(100, Math.floor(((prog.timeSpent || 0) / techTime) * 100));
+        const amberBar = branch.id === 'T' ? ' amber-fill' : '';
         cardClass = 'rsh-bcard-progress';
-        stateHtml = `${asciiHtml}<div class="rsh-bc-bar"><div class="rsh-bc-bar-fill${amberClass}" style="width:${pct}%"></div></div>
-<div class="rsh-bc-status">${pct}%${etaStr} · RP ${fmt(prog.rpSpent)}/${fmt(rpTotal)}</div>`;
+        stateHtml = `<div class="rsh-bc-bar" style="margin-top:4px"><div class="rsh-bc-bar-fill${amberBar}" style="width:${pct}%"></div></div>
+<div class="rsh-bc-status">${pct}% 진행 중</div>`;
       } else if (reqMet) {
+        cardClass = 'rsh-bcard-available' + (isSelected ? ' rsh-bcard-selected' : '');
         const rpCost = upg.cost.research || 0;
-        cardClass = 'rsh-bcard-available';
-        stateHtml = `<div class="rsh-bc-cost">RP ${fmt(rpCost)}</div>`;
+        const timeMin = Math.ceil((upg.time || 60) / 60);
+        stateHtml = `<div class="rsh-bc-cost">RP ${fmt(rpCost)} · ~${timeMin}분</div>`;
       } else {
         cardClass = 'rsh-bcard-locked';
         stateHtml = `<div class="rsh-bc-status">\u{1F512} 잠금</div>`;
       }
 
-      // Display ID (e.g. S01, P02)
-      const displayId = upg.icon;
-
-      // Arrow before card (except first)
       if (idx > 0) {
         const arrowColor = purchased ? 'var(--green)' : inProgress ? 'var(--amber)' : 'var(--green-dim)';
         cardsHtml += `<div class="rsh-branch-arrow" style="color:${arrowColor}">│</div>`;
       }
 
-      const clickAttr = (!purchased && !inProgress && reqMet)
-        ? `onclick="startResearch('${uid}')" style="cursor:pointer"`
-        : '';
+      // 클릭: 선택 (구매된 카드 제외)
+      const clickAttr = (!purchased) ? `onclick="selectTech('${uid}')" style="cursor:pointer"` : '';
 
       cardsHtml += `<div class="${cardClass}" ${clickAttr}>
-  <div class="rsh-bc-hd"><span class="rsh-bc-id">${displayId}</span> ${upg.name}</div>
+  <div class="rsh-bc-hd"><span class="rsh-bc-id">${upg.icon}</span> ${upg.name}</div>
   <div class="rsh-bc-desc">${upg.desc}</div>
   ${stateHtml}
 </div>`;
@@ -257,14 +302,93 @@ function renderResearchTab() {
 </div>`;
   });
 
-  const labCount = gs.buildings.research_lab || 0;
-  const rpPanelHtml = labCount > 0
-    ? `<div class="rsh-rp-panel">연구소 ×${labCount} → <b>+${fmtDec(rpRate,2)}/s</b> TOTAL</div>`
-    : `<div class="rsh-rp-panel" style="color:var(--dim)">연구소 없음 — RP 생산 불가</div>`;
+  // 완료된 기술 목록 (하단)
+  const completedList = UPGRADES.filter(u => gs.upgrades[u.id]);
+  let completedHtml = '';
+  if (completedList.length > 0) {
+    completedHtml = `<div class="rsh-completed-strip">
+  <span style="color:var(--green-mid);font-size:10px">// COMPLETED TECHNOLOGIES — ${completedList.length}개 완료</span>
+  <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">
+    ${completedList.map(u => `<span style="font-size:9px;color:var(--green);border:1px solid var(--green-dim);padding:1px 5px;border-radius:2px">${u.icon} ${u.name}</span>`).join('')}
+  </div>
+</div>`;
+  }
 
-  layout.innerHTML = `${topbarHtml}
-${rpPanelHtml}
-<div class="rsh-branches-row">
-  ${branchesHtml}
+  // ── 우측: 기술 상세 패널 ──────────────────────────────────
+  let detailHtml = '';
+  if (selectedUid) {
+    const upg = UPGRADES.find(u => u.id === selectedUid);
+    if (upg) {
+      const purchased  = !!gs.upgrades[selectedUid];
+      const inProgress = !!(gs.researchProgress && gs.researchProgress[selectedUid]);
+      const reqMet     = !upg.req || !!gs.upgrades[upg.req];
+      const canStart   = !purchased && !inProgress && reqMet && activeIds.length < maxSlots;
+
+      // 비용 표시
+      const costParts = Object.entries(upg.cost).map(([r, v]) => {
+        const res = (typeof RESOURCES !== 'undefined' ? RESOURCES : []).find(x => x.id === r);
+        const label = res ? res.name : r;
+        return `${label}: ${fmt(v)}`;
+      }).join(' / ');
+
+      // 소요 시간
+      const techTime = upg.time || 60;
+      const timeMin = Math.floor(techTime / 60);
+      const timeSec = techTime % 60;
+      const timeStr = timeMin > 0 ? `${timeMin}분 ${timeSec > 0 ? timeSec + '초' : ''}` : `${timeSec}초`;
+
+      // 선행 기술
+      const reqHtml = upg.req
+        ? `<div class="rsh-detail-value">${upg.req} ${gs.upgrades[upg.req] ? '✓' : '✗ 미완료'}</div>`
+        : `<div class="rsh-detail-value">없음</div>`;
+
+      // 버튼 상태
+      let btnHtml = '';
+      if (purchased) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">✓ 연구 완료</div>`;
+      } else if (inProgress) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">▶ 연구 진행 중</div>`;
+      } else if (!reqMet) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">🔒 선행 기술 필요</div>`;
+      } else if (activeIds.length >= maxSlots) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">슬롯 가득 찼음</div>`;
+      } else {
+        btnHtml = `<div class="rsh-detail-btn" onclick="startResearch('${selectedUid}');renderAll()">▶ 연구 시작</div>`;
+      }
+
+      detailHtml = `<div class="rsh-detail-panel">
+  <div class="rsh-detail-title">${upg.name}</div>
+  <div class="rsh-detail-id">${upg.icon} — ${upg.desc}</div>
+
+  <div class="rsh-detail-section">
+    <div class="rsh-detail-label">비용</div>
+    <div class="rsh-detail-value">${costParts}</div>
+  </div>
+
+  <div class="rsh-detail-section">
+    <div class="rsh-detail-label">소요 시간</div>
+    <div class="rsh-detail-value">${timeStr}</div>
+  </div>
+
+  <div class="rsh-detail-section">
+    <div class="rsh-detail-label">선행 기술</div>
+    ${reqHtml}
+  </div>
+
+  ${btnHtml}
+</div>`;
+    }
+  } else {
+    detailHtml = `<div class="rsh-detail-panel"><div class="rsh-detail-empty">← 기술 트리에서<br>기술을 선택하세요</div></div>`;
+  }
+
+  // ── 최종 레이아웃 조합 ────────────────────────────────────
+  layout.innerHTML = `<div class="rsh-full-layout">
+  <div class="rsh-col-left">${queueHtml}</div>
+  <div class="rsh-col-center">
+    <div class="rsh-branches-row">${branchesHtml}</div>
+    ${completedHtml}
+  </div>
+  <div class="rsh-col-right">${detailHtml}</div>
 </div>`;
 }
