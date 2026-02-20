@@ -146,6 +146,8 @@ const TECH_VIZ = {
   fusion:             { lines: ['▓▓▓▓▓▓▓▓▓▓▓ ← 플라즈마', '▓▓▓▓▓▓▓▓▓▓ ← 자기 봉입', '▓▓▓▓▓▓▓▓▓ ← 중성자'], stat: '+22 ISP / +120kN' },
   reliability:        { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 배선 품질', '▓▓▓▓▓▓▓▓▓ ← 이중화', '▓▓▓▓▓▓▓▓▓▓ ← 테스트 커버'], stat: '+15% RELIABILITY' },
   multipad:           { lines: ['▓▓▓▓▓▓▓▓▓ ← 발사대 추가', '▓▓▓▓▓▓▓▓▓▓ ← 가트리 시스템', '▓▓▓▓▓▓▓▓ ← 연결부'], stat: '+1 ASSEMBLY SLOT' },
+  auto_worker_assign: { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 배치 알고리즘', '▓▓▓▓▓▓▓▓▓ ← 인원 최적화', '▓▓▓▓▓▓▓▓ ← 스케줄링'], stat: 'AUTO WORKER' },
+  auto_assemble_restart: { lines: ['▓▓▓▓▓▓▓▓▓ ← 공정 자동화', '▓▓▓▓▓▓▓▓▓▓ ← 조립 시퀀서', '▓▓▓▓▓▓▓▓ ← 재시작 로직'], stat: 'AUTO ASSEMBLE' },
 };
 
 // Tech tier groupings for vertical layout
@@ -156,7 +158,8 @@ const TIER_GROUPS = [
   { label: 'TIER-3  //  고급 공학',    nodes: ['automation', 'rocket_eng', 'reliability', 'lightweight'] },
   { label: 'TIER-4  //  우주 공학',    nodes: ['fusion', 'multipad', 'launch_ctrl'] },
   { label: 'TIER-5  //  임무 시스템',  nodes: ['mission_sys'] },
-]; // TIER-6 제거: auto_worker_assign/auto_assemble_restart는 효과 없어 삭제됨 (DESIGN-002)
+  { label: 'TIER-6  //  자동화 연구', nodes: ['auto_worker_assign', 'auto_assemble_restart'] },
+];
 
 function buyUpgrade(uid) {
   const upg = UPGRADES.find(u => u.id === uid);
