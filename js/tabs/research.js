@@ -171,11 +171,12 @@ function renderResearchTab() {
   const activeCount = gs.researchProgress ? Object.keys(gs.researchProgress).length : 0;
 
   // ── TOP BAR: RP 현황 ────────────────────────────────────
+  const maxSlots = gs.maxResearchSlots || 2;
   const topbarHtml = `<div class="rsh-topbar">
   <span>RP <b>${fmt(gs.res.research || 0)}</b></span>
   <span>+${fmtDec(rpRate,2)}/s</span>
   <span>완료 ${researchedCount}/${UPGRADES.length}</span>
-  ${activeCount > 0 ? `<span style="color:var(--amber)">진행 중 ${activeCount}</span>` : ''}
+  ${activeCount > 0 ? `<span style="color:var(--amber)">연구 중 [${activeCount}/${maxSlots} 슬롯]</span>` : `<span style="color:var(--dim)">슬롯 비어있음 [0/${maxSlots}]</span>`}
 </div>`;
 
   // ── BRANCH COLUMNS ──────────────────────────────────────
@@ -200,9 +201,27 @@ function renderResearchTab() {
         const prog = gs.researchProgress[uid];
         const rpTotal = upg.cost.research || 1;
         const pct = Math.min(100, Math.floor((prog.rpSpent / rpTotal) * 100));
+        const amberClass = branch.id === 'T' ? ' amber-fill' : '';
+        // ETA 계산 (getResearchETA가 있으면 사용)
+        let etaStr = '';
+        if (typeof getResearchETA === 'function') {
+          const etaSec = getResearchETA(uid);
+          if (etaSec === Infinity || etaSec > 864000) etaStr = ' · ∞';
+          else {
+            const h = Math.floor(etaSec / 3600);
+            const m = Math.floor((etaSec % 3600) / 60);
+            const s = Math.floor(etaSec % 60);
+            etaStr = h > 0 ? ` · ${h}h ${m}m` : ` · ${m}m ${s}s`;
+          }
+        }
+        // ASCII 아트 패널
+        const asciiArt = (RESEARCH_ASCII_ART && (RESEARCH_ASCII_ART[uid] || RESEARCH_ASCII_ART._default)) || '';
+        const asciiHtml = asciiArt
+          ? `<div class="rsh-ascii-panel"><pre class="rsh-ascii-art">${asciiArt}</pre><div class="rsh-ascii-scanline"></div></div>`
+          : '';
         cardClass = 'rsh-bcard-progress';
-        stateHtml = `<div class="rsh-bc-bar"><div class="rsh-bc-bar-fill" style="width:${pct}%"></div></div>
-<div class="rsh-bc-status">${pct}% · RP ${fmt(prog.rpSpent)}/${fmt(rpTotal)}</div>`;
+        stateHtml = `${asciiHtml}<div class="rsh-bc-bar"><div class="rsh-bc-bar-fill${amberClass}" style="width:${pct}%"></div></div>
+<div class="rsh-bc-status">${pct}%${etaStr} · RP ${fmt(prog.rpSpent)}/${fmt(rpTotal)}</div>`;
       } else if (reqMet) {
         const rpCost = upg.cost.research || 0;
         cardClass = 'rsh-bcard-available';
@@ -238,7 +257,13 @@ function renderResearchTab() {
 </div>`;
   });
 
+  const labCount = gs.buildings.research_lab || 0;
+  const rpPanelHtml = labCount > 0
+    ? `<div class="rsh-rp-panel">연구소 ×${labCount} → <b>+${fmtDec(rpRate,2)}/s</b> TOTAL</div>`
+    : `<div class="rsh-rp-panel" style="color:var(--dim)">연구소 없음 — RP 생산 불가</div>`;
+
   layout.innerHTML = `${topbarHtml}
+${rpPanelHtml}
 <div class="rsh-branches-row">
   ${branchesHtml}
 </div>`;

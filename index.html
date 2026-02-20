@@ -676,7 +676,77 @@ body.tab-launch #rp { display: none; }
 .rsh-bcard-progress .rsh-bc-hd { color:var(--amber); text-shadow:var(--amber-glow); }
 .rsh-bcard-progress .rsh-bc-status { color:var(--amber); }
 .rsh-bc-bar { width:100%; height:4px; background:#1a1200; margin:4px 0 2px; }
-.rsh-bc-bar-fill { height:100%; background:var(--amber); transition:width 0.3s; box-shadow:var(--amber-glow); }
+/* ─── U8-2: 공통 프로그레스 바 shimmer (keyframes는 전역 progress-shimmer 재사용) ── */
+.rsh-bc-bar-fill {
+  position: relative;
+  background: linear-gradient(90deg, var(--green) 0%, #6fff6f 50%, var(--green) 100%);
+  background-size: 200% auto;
+  animation: progress-shimmer 2.4s linear infinite;
+  border-radius: 2px;
+  height: 100%;
+  transition: width 0.5s ease;
+}
+.rsh-bc-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: rgba(255,255,255,0.85);
+  box-shadow: 0 0 6px #fff;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ─── U8-3: 앰버 프로그레스 변형 (T브랜치) ─────────────── */
+.rsh-bc-bar-fill.amber-fill {
+  background: linear-gradient(90deg, var(--amber) 0%, #ffdf80 50%, var(--amber) 100%);
+  background-size: 200% auto;
+}
+.rsh-bc-bar-fill.amber-fill::after {
+  background: rgba(255,220,100,0.9);
+  box-shadow: 0 0 6px var(--amber);
+}
+
+/* ─── U8-1: 연구 ASCII 패널 ─────────────────────────────── */
+.rsh-ascii-panel {
+  position: relative;
+  margin: 6px 0;
+  border: 1px solid var(--green-dim, #1a3a1a);
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(0,20,0,0.4);
+}
+.rsh-ascii-art {
+  font-family: var(--font-mono, 'Courier New', monospace);
+  font-size: 9px;
+  line-height: 1.3;
+  color: var(--green);
+  margin: 4px 6px;
+  white-space: pre;
+  overflow: hidden;
+}
+.rsh-ascii-scanline {
+  pointer-events: none;
+  position: absolute;
+  top: -100%;
+  left: 0; right: 0;
+  height: 30%;
+  background: linear-gradient(transparent, rgba(0,255,70,0.06), transparent);
+  animation: ascii-scanline-move 3s linear infinite;
+}
+@keyframes ascii-scanline-move {
+  0%   { top: -30%; }
+  100% { top: 100%; }
+}
+
+/* ─── U8-1: RP 생산 현황 패널 ───────────────────────────── */
+.rsh-rp-panel {
+  font-size: 11px;
+  color: var(--green-dim, #3a7a3a);
+  padding: 3px 8px 4px;
+  border-bottom: 1px solid var(--border, #1a2a1a);
+  letter-spacing: 0.03em;
+}
+
 /* AVAILABLE — green dim border, clickable */
 .rsh-bcard-available { border:1px solid var(--green-dim); background:rgba(0,153,77,0.04); cursor:pointer; animation:node-available-pulse 2s ease-in-out infinite; }
 .rsh-bcard-available:hover { border-color:var(--green); background:rgba(0,230,118,0.08); }
