@@ -11,3 +11,6 @@ Thumbs.db
 # Electron build output
 dist/
 steamcmd_output/
+
+# Sprint snapshot directories (로컬 참조용, git 미추적)
+sprint/

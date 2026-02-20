@@ -201,6 +201,7 @@ primordial-station/.worktrees/wt-dev-build\       ← dev/build
 | verify-moonidle-core | MoonIdle 핵심 게임 로직 일관성 검증 (게임 상태, 데이터 정합성, 탭 시스템, 경제 밸런싱) |
 | verify-comfyui-workflows | ComfyUI 워크플로우 및 배치 스크립트 일관성 검증 (JSON 스키마, 시드 고정, 파일 명명 규칙) |
 | verify-design-consistency | 디자인 시스템 통일성 검증 (CSS 토큰, 아이콘 형식, 클래스 네이밍, ComfyUI 프롬프트) |
+| verify-ascii-rendering | ASCII 건물 렌더링 일관성 검증 (폰트 정의, 기반부 정렬, 박스 외폭 일치, 선행 공백 규칙) |
 
 ---
 
