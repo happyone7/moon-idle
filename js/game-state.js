@@ -12,7 +12,7 @@ let gs = {
   workers: 1,          // 총 인원
   assignments: {},     // { buildingId: workerCount }
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
-  assembly: { selectedQuality:'proto', jobs:[] },
+  assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
   upgrades: {},
   msUpgrades: {},
   autoEnabled: {},
@@ -96,9 +96,10 @@ function getQuality(qid) { return QUALITIES.find(q => q.id === qid) || QUALITIES
 function getAssemblySlots() { return 1 + gs.buildings.launch_pad + slotBonus + getAddonSlotBonus(); }
 
 function ensureAssemblyState() {
-  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', jobs:[] };
+  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
   if (!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs = [];
   if (!gs.assembly.selectedQuality) gs.assembly.selectedQuality = 'proto';
+  if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
   const slots = getAssemblySlots();
   while (gs.assembly.jobs.length < slots) gs.assembly.jobs.push(null);
   if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
@@ -466,7 +467,8 @@ function loadGame(slot) {
     gs.moonstone = saved.moonstone || 0;
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
-    gs.assembly = saved.assembly || { selectedQuality:'proto', jobs:[] };
+    gs.assembly = saved.assembly || { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
+    if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
     gs.settings = saved.settings || { sound: true, lang: 'en' };
     if (gs.settings.lang === undefined) gs.settings.lang = 'en';
     gs.lastTick = saved.lastTick || Date.now();

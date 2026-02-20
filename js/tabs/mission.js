@@ -102,7 +102,7 @@ function confirmLaunch() {
   gs.assignments = {};
   gs._prodHubVisited = false;
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
-  gs.assembly = { selectedQuality:'proto', jobs:[] };
+  gs.assembly = { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
   gs.upgrades = {};
   gs.bldLevels = {};
   gs.bldSlotLevels = {};
@@ -148,6 +148,35 @@ function closeLaunchOverlay() {
   if (overlay) overlay.classList.remove('show');
   saveGame();
   renderAll();
+}
+
+
+// ============================================================
+//  MISSION SUB-TAB SWITCHING (P3-5)
+// ============================================================
+let activeMissionSubTab = 'phases';
+
+function switchMissionSubTab(subId) {
+  activeMissionSubTab = subId;
+  playSfx('triangle', 220, 0.04, 0.02, 330);
+
+  // Update sub-tab buttons
+  document.querySelectorAll('.msn-sub-tab').forEach(btn => {
+    const isActive = btn.dataset.subtab === subId;
+    btn.classList.toggle('active', isActive);
+    // Update dot icon
+    btn.innerHTML = btn.innerHTML.replace(/[●○]/, isActive ? '●' : '○');
+  });
+
+  // Update sub-screens
+  document.querySelectorAll('.msn-sub-screen').forEach(screen => {
+    screen.classList.remove('active');
+  });
+  const target = document.getElementById('msn-sub-' + subId);
+  if (target) target.classList.add('active');
+
+  // Re-render mission tab to update the active sub-screen content
+  renderMissionTab();
 }
 
 
@@ -260,4 +289,39 @@ function renderMissionTab() {
   }
   const prestigeWrap = document.getElementById('prestige-wrap');
   if (prestigeWrap) prestigeWrap.innerHTML = prestigeHtml;
+
+  // ── Milestone list (P3-5 마일스톤 서브탭) ─────────────────
+  renderMilestoneList();
+}
+
+
+// ============================================================
+//  P3-5: MILESTONE LIST RENDERING
+// ============================================================
+function renderMilestoneList() {
+  const wrap = document.getElementById('milestone-list-wrap');
+  if (!wrap || typeof MILESTONES === 'undefined') return;
+
+  let html = '';
+  MILESTONES.forEach(ms => {
+    const done = gs.milestones && gs.milestones[ms.id];
+    html += `<div class="msn-milestone-row">
+      <span class="msn-milestone-icon">${ms.icon}</span>
+      <span class="msn-milestone-name" style="color:${done ? 'var(--green)' : 'var(--green-dim)'}">${ms.name}</span>
+      <span class="msn-milestone-desc">${ms.desc}</span>
+      <span class="msn-milestone-status ${done ? 'done' : 'pending'}">
+        ${done ? '&#10003; 완료' : '미달성'}
+      </span>
+    </div>`;
+    // Show reward
+    html += `<div style="font-size:10px;color:${done ? 'var(--green-mid)' : 'var(--green-dim)'};padding:0 0 4px 40px;opacity:${done ? '0.7' : '0.5'};">
+      보상: ${ms.reward}
+    </div>`;
+  });
+
+  if (MILESTONES.length === 0) {
+    html = '<div style="color:var(--green-dim);font-size:12px;padding:10px;">// 마일스톤 없음</div>';
+  }
+
+  wrap.innerHTML = html;
 }
