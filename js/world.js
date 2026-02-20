@@ -4,17 +4,17 @@
 const WORLD_POSITIONS = {
   housing:      310,  // 주거시설 맨 왼쪽
   research_lab: 510,  r_and_d:      680,
-  ops_center:   860,  // addon @ 1030
+  ops_center:   860,  // addon @ 940
   supply_depot: 1210, mine:         1420, extractor:    1560,
   refinery:     1750, cryo_plant:   1930, elec_lab:     2130,
   fab_plant:    2300, solar_array:  2490, launch_pad:   2700,
-  // launch_pad addon @ 2870
+  // launch_pad addon @ 2800
 };
 
-// 애드온 건물 위치 (부모 건물 우측 고정)
+// 애드온 건물 위치 (부모 건물 우측 밀착 — 문자 폭 6.6px 기준)
 const ADDON_POSITIONS = {
-  ops_center:  1030,
-  launch_pad: 2870,
+  ops_center:  940,   // 860 + 12자×6.6px ≈ 79px → 940
+  launch_pad: 2800,   // 2700 + 15자×6.6px ≈ 99px → 2800
 };
 
 // ─── ASCII BUILDING ART (upgrade-aware, cnt-aware height, no double-width chars) ───
@@ -48,7 +48,7 @@ function _bldAscii(bld, cnt) {
           '╠═══════╣\n' +
           '║TWNSHIP║\n' +
           '╚═══════╝\n' +
-          ' ███████'
+          '█████████'
         );
         return (
           '╔═══════╗\n' +
@@ -60,7 +60,7 @@ function _bldAscii(bld, cnt) {
           '╠═══════╣\n' +
           '║TWNSHIP║\n' +
           '╚═══════╝\n' +
-          ' ███████'
+          '█████████'
         );
       }
       if (bu.hsg_welfare) {
@@ -72,7 +72,7 @@ function _bldAscii(bld, cnt) {
           '║ ▓▓ ▓▓ ▓▓  ║\n' +
           '║ ▓▓ ▓▓ ▓▓  ║\n' +
           '╚═══════════╝\n' +
-          '  █████████'
+          '█████████████'
         );
         return (
           '╔═══════════╗\n' +
@@ -81,7 +81,7 @@ function _bldAscii(bld, cnt) {
           '║ ▓▓ ▓▓ ▓▓  ║\n' +
           '║ ▓▓ ▓▓ ▓▓  ║\n' +
           '╚═══════════╝\n' +
-          '  █████████'
+          '█████████████'
         );
       }
       if (bu.hsg_dorm) {
@@ -93,7 +93,7 @@ function _bldAscii(bld, cnt) {
           '║ ▒▒ ▒▒ ▒▒  ║\n' +
           '║ ░░ ░░ ░░  ║\n' +
           '╚═══════════╝\n' +
-          '  █████████'
+          '█████████████'
         );
         return (
           '╔═══════════╗\n' +
@@ -102,7 +102,7 @@ function _bldAscii(bld, cnt) {
           '║ ▒▒ ▒▒ ▒▒  ║\n' +
           '║ ░░ ░░ ░░  ║\n' +
           '╚═══════════╝\n' +
-          '  █████████'
+          '█████████████'
         );
       }
       if (tier >= 3) return (
@@ -114,7 +114,7 @@ function _bldAscii(bld, cnt) {
         '╠═══════════╣\n' +
         '║ ▒▒ ▒▒ ▒▒  ║\n' +
         '╚═══════════╝\n' +
-        '  █████████'
+        '█████████████'
       );
       if (tier >= 2) return (
         '╔═══════════╗\n' +
@@ -123,7 +123,7 @@ function _bldAscii(bld, cnt) {
         '╠═══════════╣\n' +
         '║ ▒▒ ▒▒ ▒▒  ║\n' +
         '╚═══════════╝\n' +
-        '  █████████'
+        '█████████████'
       );
       if (tier >= 1) return (
         '╔═══════════╗\n' +
@@ -131,7 +131,7 @@ function _bldAscii(bld, cnt) {
         '║ ▒▒ ▒▒ ▒▒  ║\n' +
         '║ ░░ ░░ ░░  ║\n' +
         '╚═══════════╝\n' +
-        '  █████████'
+        '█████████████'
       );
       return (
         '╔═══════════╗\n' +
@@ -139,7 +139,7 @@ function _bldAscii(bld, cnt) {
         '║ ▒▒ ▒▒ ▒▒  ║\n' +
         '║ ▒▒ ▒▒ ▒▒  ║\n' +
         '╚═══════════╝\n' +
-        '  █████████'
+        '█████████████'
       );
 
     case 'wb-ops': {
@@ -153,7 +153,7 @@ function _bldAscii(bld, cnt) {
           '║ ▓▓▓▓▓▓▓▓ ║\n' +
           '║ ░ VIP ░  ║\n' +
           '╚══════════╝\n' +
-          ' ██████████'
+          '████████████'
         );
         return (
           '╔══════════╗\n' +
@@ -161,7 +161,7 @@ function _bldAscii(bld, cnt) {
           '║ ▓▓▓▓▓▓▓▓ ║\n' +
           '║ ░ VIP ░  ║\n' +
           '╚══════════╝\n' +
-          ' ██████████'
+          '████████████'
         );
       }
       if (isOps && bu.ops_24h) {
@@ -173,7 +173,7 @@ function _bldAscii(bld, cnt) {
           '║ ▓▓▓▓▓▓▓▓ ║\n' +
           '║ ░░ 24H ░░║\n' +
           '╚══════════╝\n' +
-          ' ██████████'
+          '████████████'
         );
         return (
           '╔══════════╗\n' +
@@ -181,7 +181,7 @@ function _bldAscii(bld, cnt) {
           '║ ▓▓▓▓▓▓▓▓ ║\n' +
           '║ ░░ 24H ░░║\n' +
           '╚══════════╝\n' +
-          ' ██████████'
+          '████████████'
         );
       }
       if (isOps && bu.ops_sales) {
@@ -192,7 +192,7 @@ function _bldAscii(bld, cnt) {
           '╠══════════╣\n' +
           '║ ░▓▓░▓▓░▓ ║\n' +
           '╚══════════╝\n' +
-          ' ██████████'
+          '████████████'
         );
         return (
           '╔══════════╗\n' +
@@ -200,7 +200,7 @@ function _bldAscii(bld, cnt) {
           '║ ▓▓░▓▓░▓▓ ║\n' +
           '║ ░▓▓░▓▓░▓ ║\n' +
           '╚══════════╝\n' +
-          ' ██████████'
+          '████████████'
         );
       }
       const lbl = isOps ? 'OPS CTR  ' : 'SUPPLY D ';
@@ -213,7 +213,7 @@ function _bldAscii(bld, cnt) {
         '╠══════════╣\n' +
         '║ ▓░▓░▓░▓  ║\n' +
         '╚══════════╝\n' +
-        '  ████████'
+        '████████████'
       );
       if (tier >= 1) return (
         '╔══════════╗\n' +
@@ -222,7 +222,7 @@ function _bldAscii(bld, cnt) {
         '╠══════════╣\n' +
         '║ ░▓░▓░▓░  ║\n' +
         '╚══════════╝\n' +
-        '  ████████'
+        '████████████'
       );
       return (
         '╔══════════╗\n' +
@@ -230,7 +230,7 @@ function _bldAscii(bld, cnt) {
         '║ ▓░▓░▓░▓  ║\n' +
         '║ ░▓░▓░▓░  ║\n' +
         '╚══════════╝\n' +
-        '  ████████'
+        '████████████'
       );
     }
 
@@ -245,7 +245,7 @@ function _bldAscii(bld, cnt) {
           '║  ▓ ROBOT ▓  ║\n' +
           '╠═════════════╣\n' +
           '╚═════════════╝\n' +
-          '    ███████████'
+          '███████████████'
         );
         return (
           '     ╔═══╗\n' +
@@ -253,7 +253,7 @@ function _bldAscii(bld, cnt) {
           '╔════╩═══╩════╗\n' +
           '║  ▓ ROBOT ▓  ║\n' +
           '╚═════════════╝\n' +
-          '    ███████████'
+          '███████████████'
         );
       }
       if (!isExt && bu.mine_deep) {
@@ -264,7 +264,7 @@ function _bldAscii(bld, cnt) {
           '╔════╩═══╩════╗\n' +
           '║  ▓▒▒▒▒▒▒▓  ║\n' +
           '╚═════════════╝\n' +
-          '    ███████████'
+          '███████████████'
         );
         return (
           '     ╔═══╗\n' +
@@ -272,7 +272,7 @@ function _bldAscii(bld, cnt) {
           '╔════╩═══╩════╗\n' +
           '║  ▓▒▒▒▒▒▒▓  ║\n' +
           '╚═════════════╝\n' +
-          '    ███████████'
+          '███████████████'
         );
       }
       if (tier >= 3) return (
@@ -283,7 +283,7 @@ function _bldAscii(bld, cnt) {
         '║   ▒▒▒▒▒▒▒   ║\n' +
         '╠═════════════╣\n' +
         '╚═════════════╝\n' +
-        '    ███████████'
+        '███████████████'
       );
       if (tier >= 1) return (
         '     ╔═══╗\n' +
@@ -292,7 +292,7 @@ function _bldAscii(bld, cnt) {
         '║   ▒▒▒▒▒▒▒   ║\n' +
         '╠═════════════╣\n' +
         '╚═════════════╝\n' +
-        '    ███████████'
+        '███████████████'
       );
       return (
         '     ╔═══╗\n' +
@@ -300,7 +300,7 @@ function _bldAscii(bld, cnt) {
         '╔════╩═══╩════╗\n' +
         '║   ▒▒▒▒▒▒▒   ║\n' +
         '╚═════════════╝\n' +
-        '    ███████████'
+        '███████████████'
       );
     }
 
@@ -313,7 +313,7 @@ function _bldAscii(bld, cnt) {
         ' ║▓║  ║▓▓║\n' +
         ' ║▓║  ║▓▓║\n' +
         ' ╚═╝  ╚══╝\n' +
-        '███████████'
+        '██████████'
       );
       if (tier >= 1) return (
         ' ╔═╗  ╔══╗\n' +
@@ -322,7 +322,7 @@ function _bldAscii(bld, cnt) {
         ' ╠═╣  ╠══╣\n' +
         ' ║▓║  ║▓▓║\n' +
         ' ╚═╝  ╚══╝\n' +
-        '███████████'
+        '██████████'
       );
       return (
         ' ╔═╗  ╔══╗\n' +
@@ -330,37 +330,37 @@ function _bldAscii(bld, cnt) {
         ' ║▓║  ║▓▓║\n' +
         ' ║▓║  ║▓▓║\n' +
         ' ╚═╝  ╚══╝\n' +
-        '███████████'
+        '██████████'
       );
 
     case 'wb-eleclab':
       if (tier >= 3) return (
         '╔══════════╗\n' +
         '║ PCB  LAB ║\n' +
-        '║▒░▒░▒░▒░▒║\n' +
+        '║▒░▒░▒░▒░▒ ║\n' +
         '╠══════════╣\n' +
-        '║░▒░▒░▒░▒░║\n' +
+        '║░▒░▒░▒░▒░ ║\n' +
         '╠══════════╣\n' +
-        '║▒░▒░▒░▒░▒║\n' +
+        '║▒░▒░▒░▒░▒ ║\n' +
         '╚══════════╝\n' +
-        '  ████████'
+        '████████████'
       );
       if (tier >= 1) return (
         '╔══════════╗\n' +
         '║ PCB  LAB ║\n' +
-        '║▒░▒░▒░▒░▒║\n' +
+        '║▒░▒░▒░▒░▒ ║\n' +
         '╠══════════╣\n' +
-        '║░▒░▒░▒░▒░║\n' +
+        '║░▒░▒░▒░▒░ ║\n' +
         '╚══════════╝\n' +
-        '  ████████'
+        '████████████'
       );
       return (
         '╔══════════╗\n' +
         '║ PCB  LAB ║\n' +
-        '║▒░▒░▒░▒░▒║\n' +
-        '║░▒░▒░▒░▒░║\n' +
+        '║▒░▒░▒░▒░▒ ║\n' +
+        '║░▒░▒░▒░▒░ ║\n' +
         '╚══════════╝\n' +
-        '  ████████'
+        '████████████'
       );
 
     case 'wb-research': {
@@ -375,7 +375,7 @@ function _bldAscii(bld, cnt) {
           '╠════════════╣\n' +
           '║ [CPU-9000] ║\n' +
           '╚════════════╝\n' +
-          '   ██████████'
+          '██████████████'
         );
         return (
           '╔════════════╗\n' +
@@ -385,7 +385,7 @@ function _bldAscii(bld, cnt) {
           '╠════════════╣\n' +
           '║ [CPU-9000] ║\n' +
           '╚════════════╝\n' +
-          '   ██████████'
+          '██████████████'
         );
       }
       if (!isRnd && bu.rsh_cross) {
@@ -397,7 +397,7 @@ function _bldAscii(bld, cnt) {
           '║ ░▓▓▓░▓▓▓░▓ ║\n' +
           '╠════════════╣\n' +
           '╚════════════╝\n' +
-          '   ██████████'
+          '██████████████'
         );
         return (
           '╔════════════╗\n' +
@@ -406,7 +406,7 @@ function _bldAscii(bld, cnt) {
           '║ ░▓▓▓░▓▓▓░▓ ║\n' +
           '╠════════════╣\n' +
           '╚════════════╝\n' +
-          '   ██████████'
+          '██████████████'
         );
       }
       if (tier >= 3) return (
@@ -418,7 +418,7 @@ function _bldAscii(bld, cnt) {
         '╠════════════╣\n' +
         '║ ▓░▓░▓░▓░   ║\n' +
         '╚════════════╝\n' +
-        '   ██████████'
+        '██████████████'
       );
       if (tier >= 1) return (
         '╔════════════╗\n' +
@@ -427,7 +427,7 @@ function _bldAscii(bld, cnt) {
         '╠════════════╣\n' +
         '║ ░▓░▓░▓░▓   ║\n' +
         '╚════════════╝\n' +
-        '   ██████████'
+        '██████████████'
       );
       return (
         '╔════════════╗\n' +
@@ -436,7 +436,7 @@ function _bldAscii(bld, cnt) {
         '║ ░▓░▓░▓░▓   ║\n' +
         '╠════════════╣\n' +
         '╚════════════╝\n' +
-        '   ██████████'
+        '██████████████'
       );
     }
 
@@ -448,7 +448,7 @@ function _bldAscii(bld, cnt) {
           ' ╚╝    ╚╝    ╚╝\n' +
           '  │     │     │\n' +
           '  │     │     │\n' +
-          ' ████████████'
+          ' ██████████████'
         );
         return (
           ' ╔╗ -- ╔╗\n' +
@@ -466,7 +466,7 @@ function _bldAscii(bld, cnt) {
           ' ╚╝    ╚╝    ╚╝\n' +
           '  │     │     │\n' +
           '  │     │     │\n' +
-          ' ████████████'
+          ' ██████████████'
         );
         return (
           ' ╔╗    ╔╗\n' +
@@ -483,7 +483,7 @@ function _bldAscii(bld, cnt) {
         ' ╚╝    ╚╝    ╚╝\n' +
         '  │     │     │\n' +
         '  │     │     │\n' +
-        ' ████████████'
+        ' ██████████████'
       );
       return (
         ' ╔╗    ╔╗\n' +
@@ -511,7 +511,7 @@ function _bldAscii(bld, cnt) {
           '    /══▓══╲\n' +
           '   ╔═══════╗\n' +
           '   ║[PAD+] ║\n' +
-          '──╚═════════╝──'
+          '───╚═══════╝───'
         );
       }
       if (bu.pad_reinforce) {
@@ -522,7 +522,7 @@ function _bldAscii(bld, cnt) {
           '    /══▓══╲\n' +
           '   ╔═══════╗\n' +
           '   ║[R-PAD]║\n' +
-          '──╚═════════╝──'
+          '───╚═══════╝───'
         );
         return (
           '      /▲╲\n' +
@@ -530,7 +530,7 @@ function _bldAscii(bld, cnt) {
           '    /══▓══╲\n' +
           '   ╔═══════╗\n' +
           '   ║[R-PAD]║\n' +
-          '──╚═════════╝──'
+          '───╚═══════╝───'
         );
       }
       if (tier >= 3) return (
@@ -541,7 +541,7 @@ function _bldAscii(bld, cnt) {
         '    /   ▓   ╲\n' +
         '   ╔═══════╗\n' +
         '   ║ [PAD] ║\n' +
-        '──╚═════════╝──'
+        '───╚═══════╝───'
       );
       if (tier >= 1) return (
         '      /▲╲\n' +
@@ -549,7 +549,7 @@ function _bldAscii(bld, cnt) {
         '    /  ▓  ╲\n' +
         '   ╔═══════╗\n' +
         '   ║ [PAD] ║\n' +
-        '──╚═════════╝──'
+        '───╚═══════╝───'
       );
       return (
         '      /▲╲\n' +
@@ -557,7 +557,7 @@ function _bldAscii(bld, cnt) {
         '    /  ▓  ╲\n' +
         '   ╔═══════╗\n' +
         '   ║ [PAD] ║\n' +
-        '──╚═════════╝──'
+        '───╚═══════╝───'
       );
 
     default: {
@@ -566,7 +566,7 @@ function _bldAscii(bld, cnt) {
         '╔═══════╗\n' +
         '║ ' + ic + ' ║\n' +
         '╚═══════╝\n' +
-        '  █████'
+        '█████████'
       );
     }
   }
@@ -583,7 +583,7 @@ function _addonAscii(option) {
         ' ║ BANK ║\n' +
         ' ║ $$$  ║\n' +
         ' ╚══════╝\n' +
-        '  ██████'
+        ' ████████'
       );
     case 'addon_tech_hub':
       return (
@@ -592,7 +592,7 @@ function _addonAscii(option) {
         ' ║  HUB ║\n' +
         ' ║ ▒▒▒  ║\n' +
         ' ╚══════╝\n' +
-        '  ██████'
+        ' ████████'
       );
     case 'addon_launch_ctrl':
       return (
@@ -601,7 +601,7 @@ function _addonAscii(option) {
         ' ║ TWR ║\n' +
         ' ║ ▓▓▓ ║\n' +
         ' ╚═════╝\n' +
-        '  █████'
+        ' ███████'
       );
     case 'addon_vif':
       return (
@@ -610,7 +610,7 @@ function _addonAscii(option) {
         ' ║─────║\n' +
         ' ║ FAB ║\n' +
         ' ╚═════╝\n' +
-        '  █████'
+        ' ███████'
       );
     default:
       return _addonPlaceholderAscii();
@@ -623,7 +623,7 @@ function _addonPlaceholderAscii() {
     ' ║ ??? ║\n' +
     ' ║ADDON║\n' +
     ' ╚═════╝\n' +
-    '  █████'
+    ' ███████'
   );
 }
 
@@ -932,18 +932,21 @@ function openBldOv(bld, el) {
   </button>
 </div>`;
 
-  // Position
-  const r = el.getBoundingClientRect();
-  const ovW = 490, ovH = ovEl.offsetHeight || 260;
-  let lx = r.left - 10;
-  let ty = r.top - ovH - 8;
-  if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
-  if (lx < 4) lx = 4;
-  if (ty < 4) ty = r.bottom + 6;
-  ovEl.style.left = lx + 'px';
-  ovEl.style.top  = ty + 'px';
+  // Position — display:block 먼저 적용 후 다음 프레임에서 실제 높이 반영
+  const ovW = 490;
   ovEl.style.width = ovW + 'px';
   ovEl.style.display = 'block';
+  requestAnimationFrame(() => {
+    const r   = el.getBoundingClientRect();
+    const ovH = ovEl.offsetHeight || 260;
+    let lx = r.left - 10;
+    let ty = r.top - ovH - 8;
+    if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
+    if (lx < 4) lx = 4;
+    if (ty < 4) ty = r.bottom + 6;
+    ovEl.style.left = lx + 'px';
+    ovEl.style.top  = ty + 'px';
+  });
 }
 
 function bovHover(idx) {
@@ -1051,17 +1054,21 @@ function openAddonOv(bld, opt, el) {
   </div>
 </div>`;
 
-  const r = el.getBoundingClientRect();
-  const ovW = 420, ovH = ovEl.offsetHeight || 200;
-  let lx = r.left - 10;
-  let ty = r.top - ovH - 8;
-  if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
-  if (lx < 4) lx = 4;
-  if (ty < 4) ty = r.bottom + 6;
-  ovEl.style.left = lx + 'px';
-  ovEl.style.top  = ty + 'px';
+  // Position — display:block 먼저 적용 후 다음 프레임에서 실제 높이 반영
+  const ovW = 420;
   ovEl.style.width = ovW + 'px';
   ovEl.style.display = 'block';
+  requestAnimationFrame(() => {
+    const r   = el.getBoundingClientRect();
+    const ovH = ovEl.offsetHeight || 200;
+    let lx = r.left - 10;
+    let ty = r.top - ovH - 8;
+    if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
+    if (lx < 4) lx = 4;
+    if (ty < 4) ty = r.bottom + 6;
+    ovEl.style.left = lx + 'px';
+    ovEl.style.top  = ty + 'px';
+  });
 }
 
 function buyAddonOption(bldId, optionId) {
@@ -1220,17 +1227,21 @@ function openGhostOv(bld, el) {
   </button>
 </div>`;
 
-  const r = el.getBoundingClientRect();
-  const ovW = 240, ovH = ovEl.offsetHeight || 200;
-  let lx = r.left - 10;
-  let ty = r.top - ovH - 8;
-  if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
-  if (lx < 4) lx = 4;
-  if (ty < 4) ty = r.bottom + 6;
-  ovEl.style.left = lx + 'px';
-  ovEl.style.top  = ty + 'px';
+  // Position — display:block 먼저 적용 후 다음 프레임에서 실제 높이 반영
+  const ovW = 240;
   ovEl.style.width = ovW + 'px';
   ovEl.style.display = 'block';
+  requestAnimationFrame(() => {
+    const r   = el.getBoundingClientRect();
+    const ovH = ovEl.offsetHeight || 200;
+    let lx = r.left - 10;
+    let ty = r.top - ovH - 8;
+    if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
+    if (lx < 4) lx = 4;
+    if (ty < 4) ty = r.bottom + 6;
+    ovEl.style.left = lx + 'px';
+    ovEl.style.top  = ty + 'px';
+  });
 }
 
 // ─── BUILDING ANIMATIONS ──────────────────────────────────

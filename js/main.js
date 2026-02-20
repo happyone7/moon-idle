@@ -58,7 +58,7 @@ function renderResources() {
   // Left panel — categories inline (no tabs)
   const rlInner = document.getElementById('rl-inner');
   if (rlInner) {
-    const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
+    const RES_MAX = { money:1e12, metal:5e7, fuel:2e7, electronics:1e7, research:50000 };
     const CAT_HEADERS = { money: t('cat_funds'), metal: t('cat_materials'), research: t('cat_research') };
 
     let html = '';

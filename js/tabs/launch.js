@@ -65,9 +65,9 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   animWrap.innerHTML = `
 <div id="launch-rocket-cnt" style="text-align:center;position:relative;">
 <pre class="launch-rocket-ascii" id="launch-rocket-pre">    *
-   /|\\
-  / | \\
- /  |  \\
+   /|╲
+  / | ╲
+ /  |  ╲
 |ENGINE |
 |_______|</pre>
 <pre class="exhaust-anim" id="exhaust-art" style="display:none;">  |||
@@ -130,9 +130,9 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
     const FAIL_FRAMES = [
       // Frame 1: Destabilized
       '       *\n' +
-      '     /\\!\\  GYRO ALERT\n' +
-      '    / !! \\\n' +
-      '   / WARN \\\n' +
+      '     /╲!╲  GYRO ALERT\n' +
+      '    / !! ╲\n' +
+      '   / WARN ╲\n' +
       '  |  ROLL  |\n' +
       '  |__+47°__|',
       // Frame 2: Explosion
@@ -210,9 +210,9 @@ function _showLaunchOverlay(q, sci, earned, success = true) {
   const loRocket = document.getElementById('lo-rocket-art');
   if (loRocket) loRocket.textContent =
 `    *
-   /|\\
-  / | \\
- /  |  \\
+   /|╲
+  / | ╲
+ /  |  ╲
 |ENGINE |
 |_______|`;
   const loStats = document.getElementById('lo-stats');
