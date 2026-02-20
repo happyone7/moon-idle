@@ -305,3 +305,67 @@ const BGM = {
   masterGain: null,
   init() { return true; },
 };
+
+
+// ============================================================
+//  SFX 이벤트 — Web Audio API OscillatorNode 프로그래매틱 생성
+//  기존 playSfx() (js/game-state.js) 를 활용한 고수준 효과음
+//
+//  ※ BGM 시스템(위 BGM 객체)과 완전히 독립된 레이어.
+//     BGM은 HTMLAudioElement(mp3), SFX는 Web Audio OscillatorNode.
+// ============================================================
+
+/**
+ * 조립 스테이지 1개 완료 SFX
+ * 짧은 성공 효과음 — 상승하는 2음 시퀀스 (ding-ding)
+ *
+ * 연결점: js/tabs/assembly.js updateAssemblyJobs() 에서
+ *         job.ready = true 직후 호출.
+ *         현재는 인라인 playSfx 호출이 있으며,
+ *         이 함수로 대체하여 통합 관리 가능.
+ */
+function sfxAssemblyStageComplete() {
+  if (typeof playSfx !== 'function') return;
+  // 첫 번째 음: 밝은 삼각파 상승음
+  playSfx('triangle', 660, 0.10, 0.06, 880);
+  // 두 번째 음: 약간의 딜레이 후 더 높은 사인파
+  setTimeout(() => playSfx('sine', 880, 0.08, 0.04, 1100), 100);
+}
+
+/**
+ * 전체 조립 완료 (모든 슬롯 조립 완료) SFX
+ * 화려한 완성 팡파르 — 3단 상승 시퀀스 + 하모닉 쉬머
+ *
+ * 연결점: js/tabs/assembly.js 또는 js/game-state.js 에서
+ *         모든 assembly.jobs 가 ready 상태가 되었을 때 호출.
+ *         launchReady() 직전 또는 전체 슬롯 완료 감지 시점에서 사용.
+ */
+function sfxAssemblyAllComplete() {
+  if (typeof playSfx !== 'function') return;
+  // 1단: 낮은 사각파 — 기반 톤
+  playSfx('square', 440, 0.12, 0.06, 660);
+  // 2단: 중간 삼각파 — 상승
+  setTimeout(() => playSfx('triangle', 660, 0.10, 0.05, 880), 120);
+  // 3단: 높은 사인파 — 정점
+  setTimeout(() => playSfx('sine', 880, 0.14, 0.06, 1320), 250);
+  // 4단: 하모닉 쉬머 (고음 잔향)
+  setTimeout(() => playSfx('sine', 1320, 0.20, 0.03, 1760), 400);
+}
+
+/**
+ * 탭 전환 SFX
+ * 미세한 클릭 사운드 — 짧은 삼각파 틱 (UI 피드백용)
+ *
+ * 연결점: js/main.js switchMainTab() 에서 호출.
+ *         현재 switchMainTab() 라인 6에 인라인 playSfx('triangle', 220, ...)가 있으며,
+ *         이 함수로 대체하여 사운드 파라미터를 audio-bgm.js에서 통합 관리 가능.
+ *         nav-tab click handler (main.js init() 라인 371~373):
+ *           document.querySelectorAll('.nav-tab').forEach(t => {
+ *             t.addEventListener('click', () => switchMainTab(t.dataset.tab));
+ *           });
+ */
+function sfxTabSwitch() {
+  if (typeof playSfx !== 'function') return;
+  // 매우 짧고 미세한 삼각파 클릭 — UI 피드백
+  playSfx('triangle', 220, 0.04, 0.02, 330);
+}
