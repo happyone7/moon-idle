@@ -760,38 +760,6 @@ function openBldOv(bld, el) {
   // ── Build action list ──────────────────────────────────────
   const actions = [];
 
-  // ── 슬롯 업그레이드 (생산 건물만, 보너스 건물 제외) ──────
-  if (bld.produces !== 'bonus') {
-    const slotLevel  = (gs.bldSlotLevels && gs.bldSlotLevels[bld.id]) || 0;
-    const slotCap    = cnt + slotLevel;
-    const slotCost   = _getBldSlotCost(bld);
-    const slotAfford = canAfford(slotCost);
-    actions.push({
-      label: `슬롯 +1 업그레이드`,
-      info: slotAfford ? getCostStr(slotCost) : `[부족]`,
-      disabled: cnt === 0,
-      affordable: slotAfford,
-      desc: `인원 배치 슬롯 +1\n현재 슬롯: ${slotCap}개 (건물 ${cnt} + 업그 ${slotLevel})\n비용: ${getCostStr(slotCost)}`,
-      type: 'slot_upgrade',
-    });
-
-    // Worker rows
-    actions.push({
-      label: '+ 인원 배치',
-      info: `여유 ${avail}명`,
-      disabled: avail <= 0 || cnt === 0 || assigned >= slotCap,
-      desc: `[${bld.name}]에 인원 배치\n현재: ${assigned}명 배치 / 슬롯: ${slotCap}개\n인원 1명 → ${bld.produces === 'money' ? '₩' : ''}+${fmtDec(bld.baseRate * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id) * getAddonMult(bld.id), 2)}/s`,
-      type: 'assign',
-    });
-    actions.push({
-      label: '- 인원 철수',
-      info: `배치 ${assigned}명`,
-      disabled: assigned <= 0,
-      desc: `[${bld.name}]에서 인원 회수\n현재 ${assigned}명 배치 중`,
-      type: 'unassign',
-    });
-  }
-
   // Named building upgrades
   const bldUpgs = (typeof BUILDING_UPGRADES !== 'undefined' && BUILDING_UPGRADES[bld.id]) || [];
   bldUpgs.forEach(upg => {
@@ -810,17 +778,17 @@ function openBldOv(bld, el) {
     });
   });
 
-  // ── 주거 시설: 직원 고용 섹션 ────────────────────────────
-  if (bld.id === 'housing' && cnt >= 1) {
+  // ── 운영 센터: 직원 고용 섹션 ────────────────────────────
+  if (bld.id === 'ops_center' && cnt >= 1) {
     const hireCost = getWorkerHireCost();
     const hireAfford = (gs.res.money || 0) >= hireCost;
     actions.push({ type: 'sep', label: '// 직원 고용' });
     actions.push({
-      label: `직원 고용 (현재 ${gs.workers}명)`,
-      info: hireAfford ? `₩${fmt(hireCost)}` : `[자금 부족]`,
+      label: `센터 직원 고용 (현재 ${gs.workers}명)`,
+      info: hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
       disabled: false,
       affordable: hireAfford,
-      desc: `직원 1명 고용\n현재 인원: ${gs.workers}명\n고용 비용: ₩${fmt(hireCost)}\n다음 고용 비용: ₩${fmt(Math.floor(500 * Math.pow(2.0, gs.workers)))}`,
+      desc: `센터 직원 1명 고용\n현재 인원: ${gs.workers}명\n고용 비용: $${fmt(hireCost)}\n// 배치는 [직원 배치 관리]에서`,
       type: 'hire_worker',
     });
   }
@@ -1099,6 +1067,11 @@ function buyAddonOption(bldId, optionId) {
   const el  = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (bld && el) openBldOv(bld, el);
   renderAll();
+  // 오버레이 갱신
+  setTimeout(() => {
+    const freshPre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+    if (freshPre && typeof openBldOv === 'function') openBldOv(BUILDINGS.find(b => b.id === bldId), freshPre);
+  }, 60);
 }
 
 function buyAddonUpgrade(upgId, bldId) {
@@ -1438,4 +1411,107 @@ function spawnAsciiParticles(x, y, count, color) {
     document.body.appendChild(el);
     el.addEventListener('animationend', () => el.remove());
   }
+}
+
+// ─── 직원 배치 관리 팝업 ──────────────────────────────────────
+function openStaffPopup() {
+  const pop = document.getElementById('staff-popup');
+  const ov  = document.getElementById('staff-popup-overlay');
+  if (!pop || !ov) return;
+  pop.classList.add('open');
+  ov.classList.add('open');
+  renderStaffPopup();
+}
+
+function closeStaffPopup() {
+  const pop = document.getElementById('staff-popup');
+  const ov  = document.getElementById('staff-popup-overlay');
+  if (pop) pop.classList.remove('open');
+  if (ov)  ov.classList.remove('open');
+}
+
+function renderStaffPopup() {
+  const bodyEl = document.getElementById('sp-body');
+  const availEl = document.getElementById('sp-avail-txt');
+  if (!bodyEl) return;
+
+  const avail = getAvailableWorkers();
+  if (availEl) availEl.textContent = `여유 ${avail}명 / 전체 ${gs.workers}명`;
+
+  // 건물 카테고리 정의
+  const SECTIONS = [
+    {
+      title: '■ 자원 생산',
+      blds: ['mine', 'extractor', 'refinery', 'cryo_plant'],
+    },
+    {
+      title: '■ 기술 생산',
+      blds: ['elec_lab', 'fab_plant'],
+    },
+    {
+      title: '■ 연구',
+      blds: ['research_lab', 'r_and_d'],
+    },
+    {
+      title: '■ 기타',
+      blds: ['supply_depot', 'solar_array', 'launch_pad'],
+    },
+  ];
+
+  let html = '';
+
+  // 운영 센터 역할 섹션 (OPS_ROLES 기반)
+  const opsCnt = gs.buildings.ops_center || 0;
+  if (opsCnt > 0 && typeof OPS_ROLES !== 'undefined') {
+    html += `<div class="sp-sect-hd">■ 운영 센터</div>`;
+    OPS_ROLES.forEach(role => {
+      const cur = (gs.opsRoles && gs.opsRoles[role.id]) || 0;
+      const max = opsCnt * role.maxSlotsPerBld;
+      const canAdd = avail > 0 && cur < max;
+      const canSub = cur > 0;
+      html += `<div class="sp-row">
+        <span class="sp-bld-icon">[OPS]</span>
+        <span class="sp-role-name">${role.name}</span>
+        <button class="sp-btn" onclick="unassignOpsRole('${role.id}'); renderStaffPopup();" ${canSub?'':'disabled'}>−</button>
+        <span class="sp-count">${cur}</span>
+        <button class="sp-btn" onclick="assignOpsRole('${role.id}'); renderStaffPopup();" ${canAdd?'':'disabled'}>+</button>
+        <span class="sp-max">/ ${max}</span>
+      </div>`;
+    });
+  }
+
+  // 일반 건물 섹션
+  SECTIONS.forEach(sect => {
+    const rows = sect.blds
+      .map(bid => {
+        const bld = BUILDINGS.find(b => b.id === bid);
+        if (!bld) return null;
+        const cnt = gs.buildings[bid] || 0;
+        if (cnt === 0) return null;  // 미건설 건물 숨김
+        const assigned = (gs.assignments && gs.assignments[bid]) || 0;
+        const slotCap  = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bid]) || 0);
+        const staffName = (typeof BLD_STAFF_NAMES !== 'undefined' && BLD_STAFF_NAMES[bid]) || '직원';
+        const canAdd = avail > 0 && assigned < slotCap;
+        const canSub = assigned > 0;
+        return `<div class="sp-row">
+          <span class="sp-bld-icon">${bld.icon}</span>
+          <span class="sp-role-name">${staffName}</span>
+          <button class="sp-btn" onclick="unassignWorker('${bid}'); renderStaffPopup();" ${canSub?'':'disabled'}>−</button>
+          <span class="sp-count">${assigned}</span>
+          <button class="sp-btn" onclick="assignWorker('${bid}'); renderStaffPopup();" ${canAdd?'':'disabled'}>+</button>
+          <span class="sp-max">/ ${slotCap}</span>
+        </div>`;
+      })
+      .filter(Boolean)
+      .join('');
+    if (rows) {
+      html += `<div class="sp-sect-hd">${sect.title}</div>${rows}`;
+    }
+  });
+
+  if (!html) {
+    html = '<div style="color:var(--text-dim);font-size:var(--fs-sm);padding:12px 0">건설된 건물이 없습니다.</div>';
+  }
+
+  bodyEl.innerHTML = html;
 }
