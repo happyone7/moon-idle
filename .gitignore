@@ -7,3 +7,7 @@ Thumbs.db
 # Git worktrees (managed via git worktree, not regular files)
 .worktrees/
 .tmp-worktrees/
+
+# Electron build output
+dist/
+steamcmd_output/

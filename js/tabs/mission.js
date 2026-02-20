@@ -97,7 +97,7 @@ function confirmLaunch() {
   const savedMilestones = gs.milestones || {}; // BUG-P08: 마일스톤 보존 (프레스티지 후 재지급 방지)
 
   // Prestige reset — keep moonstone, msUpgrades, launches, history, unlocks, workers
-  gs.res = { money:500, metal:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:5000, metal:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.assignments = {};
   gs._prodHubVisited = false;
@@ -131,6 +131,8 @@ function confirmLaunch() {
   closeLaunchOverlay();
   notify(`문스톤 ${gs.moonstone}개 보유 — 생산 +${gs.moonstone * 5}%`, '');
   playSfx('triangle', 500, 0.12, 0.04, 760);
+  // 프레스티지 BGM 이벤트 (bgm_08_prestige_void)
+  if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('prestige');
   switchMainTab('production'); // DESIGN-007: 프레스티지 후 생산 탭으로 이동
   saveGame();
   renderAll();

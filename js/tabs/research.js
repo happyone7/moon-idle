@@ -50,6 +50,8 @@ function buyUpgrade(uid) {
 
 function selectTech2(uid) {
   selectedTechId = uid;
+  // 기술 카드 선택음
+  playSfx('sine', 380, 0.05, 0.018);
   // Highlight selected card
   document.querySelectorAll('.rsh-card2').forEach(c => {
     c.classList.toggle('selected', c.dataset.uid === uid);

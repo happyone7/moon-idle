@@ -1,0 +1,93 @@
+{
+  "client_id": "moonidle_bgm_batch_v1",
+  "prompt": {
+    "1": {
+      "class_type": "CheckpointLoaderSimple",
+      "inputs": {
+        "ckpt_name": "ace_step_v1_3.5b.safetensors"
+      }
+    },
+    "2": {
+      "class_type": "TextEncodeAceStepAudio",
+      "inputs": {
+        "clip": ["1", 1],
+        "tags": "industrial, ambient, F minor, 100 bpm, machinery hum, automation, calm factory, steady rhythm, low frequency, peaceful industrial, satisfied, no vocals, loop-friendly",
+        "lyrics": "[instrumental]",
+        "lyrics_strength": 1.0
+      }
+    },
+    "3": {
+      "class_type": "EmptyAceStepLatentAudio",
+      "inputs": {
+        "seconds": 90.0,
+        "batch_size": 1
+      }
+    },
+    "4": {
+      "class_type": "BasicGuider",
+      "inputs": {
+        "model": ["1", 0],
+        "conditioning": ["2", 0]
+      }
+    },
+    "5": {
+      "class_type": "RandomNoise",
+      "inputs": {
+        "noise_seed": 230005
+      }
+    },
+    "6": {
+      "class_type": "KSamplerSelect",
+      "inputs": {
+        "sampler_name": "euler"
+      }
+    },
+    "7": {
+      "class_type": "LaplaceScheduler",
+      "inputs": {
+        "steps": 60,
+        "sigma_max": 14.614642,
+        "sigma_min": 0.0291675,
+        "mu": 0.0,
+        "beta": 0.5
+      }
+    },
+    "8": {
+      "class_type": "SamplerCustomAdvanced",
+      "inputs": {
+        "noise": ["5", 0],
+        "guider": ["4", 0],
+        "sampler": ["6", 0],
+        "sigmas": ["7", 0],
+        "latent_image": ["3", 0]
+      }
+    },
+    "9": {
+      "class_type": "VAEDecodeAudio",
+      "inputs": {
+        "samples": ["8", 0],
+        "vae": ["1", 2]
+      }
+    },
+    "10": {
+      "class_type": "TrimAudioDuration",
+      "inputs": {
+        "audio": ["9", 0],
+        "start_index": 0.0,
+        "duration": 90.0
+      }
+    },
+    "11": {
+      "class_type": "SaveAudio",
+      "inputs": {
+        "audio": ["10", 0],
+        "filename_prefix": "audio/bgm_06_automation_hum"
+      }
+    }
+  },
+  "extra_data": {
+    "track_id": "bgm_06_automation_hum",
+    "description": "자동화 완성 — 잔잔한 기계음. F-minor 100 BPM, 인더스트리얼 험.",
+    "seed": 230005
+  }
+}

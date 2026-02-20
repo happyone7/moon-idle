@@ -65,7 +65,10 @@ function checkMilestones() {
     changed = true;
     _applyMilestoneReward(m);
     notify(`// 마일스톤 달성: ${m.icon} ${m.name}`, 'amber');
-    if (typeof playSfx === 'function') playSfx('square', 880, 0.12, 0.08, 1400);
+    if (typeof playSfx === 'function') {
+      playSfx('square', 880, 0.12, 0.08, 1400);
+      setTimeout(() => playSfx('triangle', 1200, 0.08, 0.04), 200);
+    }
   });
 
   if (changed) {
