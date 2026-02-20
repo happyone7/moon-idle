@@ -788,6 +788,24 @@ function tickResearch() {
   completedIds.forEach(uid => _completeResearch(uid));
 }
 
+/**
+ * 연구 완료까지 남은 시간(초)을 반환한다.
+ * @param {string} uid - 연구 중인 업그레이드 ID
+ * @returns {number} 남은 초. RP rate가 0이면 Infinity 반환.
+ */
+function getResearchETA(uid) {
+  if (!gs.researchProgress || !gs.researchProgress[uid]) return 0;
+  const rpRate = getProduction().research || 0;
+  if (rpRate <= 0) return Infinity;
+  const upg = UPGRADES.find(u => u.id === uid);
+  const rpTotal = upg ? (upg.cost.research || 0) : 0;
+  const rpSpent = gs.researchProgress[uid].rpSpent || 0;
+  const rpRemaining = rpTotal - rpSpent;
+  const activeCount = Object.keys(gs.researchProgress).length;
+  const myRate = rpRate / activeCount;
+  return myRate > 0 ? rpRemaining / myRate : Infinity;
+}
+
 // ============================================================
 //  TICK / OFFLINE
 // ============================================================
