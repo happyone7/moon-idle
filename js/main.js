@@ -11,6 +11,8 @@ function switchMainTab(tabId) {
   }
   activeTab = tabId;
   document.body.className = 'tab-' + tabId;
+  // U8-4: 연구 탭 활성 시 research-active 클래스 토글 (풀-레이아웃용)
+  document.body.classList.toggle('research-active', tabId === 'research');
   document.querySelectorAll('.nav-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tabId);
   });

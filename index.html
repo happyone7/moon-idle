@@ -268,6 +268,22 @@ body.tab-production #world-bg:active { cursor: grabbing; }
 /* 발사 통제 탭에서는 좌측 자원 패널 + 우측 인원 패널 숨김 */
 body.tab-launch #res-left { display: none; }
 body.tab-launch #rp { display: none; }
+/* ─── U8-4: 연구 탭 풀-레이아웃 ────────────────────────── */
+body.tab-research #res-left,
+body.tab-research #rp {
+  display: none !important;
+}
+body.tab-research #ww {
+  flex: 1;
+  max-width: 100%;
+  width: 100%;
+}
+body.tab-research #pane-research {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+}
 #world-bg::-webkit-scrollbar { height: 6px; }
 #world-bg::-webkit-scrollbar-track { background: var(--bg); border-top: 1px solid var(--green-dim); }
 #world-bg::-webkit-scrollbar-thumb { background: var(--green-dim); border-radius: 3px; }
@@ -647,6 +663,150 @@ body.tab-launch #rp { display: none; }
    RESEARCH TAB — branch column layout
    =========================== */
 #pane-research.active { padding:8px 10px 0 10px; }
+
+/* ─── 연구 3-컬럼 레이아웃 ─────────────────────────────── */
+.rsh-full-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  height: 100%;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.rsh-col-left {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+.rsh-col-center {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+.rsh-col-right {
+  width: 260px;
+  flex-shrink: 0;
+  overflow-y: auto;
+}
+
+/* ─── 연구 큐 패널 (좌측) ──────────────────────────────── */
+.rsh-queue-header {
+  font-size: 11px;
+  color: var(--green-mid);
+  border-bottom: 1px solid var(--green-dim);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+}
+.rsh-queue-item {
+  border: 1px solid var(--green-dim);
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: rgba(0,15,0,0.4);
+}
+.rsh-queue-item-hd {
+  font-size: 11px;
+  color: var(--green);
+  margin-bottom: 4px;
+}
+.rsh-queue-item-branch {
+  font-size: 9px;
+  color: var(--green-dim);
+  margin-bottom: 4px;
+}
+.rsh-queue-cancel {
+  font-size: 10px;
+  color: var(--red, #f66);
+  cursor: pointer;
+  border: 1px solid var(--red, #f66);
+  padding: 1px 6px;
+  margin-top: 4px;
+  display: inline-block;
+  border-radius: 2px;
+}
+.rsh-queue-cancel:hover { background: rgba(255,60,60,0.15); }
+.rsh-queue-empty {
+  font-size: 10px;
+  color: var(--green-dim);
+  padding: 8px 0;
+}
+
+/* ─── 기술 상세 패널 (우측) ────────────────────────────── */
+.rsh-detail-panel {
+  border: 1px solid var(--green-dim);
+  border-radius: 3px;
+  padding: 10px;
+  background: rgba(0,15,0,0.4);
+  font-size: 11px;
+}
+.rsh-detail-title {
+  font-size: 13px;
+  color: var(--green);
+  margin-bottom: 2px;
+}
+.rsh-detail-id {
+  font-size: 9px;
+  color: var(--green-dim);
+  margin-bottom: 8px;
+}
+.rsh-detail-section {
+  margin-bottom: 8px;
+  border-top: 1px solid rgba(0,80,0,0.5);
+  padding-top: 6px;
+}
+.rsh-detail-label {
+  color: var(--green-mid);
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+.rsh-detail-value {
+  color: var(--green);
+}
+.rsh-detail-effect {
+  color: var(--green-mid);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.rsh-detail-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px;
+  background: rgba(0,60,0,0.5);
+  border: 1px solid var(--green);
+  color: var(--green);
+  font-size: 12px;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+}
+.rsh-detail-btn:hover { background: rgba(0,100,0,0.5); }
+.rsh-detail-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.rsh-detail-empty {
+  color: var(--green-dim);
+  font-size: 10px;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ─── 선택된 카드 하이라이트 ──────────────────────────── */
+.rsh-bcard-selected {
+  border-color: var(--cyan, #0ff) !important;
+  box-shadow: 0 0 6px rgba(0,255,255,0.3);
+}
+/* ─── 완료 기술 스트립 (중앙 하단) ───────────────────── */
+.rsh-completed-strip {
+  margin-top: 12px;
+  padding: 8px;
+  border-top: 1px solid var(--green-dim);
+}
+
 /* Top bar — RP display */
 .rsh-topbar { display:flex; gap:18px; align-items:center; padding:6px 12px; background:var(--panel-bg); border:var(--border); margin-bottom:8px; font-size:12px; color:var(--green-mid); letter-spacing:1px; }
 .rsh-topbar b { color:var(--green); text-shadow:var(--glow); font-size:14px; }
