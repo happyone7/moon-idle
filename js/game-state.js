@@ -17,6 +17,9 @@ let gs = {
   msUpgrades: {},
   autoEnabled: {},
   milestones: {},
+  achievements: {},       // P4-2: earned achievement IDs
+  prestigeStars: {},      // P4-3: purchased star tree node IDs
+  prestigeCount: 0,       // P4-3: total prestige count
   launches: 0,
   moonstone: 0,
   history: [],
@@ -483,6 +486,9 @@ function loadGame(slot) {
     gs.msUpgrades = saved.msUpgrades || {};
     gs.autoEnabled = saved.autoEnabled || {};
     gs.milestones  = saved.milestones  || {};
+    gs.achievements = saved.achievements || {};         // P4-2
+    gs.prestigeStars = saved.prestigeStars || {};       // P4-3
+    gs.prestigeCount = saved.prestigeCount || 0;        // P4-3
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
@@ -732,5 +738,6 @@ function tick() {
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
   if (typeof runAutomation === 'function') runAutomation();
+  if (typeof checkAchievements === 'function') checkAchievements(); // P4-2
 }
 
