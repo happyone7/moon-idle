@@ -391,9 +391,10 @@ body.tab-launch #rp { display: none; }
 #bgm-track-label { font-size: 11px; color: var(--green-dim); min-width: 80px; }
 
 /* Progress bars */
-.prog-wrap { border: 1px solid var(--green-dim); height: 8px; background: var(--bg); overflow: hidden; margin: 4px 0; }
+.prog-wrap { border: 1px solid var(--green-dim); height: 10px; background: var(--bg); overflow: hidden; margin: 6px 0 3px; }
 .prog-fill { height: 100%; background: var(--green-mid); transition: width 0.3s; }
-.prog-fill.amber { background: var(--amber); }
+.prog-fill.amber { background: var(--amber); box-shadow: 0 0 4px rgba(255,171,0,0.5); }
+.prog-pct  { font-size: 11px; color: var(--green-mid); text-align: right; }
 
 /* Notifications */
 #notif { position: fixed; bottom: 40px; right: 20px; z-index: 8000; display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
@@ -778,19 +779,76 @@ body.tab-launch #rp { display: none; }
 .rocket-art-wrap { text-align: center; padding: 10px; border-bottom: 1px solid var(--green-dim); background: var(--bg); min-height: 220px; display: flex; align-items: center; justify-content: center; }
 #rocket-art-display { font-size: 12px; white-space: pre; line-height: 1.3; color: var(--green-dim); }
 #rocket-art-display .done { color: var(--green); text-shadow: var(--glow); }
-.parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 6px 0; font-size: 12px; gap: 6px; }
-.part-done { color: var(--green); text-shadow: var(--glow); }
+
+/* Parts list — done vs pending clarity */
+.parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 7px 0; font-size: 13px; gap: 8px; }
+.parts-list-item.part-item-done { background: rgba(0,230,118,0.04); }
+.parts-list-item.part-item-missing { opacity: 0.72; }
+.part-done { color: var(--green); text-shadow: var(--glow); font-weight: bold; }
 .part-pending { color: var(--green-dim); }
-.quality-selector { display: flex; flex-wrap: wrap; gap: 4px; }
-.q-btn { flex: 1; min-width: 80px; font-size: 10px; padding: 4px 6px; }
-.q-btn.selected { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 8px var(--amber); }
-.slot-card { border: var(--border); background: var(--panel-bg); padding: 8px 10px; margin-bottom: 8px; }
-.slot-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.slot-title { font-size: 12px; color: var(--green); letter-spacing: 1px; }
-.slot-state.idle { color: var(--green-mid); }
-.slot-state.busy { color: var(--amber); }
-.slot-state.ready { color: var(--green); text-shadow: var(--glow); }
-.science-box { border-top: 1px solid var(--green-dim); padding: 8px 10px; font-size: 11px; color: var(--green-mid); line-height: 1.7; }
+.part-missing-badge { font-size: 10px; letter-spacing: .1em; color: var(--green-dim); border: 1px solid var(--green-dim); padding: 1px 5px; opacity: 0.6; }
+
+/* Quality selector — tiered visual design */
+.quality-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.q-btn {
+  flex: 1; min-width: 110px; min-height: 52px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; padding: 8px 10px;
+  border: 1px solid var(--green-dim); background: var(--bg);
+  transition: all 0.15s;
+}
+.q-btn:hover:not(:disabled) { border-color: var(--green); }
+.q-btn-label { font-size: 13px; letter-spacing: 1px; font-family: var(--font); }
+.q-btn-sub { font-size: 10px; color: var(--green-dim); letter-spacing: .05em; }
+/* Tier colours */
+.q-btn[data-qid="proto"]    { border-color: #1a5c34; }
+.q-btn[data-qid="standard"] { border-color: #2a6040; }
+.q-btn[data-qid="advanced"] { border-color: #3d5a28; }
+.q-btn[data-qid="elite"]    { border-color: var(--amber-dim); }
+/* Selected state — strong highlight */
+.q-btn.selected { background: rgba(0,230,118,0.07); border-width: 2px; }
+.q-btn[data-qid="proto"].selected    { border-color: var(--green-mid); color: var(--green-mid); }
+.q-btn[data-qid="standard"].selected { border-color: var(--green); color: var(--green); box-shadow: 0 0 8px rgba(0,230,118,0.3); }
+.q-btn[data-qid="advanced"].selected { border-color: #80ff60; color: #80ff60; box-shadow: 0 0 10px rgba(128,255,96,0.3); }
+.q-btn[data-qid="elite"].selected    { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 10px var(--amber-glow); background: rgba(255,171,0,0.07); }
+.q-btn-label.q-lbl-proto    { color: inherit; }
+.q-btn-label.q-lbl-standard { color: inherit; }
+.q-btn-label.q-lbl-advanced { color: inherit; }
+.q-btn-label.q-lbl-elite    { color: var(--amber); }
+
+/* Assembly slot cards */
+.slot-card {
+  border: var(--border); background: var(--panel-bg);
+  padding: 12px 14px; margin-bottom: 10px;
+  min-height: 88px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.slot-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.slot-title { font-size: 13px; color: var(--green); letter-spacing: 1px; }
+
+/* Status badge replacing plain text */
+.slot-state {
+  font-size: 10px; letter-spacing: .12em; padding: 2px 7px;
+  border: 1px solid; border-radius: 0;
+}
+.slot-state.idle  { color: var(--green-dim); border-color: var(--green-dim); background: rgba(26,92,52,0.2); }
+.slot-state.busy  { color: var(--amber);     border-color: var(--amber-dim); background: rgba(255,171,0,0.08); }
+.slot-state.ready { color: var(--green);     border-color: var(--green);     background: rgba(0,230,118,0.1); text-shadow: var(--glow); }
+
+/* Ready slot — glowing pulse to draw attention */
+.slot-card.slot-ready {
+  border-color: var(--green);
+  box-shadow: 0 0 12px rgba(0,230,118,0.18);
+  animation: pulse-slot-ready 2.5s ease-in-out infinite;
+}
+@keyframes pulse-slot-ready {
+  0%,100% { box-shadow: 0 0 6px rgba(0,230,118,0.15); border-color: var(--green); }
+  50%     { box-shadow: 0 0 18px rgba(0,230,118,0.35); border-color: var(--green); }
+}
+/* Busy slot — subtle amber tint */
+.slot-card.slot-busy { border-color: var(--amber); }
+
+.science-box { border: var(--border); background: var(--bg); padding: 10px 14px; font-size: 12px; color: var(--green-mid); margin-top: 10px; line-height: 1.7; }
 .science-box .val { color: var(--green); }
 .science-box .ms-val { color: var(--amber); }
 
@@ -1266,6 +1324,526 @@ body.tab-launch #rp { display: none; }
   100% { filter: brightness(1) saturate(1); }
 }
 .bld-build-flash { animation: bld-build-flash 0.6s ease-out; }
+
+/* ===========================
+   [S3 U3-1] 조립 탭 3-column CSS (v7c 기준)
+   =========================== */
+.assembly-3col {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+.assembly-3col .asm-col-left {
+  width: 30%;
+  flex-shrink: 0;
+  border-right: 1px solid var(--green-dim);
+  background: var(--panel-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.assembly-3col .asm-col-center {
+  width: 40%;
+  flex-shrink: 0;
+  border-right: 1px solid var(--green-dim);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.assembly-3col .asm-col-right {
+  width: 30%;
+  flex-shrink: 0;
+  background: var(--panel-bg);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.assembly-3col .asm-col-left::-webkit-scrollbar,
+.assembly-3col .asm-col-right::-webkit-scrollbar { width: 4px; background: var(--bg); }
+.assembly-3col .asm-col-left::-webkit-scrollbar-thumb,
+.assembly-3col .asm-col-right::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+/* Column header (v7c) */
+.asm-col-header {
+  background: #011005;
+  border-bottom: 2px solid var(--green-dim);
+  padding: 4px 12px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--green);
+  text-shadow: var(--glow);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+.asm-col-header::before { content: '//'; color: var(--green-mid); font-size: 12px; }
+
+/* Section blocks inside columns */
+.asm-section { padding: 8px 12px; border-bottom: var(--border); }
+.asm-section:last-child { border-bottom: none; }
+.asm-section-title {
+  font-size: 9px; letter-spacing: 2px; color: var(--green-mid);
+  margin-bottom: 6px; padding-bottom: 3px;
+  border-bottom: 1px solid #0a2e14; text-transform: uppercase;
+}
+
+/* Rocket class selector cards (v7c) */
+.class-card {
+  padding: 5px 6px;
+  border: 1px solid var(--green-dim);
+  background: var(--bg);
+  color: var(--green-mid);
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  position: relative;
+}
+.class-card:hover:not(.locked) {
+  border-color: var(--green);
+  color: var(--green);
+  background: #030f05;
+}
+.class-card.selected {
+  border-color: var(--green);
+  background: #011a08;
+  color: var(--green);
+  text-shadow: var(--glow);
+  box-shadow: inset 0 0 8px #00e67620;
+}
+.class-card.locked {
+  border-color: #0a2e14;
+  color: #1a5c34;
+  cursor: not-allowed;
+  background: #010b03;
+}
+.class-card .lock-icon { float: right; font-size: 9px; color: #1a5c34; }
+.class-card .radio {
+  display: inline-block; width: 8px; height: 8px;
+  border: 1px solid currentColor; border-radius: 50%;
+  margin-right: 5px; vertical-align: middle; position: relative;
+}
+.class-card.selected .radio::after {
+  content: '';
+  position: absolute; inset: 2px;
+  background: var(--green); border-radius: 50%;
+  box-shadow: var(--glow);
+}
+.class-card-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 4px;
+}
+
+/* ===========================
+   [S3 U3-2] BOM 테이블 CSS + 호버 하이라이트 (v7c 기준)
+   =========================== */
+.bom-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+}
+.bom-table th {
+  text-align: left;
+  color: var(--green-mid);
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 3px 4px;
+  border-bottom: 1px solid var(--green-dim);
+  white-space: nowrap;
+}
+.bom-table td {
+  padding: 3px 4px;
+  vertical-align: middle;
+  border-bottom: 1px solid #0a2e14;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Row hover — glow border highlight */
+.bom-table tr:hover td {
+  background: #011a08;
+  cursor: pointer;
+  box-shadow: inset 0 0 6px rgba(0,230,118,0.08);
+}
+.bom-table tr.bom-highlight td {
+  background: #011a08;
+  border-bottom-color: var(--green);
+  box-shadow: 0 0 8px rgba(0,230,118,0.15);
+}
+/* Sub rows (indented) */
+.bom-table tr.bom-sub td {
+  color: var(--green-mid);
+  font-size: 9px;
+  padding-left: 12px;
+}
+.bom-table tr.bom-sub:hover td {
+  background: #010e04;
+}
+/* Status icons */
+.bom-status-ok { color: var(--green); text-shadow: var(--glow); }
+.bom-status-ok::before { content: '\2713 '; /* checkmark */ }
+.bom-status-progress { color: var(--amber); text-shadow: var(--amber-glow); animation: pulse-amber 2s ease-in-out infinite; }
+.bom-status-pending { color: #1a5c34; }
+.bom-status-missing { color: var(--red); }
+.bom-status-missing::before { content: '\26A0 '; /* warning */ }
+
+/* ===========================
+   [S3 U3-3] 프로그레스 바 shimmer + leading edge 전 탭 적용
+   (TA progress-shimmer.css 패치 기반)
+   =========================== */
+@keyframes progress-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+/* Override base .prog-fill with shimmer */
+.prog-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00994d, #00e676, #00994d);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  transition: width 0.3s;
+  position: relative;
+}
+
+/* Leading edge: 2px white glow at fill tip */
+.prog-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: white;
+  box-shadow:
+    0 0 4px rgba(255,255,255,0.9),
+    0 0 8px var(--green);
+  pointer-events: none;
+}
+
+/* Also apply to rocket build phase bars */
+.rc-phase-bar-fill {
+  background: linear-gradient(90deg, #00994d, #00e676, #00994d);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  position: relative;
+}
+.rc-phase-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: white;
+  box-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px var(--green);
+  pointer-events: none;
+}
+.rc-phase-bar-fill.done {
+  background: var(--green);
+  box-shadow: 0 0 4px var(--green);
+  animation: none;
+}
+.rc-phase-bar-fill.done::after { display: none; }
+
+/* Resource bars shimmer */
+.rl-bar-fill {
+  background: linear-gradient(90deg, #005530, #00994d, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+  position: relative;
+}
+.rl-bar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 1px;
+  background: white;
+  box-shadow: 0 0 3px rgba(255,255,255,0.7), 0 0 6px var(--green);
+  pointer-events: none;
+}
+
+/* Staff panel bars shimmer */
+.gfill {
+  background: linear-gradient(90deg, #005530, #00e676, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+  position: relative;
+}
+.gfill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 1px;
+  background: white;
+  box-shadow: 0 0 3px rgba(255,255,255,0.7), 0 0 6px var(--green);
+  pointer-events: none;
+}
+.gfill.a {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+}
+
+/* Launch tab status bars shimmer */
+.lc-sbar-fill {
+  background: linear-gradient(90deg, #005530, #00e676, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  position: relative;
+}
+.lc-sbar-fill::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: white;
+  box-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px var(--green);
+  pointer-events: none;
+}
+.lc-sbar-fill.amber {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  box-shadow: 0 0 4px var(--amber);
+}
+.lc-sbar-fill.amber::after {
+  background: #fff8e1;
+  box-shadow: 0 0 4px rgba(255,248,225,0.9), 0 0 8px var(--amber);
+}
+.lc-sbar-fill.red {
+  background: linear-gradient(90deg, #5c0a15, #ff1744, #5c0a15);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  box-shadow: 0 0 4px var(--red);
+}
+
+/* Quest progress bar shimmer */
+.qs-progress-fill {
+  background: linear-gradient(90deg, #005530, #00e676, #005530);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+}
+
+/* Risk tag with pulse */
+.risk-tag {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border: 1px solid #5c0a15;
+  font-size: 10px;
+  font-family: var(--font);
+  color: var(--red);
+  margin-bottom: 3px;
+  animation: pulse-red 2.5s ease-in-out infinite;
+}
+.risk-tag::before { content: '\26A0'; font-size: 10px; }
+@keyframes pulse-red {
+  0%, 100% { color: var(--red); border-color: #5c0a15; text-shadow: 0 0 4px rgba(255,23,68,0.3); }
+  50%      { color: #7a0020; border-color: #2a0510; text-shadow: none; }
+}
+
+/* ===========================
+   [S3 U3-4] 임무 탭 서브탭 CSS + 페이즈 타임라인 노드 스타일 (v7e 기준)
+   =========================== */
+/* Sub-tab navigation bar */
+.sub-tab-nav {
+  display: flex;
+  background: #010a02;
+  border-bottom: var(--border);
+  flex-shrink: 0;
+  padding: 0 16px;
+}
+.sub-tab-btn {
+  padding: 5px 16px;
+  font-family: var(--font);
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--green-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.sub-tab-btn:hover { color: var(--green-mid); }
+.sub-tab-btn.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+  text-shadow: var(--glow);
+}
+
+/* Phase timeline strip */
+.phase-timeline {
+  flex-shrink: 0;
+  background: #010d03;
+  border-bottom: 2px solid var(--green-dim);
+  padding: 14px 24px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.phase-timeline .zone-label {
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--green-dim);
+  margin-bottom: 10px;
+}
+
+/* Timeline row container */
+.phase-timeline-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 80px;
+}
+
+/* Phase connector lines between nodes */
+.phase-connector {
+  flex: 1;
+  height: 2px;
+  background: var(--green-dim);
+  position: relative;
+}
+.phase-connector.complete {
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+.phase-connector.partial {
+  background: linear-gradient(to right, var(--green) 60%, var(--green-dim) 60%);
+}
+.phase-connector.locked {
+  background: #0a1e0e;
+}
+
+/* Phase node wrapper */
+.phase-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  gap: 0;
+}
+
+/* Phase dot — the main node circle */
+.phase-dot {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--green-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: var(--bg);
+  position: relative;
+  z-index: 2;
+  transition: transform 0.15s;
+}
+.phase-node:hover .phase-dot { transform: scale(1.1); }
+
+/* Phase dot states */
+.phase-dot.complete {
+  border-color: var(--green);
+  background: #010f05;
+  box-shadow: var(--glow-strong);
+  color: var(--green);
+  text-shadow: var(--glow-strong);
+}
+@keyframes progress-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--amber); }
+  50%      { box-shadow: 0 0 12px var(--amber), 0 0 20px #ffab0050; }
+}
+.phase-dot.in-progress {
+  border-color: var(--amber);
+  background: #0a0500;
+  box-shadow: 0 0 10px var(--amber), 0 0 20px #ffab0060;
+  color: var(--amber);
+  animation: progress-pulse 2s ease-in-out infinite;
+}
+.phase-dot.locked {
+  border-color: #0a2010;
+  background: #010800;
+  color: #1a3a20;
+}
+
+/* Phase info below dot */
+.phase-info {
+  position: absolute;
+  top: 44px; left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.phase-info .phase-name-label {
+  font-size: 10px; letter-spacing: 1.5px; display: block; margin-bottom: 2px;
+}
+.phase-info .phase-name-label.complete { color: var(--green); text-shadow: var(--glow); }
+.phase-info .phase-name-label.in-progress { color: var(--amber); text-shadow: var(--amber-glow); }
+.phase-info .phase-name-label.locked { color: #2a5c35; }
+
+.phase-status-text { font-size: 9px; letter-spacing: 1px; display: block; }
+.phase-status-text.complete { color: var(--green-mid); }
+.phase-status-text.in-progress { color: #7a5100; }
+.phase-status-text.locked { color: #1a3a20; }
+
+.phase-sub-text { font-size: 8px; letter-spacing: 0.5px; margin-top: 2px; display: block; }
+.phase-sub-text.complete { color: #2a7a4a; }
+.phase-sub-text.in-progress { color: var(--amber-dim); }
+.phase-sub-text.locked { color: #0f2514; }
+
+/* Mini progress bar under active phase dot */
+.phase-mini-progress {
+  position: absolute;
+  bottom: -6px; left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+}
+.phase-mini-bar {
+  width: 100%; height: 3px;
+  background: #0a2010;
+  position: relative;
+}
+.phase-mini-fill {
+  height: 100%;
+  background: var(--amber);
+  box-shadow: 0 0 4px var(--amber);
+}
+
+/* ===========================
+   [S3 U3-5] 앰버 프로그레스 바 변형 CSS
+   =========================== */
+/* Amber variant for .prog-fill (heat/thermal management) */
+.prog-fill.amber,
+.prog-fill.progress-amber,
+.progress-amber .prog-fill {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 2.5s linear infinite;
+  box-shadow: 0 0 4px rgba(255,171,0,0.5);
+}
+.prog-fill.amber::after,
+.prog-fill.progress-amber::after,
+.progress-amber .prog-fill::after {
+  background: #fff8e1;
+  box-shadow:
+    0 0 4px rgba(255,248,225,0.9),
+    0 0 8px var(--amber);
+}
+
+/* Standalone .progress-amber class for wrapping containers */
+.progress-amber .prog-wrap { border-color: var(--amber-dim); }
+
+/* Amber resource bar variant */
+.rl-bar-fill.amber {
+  background: linear-gradient(90deg, #8b6914, #ffc107, #8b6914);
+  background-size: 200% 100%;
+  animation: progress-shimmer 3s linear infinite;
+}
+.rl-bar-fill.amber::after {
+  background: #fff8e1;
+  box-shadow: 0 0 3px rgba(255,248,225,0.7), 0 0 6px var(--amber);
+}
 
 </style>
 </head>

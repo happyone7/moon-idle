@@ -387,6 +387,38 @@ function renderAssemblyTab() {
   // 8. BOM table (P3-3)
   renderBomTable(selClass);
 
+  // Parts checklist
+  let partsHtml = '';
+  PARTS.forEach(p => {
+    const done = gs.parts[p.id];
+    const cost = getPartCost(p);
+    const costStr = getCostStr(cost);
+    const affordable = canAfford(cost);
+    partsHtml += `<div class="parts-list-item ${done ? 'part-item-done' : 'part-item-missing'}">
+      <span class="part-check ${done ? 'part-done' : 'part-pending'}">${done ? '[✓]' : '[✗]'}</span>
+      <span style="flex:1;color:${done ? 'var(--green)' : 'var(--green-dim)'};">${p.icon} ${p.name}</span>
+      ${done
+        ? '<span style="color:var(--green);font-size:12px;">완료</span>'
+        : `<span class="part-missing-badge">미제작</span><button class="btn btn-sm${affordable ? '' : ' btn-amber'}" onclick="craftPart('${p.id}')" ${affordable ? '' : 'disabled'}>제작</button>`}
+    </div>
+    ${!done ? `<div style="font-size:11px;color:var(--green-mid);padding:2px 0 5px 22px;">비용: ${costStr}</div>` : ''}`;
+  });
+  const checklist = document.getElementById('parts-checklist');
+  if (checklist) checklist.innerHTML = partsHtml;
+
+  // Quality selector — with tier sub-labels (time + cost multiplier)
+  let qualHtml = '';
+  QUALITIES.forEach(q => {
+    const active = gs.assembly.selectedQuality === q.id;
+    const subLabel = `${fmtTime(q.timeSec)} · x${q.costMult} 비용`;
+    qualHtml += `<button class="btn q-btn${active ? ' selected' : ''}" data-qid="${q.id}" onclick="selectQuality('${q.id}')">
+      <span class="q-btn-label q-lbl-${q.id}">${q.icon} ${q.name}</span>
+      <span class="q-btn-sub">${subLabel}</span>
+    </button>`;
+  });
+  const qualSel = document.getElementById('quality-selector');
+  if (qualSel) qualSel.innerHTML = qualHtml;
+
   // ── RIGHT COLUMN ──
 
   // 9. Assembly slots
@@ -397,35 +429,35 @@ function renderAssemblyTab() {
       const canStart = PARTS.every(p => gs.parts[p.id]) && canAfford(asmCost);
       slotsHtml += `<div class="slot-card">
         <div class="slot-card-header">
-          <span class="slot-title">// 슬롯 ${idx + 1}</span>
-          <span class="slot-state idle">대기 중</span>
+          <span class="slot-title">// 조립 슬롯 ${idx + 1}</span>
+          <span class="slot-state idle">빈 슬롯</span>
         </div>
-        <div style="font-size:10px;color:var(--green-mid);margin-bottom:4px;">${q.name} | ${asmCostStr}</div>
-        <button class="btn btn-full btn-sm${canStart ? '' : ' btn-amber'}" onclick="startAssembly(${idx})" ${canStart ? '' : 'disabled'} style="font-size:10px;">
-          ${canStart ? '[ START ]' : '[ 부품/자원 부족 ]'}
+        <div style="font-size:12px;color:var(--green-mid);margin-bottom:8px;">선택: ${q.name}  |  비용: ${asmCostStr}</div>
+        <button class="btn btn-full btn-sm${canStart ? '' : ' btn-amber'}" onclick="startAssembly(${idx})" ${canStart ? '' : 'disabled'}>
+          ${canStart ? '[ ▶ 조립 시작 ]' : '[ 부품/자원 부족 ]'}
         </button>
       </div>`;
     } else if (job.ready) {
       const ms = getMoonstoneReward(job.qualityId);
-      slotsHtml += `<div class="slot-card" style="border-color:var(--green);">
+      slotsHtml += `<div class="slot-card slot-ready">
         <div class="slot-card-header">
           <span class="slot-title glow">// 슬롯 ${idx + 1} — ${getQuality(job.qualityId).name}</span>
-          <span class="slot-state ready">READY</span>
+          <span class="slot-state ready">준비 완료!</span>
         </div>
-        <div style="font-size:10px;color:var(--green-mid);margin-bottom:4px;">문스톤: +${ms}</div>
-        <button class="btn btn-full btn-sm btn-amber" onclick="launchFromSlot(${idx})" style="font-size:10px;">[ LAUNCH ]</button>
+        <div style="font-size:12px;color:var(--green);margin-bottom:8px;text-shadow:var(--glow);">예상 문스톤: +${ms}개</div>
+        <button class="btn btn-full btn-sm btn-amber" onclick="launchFromSlot(${idx})">[ ▶▶ 발사 실행 ]</button>
       </div>`;
     } else {
       const remain = Math.max(0, Math.floor((job.endAt - now) / 1000));
       const total = Math.max(1, Math.floor((job.endAt - job.startAt) / 1000));
       const pct = Math.min(100, ((total - remain) / total) * 100);
-      slotsHtml += `<div class="slot-card" style="border-color:var(--amber);">
+      slotsHtml += `<div class="slot-card slot-busy">
         <div class="slot-card-header">
           <span class="slot-title">// 슬롯 ${idx + 1} — ${getQuality(job.qualityId).name}</span>
-          <span class="slot-state busy">${fmtTime(remain)}</span>
+          <span class="slot-state busy">조립 중...</span>
         </div>
         <div class="prog-wrap"><div class="prog-fill amber" style="width:${pct}%"></div></div>
-        <div style="font-size:10px;color:var(--green-mid);">${pct.toFixed(0)}%</div>
+        <div class="prog-pct">${pct.toFixed(0)}% — 잔여 ${fmtTime(remain)}</div>
       </div>`;
     }
   });
