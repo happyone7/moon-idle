@@ -300,7 +300,7 @@ function renderAssemblyTab() {
     const active = gs.assembly.selectedQuality === q.id;
     qualHtml += `<button class="btn q-btn${active ? ' selected' : ''}" onclick="selectQuality('${q.id}')">${q.icon} ${q.name}</button>`;
   });
-  const qualSel = document.getElementById('quality-selector');
+  let qualSel = document.getElementById('quality-selector');
   if (qualSel) qualSel.innerHTML = qualHtml;
 
   // 4. Parts checklist
@@ -319,7 +319,7 @@ function renderAssemblyTab() {
     </div>
     ${!done ? `<div style="font-size:10px;color:var(--green-mid);padding:1px 0 3px 22px;">비용: ${costStr}</div>` : ''}`;
   });
-  const checklist = document.getElementById('parts-checklist');
+  let checklist = document.getElementById('parts-checklist');
   if (checklist) checklist.innerHTML = partsHtml;
 
   // 5. Science box
@@ -403,7 +403,7 @@ function renderAssemblyTab() {
     </div>
     ${!done ? `<div style="font-size:11px;color:var(--green-mid);padding:2px 0 5px 22px;">비용: ${costStr}</div>` : ''}`;
   });
-  const checklist = document.getElementById('parts-checklist');
+  checklist = document.getElementById('parts-checklist');
   if (checklist) checklist.innerHTML = partsHtml;
 
   // Quality selector — with tier sub-labels (time + cost multiplier)
@@ -416,7 +416,7 @@ function renderAssemblyTab() {
       <span class="q-btn-sub">${subLabel}</span>
     </button>`;
   });
-  const qualSel = document.getElementById('quality-selector');
+  qualSel = document.getElementById('quality-selector');
   if (qualSel) qualSel.innerHTML = qualHtml;
 
   // ── RIGHT COLUMN ──
