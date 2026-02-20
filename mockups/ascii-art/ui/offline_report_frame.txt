@@ -1,0 +1,32 @@
+OFFLINE RETURN REPORT — TERMINAL UI
+════════════════════════════════════════
+
+╔════════════════════════════════════╗
+║  // OFFLINE RETURN REPORT  v2.1   ║
+║  // GROUND CONTROL — MOONBASE     ║
+╠════════════════════════════════════╣
+║                                    ║
+║  ELAPSED: {time}                   ║
+║  ══════════════════                ║
+║                                    ║
+║  ┌─ RESOURCES EARNED ───────────┐  ║
+║  │  ₩  {money}           FUNDS  │  ║
+║  │  Fe {metal}           METAL  │  ║
+║  │  LOX {fuel}            FUEL  │  ║
+║  │  ⚡ {power}           POWER  │  ║
+║  └──────────────────────────────┘  ║
+║                                    ║
+║  ┌─ OPERATIONS ─────────────────┐  ║
+║  │  ASSEMBLY: {status}          │  ║
+║  │  LAUNCHES: {count}           │  ║
+║  │  MOONSTONE: +{ms}            │  ║
+║  └──────────────────────────────┘  ║
+║                                    ║
+║  EFFICIENCY: {pct}%                ║
+║  ─────────────────────             ║
+║  ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░  {pct}%    ║
+║                                    ║
+╠════════════════════════════════════╣
+║          [ CONFIRMED ]             ║
+╚════════════════════════════════════╝
+  STATUS: SYSTEMS NOMINAL — WELCOME BACK
