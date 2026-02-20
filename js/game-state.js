@@ -14,7 +14,8 @@ let gs = {
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
   assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
   upgrades: {},
-  researchProgress: {},  // { upgradeId: { rpSpent: number } } — 진행 중인 연구
+  researchProgress: {},  // { upgradeId: { rpSpent: number, timeSpent: number } } — 진행 중인 연구
+  selectedTech: null,
   msUpgrades: {},
   autoEnabled: {},
   milestones: {},
@@ -489,6 +490,21 @@ function loadGame(slot) {
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
     gs.researchProgress = saved.researchProgress || {};
+    // researchProgress 마이그레이션: timeSpent 없으면 추론
+    if (gs.researchProgress) {
+      Object.entries(gs.researchProgress).forEach(([uid, prog]) => {
+        if (prog.timeSpent === undefined) {
+          const upg = UPGRADES.find(u => u.id === uid);
+          if (upg) {
+            const techTime = upg.time || 60;
+            const rpTotal  = upg.cost.research || 1;
+            prog.timeSpent = ((prog.rpSpent || 0) / rpTotal) * techTime;
+          } else {
+            prog.timeSpent = 0;
+          }
+        }
+      });
+    }
     gs.assembly = saved.assembly || { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
     if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
     gs.settings = saved.settings || { sound: true, lang: 'en' };
@@ -734,6 +750,7 @@ function _showOfflineReport(report) {
 // ============================================================
 /** 연구 시작 — 비RP 자원 즉시 차감, RP는 tick마다 점진 소모 */
 function startResearch(uid) {
+  gs.selectedTech = uid;  // 마지막 선택 기술 기록
   const upg = UPGRADES.find(u => u.id === uid);
   if (!upg || gs.upgrades[uid]) return;
   if (gs.researchProgress && gs.researchProgress[uid]) return; // 이미 진행 중
@@ -763,47 +780,81 @@ function _completeResearch(uid) {
   playSfx('sawtooth', 440, 0.1, 0.028, 700);
 }
 
-/** tick마다 호출 — 보유 RP를 진행 중인 연구들에 균등 분배 */
-function tickResearch() {
+/** tick마다 호출 — 시간 기반 연구 진행 (dt: 경과 시간, 초 단위) */
+function tickResearch(dt) {
   if (!gs.researchProgress) return;
   const activeIds = Object.keys(gs.researchProgress);
   if (activeIds.length === 0) return;
-  const rpHave = gs.res.research || 0;
-  if (rpHave <= 0.001) return;
-  const rpPerItem = rpHave / activeIds.length;
-  let totalConsumed = 0;
+
   const completedIds = [];
   activeIds.forEach(uid => {
     const upg = UPGRADES.find(u => u.id === uid);
     if (!upg) return;
-    const rpTotal = upg.cost.research || 0;
-    const prog = gs.researchProgress[uid];
-    const rpNeeded = rpTotal - (prog.rpSpent || 0);
-    const rpGiven = Math.min(rpPerItem, rpNeeded);
-    prog.rpSpent = (prog.rpSpent || 0) + rpGiven;
-    totalConsumed += rpGiven;
-    if (prog.rpSpent >= rpTotal) completedIds.push(uid);
+
+    const techTime    = upg.time || 60;                      // 기술 고정 시간(초)
+    const rpTotal     = upg.cost.research || 0;
+    const rpPerSec    = techTime > 0 ? rpTotal / techTime : 0; // RP 소모 속도
+    const prog        = gs.researchProgress[uid];
+    if (!prog.timeSpent) prog.timeSpent = 0;
+
+    // RP 소모 계산
+    const rpNeeded = rpPerSec * dt;
+    const rpAvail  = gs.res.research || 0;
+
+    let advance = 0;
+    if (rpPerSec <= 0) {
+      // RP 비용 없는 기술 → 시간만으로 진행
+      advance = dt;
+    } else if (rpAvail >= rpNeeded) {
+      // 충분한 RP → 정속 진행
+      advance = dt;
+      gs.res.research = Math.max(0, rpAvail - rpNeeded);
+      prog.rpSpent = (prog.rpSpent || 0) + rpNeeded;
+    } else if (rpAvail > 0) {
+      // RP 부족 → 비율만큼 진행
+      const ratio = rpAvail / rpNeeded;
+      advance = dt * ratio;
+      prog.rpSpent = (prog.rpSpent || 0) + rpAvail;
+      gs.res.research = 0;
+    }
+    // else: RP 없음 → 정지
+
+    prog.timeSpent += advance;
+    if (prog.timeSpent >= techTime) completedIds.push(uid);
   });
-  gs.res.research = Math.max(0, rpHave - totalConsumed);
+
   completedIds.forEach(uid => _completeResearch(uid));
 }
 
 /**
  * 연구 완료까지 남은 시간(초)을 반환한다.
- * @param {string} uid - 연구 중인 업그레이드 ID
- * @returns {number} 남은 초. RP rate가 0이면 Infinity 반환.
+ * RP 생산이 부족하면 실제 예상 시간(느린 속도 반영)을 반환.
+ * @param {string} uid
+ * @returns {number} 남은 초. RP 없음이면 Infinity.
  */
 function getResearchETA(uid) {
   if (!gs.researchProgress || !gs.researchProgress[uid]) return 0;
-  const rpRate = getProduction().research || 0;
-  if (rpRate <= 0) return Infinity;
   const upg = UPGRADES.find(u => u.id === uid);
-  const rpTotal = upg ? (upg.cost.research || 0) : 0;
-  const rpSpent = gs.researchProgress[uid].rpSpent || 0;
-  const rpRemaining = rpTotal - rpSpent;
+  if (!upg) return 0;
+
+  const techTime    = upg.time || 60;
+  const rpTotal     = upg.cost.research || 0;
+  const rpPerSec    = techTime > 0 ? rpTotal / techTime : 0;
+  const prog        = gs.researchProgress[uid];
+  const timeSpent   = prog.timeSpent || 0;
+  const timeLeft    = Math.max(0, techTime - timeSpent);
+
+  if (rpPerSec <= 0) return timeLeft;
+
+  const rpRate      = getProduction().research || 0;
   const activeCount = Object.keys(gs.researchProgress).length;
-  const myRate = rpRate / activeCount;
-  return myRate > 0 ? rpRemaining / myRate : Infinity;
+  const myRpRate    = activeCount > 0 ? rpRate / activeCount : 0;
+
+  if (myRpRate <= 0) return Infinity;
+
+  const speedRatio  = Math.min(1, myRpRate / rpPerSec);
+  if (speedRatio <= 0) return Infinity;
+  return timeLeft / speedRatio;
 }
 
 // ============================================================
@@ -834,7 +885,7 @@ function tick() {
       _resCap_lastSfx = now;
     }
   }
-  tickResearch();  // 점진적 RP 소모
+  tickResearch(dt);  // 시간 기반 연구 진행
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
   if (typeof runAutomation === 'function') runAutomation();
