@@ -142,10 +142,10 @@ function upgBuilding(bid) {
   renderAll();
 }
 
-function getMoonstoneMult() { return 1 + gs.moonstone * 0.05; }
+function getMoonstoneMult() { return Math.pow(1.07, gs.moonstone || 0); }
 
 function getSolarBonus() {
-  let perPanel = 0.10;
+  let perPanel = 0.15;
   if (gs.bldUpgrades) {
     if (gs.bldUpgrades.sol_hieff)   perPanel += 0.05;
     if (gs.bldUpgrades.sol_tracker) perPanel += 0.05;
@@ -244,10 +244,27 @@ function spend(cost) {
   });
 }
 
+const BUILDING_EXPONENTS = {
+  housing:       1.12,
+  ops_center:    1.18,
+  supply_depot:  1.18,
+  mine:          1.13,
+  extractor:     1.15,
+  refinery:      1.15,
+  cryo_plant:    1.15,
+  elec_lab:      1.12,
+  fab_plant:     1.15,
+  research_lab:  1.12,
+  r_and_d:       1.15,
+  solar_array:   1.22,
+  launch_pad:    1.30,
+};
+
 function getBuildingCost(bld) {
   const cost = {};
   Object.entries(bld.baseCost).forEach(([r, v]) => {
-    cost[r] = Math.floor(v * Math.pow(1.15, gs.buildings[bld.id] || 0));
+    const exp = BUILDING_EXPONENTS[bld.id] || 1.15;
+    cost[r] = Math.floor(v * Math.pow(exp, gs.buildings[bld.id] || 0));
   });
   return cost;
 }
@@ -723,7 +740,7 @@ function tick() {
   gs.lastTick = now;
   if (dt < 0.001) return;  // 너무 짧은 tick 방지 (calcOffline 직후)
   const prod = getProduction();
-  const RES_MAX = { money:999999, metal:50000, fuel:20000, electronics:10000, research:5000 };
+  const RES_MAX = { money:1e12, metal:5e7, fuel:2e7, electronics:1e7, research:50000 };
   RESOURCES.forEach(r => { gs.res[r.id] = Math.max(0, (gs.res[r.id] || 0) + prod[r.id] * dt); });
   // 자원 한도 도달 경고음 (생산 중인 자원이 한도에 근접/도달 시)
   if (now - _resCap_lastSfx > RES_CAP_COOLDOWN) {
