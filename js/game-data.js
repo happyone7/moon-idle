@@ -29,6 +29,33 @@ const BLD_STAFF_NAMES = {
   launch_pad:    '발사 기술자',
 };
 
+const BLD_STAFF_ICONS = {
+  housing:      '<span class="wk-icon wk-housing">&#x1F465;</span>',
+  ops_center:   '<span class="wk-icon wk-ops">&#x229E;</span>',
+  supply_depot: '<span class="wk-icon wk-supply">&#x25A4;</span>',
+  mine:         '<span class="wk-icon wk-mine">&#x25C8;</span>',
+  extractor:    '<span class="wk-icon wk-extract">&#x2B21;</span>',
+  refinery:     '<span class="wk-icon wk-refinery">&#x2699;</span>',
+  cryo_plant:   '<span class="wk-icon wk-cryo">&#x2745;</span>',
+  elec_lab:     '<span class="wk-icon wk-elec">&#x26A1;</span>',
+  fab_plant:    '<span class="wk-icon wk-fab">&#x2B1B;</span>',
+  research_lab: '<span class="wk-icon wk-rsc">&#x2B21;</span>',
+  r_and_d:      '<span class="wk-icon wk-rnd">&#x2605;</span>',
+  solar_array:  '<span class="wk-icon wk-solar">&#x25CE;</span>',
+  launch_pad:   '<span class="wk-icon wk-launch">&#x25B2;</span>',
+};
+
+const SPECIALIST_ROLES = {
+  research_lab: [
+    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 생산 +25%\n실험 결과 가속',      effect:'res_research_mult', val:0.25 },
+    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 생산 효율 +8%\n공정 최적화 적용', effect:'all_prod_mult',     val:0.08 },
+  ],
+  ops_center: [
+    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%\n거래 채널 확대',      effect:'money_mult',    val:0.20 },
+    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'건물 유지비 -15%\n운영 자동화 적용',  effect:'upkeep_reduce', val:0.15 },
+  ],
+};
+
 const BUILDINGS = [
   { id:'housing',      name:'주거 시설',        icon:'[HSG]', produces:'bonus',       baseRate:0,   baseCost:{money:200},                                    desc:'인원 상한 +1',      wbClass:'wb-housing' },
   { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:35,  baseCost:{metal:150},                                    desc:'수익 창출 허브',    wbClass:'wb-ops' },

@@ -17,6 +17,7 @@ let gs = {
   researchProgress: {},  // { upgradeId: { rpSpent: number, timeSpent: number } } — 진행 중인 연구
   opsRoles: { sales: 0, accounting: 0, consulting: 0 },
   citizens: 0,         // 분양된 시민 수 (P8-4)
+  specialists: {},     // { bldId: { specId: count } } — 전문화된 직원
   selectedTech: null,
   msUpgrades: {},
   autoEnabled: {},
@@ -299,6 +300,18 @@ function getBldWorkerCost(bldId) {
   return Math.floor(100 * Math.pow(3.0, assigned));
 }
 
+// 직원 전문화: 해당 건물 배치 인원 1명을 전문가로 전환 (P8-5)
+function promoteToSpecialist(bldId, specId) {
+  const assigned = (gs.assignments && gs.assignments[bldId]) || 0;
+  if (assigned < 1) return false;
+  gs.assignments[bldId] = assigned - 1;
+  gs.workers = Math.max(0, (gs.workers || 0) - 1);
+  if (!gs.specialists) gs.specialists = {};
+  if (!gs.specialists[bldId]) gs.specialists[bldId] = {};
+  gs.specialists[bldId][specId] = (gs.specialists[bldId][specId] || 0) + 1;
+  return true;
+}
+
 // 시민 분양 비용: 500 × 1.8^(citizens) (P8-4)
 function getCitizenCost() {
   return Math.floor(500 * Math.pow(1.8, gs.citizens || 0));
@@ -340,6 +353,21 @@ function getProduction() {
   // 주거시설 상가 업그레이드: +50/s (P8-4)
   if (gs.bldUpgrades && gs.bldUpgrades.housing_market) {
     prod.money += 50;
+  }
+  // ── 전문가 효과 반영 (P8-5) ──────────────────────────────────
+  if (gs.specialists) {
+    // research_lab 실험 전문가: 연구 생산 +25%/명
+    const expCount = (gs.specialists.research_lab && gs.specialists.research_lab.experiment) || 0;
+    if (expCount > 0) prod.research = (prod.research || 0) * (1 + expCount * 0.25);
+    // research_lab 데이터 분석가: 모든 생산 +8%/명
+    const analCount = (gs.specialists.research_lab && gs.specialists.research_lab.analyst) || 0;
+    if (analCount > 0) {
+      const analMult = 1 + analCount * 0.08;
+      Object.keys(prod).forEach(k => { if (typeof prod[k] === 'number') prod[k] *= analMult; });
+    }
+    // ops_center 영업 전문가: 자금 수입 +20%/명
+    const salesCount = (gs.specialists.ops_center && gs.specialists.ops_center.sales_pro) || 0;
+    if (salesCount > 0) prod.money = (prod.money || 0) * (1 + salesCount * 0.20);
   }
   return prod;
 }
@@ -544,6 +572,8 @@ function loadGame(slot) {
     if (!gs.opsRoles) gs.opsRoles = { sales: 0, accounting: 0, consulting: 0 };
     // 시민 수 마이그레이션 (P8-4)
     gs.citizens = saved.citizens !== undefined ? saved.citizens : 0;
+    // 전문가 마이그레이션 (P8-5)
+    gs.specialists = saved.specialists || {};
     // 기존 ops_center 배치 인원을 역할로 분배 (마이그레이션)
     if (gs.assignments && gs.assignments.ops_center &&
         gs.opsRoles.sales === 0 && gs.opsRoles.accounting === 0 && gs.opsRoles.consulting === 0) {
