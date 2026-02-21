@@ -13,8 +13,10 @@ let gs = {
   assignments: {},     // { buildingId: workerCount }
   parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
   assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
+  fuelLoaded: false,     // 연료 수동 주입 여부 (발사 전 주입 필요)
   upgrades: {},
   researchProgress: {},  // { upgradeId: { rpSpent: number, timeSpent: number } } — 진행 중인 연구
+  maxResearchSlots: 1,   // 연구 슬롯 초기 1개
   opsRoles: { sales: 0, accounting: 0, consulting: 0 },
   citizens: 0,         // 분양된 시민 수 (P8-4)
   specialists: {},     // { bldId: { specId: count } } — 전문화된 직원

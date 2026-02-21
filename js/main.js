@@ -231,7 +231,10 @@ function startNewGame(slot) {
   gs.addonUpgrades = {};
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
   gs.assembly = { selectedQuality:'proto', jobs:[] };
+  gs.fuelLoaded = false;
   gs.upgrades = {};
+  gs.researchProgress = {};
+  gs.maxResearchSlots = 1;
   gs.msUpgrades = {};
   gs.achievements = {};       // P4-2
   gs.prestigeStars = {};      // P4-3

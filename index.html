@@ -1105,6 +1105,19 @@ body.tab-research #pane-research {
 .rsh-bcard-locked .rsh-bc-hd { color:#3a4a3a; }
 .rsh-bcard-locked .rsh-bc-status { color:#2a3a2a; }
 
+/* ── 자동화(O) 브랜치 — 보라색 컬러 스킴 ── */
+.rsh-branch-col[data-branch="O"] .rsh-branch-hd { color:#bb86fc; border-color:#6a1b9a; text-shadow:0 0 8px #bb86fc60; }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-available { border-color:#6a1b9a; background:rgba(156,39,176,0.07); animation:node-purple-pulse 2s ease-in-out infinite; }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-available:hover { border-color:#bb86fc; background:rgba(187,134,252,0.12); }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-available .rsh-bc-hd { color:#e1bee7; }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-available .rsh-bc-cost { color:#ce93d8; }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-complete { border-color:#9c27b0; background:rgba(156,39,176,0.1); }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-complete .rsh-bc-hd { color:#ce93d8; text-shadow:0 0 6px #9c27b060; }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-progress { border-color:#ab47bc; background:rgba(171,71,188,0.08); }
+.rsh-branch-col[data-branch="O"] .rsh-bcard-progress .rsh-bc-hd { color:#ce93d8; }
+.rsh-branch-col[data-branch="O"] .rsh-branch-arrow { color:#9c27b0; }
+@keyframes node-purple-pulse { 0%,100%{box-shadow:0 0 4px rgba(156,39,176,0.3)} 50%{box-shadow:0 0 10px rgba(187,134,252,0.5)} }
+
 /* ===========================
    ASSEMBLY TAB
    =========================== */
@@ -1347,6 +1360,10 @@ body.tab-research #pane-research {
 /* 조립/연료 상태 패널 */
 #lc-status-panel { width: 100%; max-width: 420px; margin: 4px auto 2px; padding: 4px 12px 0; box-sizing: border-box; }
 .lc-sp-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
+.lc-sp-inject-row { padding: 3px 0 2px; }
+.lc-inject-btn { padding: 4px 12px; background: rgba(0,0,0,.5); border: 1px solid var(--green-dim); color: var(--green-mid); font-family: var(--font); font-size: 10px; letter-spacing: .12em; cursor: pointer; transition: border-color .2s, color .2s; }
+.lc-inject-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: rgba(0,230,118,.08); }
+.lc-inject-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .lc-sp-label { font-size: 11px; color: var(--text-primary); letter-spacing: .08em; min-width: 64px; text-align: right; flex-shrink: 0; }
 .lc-sp-bar-wrap { flex: 1; height: 6px; background: rgba(0,230,118,.06); overflow: hidden; border: 1px solid #0d3d1f; }
 .lc-sp-bar-fill { height: 100%; background: var(--green-dim); transition: width .5s; }
@@ -3032,12 +3049,10 @@ body.ignition-flash::before {
         <!-- ===== PRODUCTION TAB ===== -->
         <div class="tab-pane" id="pane-production">
           <div id="prod-bld-panel">
-            <div class="bld-list-hd">건물 리스트</div>
             <div id="prod-status"></div>
             <div id="prod-tutorial"></div>
             <div id="bld-grid"></div>
             <div id="mission-goal"></div>
-            <div id="milestone-panel"></div>
           </div>
         </div>
 
@@ -3216,7 +3231,7 @@ body.ignition-flash::before {
           </div>
           <!-- Sub-screen: 마일스톤 -->
           <div class="msn-sub-screen" id="msn-sub-milestones">
-            <div class="panel"><div class="panel-header">마일스톤</div><div id="milestone-list-wrap"></div></div>
+            <div class="panel"><div class="panel-header">마일스톤</div><div id="milestone-list-wrap"><div id="milestone-panel"></div></div></div>
             <div id="ms-shop-wrap"></div>
           </div>
           <!-- Sub-screen: 업적 (P4-2) -->

@@ -296,7 +296,7 @@ function renderResearchTab() {
 </div>`;
     });
 
-    branchesHtml += `<div class="rsh-branch-col">
+    branchesHtml += `<div class="rsh-branch-col" data-branch="${branch.id}">
   <div class="rsh-branch-hd">${branch.id} · ${branch.label}</div>
   ${cardsHtml}
 </div>`;

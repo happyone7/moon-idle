@@ -1,5 +1,19 @@
 
+const FUEL_LOAD_REQ = 500; // 로켓 연료 주입에 필요한 LOX 최소량
+
 let _prevAllGo = false; // ALL SYSTEMS GO 전환 감지용
+
+// 연료 수동 주입
+function loadFuelToRocket() {
+  const stored = Math.floor(gs.res.fuel || 0);
+  if (stored < FUEL_LOAD_REQ) { notify('LOX 부족 — 연료를 더 생산하세요', 'red'); return; }
+  gs.res.fuel = (gs.res.fuel || 0) - FUEL_LOAD_REQ;
+  gs.fuelLoaded = true;
+  if (typeof playSfx === 'function') playSfx('sine', 330, 0.06, 0.03, 440);
+  notify('연료 주입 완료 — 발사 준비 시작', 'green');
+  saveGame();
+  renderAll();
+}
 
 function launchFromSlot(slotIdx) {
   if (launchInProgress) return;
@@ -19,6 +33,7 @@ function launchFromSlot(slotIdx) {
   }
 
   gs.assembly.jobs[slotIdx] = null;
+  gs.fuelLoaded = false; // 발사 후 연료 주입 상태 초기화
   gs.launches++;
   if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches || 0) + 1;
 
@@ -482,7 +497,7 @@ function renderLaunchTab() {
 
   // ALL GO 체크
   const launchPadBuilt = (gs.buildings.launch_pad || 0) >= 1;
-  const hasFuel        = (gs.res.fuel || 0) > 50;
+  const hasFuel        = !!gs.fuelLoaded;  // 연료는 수동 주입 후 활성화
   const allGo = hasReady && launchPadBuilt && hasFuel;
   if (allGo && !_prevAllGo) {
     playSfx('sine', 440, 0.08, 0.04, 660);
@@ -492,8 +507,9 @@ function renderLaunchTab() {
 
   // 프리론치 단계 바 — PROD(0)→ASSY(1)→FUEL(2)→T-MINUS(3)
   const hasProdSetup = Object.keys(gs.buildings).some(k => k !== 'housing' && (gs.buildings[k] || 0) >= 1);
+  const anyPart      = PARTS.some(pt => (gs.parts[pt.id] || 0) > 0);
   if (allGo)             _setLcStage(3); // T-MINUS active (0-2 done)
-  else if (hasReady)     _setLcStage(2); // FUEL active (0-1 done)
+  else if (anyPart)      _setLcStage(2); // FUEL active — 부품 하나라도 있으면 ASSY 완료
   else if (hasProdSetup) _setLcStage(1); // ASSY active (0 done)
   else                   _setLcStage(0); // PROD active
 
@@ -507,7 +523,7 @@ function renderLaunchTab() {
       { done: pdone === PARTS.length,     label: `부품 조달 (${pdone}/${PARTS.length})` },
       { done: !!hasReady,                 label: `조립 완료` },
       { done: (gs.buildings.launch_pad || 0) >= 1, label: `발사대 건설` },
-      { done: (gs.res.fuel || 0) > 50,   label: `연료 충전` },
+      { done: hasFuel,                    label: `연료 주입` },
     ];
     checklistEl.innerHTML = items.map(it =>
       `<div class="lc-cl-item${it.done ? ' done' : ''}">` +
@@ -546,18 +562,22 @@ function renderLaunchTab() {
       const to2 = Math.max(1, inProgJob2.endAt - inProgJob2.startAt);
       asmPct = Math.min(100, (el2 / to2) * 100);
     }
-    const fuelVal   = gs.res.fuel || 0;
-    const fuelOk    = fuelVal > 50;
-    const fuelPct   = Math.min(100, Math.round((fuelVal / Math.max(500, fuelVal)) * 100));
-    const partsClr  = partsPct === 100 ? '' : 'amber';
-    const asmClr    = asmPct  === 100 ? '' : 'amber';
-    const fuelClr   = fuelOk          ? '' : 'red';
+    const storedFuel = Math.floor(gs.res.fuel || 0);
+    const fuelPct    = Math.min(100, Math.round((storedFuel / FUEL_LOAD_REQ) * 100));
+    const canInject  = storedFuel >= FUEL_LOAD_REQ;
+    const partsClr   = partsPct === 100 ? '' : 'amber';
+    const asmClr     = asmPct  === 100 ? '' : 'amber';
 
     let spHtml = `<div class="lc-sp-row"><span class="lc-sp-label">부품 조달</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${partsClr}" style="width:${partsPct}%"></div></div><span class="lc-sp-pct ${partsClr}">${partsDone}/${PARTS.length}</span></div>`;
     if (asmPct > 0 || readyJob2) {
       spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">조립 진행</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${asmClr}" style="width:${asmPct}%"></div></div><span class="lc-sp-pct ${asmClr}">${Math.round(asmPct)}%</span></div>`;
     }
-    spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 충전</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${fuelClr}" style="width:${fuelPct}%"></div></div><span class="lc-sp-pct ${fuelClr}">${fuelVal.toLocaleString()}</span></div>`;
+    if (gs.fuelLoaded) {
+      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 주입</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill" style="width:100%"></div></div><span class="lc-sp-pct">완료 ✓</span></div>`;
+    } else {
+      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">LOX 보유</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${canInject ? '' : 'red'}" style="width:${fuelPct}%"></div></div><span class="lc-sp-pct ${canInject ? '' : 'red'}">${storedFuel.toLocaleString()}/${FUEL_LOAD_REQ}</span></div>`;
+      spHtml += `<div class="lc-sp-row lc-sp-inject-row"><button class="lc-inject-btn" onclick="loadFuelToRocket()" ${canInject ? '' : 'disabled'}>${canInject ? '[ ▶ 연료 주입 실행 ]' : '[ LOX ' + FUEL_LOAD_REQ + ' 필요 ]'}</button></div>`;
+    }
     statusPanel.innerHTML = spHtml;
   }
 
