@@ -54,6 +54,30 @@ function lcHudToggle(btn) {
 // ============================================================
 //  STAGE BAR HELPERS (11단계: 0-10)
 // ============================================================
+
+// 페이즈 헤더 상태 업데이트 (phase-active / phase-done)
+function _updateLcPhaseHeaders(activeIdx, isFail = false) {
+  const phases = [
+    { sel: '.lc-phase-pre',    start: 0, end: 2 },
+    { sel: '.lc-phase-ascent', start: 3, end: 7 },
+    { sel: '.lc-phase-lunar',  start: 8, end: 10 },
+  ];
+  phases.forEach(ph => {
+    const el = document.querySelector(ph.sel);
+    if (!el) return;
+    el.classList.remove('phase-active', 'phase-done');
+    if (isFail) {
+      if (ph.sel === '.lc-phase-pre')    el.classList.add('phase-done');
+      else if (ph.sel === '.lc-phase-ascent') el.classList.add('phase-active');
+      // lunar: 그대로 dim
+    } else if (activeIdx > ph.end) {
+      el.classList.add('phase-done');
+    } else if (activeIdx >= ph.start) {
+      el.classList.add('phase-active');
+    }
+  });
+}
+
 function _setLcStage(activeIdx) {
   document.querySelectorAll('.lc-stage-seg').forEach(seg => {
     const idx = parseInt(seg.dataset.idx, 10);
@@ -61,6 +85,7 @@ function _setLcStage(activeIdx) {
     if (idx === activeIdx) seg.classList.add('active');
     else if (activeIdx >= 0 && idx < activeIdx) seg.classList.add('done');
   });
+  _updateLcPhaseHeaders(activeIdx);
 }
 
 function _setLcStageFail() {
@@ -71,6 +96,7 @@ function _setLcStageFail() {
     if (idx <= 4) seg.classList.add('done');
     else          seg.classList.add('fail');
   });
+  _updateLcPhaseHeaders(-1, true);
 }
 
 // ============================================================

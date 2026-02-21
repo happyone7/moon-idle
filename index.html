@@ -1334,18 +1334,70 @@ body.tab-research #pane-research {
 .telem-fail .telem-pct   { color: var(--red); }
 .telem-fail .telem-time  { color: var(--red); }
 
-/* 단계 진행 바 */
-#lc-stagebar { flex-shrink: 0; background: var(--panel-bg); border-top: 2px solid var(--green-dim); padding: 0; }
-.lc-stage-track { display: flex; width: 100%; }
-.lc-stage-seg { flex: 1; text-align: center; padding: 5px 3px 5px; font-size: 9px; letter-spacing: .05em; color: #334433; border-right: 1px solid var(--green-deep); position: relative; text-transform: uppercase; cursor: default; transition: background .3s; }
-.lc-stage-seg:last-child { border-right: none; }
-.lc-stage-seg::before { content: '○'; display: block; font-size: 8px; color: #334433; margin-bottom: 2px; }
-.lc-stage-seg.done { color: var(--green-mid); background: rgba(0,230,118,.04); }
-.lc-stage-seg.done::before { content: '✓'; color: var(--green-dim); }
-.lc-stage-seg.active { color: var(--green); background: rgba(0,230,118,.12); }
-.lc-stage-seg.active::before { content: '▼'; color: var(--amber); text-shadow: 0 0 6px var(--amber); animation: pulse-amber 1.5s ease-in-out infinite; }
-.lc-stage-seg.fail { color: var(--red); background: rgba(255,23,68,.07); }
-.lc-stage-seg.fail::before { content: '✗'; color: var(--red); animation: none; }
+/* ── 단계 진행 바 (타임라인 노드형) ── */
+#lc-stagebar { flex-shrink: 0; background: #000a02; border-top: 1px solid var(--green-deep); }
+
+/* Phase header */
+.lc-phase-header { display: grid; grid-template-columns: 3fr 5fr 3fr; }
+.lc-phase-group { text-align: center; font-size: 7px; letter-spacing: 0.2em; padding: 3px 4px 2px; text-transform: uppercase; border-bottom: 1px solid #0a2210; transition: color 0.5s, text-shadow 0.5s, border-color 0.5s; }
+.lc-phase-group + .lc-phase-group { border-left: 1px solid #0a2210; }
+.lc-phase-pre    { color: #1a4428; }
+.lc-phase-ascent { color: #0e2a18; }
+.lc-phase-lunar  { color: #2a1800; }
+.lc-phase-pre.phase-active,
+.lc-phase-ascent.phase-active { color: var(--green-mid); border-bottom-color: var(--green-dim); }
+.lc-phase-lunar.phase-active  { color: #c47a00; border-bottom-color: #7a4800; }
+.lc-phase-pre.phase-done    { color: var(--green-dim);  text-shadow: 0 0 6px rgba(0,230,118,.3);  border-bottom-color: var(--green-dim); }
+.lc-phase-ascent.phase-done { color: var(--green-mid);  text-shadow: 0 0 8px rgba(0,230,118,.45); border-bottom-color: var(--green-mid); }
+.lc-phase-lunar.phase-done  { color: var(--amber);      text-shadow: 0 0 10px rgba(255,171,0,.5); border-bottom-color: var(--amber); }
+
+/* Stage track */
+.lc-stage-track { display: flex; width: 100%; height: 52px; position: relative; }
+.lc-stage-seg { flex: 1; position: relative; cursor: default; }
+
+/* 연결선: ::before = 왼쪽 절반, ::after = 오른쪽 절반 */
+.lc-stage-seg::before,
+.lc-stage-seg::after  { content: ''; position: absolute; top: 19px; height: 2px; z-index: 1; background: #0a2210; transition: background 0.4s; }
+.lc-stage-seg::before { left: 0; right: 50%; }
+.lc-stage-seg::after  { left: 50%; right: 0; }
+.lc-stage-seg:first-child::before { display: none; }
+.lc-stage-seg:last-child::after   { display: none; }
+.lc-stage-seg.done::before,
+.lc-stage-seg.done::after  { background: var(--green-dim); }
+.lc-stage-seg.active::before { background: var(--green-dim); }
+.lc-stage-seg.fail::before   { background: rgba(255,23,68,.5); }
+.lc-stage-seg.fail::after    { background: rgba(255,23,68,.3); }
+/* 루나 페이즈 완료선: 앰버 */
+.lc-stage-seg[data-phase="lunar"].done::before,
+.lc-stage-seg[data-phase="lunar"].done::after  { background: #7a4800; }
+.lc-stage-seg[data-phase="lunar"].active::before { background: #7a4800; }
+
+/* 노드 원형 */
+.lc-node { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #0d3d1f; background: #000a02; display: flex; align-items: center; justify-content: center; z-index: 2; transition: border-color 0.4s, background 0.4s, box-shadow 0.4s; }
+.lc-node::after { content: '◦'; font-size: 8px; color: #1a4428; }
+/* Done */
+.lc-stage-seg.done .lc-node { border-color: #00a84f; background: rgba(0,168,79,.1); animation: lc-node-pop .4s cubic-bezier(.175,.885,.32,1.275) both; }
+.lc-stage-seg.done .lc-node::after { content: '✓'; font-size: 11px; font-weight: bold; color: var(--green-mid); }
+/* Active */
+.lc-stage-seg.active .lc-node { border-color: var(--amber); background: rgba(255,171,0,.12); box-shadow: 0 0 0 3px rgba(255,171,0,.15), 0 0 16px rgba(255,171,0,.45); animation: lc-pulse-amber 1.8s ease-in-out infinite; width: 28px; height: 28px; top: 5px; }
+.lc-stage-seg.active .lc-node::after { content: '▶'; font-size: 9px; color: var(--amber); margin-left: 1px; }
+/* Fail */
+.lc-stage-seg.fail .lc-node { border-color: var(--red); background: rgba(255,23,68,.08); }
+.lc-stage-seg.fail .lc-node::after { content: '✕'; font-size: 10px; color: var(--red); }
+/* LANDING 완료 — 앰버 별 */
+.lc-stage-seg[data-idx="10"].done .lc-node { border-color: var(--amber); background: rgba(255,171,0,.18); box-shadow: 0 0 0 4px rgba(255,171,0,.12), 0 0 18px rgba(255,171,0,.55); animation: lc-landing-glow 2s ease-in-out infinite; }
+.lc-stage-seg[data-idx="10"].done .lc-node::after { content: '★'; font-size: 12px; color: var(--amber); }
+
+/* 세그먼트 레이블 */
+.lc-seg-lbl { position: absolute; top: 37px; left: 0; right: 0; text-align: center; font-size: 7px; letter-spacing: .08em; text-transform: uppercase; color: #1a4428; transition: color .4s; white-space: nowrap; }
+.lc-stage-seg.done  .lc-seg-lbl { color: var(--green-dim); }
+.lc-stage-seg.active .lc-seg-lbl { color: var(--green); }
+.lc-stage-seg.fail  .lc-seg-lbl { color: var(--red); opacity: .7; }
+.lc-stage-seg[data-idx="10"].done .lc-seg-lbl { color: var(--amber); }
+
+@keyframes lc-node-pop    { 0% { transform: translateX(-50%) scale(.6); } 65% { transform: translateX(-50%) scale(1.2); } 100% { transform: translateX(-50%) scale(1); } }
+@keyframes lc-pulse-amber { 0%,100% { box-shadow: 0 0 0 3px rgba(255,171,0,.12), 0 0 12px rgba(255,171,0,.35); } 50% { box-shadow: 0 0 0 5px rgba(255,171,0,.22), 0 0 24px rgba(255,171,0,.6); } }
+@keyframes lc-landing-glow { 0%,100% { box-shadow: 0 0 0 4px rgba(255,171,0,.1), 0 0 14px rgba(255,171,0,.4); } 50% { box-shadow: 0 0 0 7px rgba(255,171,0,.22), 0 0 28px rgba(255,171,0,.7); } }
 
 /* 데이터 행 */
 .lc-drow     { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 2px 0; color: #8aaa8a; }
@@ -3066,20 +3118,25 @@ body.ignition-flash::before {
 
           </div>
 
-          <!-- ── 하단: 11단계 진행 바 ── -->
+          <!-- ── 하단: 11단계 진행 바 (타임라인 노드형) ── -->
           <div id="lc-stagebar">
+            <div class="lc-phase-header">
+              <div class="lc-phase-group lc-phase-pre phase-active">◂ PRE-LAUNCH ▸</div>
+              <div class="lc-phase-group lc-phase-ascent">◂ ASCENT ▸</div>
+              <div class="lc-phase-group lc-phase-lunar">◂ LUNAR MISSION ▸</div>
+            </div>
             <div class="lc-stage-track">
-              <div class="lc-stage-seg active" data-idx="0"><span>ASSY</span></div>
-              <div class="lc-stage-seg" data-idx="1"><span>FUEL</span></div>
-              <div class="lc-stage-seg" data-idx="2"><span>T-MINUS</span></div>
-              <div class="lc-stage-seg" data-idx="3"><span>LIFTOFF</span></div>
-              <div class="lc-stage-seg" data-idx="4"><span>MAX-Q</span></div>
-              <div class="lc-stage-seg" data-idx="5"><span>MECO</span></div>
-              <div class="lc-stage-seg" data-idx="6"><span>STG SEP</span></div>
-              <div class="lc-stage-seg" data-idx="7"><span>ORBIT</span></div>
-              <div class="lc-stage-seg" data-idx="8"><span>TLI</span></div>
-              <div class="lc-stage-seg" data-idx="9"><span>LOI</span></div>
-              <div class="lc-stage-seg" data-idx="10"><span>LANDING</span></div>
+              <div class="lc-stage-seg active" data-idx="0" data-phase="pre"><div class="lc-node"></div><span class="lc-seg-lbl">ASSY</span></div>
+              <div class="lc-stage-seg" data-idx="1" data-phase="pre"><div class="lc-node"></div><span class="lc-seg-lbl">FUEL</span></div>
+              <div class="lc-stage-seg" data-idx="2" data-phase="pre"><div class="lc-node"></div><span class="lc-seg-lbl">T-MINUS</span></div>
+              <div class="lc-stage-seg" data-idx="3" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">LIFTOFF</span></div>
+              <div class="lc-stage-seg" data-idx="4" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">MAX-Q</span></div>
+              <div class="lc-stage-seg" data-idx="5" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">MECO</span></div>
+              <div class="lc-stage-seg" data-idx="6" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">STG SEP</span></div>
+              <div class="lc-stage-seg" data-idx="7" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">ORBIT</span></div>
+              <div class="lc-stage-seg" data-idx="8" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">TLI</span></div>
+              <div class="lc-stage-seg" data-idx="9" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">LOI</span></div>
+              <div class="lc-stage-seg" data-idx="10" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">LANDING</span></div>
             </div>
           </div>
 
