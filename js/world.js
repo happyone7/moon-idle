@@ -788,15 +788,15 @@ function openBldOv(bld, el, keepPosition = false) {
       actions.push({ type: 'sep', label: '// 직원 고용' });
       actions.push({
         label: hasIdleWorker
-          ? `${wkIcon} 직원 고용 — ${bld.name} 배치 (현재 ${assigned}명)`
-          : `${wkIcon} [시민 부족] — 여유 시민 없음 (배치 ${assigned}명)`,
-        info: `$${fmt(hireCost)}`,
+          ? `${wkIcon} 직원 고용`
+          : `${wkIcon} [시민 부족]`,
+        info: hasIdleWorker ? `$${fmt(hireCost)}` : `여유 없음`,
         disabled: !hasIdleWorker,
         affordable: hireAfford,
         hasIdleWorker: hasIdleWorker,
         desc: hasIdleWorker
-          ? `여유 시민 ${avail}명 중 1명 ${bld.name}에 배치\n현재 배치: ${assigned}명\n고용 비용: $${fmt(hireCost)}\n// 고용할수록 비용이 기하급수적으로 증가`
-          : `여유 시민이 없습니다 (${avail}/${gs.workers || 1})\n// 주거시설 업그레이드로 시민 상한을 늘리세요`,
+          ? `${bld.name}에 직원 배치 (현재 ${assigned}명)\n비용: $${fmt(hireCost)}`
+          : `여유 시민 없음 (${avail}/${gs.workers || 1})\n주거시설 업그레이드로 인원 상한을 늘리세요`,
         type: 'hire_bld_worker',
         bldId: bld.id,
       });
@@ -843,40 +843,37 @@ function openBldOv(bld, el, keepPosition = false) {
   const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bld.id];
   if (addonDef && cnt >= 1) {
     const addonChoice = gs.addons && gs.addons[bld.id];
-    // Separator
-    actions.push({ type: 'sep', label: '// 애드온 슬롯' });
     if (!addonChoice) {
+      // 선택 전: A/B 선택지 표시 (선택 후 변경 불가 경고 포함)
+      actions.push({ type: 'sep', label: '◈ 애드온 설치 — 선택 후 변경 불가' });
       addonDef.options.forEach((opt, i) => {
         const addonAfford = !opt.cost || canAfford(opt.cost);
         actions.push({
           label: `[${i === 0 ? 'A' : 'B'}] ${opt.name}`,
-          info: opt.cost ? getCostStr(opt.cost) : '선택',
+          info: opt.cost ? getCostStr(opt.cost) : '무료',
           affordable: addonAfford,
           disabled: false,
-          desc: opt.desc + (opt.cost ? `\n// 비용: ${getCostStr(opt.cost)}` : ''),
+          desc: opt.desc
+            + (opt.cost ? `\n비용: ${getCostStr(opt.cost)}` : '')
+            + `\n\n⚠ A/B 중 하나만 선택 가능\n선택 후 영구 적용됩니다`,
           type: 'addon_choose',
           addonId: opt.id,
           addonBldId: bld.id,
         });
       });
     } else {
+      // 선택 완료: 애드온 이름만 표시, 업그레이드는 애드온 건물 호버시 확인
       const chosen = addonDef.options.find(o => o.id === addonChoice);
       if (chosen) {
-        actions.push({ type: 'sep', label: `// ${chosen.name} 업그레이드` });
-        (chosen.upgrades || []).forEach(upg => {
-          const done     = !!(gs.addonUpgrades && gs.addonUpgrades[upg.id]);
-          const reqMet   = !upg.req || !!(gs.addonUpgrades && gs.addonUpgrades[upg.req]);
-          const affordable = canAfford(upg.cost);
-          actions.push({
-            label: upg.name,
-            info: done ? '[완료]' : getCostStr(upg.cost),
-            done, affordable, reqMet,
-            disabled: done || !reqMet,
-            desc: upg.desc + (!reqMet ? '\n// 선행 업그레이드 필요' : ''),
-            type: 'addon_upgrade',
-            upgId: upg.id,
-            addonBldId: bld.id,
-          });
+        actions.push({ type: 'sep', label: `◈ 애드온: ${chosen.name} (설치됨)` });
+        actions.push({
+          label: `→ 애드온 건물에 마우스를 올려 업그레이드 확인`,
+          info: '',
+          disabled: true,
+          affordable: true,
+          done: false,
+          desc: `${chosen.name} 업그레이드는\n애드온 건물([${chosen.icon || 'ADN'}])에 마우스를 올리면 확인할 수 있습니다`,
+          type: 'sep',
         });
       }
     }
@@ -931,7 +928,6 @@ function openBldOv(bld, el, keepPosition = false) {
   // Construction cost
   const buyCost    = getBuildingCost(bld);
   const buyAfford  = canAfford(buyCost);
-  const buyLabel   = cnt > 0 ? (buyAfford ? '건물 추가 건설' : '건물 추가 (자원 부족)') : (buyAfford ? '건설 시작' : '건설 (자원 부족)');
 
   // Production rate line
   let rateStr = '';
@@ -941,6 +937,11 @@ function openBldOv(bld, el, keepPosition = false) {
   } else if (bld.id === 'solar_array') { rateStr = `전체 생산 +${((getSolarBonus()-1)*100).toFixed(0)}%`; }
   else if (bld.id === 'launch_pad')    { rateStr = `발사 슬롯 +${cnt}`; }
   else if (bld.id === 'housing')       { rateStr = `인원 상한 ${gs.workers}명`; }
+
+  // 건물 미건설 시에만 건설 버튼 표시 (추가 건설 기능 제거)
+  const footHtml = cnt === 0
+    ? `<div class="bov-foot"><button class="bov-buy-btn${buyAfford?'':' dis'}" onclick="buyBuilding('${bld.id}')" ${buyAfford?'':'disabled'}>[ 건설 시작 ] <span class="bov-buy-cost">${getCostStr(buyCost)}</span></button></div>`
+    : '';
 
   ovEl.innerHTML = `
 <div class="bov-head">
@@ -955,11 +956,7 @@ function openBldOv(bld, el, keepPosition = false) {
     <div class="bov-desc-hint">${bld.desc || bld.name}<br><span style="color:var(--green-dim);font-size:10px">// 항목 hover로 상세 확인</span></div>
   </div>
 </div>
-<div class="bov-foot">
-  <button class="bov-buy-btn${buyAfford?'':' dis'}" onclick="buyBuilding('${bld.id}')" ${buyAfford?'':'disabled'}>
-    [ ${buyLabel} ] <span class="bov-buy-cost">${getCostStr(buyCost)}</span>
-  </button>
-</div>`;
+${footHtml}`;
 
   // Position — display:block 먼저 적용 후 다음 프레임에서 실제 높이 반영
   const ovW = 490;
@@ -1003,6 +1000,7 @@ function bovClick(idx) {
   const act = _bldOvActions[idx];
   if (!act || act.type === 'sep') return;
   if (act.done || act.disabled) return;
+  clearTimeout(_bldOvTimer); // 업그레이드 클릭 후 팝업 닫힘 방지
   if (act.type === 'slot_upgrade')  buyBldSlotUpgrade(_bldOvBld.id);
   else if (act.type === 'assign')   assignWorker(_bldOvBld.id);
   else if (act.type === 'unassign') unassignWorker(_bldOvBld.id);
@@ -1059,10 +1057,11 @@ function buyBldUpgrade(upgId, bldId) {
   notify(`${bld.icon} ${upg.name}${levelStr} 완료`);
   playSfx('triangle', 520, 0.12, 0.06, 780);
   _triggerUpgradeAnim(bldId);
-  // Refresh overlay
+  // Refresh overlay — keepPosition=true로 팝업 위치 유지, 닫힘 방지
   const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
-  if (el) openBldOv(bld, el);
+  if (el) openBldOv(bld, el, true);
   renderAll();
+  clearTimeout(_bldOvTimer); // renderAll 후 mouseleave 타이머 취소
 }
 
 // ─── ADD-ON OVERLAY ──────────────────────────────────────────
