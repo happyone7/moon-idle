@@ -59,7 +59,7 @@ const SPECIALIST_ROLES = {
 
 const BUILDINGS = [
   { id:'housing',      name:'주거 시설',        icon:'[HSG]', produces:'bonus',       baseRate:0,   baseCost:{money:200},                                    desc:'인원 상한 +1',      wbClass:'wb-housing' },
-  { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:35,  baseCost:{iron:150},                                    desc:'수익 창출 허브',    wbClass:'wb-ops' },
+  { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:35,  baseCost:{money:300},                                   desc:'수익 창출 허브',    wbClass:'wb-ops' },
   { id:'supply_depot', name:'보급 창고',        icon:'[DEP]', produces:'money',       baseRate:25,  baseCost:{money:3000,iron:500,electronics:150},          desc:'물류 수익',         wbClass:'wb-ops' },
   { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'iron',        baseRate:25,  baseCost:{money:800},                                    desc:'철광석 생산',       wbClass:'wb-mine' },
   { id:'extractor',    name:'구리 채굴기',      icon:'[EXT]', produces:'copper',      baseRate:40,  baseCost:{money:6000,iron:1500},                         desc:'구리 채굴 — MK2+ 필요', wbClass:'wb-mine' },
@@ -67,7 +67,7 @@ const BUILDINGS = [
   { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:35,  baseCost:{money:15000,iron:4000,electronics:800},        desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
   { id:'elec_lab',     name:'전자공학 연구소',  icon:'[PCB]', produces:'electronics', baseRate:18,  baseCost:{money:18000,iron:4000},                        desc:'회로 부품 생산',    wbClass:'wb-eleclab' },
   { id:'fab_plant',    name:'반도체 공장',      icon:'[FAB]', produces:'electronics', baseRate:35,  baseCost:{money:25000,iron:6000,electronics:1500},       desc:'고급 반도체',       wbClass:'wb-eleclab' },
-  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:15,  baseCost:{money:20000},                                  desc:'기술 연구 포인트',  wbClass:'wb-research' },
+  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:15,  baseCost:{money:5000},                                   desc:'기술 연구 포인트',  wbClass:'wb-research' },
   { id:'r_and_d',      name:'R&D 센터',         icon:'[RND]', produces:'research',    baseRate:25,  baseCost:{money:40000,electronics:3000},                 desc:'고급 연구 가속',    wbClass:'wb-research' },
   { id:'solar_array',  name:'태양광 어레이',    icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:35000,electronics:4000},                 desc:'전체 생산 +10%/개', wbClass:'wb-solar' },
   { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:120000,iron:25000,electronics:10000},    desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },

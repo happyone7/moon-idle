@@ -58,9 +58,9 @@ function lcHudToggle(btn) {
 // 페이즈 헤더 상태 업데이트 (phase-active / phase-done)
 function _updateLcPhaseHeaders(activeIdx, isFail = false) {
   const phases = [
-    { sel: '.lc-phase-pre',    start: 0, end: 2 },
-    { sel: '.lc-phase-ascent', start: 3, end: 7 },
-    { sel: '.lc-phase-lunar',  start: 8, end: 10 },
+    { sel: '.lc-phase-pre',    start: 0, end: 3  },  // PROD,ASSY,FUEL,T-MINUS
+    { sel: '.lc-phase-ascent', start: 4, end: 8  },  // LIFTOFF~ORBIT
+    { sel: '.lc-phase-lunar',  start: 9, end: 11 },  // TLI,LOI,LANDING
   ];
   phases.forEach(ph => {
     const el = document.querySelector(ph.sel);
@@ -89,11 +89,11 @@ function _setLcStage(activeIdx) {
 }
 
 function _setLcStageFail() {
-  // 실패 시: MAX-Q(4)까지 done, MECO(5)부터 fail
+  // 실패 시: MAX-Q(5)까지 done, MECO(6)부터 fail
   document.querySelectorAll('.lc-stage-seg').forEach(seg => {
     const idx = parseInt(seg.dataset.idx, 10);
     seg.classList.remove('active', 'done', 'fail');
-    if (idx <= 4) seg.classList.add('done');
+    if (idx <= 5) seg.classList.add('done');
     else          seg.classList.add('fail');
   });
   _updateLcPhaseHeaders(-1, true);
@@ -111,8 +111,8 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   const statusTextEl = document.getElementById('lc-status-text');
   if (statusTextEl) statusTextEl.textContent = '// LAUNCHING';
 
-  // 발사 시작 전 카운트다운 단계(2)를 done으로 표시
-  _setLcStage(3); // LIFTOFF active, 0-2 done
+  // 발사 시작 전 카운트다운 단계(3)를 done으로 표시
+  _setLcStage(4); // LIFTOFF active, 0-3 done
 
   const preLaunch = document.getElementById('lc-pre-launch');
   const animZone  = document.getElementById('lc-anim-zone');
@@ -213,17 +213,17 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   // 성공: 8단계 비행 시퀀스 (index 3-10)
   // 실패: 3단계 이후 이상징후
   const steps = success ? [
-    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                    pct: 5,   stage: 3 },
-    { delay: 500,  label: 'T+3',  event: 'MAX-Q 통과',                  pct: 18,  stage: 4 },
-    { delay: 1000, label: 'T+8',  event: 'MECO — 1단 엔진 종료',        pct: 35,  stage: 5 },
-    { delay: 1500, label: 'T+12', event: '단계분리 / 2단 점화',          pct: 50,  stage: 6 },
-    { delay: 2000, label: 'T+20', event: '지구 궤도 진입',              pct: 65,  stage: 7 },
-    { delay: 2600, label: 'T+28', event: 'TLI — 달 전이 궤도 점화',    pct: 78,  stage: 8 },
-    { delay: 3200, label: 'T+38', event: 'LOI — 달 궤도 진입',         pct: 90,  stage: 9 },
-    { delay: 3800, label: 'T+50', event: `달 착륙 성공 ◆ TOUCHDOWN`,    pct: 100, stage: 10 },
+    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                    pct: 5,   stage: 4  },
+    { delay: 500,  label: 'T+3',  event: 'MAX-Q 통과',                  pct: 18,  stage: 5  },
+    { delay: 1000, label: 'T+8',  event: 'MECO — 1단 엔진 종료',        pct: 35,  stage: 6  },
+    { delay: 1500, label: 'T+12', event: '단계분리 / 2단 점화',          pct: 50,  stage: 7  },
+    { delay: 2000, label: 'T+20', event: '지구 궤도 진입',              pct: 65,  stage: 8  },
+    { delay: 2600, label: 'T+28', event: 'TLI — 달 전이 궤도 점화',    pct: 78,  stage: 9  },
+    { delay: 3200, label: 'T+38', event: 'LOI — 달 궤도 진입',         pct: 90,  stage: 10 },
+    { delay: 3800, label: 'T+50', event: `달 착륙 성공 ◆ TOUCHDOWN`,    pct: 100, stage: 11 },
   ] : [
-    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                     pct: 5,   stage: 3 },
-    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',                   pct: 18,  stage: 4 },
+    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                     pct: 5,   stage: 4  },
+    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',                   pct: 18,  stage: 5  },
     { delay: 1200, label: 'T+7',  event: '!! ANOMALY DETECTED !!',      pct: 35,  stage: -1, fail: true },
     { delay: 1800, label: 'T+8',  event: '!! STRUCTURAL FAILURE !!',    pct: 35,  stage: -1, fail: true },
     { delay: 2400, label: 'T+14', event: '// MISSION LOST — RUD',       pct: 0,   stage: -1, fail: true },
@@ -308,7 +308,7 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
       }
     }
     if (statusTextEl) statusTextEl.textContent = success ? '// MISSION COMPLETE' : '// MISSION LOST';
-    if (success) _setLcStage(10); // LANDING done
+    if (success) _setLcStage(11); // LANDING done
     clearInterval(timerInterval);
   }, resultDelay);
 
@@ -490,10 +490,32 @@ function renderLaunchTab() {
   }
   _prevAllGo = allGo;
 
-  // 프리론치 단계 바 — 게임 상태 반영
-  if (allGo)        _setLcStage(2); // T-MINUS active (0,1 done)
-  else if (hasReady) _setLcStage(1); // FUEL active (0 done)
-  else               _setLcStage(0); // ASSY active
+  // 프리론치 단계 바 — PROD(0)→ASSY(1)→FUEL(2)→T-MINUS(3)
+  const hasProdSetup = Object.keys(gs.buildings).some(k => k !== 'housing' && (gs.buildings[k] || 0) >= 1);
+  if (allGo)             _setLcStage(3); // T-MINUS active (0-2 done)
+  else if (hasReady)     _setLcStage(2); // FUEL active (0-1 done)
+  else if (hasProdSetup) _setLcStage(1); // ASSY active (0 done)
+  else                   _setLcStage(0); // PROD active
+
+  // 프리-플라이트 체크리스트
+  const checklistEl = document.getElementById('lc-checklist');
+  if (checklistEl) {
+    const p2 = gs.parts || {};
+    const pdone = PARTS.filter(pt => p2[pt.id]).length;
+    const items = [
+      { done: hasProdSetup,               label: `생산 가동` },
+      { done: pdone === PARTS.length,     label: `부품 조달 (${pdone}/${PARTS.length})` },
+      { done: !!hasReady,                 label: `조립 완료` },
+      { done: (gs.buildings.launch_pad || 0) >= 1, label: `발사대 건설` },
+      { done: (gs.res.fuel || 0) > 50,   label: `연료 충전` },
+    ];
+    checklistEl.innerHTML = items.map(it =>
+      `<div class="lc-cl-item${it.done ? ' done' : ''}">` +
+      `<span class="lc-cl-chk">${it.done ? '✓' : '○'}</span>` +
+      `<span class="lc-cl-text">${it.label}</span>` +
+      `</div>`
+    ).join('');
+  }
 
   // ASCII 로켓
   const rocketPre = document.getElementById('lc-rocket-pre');
@@ -502,6 +524,9 @@ function renderLaunchTab() {
   // 커밋 박스 상태: allGo → 앰버 활성, 아닐 때 → 회색 비활성
   const commitBox = document.getElementById('lc-commit-box');
   if (commitBox) commitBox.classList.toggle('lc-commit-ready', allGo);
+  // 커밋 스탯: 로켓 완성 시만 표시
+  const commitStatsEl = document.getElementById('lc-commit-stats');
+  if (commitStatsEl) commitStatsEl.style.display = hasReady ? '' : 'none';
 
   // 조립/연료 상태 패널
   const statusPanel = document.getElementById('lc-status-panel');

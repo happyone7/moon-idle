@@ -219,9 +219,9 @@ function startTitleSequence() {
 
 function startNewGame(slot) {
   currentSaveSlot = slot || 1;
-  gs.res = { money:5000, iron:0, copper:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:2000, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
-  gs.workers = 2;  // 주거시설 1동 = 기본 1 + housing +1
+  gs.workers = 1;  // 주거시설 1동 = 인원 1명
   gs.assignments = {};
   gs._prodHubVisited = false;
   gs.bldLevels = {};

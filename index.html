@@ -790,6 +790,15 @@ body.tab-research #pane-research {
 #prod-bld-panel { display:inline-block; text-align:left; width:240px; background:rgba(1,10,2,0.93); border:1px solid var(--green-dim); padding:6px 8px; font-size:var(--fs-sm); vertical-align:top; max-height:calc(100vh - 100px); overflow-y:auto; }
 .bld-list-hd { font-size:var(--fs-sm); letter-spacing:2px; color:var(--text-primary); text-transform:uppercase; border-bottom:1px solid var(--green-dim); padding-bottom:4px; margin-bottom:5px; }
 #prod-status { font-size:10px; color:var(--green-dim); margin-bottom:5px; padding-bottom:4px; border-bottom:1px solid var(--green-deep); }
+#prod-tutorial { margin-bottom:5px; }
+.prod-tut-row { display:flex; align-items:center; gap:7px; padding:7px 8px; border:1px solid var(--amber); background:rgba(255,171,0,.06); border-radius:2px; }
+.prod-tut-icon { color:var(--amber); font-size:14px; flex-shrink:0; }
+.prod-tut-body { flex:1; min-width:0; }
+.prod-tut-title { font-size:10px; color:var(--amber); letter-spacing:.14em; text-transform:uppercase; margin-bottom:2px; }
+.prod-tut-desc { font-size:10px; color:var(--text-primary); line-height:1.4; }
+.prod-tut-btn { padding:4px 8px; background:rgba(255,171,0,.12); border:1px solid var(--amber); color:var(--amber); font-family:var(--font); font-size:10px; letter-spacing:.1em; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.prod-tut-btn:hover { background:rgba(255,171,0,.24); }
+.prod-tut-btn.dis { border-color:#3a3010; color:#3a3010; cursor:not-allowed; background:none; }
 .bld-list-row { display:flex; align-items:center; gap:4px; padding:3px 0; border-bottom:1px solid var(--green-deep); }
 .blr-icon { color:var(--green-mid); min-width:28px; font-size:10px; }
 .blr-name { flex:1; color:var(--text-primary); font-size:var(--fs-sm); white-space:nowrap; overflow:hidden; }
@@ -1323,6 +1332,18 @@ body.tab-research #pane-research {
 #lc-btn-launch.lc-btn-launch-standby { border-color: #1a3a1a; color: #2a4a2a; animation: none; }
 #lc-btn-launch.lc-btn-launch-go { border-color: var(--amber); color: var(--amber); background: rgba(255,171,0,.08); text-shadow: 0 0 8px #ffab0070; animation: pulse-amber 3s ease-in-out infinite; }
 
+/* 프리-플라이트 체크리스트 (로켓 위) */
+#lc-checklist { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; padding: 6px 12px 2px; }
+.lc-cl-item { display: flex; align-items: center; gap: 5px; font-size: 11px; letter-spacing: .06em; color: #2a4a2a; }
+.lc-cl-item.done { color: var(--text-primary); }
+.lc-cl-chk { font-size: 12px; color: #1a4428; flex-shrink: 0; }
+.lc-cl-item.done .lc-cl-chk { color: var(--green); text-shadow: var(--glow); }
+
+/* 클릭 가능 스테이지 노드 */
+.lc-stage-seg[onclick] { cursor: pointer; }
+.lc-stage-seg[onclick]:hover .lc-node { border-color: var(--green-mid) !important; box-shadow: 0 0 8px rgba(0,153,77,.25); }
+.lc-stage-seg[onclick]:hover .lc-seg-lbl { color: var(--green-mid) !important; }
+
 /* 조립/연료 상태 패널 */
 #lc-status-panel { width: 100%; max-width: 420px; margin: 4px auto 2px; padding: 4px 12px 0; box-sizing: border-box; }
 .lc-sp-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
@@ -1365,7 +1386,7 @@ body.tab-research #pane-research {
 #lc-stagebar { flex-shrink: 0; background: #000a02; border-top: 1px solid var(--green-deep); }
 
 /* Phase header */
-.lc-phase-header { display: grid; grid-template-columns: 3fr 5fr 3fr; }
+.lc-phase-header { display: grid; grid-template-columns: 4fr 5fr 3fr; }
 .lc-phase-group { text-align: center; font-size: 9px; letter-spacing: 0.2em; padding: 4px 4px 3px; text-transform: uppercase; border-bottom: 1px solid #0a2210; transition: color 0.5s, text-shadow 0.5s, border-color 0.5s; }
 .lc-phase-group + .lc-phase-group { border-left: 1px solid #0a2210; }
 .lc-phase-pre    { color: #1a4428; }
@@ -3013,6 +3034,7 @@ body.ignition-flash::before {
           <div id="prod-bld-panel">
             <div class="bld-list-hd">건물 리스트</div>
             <div id="prod-status"></div>
+            <div id="prod-tutorial"></div>
             <div id="bld-grid"></div>
             <div id="mission-goal"></div>
             <div id="milestone-panel"></div>
@@ -3088,6 +3110,8 @@ body.ignition-flash::before {
             <div id="lc-rocket-zone">
               <!-- 발사 전 정적 패널 -->
               <div id="lc-pre-launch">
+                <!-- 프리-플라이트 체크리스트 -->
+                <div id="lc-checklist"></div>
                 <div class="lc-rocket-disp">
                   <div class="lc-rocket-art" id="lc-rocket-pre"></div>
                 </div>
@@ -3149,7 +3173,7 @@ body.ignition-flash::before {
             <button id="lc-btn-abort" onclick="abortAssembly()" style="display:none;">[ ABORT ]</button>
           </div>
 
-          <!-- ── 하단: 11단계 진행 바 (타임라인 노드형) ── -->
+          <!-- ── 하단: 12단계 진행 바 (타임라인 노드형, PROD→LANDING) ── -->
           <div id="lc-stagebar">
             <div class="lc-phase-header">
               <div class="lc-phase-group lc-phase-pre phase-active">◂ PRE-LAUNCH ▸</div>
@@ -3157,17 +3181,18 @@ body.ignition-flash::before {
               <div class="lc-phase-group lc-phase-lunar">◂ LUNAR MISSION ▸</div>
             </div>
             <div class="lc-stage-track">
-              <div class="lc-stage-seg active" data-idx="0" data-phase="pre"><div class="lc-node"></div><span class="lc-seg-lbl">ASSY</span></div>
-              <div class="lc-stage-seg" data-idx="1" data-phase="pre"><div class="lc-node"></div><span class="lc-seg-lbl">FUEL</span></div>
-              <div class="lc-stage-seg" data-idx="2" data-phase="pre"><div class="lc-node"></div><span class="lc-seg-lbl">T-MINUS</span></div>
-              <div class="lc-stage-seg" data-idx="3" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">LIFTOFF</span></div>
-              <div class="lc-stage-seg" data-idx="4" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">MAX-Q</span></div>
-              <div class="lc-stage-seg" data-idx="5" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">MECO</span></div>
-              <div class="lc-stage-seg" data-idx="6" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">STG SEP</span></div>
-              <div class="lc-stage-seg" data-idx="7" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">ORBIT</span></div>
-              <div class="lc-stage-seg" data-idx="8" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">TLI</span></div>
-              <div class="lc-stage-seg" data-idx="9" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">LOI</span></div>
-              <div class="lc-stage-seg" data-idx="10" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">LANDING</span></div>
+              <div class="lc-stage-seg active" data-idx="0" data-phase="pre" onclick="switchMainTab('production')" title="프로덕션 허브"><div class="lc-node"></div><span class="lc-seg-lbl">PROD</span></div>
+              <div class="lc-stage-seg" data-idx="1" data-phase="pre" onclick="switchMainTab('assembly')" title="조립동"><div class="lc-node"></div><span class="lc-seg-lbl">ASSY</span></div>
+              <div class="lc-stage-seg" data-idx="2" data-phase="pre" onclick="switchMainTab('production')" title="연료 공급"><div class="lc-node"></div><span class="lc-seg-lbl">FUEL</span></div>
+              <div class="lc-stage-seg" data-idx="3" data-phase="pre" onclick="switchMainTab('production')" title="발사 준비"><div class="lc-node"></div><span class="lc-seg-lbl">T-MINUS</span></div>
+              <div class="lc-stage-seg" data-idx="4" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">LIFTOFF</span></div>
+              <div class="lc-stage-seg" data-idx="5" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">MAX-Q</span></div>
+              <div class="lc-stage-seg" data-idx="6" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">MECO</span></div>
+              <div class="lc-stage-seg" data-idx="7" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">STG SEP</span></div>
+              <div class="lc-stage-seg" data-idx="8" data-phase="ascent"><div class="lc-node"></div><span class="lc-seg-lbl">ORBIT</span></div>
+              <div class="lc-stage-seg" data-idx="9" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">TLI</span></div>
+              <div class="lc-stage-seg" data-idx="10" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">LOI</span></div>
+              <div class="lc-stage-seg" data-idx="11" data-phase="lunar"><div class="lc-node"></div><span class="lc-seg-lbl">LANDING</span></div>
             </div>
           </div>
 

@@ -150,6 +150,27 @@ function renderProductionTab() {
     statusEl.innerHTML = `인원: ${assignedW}/${totalW} &nbsp; 수입: +${fmtDec(totalIncome, 1)}/s${withdrawBtn}`;
   }
 
+  // 튜토리얼 힌트: ops_center 미건설 시 안내
+  const tutEl = document.getElementById('prod-tutorial');
+  if (tutEl) {
+    const opsBuilt = (gs.buildings.ops_center || 0) >= 1;
+    if (!opsBuilt) {
+      const canAffordOps = (gs.res.money || 0) >= 300;
+      tutEl.innerHTML =
+        `<div class="prod-tut-row">` +
+        `<span class="prod-tut-icon">◈</span>` +
+        `<div class="prod-tut-body">` +
+        `<div class="prod-tut-title">TUTORIAL — 첫 번째 단계</div>` +
+        `<div class="prod-tut-desc">운영 센터[OPS]를 건설하세요 — 수익 창출의 시작입니다.</div>` +
+        `</div>` +
+        `<button class="prod-tut-btn${canAffordOps ? '' : ' dis'}" onclick="buyBuilding('ops_center')" ${canAffordOps ? '' : 'disabled'}>` +
+        `[ 건설 ₩300 ]</button>` +
+        `</div>`;
+    } else {
+      tutEl.innerHTML = '';
+    }
+  }
+
   // 건물 리스트: 버튼 없이 상태만 표시 (건설은 월드 호버 팝업에서)
   let html = '';
   BUILDINGS.forEach(b => {
