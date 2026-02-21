@@ -47,12 +47,12 @@ const BLD_STAFF_ICONS = {
 
 const SPECIALIST_ROLES = {
   research_lab: [
-    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 포인트 생산 +25%/명',    effect:'res_research_mult', val:0.25 },
-    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 자원 생산 +8%/명',       effect:'all_prod_mult',     val:0.08 },
+    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 포인트 생산 +25%/명',    effect:'res_research_mult', val:0.25, unlockResearch:'spec_experiment' },
+    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 자원 생산 +8%/명',       effect:'all_prod_mult',     val:0.08, unlockResearch:'spec_analyst'    },
   ],
   ops_center: [
-    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%/명',          effect:'money_mult',    val:0.20 },
-    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'(미구현) 건물 유지비 -15%/명', effect:'upkeep_reduce', val:0.15 },
+    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%/명',          effect:'money_mult',    val:0.20, unlockResearch:'spec_sales_pro' },
+    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'(미구현) 건물 유지비 -15%/명', effect:'upkeep_reduce', val:0.15, unlockResearch:'spec_sysadmin'  },
   ],
 };
 
@@ -114,6 +114,11 @@ const UPGRADES = [
   // ── Branch O (운영 · OPERATIONS) ─────────────────────────────
   { id:'auto_worker_assign',    name:'인원 자동 배치',   icon:'O01', cost:{research:500,electronics:300},  req:null,                  time:1200, desc:'인원 자동 배치 해금',   effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_worker']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_worker']=true; }, unlocks:[] },
   { id:'auto_assemble_restart', name:'자동 조립 재시작', icon:'O02', cost:{research:600,electronics:400},  req:'auto_worker_assign',  time:1500, desc:'조립 자동 재시작 해금', effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_assemble']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_assemble']=true; }, unlocks:[] },
+  // ── Branch X (전문화 · SPECIALIZATION) ───────────────────────
+  { id:'spec_sales_pro',  name:'영업 전문화 교육',   icon:'X01', cost:{research:150},               req:'hire_worker_1',    time: 300, desc:'운영센터 영업 전문가 전직 해금',     effect:()=>{}, unlocks:[] },
+  { id:'spec_sysadmin',   name:'시스템 관리 교육',   icon:'X02', cost:{research:250,electronics:100},req:'spec_sales_pro',   time: 480, desc:'운영센터 시스템 관리자 전직 해금',   effect:()=>{}, unlocks:[] },
+  { id:'spec_experiment', name:'실험 전문화 교육',   icon:'X03', cost:{research:200},               req:'microchip',        time: 360, desc:'연구소 실험 전문가 전직 해금',       effect:()=>{}, unlocks:[] },
+  { id:'spec_analyst',    name:'데이터 분석 교육',   icon:'X04', cost:{research:350,electronics:150},req:'spec_experiment',  time: 600, desc:'연구소 데이터 분석가 전직 해금',     effect:()=>{}, unlocks:[] },
 ];
 
 // Research branch definitions for column layout
@@ -123,6 +128,7 @@ const RESEARCH_BRANCHES = [
   { id:'A', label:'항전',   nodes:['electronics_basics','microchip','reliability','automation'] },
   { id:'T', label:'열보호', nodes:['hire_worker_1','launch_ctrl','mission_sys','multipad'] },
   { id:'O', label:'운영',   nodes:['auto_worker_assign','auto_assemble_restart'] },
+  { id:'X', label:'전문화', nodes:['spec_sales_pro','spec_sysadmin','spec_experiment','spec_analyst'] },
 ];
 
 // ============================================================

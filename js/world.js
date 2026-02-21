@@ -1256,18 +1256,31 @@ function openSpecPanel(bld) {
   let html = `<div class="sp2-head">${wkIcon}&nbsp;직원 전문화</div><div class="sp2-body">`;
   roles.forEach(r => {
     const count = specs[r.id] || 0;
-    const canPromote = assigned >= 1;
+    const isUnlocked = !r.unlockResearch || !!(gs.upgrades && gs.upgrades[r.unlockResearch]);
+    const canPromote = isUnlocked && assigned >= 1;
     const descHtml = r.desc.replace(/\n/g, '<br>');
-    html += `<div class="sp2-role">
-      <div class="sp2-role-icon ${r.iconCls}"></div>
-      <div class="sp2-role-info">
-        <div class="sp2-role-name">${r.name} <span class="sp2-count">(${count}명)</span></div>
-        <div class="sp2-role-desc">${descHtml}</div>
-        <div class="sp2-cost">${wkIcon}&thinsp;×1
-          <button class="sp2-btn${canPromote ? '' : ' dis'}" onclick="specClick('${bld.id}','${r.id}')">[전직]</button>
+    if (!isUnlocked) {
+      // 미해금: 잠금 상태 표시
+      html += `<div class="sp2-role sp2-locked">
+        <div class="sp2-role-icon ${r.iconCls}" style="opacity:0.3"></div>
+        <div class="sp2-role-info">
+          <div class="sp2-role-name" style="color:var(--locked)">${r.name}</div>
+          <div class="sp2-role-desc" style="color:var(--locked)">연구 필요: <em>${r.unlockResearch}</em></div>
+          <div class="sp2-cost" style="color:var(--locked)">[연구탭에서 해금]</div>
         </div>
-      </div>
-    </div>`;
+      </div>`;
+    } else {
+      html += `<div class="sp2-role">
+        <div class="sp2-role-icon ${r.iconCls}"></div>
+        <div class="sp2-role-info">
+          <div class="sp2-role-name">${r.name} <span class="sp2-count">(${count}명)</span></div>
+          <div class="sp2-role-desc">${descHtml}</div>
+          <div class="sp2-cost">${wkIcon}&thinsp;×1
+            <button class="sp2-btn${canPromote ? '' : ' dis'}" onclick="specClick('${bld.id}','${r.id}')">[전직]</button>
+          </div>
+        </div>
+      </div>`;
+    }
   });
   html += `</div><div class="sp2-avail">배치 직원: ${assigned}명</div>`;
   panel.innerHTML = html;
@@ -1291,6 +1304,11 @@ function closeSpecPanel() {
 }
 
 function specClick(bldId, specId) {
+  const role = ((typeof SPECIALIST_ROLES !== 'undefined' && SPECIALIST_ROLES[bldId]) || []).find(r => r.id === specId);
+  if (role && role.unlockResearch && !(gs.upgrades && gs.upgrades[role.unlockResearch])) {
+    notify('연구 필요 — 연구탭에서 먼저 해금하세요', 'red');
+    return;
+  }
   if (typeof promoteToSpecialist !== 'function' || !promoteToSpecialist(bldId, specId)) {
     notify('배치 직원이 없습니다 — 먼저 직원을 고용하세요', 'red');
     return;
@@ -1463,12 +1481,21 @@ function initWorldDrag() {
     }
     if (drag) return; // skip during drag scroll
 
-    // If cursor is inside the building overlay, keep it open
+    // If cursor is inside the building overlay or spec-panel, keep it open
     const bldOvEl = document.getElementById('bld-ov');
     if (bldOvEl && bldOvEl.style.display !== 'none') {
       const or = bldOvEl.getBoundingClientRect();
       if (e.clientX >= or.left && e.clientX <= or.right &&
           e.clientY >= or.top  && e.clientY <= or.bottom) {
+        clearTimeout(_bldOvTimer);
+        return;
+      }
+    }
+    const specPanelEl = document.getElementById('spec-panel');
+    if (specPanelEl && specPanelEl.style.display !== 'none') {
+      const sr = specPanelEl.getBoundingClientRect();
+      if (e.clientX >= sr.left && e.clientX <= sr.right &&
+          e.clientY >= sr.top  && e.clientY <= sr.bottom) {
         clearTimeout(_bldOvTimer);
         return;
       }
@@ -1507,7 +1534,7 @@ function initWorldDrag() {
   const bldOv = document.getElementById('bld-ov');
   if (bldOv) {
     bldOv.addEventListener('mouseenter', () => clearTimeout(_bldOvTimer));
-    bldOv.addEventListener('mouseleave', closeBldOv);
+    bldOv.addEventListener('mouseleave', scheduleBldOvClose);  // 즉시 닫지 않고 150ms 대기 — spec-panel 이동 여지
   }
 
   setInterval(_tickWorkers, 80);
