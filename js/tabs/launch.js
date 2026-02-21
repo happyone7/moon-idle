@@ -385,7 +385,7 @@ function _lcRocketArtHtml() {
     if (readyJob)      return '#00e676';  // 완성 — 밝은 녹색
     if (inProgressJob) return '#ffd700';  // 조립 진행 중 — 노란색
     if (p[key])        return '#ff9000';  // 파트 보유(미조립) — 주황색
-    return '#7a5500';                     // 미획득 — 어두운 주황 (윤곽 보임)
+    return '#b06800';                     // 미획득 — 주황 (윤곽 명확하게 보임)
   };
 
   const partsDone  = PARTS.filter(pt => p[pt.id]).length;
@@ -409,7 +409,7 @@ function _lcRocketArtHtml() {
     sp(payC,               '        /|\\         '),
     sp(payC,               '       / | \\        '),
     sp(payC,               '      /  |  \\       '),
-    sp(payC,               '     / PYLD \\       '),
+    sp(payC,               '     / PYLD  \\      '),
     sp(payC,               '    |---------|      '),
     sp(payC,               '    | PAYLOAD |      '),
     sp(hulC,               '    |=========|      '),
