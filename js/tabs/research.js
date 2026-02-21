@@ -150,263 +150,263 @@ const TECH_VIZ = {
   auto_assemble_restart: { lines: ['▓▓▓▓▓▓▓▓▓ ← 공정 자동화', '▓▓▓▓▓▓▓▓▓▓ ← 조립 시퀀서', '▓▓▓▓▓▓▓▓ ← 재시작 로직'], stat: 'AUTO ASSEMBLE' },
 };
 
-// Tech tier groupings for vertical layout
-const TIER_GROUPS = [
-  { label: 'TIER-0  //  기초 시스템',  nodes: ['hire_worker_1', 'basic_prod'] },
-  { label: 'TIER-1  //  자원 기술',    nodes: ['drill', 'fuel_chem', 'electronics_basics'] },
-  { label: 'TIER-2  //  화학 / 전자',  nodes: ['catalyst', 'microchip', 'alloy'] },
-  { label: 'TIER-3  //  고급 공학',    nodes: ['automation', 'rocket_eng', 'reliability', 'lightweight'] },
-  { label: 'TIER-4  //  우주 공학',    nodes: ['fusion', 'multipad', 'launch_ctrl'] },
-  { label: 'TIER-5  //  임무 시스템',  nodes: ['mission_sys'] },
-  { label: 'TIER-6  //  자동화 연구', nodes: ['auto_worker_assign', 'auto_assemble_restart'] },
-];
+// Legacy compat stubs
+const TIER_GROUPS = [];
+function buyUpgrade(uid) { startResearch(uid); }
+function selectTech2(uid) { /* legacy stub */ }
+function _updateTechDetailBtnState() { /* legacy stub */ }
+function renderTechDetail(uid) { /* legacy stub */ }
 
-function buyUpgrade(uid) {
-  const upg = UPGRADES.find(u => u.id === uid);
-  if (!upg || gs.upgrades[uid]) return;
-  if (upg.req && !gs.upgrades[upg.req]) { notify('선행 연구 필요', 'red'); return; }
-  if (!canAfford(upg.cost)) { notify('연구 포인트 부족', 'red'); return; }
-  spend(upg.cost);
-  gs.upgrades[uid] = true;
-  upg.effect();
-  if (upg.unlocks) applyUnlocks(upg.unlocks);
-  recentResearches.push({ name: upg.name, ts: Date.now() });
-  notify(`${upg.icon} ${upg.name} 연구 완료`);
-  playSfx('sawtooth', 440, 0.1, 0.028, 700);
+// ─── 기술 선택 함수 ─────────────────────────────────────
+function selectTech(uid) {
+  if (typeof gs !== 'undefined') gs.selectedTech = uid;
+  renderResearchTab();
+}
+
+// ─── 연구 취소 함수 ─────────────────────────────────────
+function cancelResearch(uid) {
+  if (!gs.researchProgress || !gs.researchProgress[uid]) return;
+  delete gs.researchProgress[uid];
+  if (gs.selectedTech === uid) gs.selectedTech = null;
+  notify('연구 취소됨', 'red');
   renderAll();
 }
 
 // ============================================================
-//  RENDER: RESEARCH TAB v2 — horizontal card tree + detail panel
+//  RENDER: RESEARCH TAB — 3-column full layout
 // ============================================================
-
-function selectTech2(uid) {
-  selectedTechId = uid;
-  // 기술 카드 선택음
-  playSfx('sine', 380, 0.05, 0.018);
-  // Highlight selected card
-  document.querySelectorAll('.rsh-card2').forEach(c => {
-    c.classList.toggle('selected', c.dataset.uid === uid);
-  });
-  renderTechDetail(uid);
-}
-
-let _researchDetailRenderedFor = null; // 더블클릭 방지: 마지막으로 전체 렌더된 tech ID
-
-/** 기술 상세 패널 버튼 상태만 업데이트 (DOM 재생성 없이) */
-function _updateTechDetailBtnState() {
-  const uid = selectedTechId;
-  if (!uid) return;
-  const panel = document.getElementById('rsh-detail-panel');
-  if (!panel) return;
-  const btn = panel.querySelector('.rdp-btn');
-  if (!btn) return;
-  const upg = UPGRADES.find(u => u.id === uid);
-  if (!upg) return;
-  const purchased = !!gs.upgrades[uid];
-  const reqMet    = !upg.req || !!gs.upgrades[upg.req];
-  const affordable = canAfford(upg.cost);
-  btn.disabled    = purchased || !reqMet || !affordable;
-  btn.textContent = purchased ? '연구 완료' : !reqMet ? '선행 필요' : !affordable ? '자원 부족' : '연구 실행';
-}
-
-function renderTechDetail(uid) {
-  _researchDetailRenderedFor = uid;
-  const panel = document.getElementById('rsh-detail-panel');
-  if (!panel) return;
-
-  if (!uid) {
-    panel.innerHTML = `<div class="rdp-hd">기술 상세</div>
-<div class="rdp-empty">// 기술 카드를 클릭하면<br>상세 정보가 표시됩니다</div>`;
-    return;
-  }
-
-  const upg = UPGRADES.find(u => u.id === uid);
-  if (!upg) return;
-
-  const purchased  = !!gs.upgrades[uid];
-  const reqMet     = !upg.req || !!gs.upgrades[upg.req];
-  const affordable = canAfford(upg.cost);
-  const reqUpg     = upg.req ? UPGRADES.find(u => u.id === upg.req) : null;
-
-  let statusTxt, statusColor;
-  if (purchased)        { statusTxt = '[ 연구 완료 ]'; statusColor = 'var(--green)'; }
-  else if (!reqMet)     { statusTxt = '[ 잠금 ]';     statusColor = '#2a3a2a'; }
-  else if (affordable)  { statusTxt = '[ 연구 가능 ]'; statusColor = 'var(--amber)'; }
-  else                  { statusTxt = '[ 자원 부족 ]'; statusColor = '#1a5a2a'; }
-
-  const costHtml = Object.entries(upg.cost).map(([r, v]) => {
-    const res = RESOURCES.find(x => x.id === r);
-    const have = gs.res[r] || 0;
-    return `<div class="rdp-cost-row">
-      <span>${res ? res.symbol + ' ' + res.name : r}</span>
-      <span style="color:${have>=v?'var(--green)':'var(--red)'}">${fmt(have)}/${fmt(v)}</span>
-    </div>`;
-  }).join('');
-
-  const prereqHtml = reqUpg
-    ? `<div class="rdp-sub">선행 연구</div>
-<div style="font-size:11px;color:${gs.upgrades[upg.req]?'var(--green)':'var(--red)'}">
-  ${reqUpg.icon} ${reqUpg.name} ${gs.upgrades[upg.req]?'[완료]':'[필요]'}
-</div>`
-    : '';
-
-  const unlocksHtml = (upg.unlocks && upg.unlocks.length > 0)
-    ? `<div class="rdp-sub">잠금 해제</div>` + upg.unlocks.map(k =>
-        `<div style="font-size:11px;color:var(--green)">▶ ${k.replace('bld_','').replace('tab_','[탭] ')}</div>`
-      ).join('')
-    : '';
-
-  const viz = TECH_VIZ[uid];
-  const vizHtml = viz ? `<div class="rdp-viz">
-  <div class="rdp-viz-hd">// TECH ANALYSIS</div>
-  ${viz.lines.map(l=>`<div class="rdp-viz-bar">${l}</div>`).join('')}
-  <div class="rdp-viz-stat">${viz.stat}</div>
-</div>` : '';
-
-  // P4-5: Research ASCII art panel
-  const asciiArt = (typeof RESEARCH_ASCII_ART !== 'undefined')
-    ? (RESEARCH_ASCII_ART[uid] || RESEARCH_ASCII_ART._default)
-    : null;
-  const asciiHtml = asciiArt ? `<div class="rdp-ascii-panel">
-  <div class="rdp-ascii-hd">// SCHEMATIC</div>
-  <pre class="rdp-ascii-art">${asciiArt}</pre>
-</div>` : '';
-
-  const btnDis = purchased || !reqMet || !affordable;
-  const btnTxt = purchased ? '연구 완료' : !reqMet ? '선행 필요' : !affordable ? '자원 부족' : '연구 실행';
-
-  panel.innerHTML = `<div class="rdp-hd">기술 상세</div>
-<div class="rdp-icon">${upg.icon}</div>
-<div class="rdp-name">${upg.name}</div>
-<div class="rdp-status" style="color:${statusColor}">${statusTxt}</div>
-<div class="rdp-desc">${upg.desc}</div>
-${asciiHtml}
-<div class="rdp-sub">연구 비용</div>
-${costHtml}
-${prereqHtml}
-${unlocksHtml}
-${vizHtml}
-<button class="rdp-btn" onclick="buyUpgrade('${uid}')" ${btnDis?'disabled':''}>${btnTxt}</button>`;
-}
-
 function renderResearchTab() {
   const layout = document.getElementById('research-layout');
   if (!layout) return;
 
-  // ── LEFT SIDEBAR ────────────────────────────────────────────
   const prod = getProduction();
   const rpRate = prod.research || 0;
   const researchedCount = Object.keys(gs.upgrades).filter(k => gs.upgrades[k]).length;
+  const activeIds = gs.researchProgress ? Object.keys(gs.researchProgress) : [];
+  const maxSlots = gs.maxResearchSlots || 2;
+  const selectedUid = gs.selectedTech || null;
 
-  const researchBldgs = BUILDINGS.filter(b => b.produces === 'research');
-  let rpSourcesHtml = '';
-  researchBldgs.forEach(b => {
-    const cnt = gs.buildings[b.id] || 0;
-    if (cnt === 0) return;
-    const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
-    const rate = b.baseRate * assigned * (prodMult.research || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id);
-    rpSourcesHtml += `<div class="rsh-src-row">
-      <span>${b.icon} ${b.name} ×${cnt}</span>
-      <span>+${fmtDec(rate, 2)}/s</span>
-    </div>`;
-  });
-  if (!rpSourcesHtml) rpSourcesHtml = '<div class="rsh-empty">// 연구 시설 없음</div>';
+  // ── 좌측: 연구 큐 ────────────────────────────────────────
+  let queueHtml = `<div class="rsh-queue-header">// 연구 현황 [${activeIds.length}/${maxSlots} 슬롯]</div>`;
 
-  const recent5 = recentResearches.slice(-5).reverse();
-  const recentHtml = recent5.length === 0
-    ? '<div class="rsh-empty">// 연구 기록 없음</div>'
-    : recent5.map(r => {
-        const ago = Math.floor((Date.now() - r.ts) / 1000);
-        return `<div class="rsh-recent-row"><span>${r.name}</span><span>${fmtTime(ago)} 전</span></div>`;
-      }).join('');
+  if (activeIds.length === 0) {
+    queueHtml += `<div class="rsh-queue-empty">진행 중인 연구 없음<br>기술 트리에서 연구를 선택하세요</div>`;
+  } else {
+    activeIds.forEach(uid => {
+      const upg = UPGRADES.find(u => u.id === uid);
+      if (!upg) return;
+      const prog = gs.researchProgress[uid];
+      const techTime = upg.time || 60;
+      const timeSpent = prog.timeSpent || 0;
+      const pct = Math.min(100, Math.floor((timeSpent / techTime) * 100));
 
-  const sidebarHtml = `
-<div class="rsh-sidebar" style="overflow-y:auto;">
-  <div class="rsh-sb-hd">연구 현황</div>
-  <div class="rsh-stat-grid">
-    <div class="rsh-stat"><div class="rsh-stat-l">완료</div><div class="rsh-stat-v">${researchedCount}</div></div>
-    <div class="rsh-stat"><div class="rsh-stat-l">전체</div><div class="rsh-stat-v">${UPGRADES.length}</div></div>
-    <div class="rsh-stat rsh-stat-full"><div class="rsh-stat-l">RP 수입</div><div class="rsh-stat-v" style="color:var(--green-mid)">+${fmtDec(rpRate, 2)}/s</div></div>
-    <div class="rsh-stat rsh-stat-full"><div class="rsh-stat-l">RP 보유</div><div class="rsh-stat-v" style="color:var(--green-mid)">${fmt(gs.res.research || 0)}</div></div>
-    <div class="rsh-stat rsh-stat-full"><div class="rsh-stat-l">문스톤</div><div class="rsh-stat-v" style="color:var(--amber)">${gs.moonstone}</div></div>
-  </div>
-  <div class="rsh-sb-sub">RP 수입원</div>
-  ${rpSourcesHtml}
-  <div class="rsh-sb-sub">최근 연구</div>
-  ${recentHtml}
+      // branch 이름 찾기
+      let branchLabel = '';
+      RESEARCH_BRANCHES.forEach(b => { if (b.nodes.includes(uid)) branchLabel = b.label; });
+
+      // ETA
+      let etaStr = '';
+      if (typeof getResearchETA === 'function') {
+        const etaSec = getResearchETA(uid);
+        if (!isFinite(etaSec)) etaStr = '일시정지 — RP 없음';
+        else {
+          const h = Math.floor(etaSec / 3600);
+          const m = Math.floor((etaSec % 3600) / 60);
+          const s = Math.floor(etaSec % 60);
+          etaStr = 'ETA: ' + (h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`);
+        }
+      }
+
+      // ASCII 아트
+      const asciiArt = (RESEARCH_ASCII_ART && (RESEARCH_ASCII_ART[uid] || RESEARCH_ASCII_ART._default)) || '';
+      const asciiHtml = asciiArt
+        ? `<div class="rsh-ascii-panel"><pre class="rsh-ascii-art">${asciiArt}</pre><div class="rsh-ascii-scanline"></div></div>`
+        : '';
+
+      const amberBar = branchLabel === '열보호' ? ' amber-fill' : '';
+
+      queueHtml += `<div class="rsh-queue-item">
+  <div class="rsh-queue-item-hd">${upg.icon} ${upg.name}</div>
+  <div class="rsh-queue-item-branch">${branchLabel} 브랜치</div>
+  ${asciiHtml}
+  <div class="rsh-bc-bar"><div class="rsh-bc-bar-fill${amberBar}" style="width:${pct}%"></div></div>
+  <div style="font-size:10px;color:var(--green-mid);margin-top:3px">${pct}% · ${etaStr}</div>
+  <span class="rsh-queue-cancel" onclick="cancelResearch('${uid}')">■ 취소</span>
+</div>`;
+    });
+  }
+
+  // RP 생산 현황
+  const labCount = gs.buildings.research_lab || 0;
+  queueHtml += `<div class="rsh-rp-panel" style="margin-top:8px">
+  RP: <b>${fmt(gs.res.research || 0)}</b> (+${fmtDec(rpRate,2)}/s)<br>
+  ${labCount > 0 ? `연구소 ×${labCount}` : '연구소 없음'}
+  · 완료 ${researchedCount}/${UPGRADES.length}
 </div>`;
 
-  // ── HORIZONTAL TECH TREE ─────────────────────────────────────
-  let tierColsHtml = '';
-  TIER_GROUPS.forEach((tier, ti) => {
-    if (ti > 0) {
-      tierColsHtml += '<div class="rsh-tier-arrow">→</div>';
+  // ── 중앙: 기술 브랜치 컬럼 ───────────────────────────────
+  let branchesHtml = '';
+  RESEARCH_BRANCHES.forEach(branch => {
+    // ── 잠긴 미래 연구 열 ────────────────────────────────
+    if (branch.locked) {
+      let lockedCards = '';
+      (branch.lockedItems || []).forEach((item, idx) => {
+        if (idx > 0) lockedCards += `<div class="rsh-branch-arrow" style="color:var(--green-dim)">│</div>`;
+        lockedCards += `<div class="rsh-bcard-locked rsh-future-card">
+  <div class="rsh-bc-hd"><span class="rsh-bc-id">???</span> ${item.name}</div>
+  <div class="rsh-bc-desc rsh-future-desc">${item.desc}</div>
+  <div class="rsh-bc-status">🔒 잠김</div>
+</div>`;
+      });
+      branchesHtml += `<div class="rsh-branch-col rsh-branch-future" data-branch="${branch.id}">
+  <div class="rsh-branch-hd">${branch.id} · ${branch.label}</div>
+  ${lockedCards}
+</div>`;
+      return;
     }
 
-    let cardsInCol = '';
-    // Short tier label (strip TIER-N prefix for compact display)
-    const shortLabel = tier.label.split('//')[1]?.trim() || tier.label;
+    let cardsHtml = '';
 
-    tier.nodes.forEach(uid => {
+    branch.nodes.forEach((uid, idx) => {
       const upg = UPGRADES.find(u => u.id === uid);
       if (!upg) return;
 
       const purchased  = !!gs.upgrades[uid];
+      const inProgress = !!(gs.researchProgress && gs.researchProgress[uid]);
       const reqMet     = !upg.req || !!gs.upgrades[upg.req];
-      const affordable = canAfford(upg.cost);
+      const isSelected = uid === selectedUid;
 
-      let cardCls = '';
-      let statusTxt, statusCls;
-      if (purchased)        { cardCls = 'done';      statusTxt = '[완료]';   statusCls = 'rsh-ok'; }
-      else if (!reqMet)     { cardCls = 'locked';    statusTxt = '[잠금]';   statusCls = 'rsh-lock'; }
-      else if (affordable)  { cardCls = 'available'; statusTxt = '[가능]';   statusCls = 'rsh-rdy'; }
-      else                  {                         statusTxt = '[부족]';   statusCls = 'rsh-need'; }
+      let cardClass, stateHtml;
+      if (purchased) {
+        cardClass = 'rsh-bcard-complete';
+        stateHtml = `<div class="rsh-bc-status">✓ 완료</div>`;
+      } else if (inProgress) {
+        // 진행 중은 좌측 큐에서 표시 — 중앙에선 간략히
+        const prog = gs.researchProgress[uid];
+        const techTime = upg.time || 60;
+        const pct = Math.min(100, Math.floor(((prog.timeSpent || 0) / techTime) * 100));
+        const amberBar = branch.id === 'T' ? ' amber-fill' : '';
+        cardClass = 'rsh-bcard-progress';
+        stateHtml = `<div class="rsh-bc-bar" style="margin-top:4px"><div class="rsh-bc-bar-fill${amberBar}" style="width:${pct}%"></div></div>
+<div class="rsh-bc-status">${pct}% 진행 중</div>`;
+      } else if (reqMet) {
+        cardClass = 'rsh-bcard-available' + (isSelected ? ' rsh-bcard-selected' : '');
+        const rpCost = upg.cost.research || 0;
+        const timeMin = Math.ceil((upg.time || 60) / 60);
+        stateHtml = `<div class="rsh-bc-cost">RP ${fmt(rpCost)} · ~${timeMin}분</div>`;
+      } else {
+        cardClass = 'rsh-bcard-locked';
+        stateHtml = `<div class="rsh-bc-status">\u{1F512} 잠금</div>`;
+      }
 
-      const isSelected = selectedTechId === uid;
+      if (idx > 0) {
+        const arrowColor = purchased ? 'var(--green)' : inProgress ? 'var(--amber)' : 'var(--green-dim)';
+        cardsHtml += `<div class="rsh-branch-arrow" style="color:${arrowColor}">│</div>`;
+      }
 
-      cardsInCol += `<div class="rsh-card2 ${cardCls}${isSelected?' selected':''}" data-uid="${uid}" onclick="selectTech2('${uid}')">
-  <div class="rsh-c2-icon">${upg.icon}</div>
-  <div class="rsh-c2-name">${upg.name}</div>
-  <div class="rsh-c2-status ${statusCls}">${statusTxt}</div>
+      // 클릭: 선택 (구매된 카드 제외)
+      const clickAttr = (!purchased) ? `onclick="selectTech('${uid}')" style="cursor:pointer"` : '';
+
+      cardsHtml += `<div class="${cardClass}" ${clickAttr}>
+  <div class="rsh-bc-hd"><span class="rsh-bc-id">${upg.icon}</span> ${upg.name}</div>
+  <div class="rsh-bc-desc">${upg.desc}</div>
+  ${stateHtml}
 </div>`;
     });
 
-    tierColsHtml += `<div class="rsh-tier-col">
-  <div class="rsh-tier-label2">T${ti} · ${shortLabel}</div>
-  ${cardsInCol}
+    branchesHtml += `<div class="rsh-branch-col" data-branch="${branch.id}">
+  <div class="rsh-branch-hd">${branch.id} · ${branch.label}</div>
+  ${cardsHtml}
 </div>`;
   });
 
-  // ── DETAIL PANEL (right side) ─────────────────────────────────
-  // 기존 패널 엘리먼트를 미리 저장 (innerHTML 교체 시 제거되지만 JS 참조는 유지됨)
-  // 이렇게 하면 mousedown → renderAll → mouseup 사이클에서 click 이벤트가 끊기지 않음
-  const savedPanel = document.getElementById('rsh-detail-panel');
-
-  layout.innerHTML = `<div class="rsh-layout2">
-  ${sidebarHtml}
-  <div class="rsh-tree-area">
-    <div class="rsh-tier-row">${tierColsHtml}</div>
-  </div>
-  <div class="rsh-detail-panel" id="rsh-detail-panel">
-    <div class="rdp-hd">기술 상세</div>
-    <div class="rdp-empty">// 기술 카드를 클릭하면<br>상세 정보가 표시됩니다</div>
+  // 완료된 기술 목록 (하단)
+  const completedList = UPGRADES.filter(u => gs.upgrades[u.id]);
+  let completedHtml = '';
+  if (completedList.length > 0) {
+    completedHtml = `<div class="rsh-completed-strip">
+  <span style="color:var(--green-mid);font-size:10px">// COMPLETED TECHNOLOGIES — ${completedList.length}개 완료</span>
+  <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px">
+    ${completedList.map(u => `<span style="font-size:9px;color:var(--green);border:1px solid var(--green-dim);padding:1px 5px;border-radius:2px">${u.icon} ${u.name}</span>`).join('')}
   </div>
 </div>`;
-
-  if (savedPanel && _researchDetailRenderedFor === selectedTechId && selectedTechId) {
-    // 같은 기술 선택 유지: 기존 패널 재부착 + 버튼 상태만 갱신 (DOM 재생성 금지 — 클릭 이벤트 보존)
-    const newPanel = document.getElementById('rsh-detail-panel');
-    if (newPanel) newPanel.replaceWith(savedPanel);
-    _updateTechDetailBtnState();
-  } else if (selectedTechId) {
-    // 기술이 바뀌었거나 최초 렌더: 전체 상세 패널 렌더
-    renderTechDetail(selectedTechId);
   }
-}
 
-function selectTech(uid) {
-  // legacy alias: 자동 구매 대신 상세 패널만 표시 (BUG-014)
-  selectedTechId = uid;
-  if (typeof renderTechDetail === 'function') renderTechDetail(uid);
+  // ── 우측: 기술 상세 패널 ──────────────────────────────────
+  let detailHtml = '';
+  if (selectedUid) {
+    const upg = UPGRADES.find(u => u.id === selectedUid);
+    if (upg) {
+      const purchased  = !!gs.upgrades[selectedUid];
+      const inProgress = !!(gs.researchProgress && gs.researchProgress[selectedUid]);
+      const reqMet     = !upg.req || !!gs.upgrades[upg.req];
+      const canStart   = !purchased && !inProgress && reqMet && activeIds.length < maxSlots;
+
+      // 비용 표시
+      const costParts = Object.entries(upg.cost).map(([r, v]) => {
+        const res = (typeof RESOURCES !== 'undefined' ? RESOURCES : []).find(x => x.id === r);
+        const label = res ? res.name : r;
+        return `${label}: ${fmt(v)}`;
+      }).join(' / ');
+
+      // 소요 시간
+      const techTime = upg.time || 60;
+      const timeMin = Math.floor(techTime / 60);
+      const timeSec = techTime % 60;
+      const timeStr = timeMin > 0 ? `${timeMin}분 ${timeSec > 0 ? timeSec + '초' : ''}` : `${timeSec}초`;
+
+      // 선행 기술
+      const reqHtml = upg.req
+        ? `<div class="rsh-detail-value">${upg.req} ${gs.upgrades[upg.req] ? '✓' : '✗ 미완료'}</div>`
+        : `<div class="rsh-detail-value">없음</div>`;
+
+      // 버튼 상태
+      let btnHtml = '';
+      if (purchased) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">✓ 연구 완료</div>`;
+      } else if (inProgress) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">▶ 연구 진행 중</div>`;
+      } else if (!reqMet) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">🔒 선행 기술 필요</div>`;
+      } else if (activeIds.length >= maxSlots) {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">슬롯 가득 찼음</div>`;
+      } else {
+        btnHtml = `<div class="rsh-detail-btn" onclick="startResearch('${selectedUid}');renderAll()">▶ 연구 시작</div>`;
+      }
+
+      detailHtml = `<div class="rsh-detail-panel">
+  <div class="rsh-detail-title">${upg.name}</div>
+  <div class="rsh-detail-id">${upg.icon} — ${upg.desc}</div>
+
+  <div class="rsh-detail-section">
+    <div class="rsh-detail-label">비용</div>
+    <div class="rsh-detail-value">${costParts}</div>
+  </div>
+
+  <div class="rsh-detail-section">
+    <div class="rsh-detail-label">소요 시간</div>
+    <div class="rsh-detail-value">${timeStr}</div>
+  </div>
+
+  <div class="rsh-detail-section">
+    <div class="rsh-detail-label">선행 기술</div>
+    ${reqHtml}
+  </div>
+
+  ${btnHtml}
+</div>`;
+    }
+  } else {
+    detailHtml = `<div class="rsh-detail-panel"><div class="rsh-detail-empty">← 기술 트리에서<br>기술을 선택하세요</div></div>`;
+  }
+
+  // ── 최종 레이아웃 조합 ────────────────────────────────────
+  layout.innerHTML = `<div class="rsh-full-layout">
+  <div class="rsh-col-left">${queueHtml}</div>
+  <div class="rsh-col-center">
+    <div class="rsh-branches-row">${branchesHtml}</div>
+    ${completedHtml}
+  </div>
+  <div class="rsh-col-right">${detailHtml}</div>
+</div>`;
 }

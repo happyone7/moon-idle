@@ -3,63 +3,143 @@
 // ============================================================
 const RESOURCES = [
   { id:'money',       name:'돈',       symbol:'₩',  color:'var(--amber)' },
-  { id:'metal',       name:'금속',     symbol:'Fe', color:'var(--green)' },
+  { id:'iron',        name:'철광석',   symbol:'Fe', color:'var(--green)' },
+  { id:'copper',      name:'구리',     symbol:'Cu', color:'#b87333' },
   { id:'fuel',        name:'연료',     symbol:'LOX',color:'var(--green)' },
   { id:'electronics', name:'전자부품', symbol:'PCB',color:'var(--green)' },
   { id:'research',    name:'연구',     symbol:'RP', color:'var(--green-mid)' },
 ];
 
+const OPS_ROLES = [
+  { id: 'sales',      name: '영업팀 직원',  maxSlotsPerBld: 3 },
+  { id: 'accounting', name: '회계팀 직원',  maxSlotsPerBld: 3 },
+  { id: 'consulting', name: '상담팀 직원',  maxSlotsPerBld: 3 },
+];
+
+const BLD_STAFF_NAMES = {
+  supply_depot:  '물류 직원',
+  mine:          '채굴 직원',
+  extractor:     '추출 직원',
+  refinery:      '정제 직원',
+  cryo_plant:    '냉각 직원',
+  elec_lab:      '전자 기술자',
+  fab_plant:     '제작 기술자',
+  research_lab:  '연구원',
+  r_and_d:       '수석 연구원',
+  solar_array:   '패널 관리자',
+  launch_pad:    '발사 기술자',
+};
+
+const BLD_STAFF_ICONS = {
+  housing:      '<span class="wk-icon wk-housing">&#x1F465;</span>',
+  ops_center:   '<span class="wk-icon wk-ops">&#x229E;</span>',
+  supply_depot: '<span class="wk-icon wk-supply">&#x25A4;</span>',
+  mine:         '<span class="wk-icon wk-mine">&#x25C8;</span>',
+  extractor:    '<span class="wk-icon wk-extract">&#x2B21;</span>',
+  refinery:     '<span class="wk-icon wk-refinery">&#x2699;</span>',
+  cryo_plant:   '<span class="wk-icon wk-cryo">&#x2745;</span>',
+  elec_lab:     '<span class="wk-icon wk-elec">&#x26A1;</span>',
+  fab_plant:    '<span class="wk-icon wk-fab">&#x2B1B;</span>',
+  research_lab: '<span class="wk-icon wk-rsc">&#x2B21;</span>',
+  r_and_d:      '<span class="wk-icon wk-rnd">&#x2605;</span>',
+  solar_array:  '<span class="wk-icon wk-solar">&#x25CE;</span>',
+  launch_pad:   '<span class="wk-icon wk-launch">&#x25B2;</span>',
+};
+
+const SPECIALIST_ROLES = {
+  research_lab: [
+    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 포인트 생산 +25%/명',    effect:'res_research_mult', val:0.25, unlockResearch:'spec_experiment' },
+    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 자원 생산 +8%/명',       effect:'all_prod_mult',     val:0.08, unlockResearch:'spec_analyst'    },
+  ],
+  ops_center: [
+    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%/명',          effect:'money_mult',    val:0.20, unlockResearch:'spec_sales_pro' },
+    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'(미구현) 건물 유지비 -15%/명', effect:'upkeep_reduce', val:0.15, unlockResearch:'spec_sysadmin'  },
+  ],
+};
+
 const BUILDINGS = [
   { id:'housing',      name:'주거 시설',        icon:'[HSG]', produces:'bonus',       baseRate:0,   baseCost:{money:200},                                    desc:'인원 상한 +1',      wbClass:'wb-housing' },
-  { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:35,  baseCost:{metal:150},                                    desc:'수익 창출 허브',    wbClass:'wb-ops' },
-  { id:'supply_depot', name:'보급 창고',        icon:'[DEP]', produces:'money',       baseRate:25,  baseCost:{money:3000,metal:500,electronics:150},         desc:'물류 수익',         wbClass:'wb-ops' },
-  { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'metal',       baseRate:25,  baseCost:{money:800},                                    desc:'기본 금속 생산',    wbClass:'wb-mine' },
-  { id:'extractor',    name:'보크사이트 추출기', icon:'[EXT]', produces:'metal',       baseRate:40,  baseCost:{money:6000,metal:1500},                        desc:'고급 금속 추출',    wbClass:'wb-mine' },
-  { id:'refinery',     name:'연료 정제소',      icon:'[REF]', produces:'fuel',        baseRate:20,  baseCost:{money:10000,metal:2500},                       desc:'LOX/RP-1 생산',    wbClass:'wb-refinery' },
-  { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:35,  baseCost:{money:15000,metal:4000,electronics:800},       desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
-  { id:'elec_lab',     name:'전자공학 연구소',  icon:'[PCB]', produces:'electronics', baseRate:18,  baseCost:{money:18000,metal:4000},                       desc:'회로 부품 생산',    wbClass:'wb-eleclab' },
-  { id:'fab_plant',    name:'반도체 공장',      icon:'[FAB]', produces:'electronics', baseRate:35,  baseCost:{money:25000,metal:6000,electronics:1500},      desc:'고급 반도체',       wbClass:'wb-eleclab' },
-  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:15,  baseCost:{money:20000},                                  desc:'기술 연구 포인트',  wbClass:'wb-research' },
+  { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:35,  baseCost:{money:300},                                   desc:'수익 창출 허브',    wbClass:'wb-ops' },
+  { id:'supply_depot', name:'보급 창고',        icon:'[DEP]', produces:'money',       baseRate:25,  baseCost:{money:3000,iron:500,electronics:150},          desc:'물류 수익',         wbClass:'wb-ops' },
+  { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'iron',        baseRate:25,  baseCost:{money:800},                                    desc:'철광석 생산',       wbClass:'wb-mine' },
+  { id:'extractor',    name:'구리 채굴기',      icon:'[EXT]', produces:'copper',      baseRate:40,  baseCost:{money:6000,iron:1500},                         desc:'구리 채굴 — MK2+ 필요', wbClass:'wb-mine' },
+  { id:'refinery',     name:'연료 정제소',      icon:'[REF]', produces:'fuel',        baseRate:20,  baseCost:{money:10000,iron:2500},                        desc:'LOX/RP-1 생산',    wbClass:'wb-refinery' },
+  { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:35,  baseCost:{money:15000,iron:4000,electronics:800},        desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
+  { id:'elec_lab',     name:'전자공학 연구소',  icon:'[PCB]', produces:'electronics', baseRate:18,  baseCost:{money:18000,iron:4000},                        desc:'회로 부품 생산',    wbClass:'wb-eleclab' },
+  { id:'fab_plant',    name:'반도체 공장',      icon:'[FAB]', produces:'electronics', baseRate:35,  baseCost:{money:25000,iron:6000,electronics:1500},       desc:'고급 반도체',       wbClass:'wb-eleclab' },
+  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:1,   baseCost:{money:5000},                                   desc:'기술 연구 포인트',  wbClass:'wb-research' },
   { id:'r_and_d',      name:'R&D 센터',         icon:'[RND]', produces:'research',    baseRate:25,  baseCost:{money:40000,electronics:3000},                 desc:'고급 연구 가속',    wbClass:'wb-research' },
   { id:'solar_array',  name:'태양광 어레이',    icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:35000,electronics:4000},                 desc:'전체 생산 +10%/개', wbClass:'wb-solar' },
-  { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:120000,metal:25000,electronics:10000},   desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },
+  { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:120000,iron:25000,electronics:10000},    desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },
 ];
 
 const PARTS = [
-  { id:'engine',   name:'엔진',        icon:'[ENG]', cost:{metal:2500,fuel:1500,electronics:800} },
-  { id:'fueltank', name:'연료 탱크',   icon:'[TNK]', cost:{metal:3000,fuel:3000} },
-  { id:'control',  name:'제어 시스템', icon:'[CTL]', cost:{electronics:4000,metal:1500} },
-  { id:'hull',     name:'기체 선체',   icon:'[HUL]', cost:{metal:3500} },
-  { id:'payload',  name:'탑재체',      icon:'[PLD]', cost:{electronics:3000,metal:1000} },
+  { id:'engine',   name:'엔진',        icon:'[ENG]', cost:{iron:2500,fuel:1500,electronics:800} },
+  { id:'fueltank', name:'연료 탱크',   icon:'[TNK]', cost:{iron:3000,fuel:3000} },
+  { id:'control',  name:'제어 시스템', icon:'[CTL]', cost:{electronics:4000,iron:1500} },
+  { id:'hull',     name:'기체 선체',   icon:'[HUL]', cost:{iron:3500} },
+  { id:'payload',  name:'탑재체',      icon:'[PLD]', cost:{electronics:3000,iron:1000} },
 ];
 
 const QUALITIES = [
-  { id:'proto',    name:'PROTO-MK1', icon:'[P1]', costMult:1.0, timeSec:20,  ispBonus:0,  dryMassMult:1.0,  relBonus:5,  reuseBonus:0,  rewardMult:1.0 },
-  { id:'standard', name:'STD-MK2',  icon:'[S2]', costMult:2.0, timeSec:40,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:2.0 },
-  { id:'advanced', name:'ADV-MK3',  icon:'[A3]', costMult:4.0, timeSec:80, ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:3.5 },
-  { id:'elite',    name:'ELITE-MK4',icon:'[E4]', costMult:8.0, timeSec:160, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:6.0 },
+  { id:'proto',    name:'PROTO-MK1', icon:'[P1]', costMult:1.0, timeSec:20,  ispBonus:0,  dryMassMult:1.0,  relBonus:5,  reuseBonus:0,  rewardMult:1.0, copperCost:0    },
+  { id:'standard', name:'STD-MK2',  icon:'[S2]', costMult:2.0, timeSec:40,  ispBonus:15, dryMassMult:0.95, relBonus:8,  reuseBonus:5,  rewardMult:2.0, copperCost:500  },
+  { id:'advanced', name:'ADV-MK3',  icon:'[A3]', costMult:4.0, timeSec:80,  ispBonus:35, dryMassMult:0.88, relBonus:18, reuseBonus:12, rewardMult:3.5, copperCost:1500 },
+  { id:'elite',    name:'ELITE-MK4',icon:'[E4]', costMult:8.0, timeSec:160, ispBonus:65, dryMassMult:0.78, relBonus:32, reuseBonus:22, rewardMult:6.0, copperCost:4000 },
 ];
 
 // Each upgrade has optional 'unlocks' array: strings matching keys in gs.unlocks
+// Organized by RESEARCH BRANCHES — S(구조), P(추진), A(항전), T(열보호), O(운영)
+// Within each branch, req chains are sequential (top→bottom)
 const UPGRADES = [
-  { id:'hire_worker_1',      name:'기초 인원 채용',   icon:'[HR1]', cost:{research:20},                    req:null,                 desc:'추가 인원 +1명',                effect:()=>{ gs.workers=(gs.workers||1)+1; },                                        unlocks:[] },
-  { id:'basic_prod',         name:'기초 생산 기술',   icon:'[BAS]', cost:{research:10},                    req:null,                 desc:'광산·생산 시설 잠금 해제',     effect:()=>{},                                                                       unlocks:['bld_mine'] },
-  { id:'drill',              name:'정밀 드릴',         icon:'[DRL]', cost:{research:50},                    req:'basic_prod',         desc:'금속 생산 +25%',               effect:()=>{ prodMult.metal=(prodMult.metal||1)*1.25; },                             unlocks:['bld_extractor'] },
-  { id:'fuel_chem',          name:'연료 화학',         icon:'[FUL]', cost:{research:45},                    req:'basic_prod',         desc:'연료 정제 시설 해금',           effect:()=>{},                                                                       unlocks:['bld_refinery'] },
-  { id:'electronics_basics', name:'전자공학 기초',     icon:'[ELB]', cost:{research:80},                    req:'basic_prod',         desc:'전자 시설 해금',               effect:()=>{},                                                                       unlocks:['bld_elec_lab','bld_supply_depot'] },
-  { id:'catalyst',           name:'촉매 정제',         icon:'[CAT]', cost:{research:80,fuel:100},           req:'fuel_chem',          desc:'연료 생산 +30%',               effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; },                               unlocks:['bld_cryo_plant'] },
-  { id:'microchip',          name:'마이크로칩',        icon:'[MCH]', cost:{research:100,electronics:80},    req:'electronics_basics', desc:'전자부품 +35%',               effect:()=>{ prodMult.electronics=(prodMult.electronics||1)*1.35; },                 unlocks:['bld_fab_plant','bld_r_and_d'] },
-  { id:'automation',         name:'자동화 시스템',     icon:'[AUT]', cost:{research:200,electronics:200},   req:'microchip',          desc:'전체 생산 ×1.5',              effect:()=>{ globalMult*=1.5; },                                                     unlocks:['bld_solar_array'] },
-  { id:'alloy',              name:'고강도 합금',       icon:'[ALY]', cost:{research:130,metal:250},         req:'drill',              desc:'부품 비용 -20%',               effect:()=>{ partCostMult*=0.8; },                                                   unlocks:['bld_r_and_d'] },
-  { id:'rocket_eng',         name:'로켓 공학 기초',    icon:'[RKT]', cost:{research:200,metal:300},         req:'alloy',              desc:'조립동 해금 + 로켓 제조 시작',  effect:()=>{},                                                                       unlocks:['tab_assembly','bld_launch_pad'] },
-  { id:'launch_ctrl',        name:'발사 제어 시스템',  icon:'[LCH]', cost:{research:300,electronics:200},   req:'rocket_eng',         desc:'발사 통제 탭 해금',             effect:()=>{},                                                                       unlocks:['tab_launch'] },
-  { id:'mission_sys',        name:'임무 분석 시스템',  icon:'[MIS]', cost:{research:400},                   req:'launch_ctrl',        desc:'미션 현황 탭 해금',             effect:()=>{},                                                                       unlocks:['tab_mission'] },
-  { id:'lightweight',        name:'경량 구조',         icon:'[LGT]', cost:{research:250,metal:800},         req:'alloy',              desc:'건조질량 -10%, 재활용 +8%',    effect:()=>{ /* handled in getRocketScience */ } },
-  { id:'fusion',             name:'핵융합 엔진',       icon:'[FSN]', cost:{research:500,electronics:400},   req:'automation',         desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
-  { id:'reliability',        name:'신뢰도 강화',       icon:'[REL]', cost:{research:300},                   req:'microchip',          desc:'발사 신뢰도 +15%',             effect:()=>{ reliabilityBonus+=15; } },
-  { id:'multipad',           name:'복수 발사대',       icon:'[MUL]', cost:{research:400,metal:1000},        req:'alloy',              desc:'조립 슬롯 +1',                 effect:()=>{ slotBonus++; } },
-  { id:'auto_worker_assign', name:'인원 자동 배치 연구', icon:'[AWA]', cost:{research:500,electronics:300},  req:'automation',         desc:'인원 자동 배치 해금 (문스톤 불필요)', effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_worker']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_worker']=true; }, unlocks:[] },
-  { id:'auto_assemble_restart', name:'자동 조립 재시작 연구', icon:'[AAR]', cost:{research:600,electronics:400}, req:'auto_worker_assign', desc:'조립 자동 재시작 해금 (문스톤 불필요)', effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_assemble']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_assemble']=true; }, unlocks:[] },
+  // ── Branch S (구조 · STRUCTURE) ──────────────────────────────
+  { id:'basic_prod',   name:'기초 용접술',     icon:'S01', cost:{research:15},                       req:null,          time:  60, desc:'광산·생산 시설 잠금 해제',       effect:()=>{},                                                      unlocks:['bld_mine'] },
+  { id:'drill',        name:'알루미늄 가공',   icon:'S02', cost:{research:80},                       req:'basic_prod',  time: 180, desc:'철광석 생산 +25%',               effect:()=>{ prodMult.iron=(prodMult.iron||1)*1.25; },              unlocks:[] },
+  { id:'alloy',        name:'CFRP 적층',       icon:'M02', cost:{research:600,iron:400},             req:'rocket_eng',  time: 480, desc:'부품 비용 -20%',                 effect:()=>{ partCostMult*=0.8; },                                  unlocks:['bld_r_and_d'] },
+  { id:'rocket_eng',   name:'로켓 조립 공학', icon:'M01', cost:{research:300},                      req:null,          time: 300, desc:'조립동 해금 + 로켓 제조 시작',   effect:()=>{},                                                      unlocks:['tab_assembly','bld_launch_pad'] },
+  { id:'copper_mining',name:'구리 채굴 기술',  icon:'S05', cost:{research:500,moonstone:1},          req:'drill',       time: 480, desc:'구리 채굴기 해금 — MK2+ 필수 원자재', effect:()=>{},                                                  unlocks:['bld_extractor'] },
+  // ── Branch P (추진 · PROPULSION) ─────────────────────────────
+  { id:'fuel_chem',    name:'고압 연소실 I',   icon:'P01', cost:{research:150,iron:150},             req:null,          time: 240, desc:'연료 정제 시설 해금',             effect:()=>{},                                                      unlocks:['bld_refinery'] },
+  { id:'catalyst',     name:'터보펌프 기초',   icon:'P02', cost:{research:400,fuel:300},             req:'fuel_chem',   time: 360, desc:'연료 생산 +30%',                 effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; },               unlocks:['bld_cryo_plant'] },
+  { id:'lightweight',  name:'재생 냉각 노즐',  icon:'P03', cost:{research:1500,iron:2000},           req:'catalyst',    time: 900, desc:'건조질량 -10%, 재활용 +8%',     effect:()=>{ /* handled in getRocketScience */ } },
+  { id:'fusion',       name:'핀치 연소',       icon:'P04', cost:{research:4000,electronics:1000},   req:'lightweight', time:1800, desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
+  // ── Branch A (항전 · AVIONICS) ───────────────────────────────
+  { id:'electronics_basics', name:'자이로 안정화',   icon:'A01', cost:{research:200},                    req:null,                  time: 300, desc:'전자 시설 해금',       effect:()=>{},                                                                       unlocks:['bld_elec_lab','bld_supply_depot'] },
+  { id:'microchip',          name:'관성 항법 (INS)', icon:'A02', cost:{research:600,electronics:200},    req:'electronics_basics',  time: 480, desc:'전자부품 +35%',       effect:()=>{ prodMult.electronics=(prodMult.electronics||1)*1.35; },                 unlocks:['bld_fab_plant','bld_r_and_d'] },
+  { id:'reliability',        name:'GPS 보정',        icon:'A03', cost:{research:2000},                   req:'microchip',           time: 900, desc:'발사 신뢰도 +15%',   effect:()=>{ reliabilityBonus+=15; } },
+  { id:'automation',         name:'자율 비행',       icon:'A04', cost:{research:3000,electronics:600},   req:'reliability',         time: 720, desc:'전체 생산 ×1.5',     effect:()=>{ globalMult*=1.5; },                                                     unlocks:['bld_solar_array'] },
+  // ── Branch T (열보호 · THERMAL) ──────────────────────────────
+  { id:'hire_worker_1', name:'기초 절열재',       icon:'T01', cost:{research:50},                    req:null,            time: 120, desc:'추가 인원 +1명',       effect:()=>{ gs.workers=(gs.workers||1)+1; },  unlocks:[] },
+  { id:'launch_ctrl',   name:'삭마 코팅',         icon:'T02', cost:{research:1200,electronics:500},  req:'hire_worker_1', time: 900, desc:'발사 통제 탭 해금',   effect:()=>{},                                 unlocks:['tab_launch'] },
+  { id:'mission_sys',   name:'능동 냉각',         icon:'T03', cost:{research:3000},                  req:'launch_ctrl',   time:1200, desc:'미션 현황 탭 해금',   effect:()=>{},                                 unlocks:['tab_mission'] },
+  { id:'multipad',      name:'열차폐 타일',       icon:'T04', cost:{research:4000,iron:2500},        req:'mission_sys',   time:1200, desc:'조립 슬롯 +1',       effect:()=>{ slotBonus++; } },
+  // ── Branch O (자동화 · AUTOMATION) ───────────────────────────
+  { id:'auto_worker_assign',    name:'인원 자동 배치',   icon:'O01', cost:{research:2000,electronics:800,moonstone:2},    req:null,                   time:1800,  desc:'인원 자동 배치 해금',         effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_worker']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_worker']=true; }, unlocks:[] },
+  { id:'auto_assemble_restart', name:'자동 조립 재시작', icon:'O02', cost:{research:5000,electronics:1500,moonstone:3},   req:'auto_worker_assign',   time:2400,  desc:'조립 자동 재시작 해금',       effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_assemble']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_assemble']=true; }, unlocks:[] },
+  { id:'auto_parts_craft',      name:'자동 부품 제작',   icon:'O03', cost:{research:12000,electronics:2500,moonstone:6},  req:'auto_assemble_restart',time:4800,  desc:'자원 충족 시 5종 파트 전부 자동 제작', effect:()=>{ if(!gs.msUpgrades) gs.msUpgrades={}; ['auto_parts_engine','auto_parts_fueltank','auto_parts_control','auto_parts_hull','auto_parts_payload'].forEach(k => { gs.msUpgrades[k]=true; }); }, unlocks:[] },
+  { id:'auto_build_manage',     name:'건설 자동 관리',   icon:'O04', cost:{research:30000,electronics:6000,moonstone:12}, req:'auto_parts_craft',     time:9600,  desc:'자금·자원 충족 시 건물 자동 건설 및 인원 자동 배치 패키지', effect:()=>{ if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_build']=true; gs.msUpgrades['auto_worker']=true; gs.msUpgrades['auto_housing_upg']=true; }, unlocks:[] },
+  { id:'auto_launch_seq',       name:'완전 자동 발사',   icon:'O05', cost:{research:80000,electronics:15000,moonstone:25},req:'auto_build_manage',    time:21600, desc:'조립 완료 즉시 발사 자동 실행 — 최고 단계 자동화', effect:()=>{ if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_launch']=true; gs.msUpgrades['auto_assemble']=true; gs.msUpgrades['auto_addon']=true; }, unlocks:[] },
+  // ── Branch X (전문화 · SPECIALIZATION) ───────────────────────
+  { id:'spec_sales_pro',  name:'영업 전문화 교육',   icon:'X01', cost:{research:400},               req:'hire_worker_1',    time: 360, desc:'운영센터 영업 전문가 전직 해금',     effect:()=>{}, unlocks:[] },
+  { id:'spec_sysadmin',   name:'시스템 관리 교육',   icon:'X02', cost:{research:1000,electronics:300},req:'spec_sales_pro',   time: 600, desc:'운영센터 시스템 관리자 전직 해금',   effect:()=>{}, unlocks:[] },
+  { id:'spec_experiment', name:'실험 전문화 교육',   icon:'X03', cost:{research:600},               req:'microchip',        time: 480, desc:'연구소 실험 전문가 전직 해금',       effect:()=>{}, unlocks:[] },
+  { id:'spec_analyst',    name:'데이터 분석 교육',   icon:'X04', cost:{research:1800,electronics:500},req:'spec_experiment',  time: 720, desc:'연구소 데이터 분석가 전직 해금',     effect:()=>{}, unlocks:[] },
+];
+
+// Research branch definitions for column layout
+const RESEARCH_BRANCHES = [
+  { id:'R', label:'채굴·생산', nodes:['basic_prod','drill','copper_mining'] },
+  { id:'M', label:'제조·조립', nodes:['rocket_eng','alloy'] },
+  { id:'P', label:'추진',      nodes:['fuel_chem','catalyst','lightweight','fusion'] },
+  { id:'A', label:'항전',      nodes:['electronics_basics','microchip','reliability','automation'] },
+  { id:'T', label:'열보호',    nodes:['hire_worker_1','launch_ctrl','mission_sys','multipad'] },
+  { id:'O', label:'자동화',    nodes:['auto_worker_assign','auto_assemble_restart','auto_parts_craft','auto_build_manage','auto_launch_seq'] },
+  { id:'X', label:'전문화',    nodes:['spec_sales_pro','spec_sysadmin','spec_experiment','spec_analyst'] },
+  { id:'F', label:'미래 연구', nodes:[], locked:true, lockedItems:[
+    { name:'???', desc:'생물학적 개선 — 달 탐사 인원의 생존력 강화' },
+    { name:'???', desc:'화학 합성 — 달 현지 자원 활용 기술' },
+    { name:'???', desc:'테라포밍 기초 — 달 환경 변화를 위한 초기 기술' },
+  ]},
 ];
 
 // ============================================================
@@ -69,62 +149,66 @@ const UPGRADES = [
 //  rel:  adds to reliabilityBonus when purchased
 //  solarBonus: extra solar bonus per panel
 // ============================================================
+// ── BUILDING_UPGRADES ─────────────────────────────────────────────────────
+// repeatable:true → 여러번 구매 가능. costScale → 단계별 비용 배율.
+// premium:true    → 단 1회. 강력한 효과. 텍스트 앰버 강조.
 const BUILDING_UPGRADES = {
   housing: [
-    { id:'hsg_dorm',      name:'기숙사 증설',          cost:{money:250},                          desc:'인원 상한 +2명 추가',              wkr:2 },
-    { id:'hsg_welfare',   name:'복리 후생 강화',        cost:{money:800,metal:50},                 desc:'인원 +3명 추가',                   wkr:3,  req:'hsg_dorm' },
-    { id:'hsg_township',  name:'타운십 조성',           cost:{money:3000,metal:200},               desc:'인원 +5명 대규모 주거 허브',       wkr:5,  req:'hsg_welfare' },
+    { id:'hsg_dorm',       name:'기숙사 증설',          cost:{money:200},                             desc:'인원 상한 +1명',                  wkr:1, repeatable:true, costScale:2.0 },
+    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:800},                             desc:'인원 +1명 추가',                  wkr:1, repeatable:true, costScale:2.2, req:'hsg_dorm' },
+    { id:'hsg_township',   name:'★ 타운십 조성',        cost:{money:8000},                            desc:'인원 +5명 — 대규모 주거 허브',    wkr:5, premium:true, req:'hsg_welfare' },
+    { id:'housing_school', name:'★ 단지 내 학원',       cost:{money:8000},                            desc:'생산 전체 +10%',                  mult:1.10, effect:'specialist_rate', premium:true, req:'hsg_township' },
+    { id:'housing_market', name:'★ 단지 내 상가',       cost:{money:5000},                            desc:'자금 +50/s 수익',                 effect:'passive_income', premium:true, req:'hsg_township' },
   ],
   ops_center: [
-    { id:'ops_sales',     name:'영업팀 강화',           cost:{money:400},                          desc:'이 건물 수익 +35%',                mult:1.35 },
-    { id:'ops_24h',       name:'24시간 운영',           cost:{money:1500,electronics:50},          desc:'이 건물 수익 추가 +50%',           mult:1.50, req:'ops_sales' },
-    { id:'ops_premium',   name:'프리미엄 서비스',       cost:{money:4000,electronics:200},         desc:'이 건물 수익 ×1.8 증폭',           mult:1.80, req:'ops_24h' },
+    { id:'ops_sales',     name:'영업팀 강화',           cost:{money:400},                             desc:'이 건물 수익 +5%',                mult:1.05, repeatable:true, costScale:1.8 },
+    { id:'ops_24h',       name:'★ 24시간 풀가동',      cost:{money:12000},                           desc:'이 건물 수익 ×2.0 — 프리미엄',    mult:2.00, premium:true, req:'ops_sales' },
   ],
   supply_depot: [
-    { id:'dep_logistics', name:'물류 최적화',           cost:{money:600,metal:100},                desc:'이 건물 수익 +40%',                mult:1.40 },
-    { id:'dep_autoware',  name:'자동화 창고',           cost:{money:2000,electronics:100},         desc:'이 건물 수익 +60%',                mult:1.60, req:'dep_logistics' },
+    { id:'dep_logistics', name:'물류 최적화',           cost:{money:500},                             desc:'이 건물 수익 +8%',                mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'dep_autoware',  name:'★ 자동화 창고',        cost:{money:8000},                            desc:'이 건물 수익 ×2.0 — 프리미엄',    mult:2.00, premium:true, req:'dep_logistics' },
   ],
   mine: [
-    { id:'mine_bit',      name:'강화 드릴 비트',        cost:{money:300,metal:50},                 desc:'이 건물 금속 생산 +30%',           mult:1.30 },
-    { id:'mine_deep',     name:'심층 채굴 기술',        cost:{money:900,metal:200},                desc:'이 건물 금속 생산 +50%',           mult:1.50, req:'mine_bit' },
-    { id:'mine_robot',    name:'로봇 채굴기',           cost:{money:2500,electronics:100},         desc:'이 건물 금속 생산 ×2.0',           mult:2.00, req:'mine_deep' },
+    { id:'mine_bit',      name:'강화 드릴 비트',        cost:{money:300},                             desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'mine_deep',     name:'심층 채굴 기술',        cost:{money:800},                             desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.9, req:'mine_bit' },
+    { id:'mine_robot',    name:'★ 로봇 채굴기',        cost:{money:9000},                            desc:'이 건물 철광석 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'mine_deep' },
   ],
   extractor: [
-    { id:'ext_pump',      name:'고속 추출 펌프',        cost:{money:500,metal:100},                desc:'이 건물 금속 생산 +40%',           mult:1.40 },
-    { id:'ext_filter',    name:'순도 향상 필터',        cost:{money:1500,metal:300},               desc:'이 건물 금속 생산 +60%',           mult:1.60, req:'ext_pump' },
+    { id:'ext_pump',      name:'고속 추출 펌프',        cost:{money:600},                             desc:'이 건물 구리 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'ext_filter',    name:'★ 순도 향상 필터',     cost:{money:8000},                            desc:'이 건물 구리 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'ext_pump' },
   ],
   refinery: [
-    { id:'ref_catalyst',  name:'촉매 반응로',           cost:{money:400,metal:80},                 desc:'이 건물 연료 생산 +35%',           mult:1.35 },
-    { id:'ref_highpress', name:'고압 정제 시스템',      cost:{money:1200,metal:200},               desc:'이 건물 연료 생산 +55%',           mult:1.55, req:'ref_catalyst' },
+    { id:'ref_catalyst',  name:'촉매 반응로',           cost:{money:500},                             desc:'이 건물 연료 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'ref_highpress', name:'★ 고압 정제 시스템',   cost:{money:9000},                            desc:'이 건물 연료 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'ref_catalyst' },
   ],
   cryo_plant: [
-    { id:'cry_heatex',    name:'열교환 최적화',         cost:{money:800,electronics:50},           desc:'이 건물 연료 생산 +40%',           mult:1.40 },
-    { id:'cry_supercon',  name:'초전도 냉각 코일',      cost:{money:2500,electronics:200},         desc:'이 건물 연료 생산 +70%',           mult:1.70, req:'cry_heatex' },
+    { id:'cry_heatex',    name:'열교환 최적화',         cost:{money:900},                             desc:'이 건물 연료 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'cry_supercon',  name:'★ 초전도 냉각 코일',   cost:{money:10000},                           desc:'이 건물 연료 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'cry_heatex' },
   ],
   elec_lab: [
-    { id:'elb_smd',       name:'SMD 자동 납땜',         cost:{money:600,metal:100},                desc:'이 건물 전자부품 +35%',            mult:1.35 },
-    { id:'elb_nano',      name:'나노 패터닝',           cost:{money:1800,electronics:100},         desc:'이 건물 전자부품 +55%',            mult:1.55, req:'elb_smd' },
+    { id:'elb_smd',       name:'SMD 자동 납땜',         cost:{money:600},                             desc:'이 건물 전자부품 생산 +8%',       mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'elb_nano',      name:'★ 나노 패터닝',        cost:{money:8000},                            desc:'이 건물 전자부품 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'elb_smd' },
   ],
   fab_plant: [
-    { id:'fab_euv',       name:'EUV 리소그래피',        cost:{money:2000,electronics:200},         desc:'이 건물 전자부품 +50%',            mult:1.50 },
-    { id:'fab_3d',        name:'3D 적층 기술',          cost:{money:5000,electronics:500},         desc:'이 건물 전자부품 ×2.0',            mult:2.00, req:'fab_euv' },
+    { id:'fab_euv',       name:'EUV 리소그래피',        cost:{money:2500},                            desc:'이 건물 전자부품 생산 +8%',       mult:1.08, repeatable:true, costScale:1.8 },
+    { id:'fab_3d',        name:'★ 3D 적층 기술',       cost:{money:20000},                           desc:'이 건물 전자부품 생산 ×2.5 — 프리미엄', mult:2.50, premium:true, req:'fab_euv' },
   ],
   research_lab: [
-    { id:'rsh_equip',     name:'최신 장비 도입',        cost:{money:500},                          desc:'이 건물 RP +40%',                  mult:1.40 },
-    { id:'rsh_cross',     name:'융합 연구 프로그램',    cost:{money:1500,electronics:100},         desc:'이 건물 RP +60%',                  mult:1.60, req:'rsh_equip' },
-    { id:'rsh_super',     name:'슈퍼컴퓨터 연결',      cost:{money:4000,electronics:400},         desc:'이 건물 RP ×2.0',                  mult:2.00, req:'rsh_cross' },
+    { id:'rsh_equip',     name:'최신 장비 도입',        cost:{money:400},                             desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:1.8 },
+    { id:'rsh_cross',     name:'융합 연구 프로그램',    cost:{money:1500},                            desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:2.0, req:'rsh_equip' },
+    { id:'rsh_super',     name:'★ 슈퍼컴퓨터 연결',   cost:{money:20000},                           desc:'이 건물 RP 생산 ×3.0 — 프리미엄', mult:3.00, premium:true, req:'rsh_cross' },
   ],
   r_and_d: [
-    { id:'rnd_collab',    name:'외부 연구 협력',        cost:{money:2000,electronics:200},         desc:'이 건물 RP +50%',                  mult:1.50 },
-    { id:'rnd_patent',    name:'특허 풀 구축',          cost:{money:5000,electronics:500},         desc:'이 건물 RP ×1.8',                  mult:1.80, req:'rnd_collab' },
+    { id:'rnd_collab',    name:'외부 연구 협력',        cost:{money:2500},                            desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:1.8 },
+    { id:'rnd_patent',    name:'★ 특허 풀 구축',       cost:{money:30000},                           desc:'이 건물 RP 생산 ×3.0 — 프리미엄', mult:3.00, premium:true, req:'rnd_collab' },
   ],
   solar_array: [
-    { id:'sol_hieff',     name:'고효율 패널',           cost:{money:600,electronics:50},           desc:'태양광 보너스 +5%/개 추가\n→ +15%/개로 증가', solarBonus:0.05 },
-    { id:'sol_tracker',   name:'추적 시스템',           cost:{money:1500,electronics:100},         desc:'태양광 보너스 추가 +5%/개\n→ +20%/개로 증가', solarBonus:0.05, req:'sol_hieff' },
+    { id:'sol_hieff',     name:'고효율 패널',           cost:{money:800},                             desc:'태양광 보너스 +5%/개 추가\n→ +15%/개로 증가', solarBonus:0.05 },
+    { id:'sol_tracker',   name:'★ 추적 시스템',        cost:{money:5000},                            desc:'태양광 보너스 추가 +5%/개\n→ +20%/개로 증가 (프리미엄)', solarBonus:0.05, premium:true, req:'sol_hieff' },
   ],
   launch_pad: [
-    { id:'pad_reinforce', name:'발사대 보강',           cost:{money:1000,metal:500},               desc:'발사 신뢰도 +10%',                 rel:10 },
-    { id:'pad_fuelfeed',  name:'연료 공급 가속',        cost:{money:3000,metal:1000,electronics:200}, desc:'조립 시간 -20% (발사대 필요)',   timeMult:0.8, req:'pad_reinforce' },
+    { id:'pad_reinforce', name:'발사대 보강',           cost:{money:1500},                            desc:'발사 신뢰도 +5%',                 rel:5, repeatable:true, costScale:2.0 },
+    { id:'pad_fuelfeed',  name:'★ 연료 공급 가속',     cost:{money:25000},                           desc:'조립 시간 -20% — 프리미엄',       timeMult:0.8, premium:true, req:'pad_reinforce' },
   ],
 };
 
@@ -182,12 +266,12 @@ const BUILDING_ADDONS = {
         id: 'addon_vif',
         name: '수직 통합 시설',
         icon: '[VIF]',
-        cost: { money: 15000, metal: 2000 },
+        cost: { money: 15000, iron: 2000 },
         desc: '조립 슬롯 +1\n부품 비용 -15%',
         effect: { slotBonus: 1, partCostReduct: 0.15 },
         upgrades: [
-          { id:'vif_print', name:'3D 프린팅 허브', cost:{metal:5000,electronics:2500},  desc:'부품 비용 추가 -10%', partCostReduct:0.10 },
-          { id:'vif_auto',  name:'조립 자동화',    cost:{metal:12000,electronics:6000}, desc:'조립 슬롯 추가 +1', slotBonus:1, req:'vif_print' },
+          { id:'vif_print', name:'3D 프린팅 허브', cost:{iron:5000,electronics:2500},   desc:'부품 비용 추가 -10%', partCostReduct:0.10 },
+          { id:'vif_auto',  name:'조립 자동화',    cost:{iron:12000,electronics:6000},  desc:'조립 슬롯 추가 +1', slotBonus:1, req:'vif_print' },
         ],
       },
     ],
@@ -738,7 +822,8 @@ const PRESTIGE_STAR_TREE = [
 const PRESTIGE_CONFIG = {
   resets: [
     { id: 'money',          name: '자금(₩)',               desc: '보유 자금이 0으로 초기화된다.' },
-    { id: 'metal',          name: '금속(Fe)',               desc: '보유 금속이 0으로 초기화된다.' },
+    { id: 'iron',           name: '철광석(Fe)',             desc: '보유 철광석이 0으로 초기화된다.' },
+    { id: 'copper',         name: '구리(Cu)',               desc: '보유 구리가 0으로 초기화된다.' },
     { id: 'fuel',           name: '연료(LOX)',              desc: '보유 연료가 0으로 초기화된다.' },
     { id: 'electronics',    name: '전자부품(PCB)',          desc: '보유 전자부품이 0으로 초기화된다.' },
     { id: 'research',       name: '연구 포인트(RP)',        desc: '보유 RP가 0으로 초기화된다. (구매한 연구는 별도 규칙)' },

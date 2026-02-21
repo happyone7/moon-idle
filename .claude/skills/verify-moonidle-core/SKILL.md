@@ -58,6 +58,8 @@ grep -n "let gs = {" js/game-state.js
   - `res`, `buildings`, `parts`, `assembly`, `upgrades`, `milestones`, `unlocks`, `settings`, `saveVersion`
   - `workers`, `assignments` (인원 시스템)
   - `launches`, `moonstone`, `history` (발사 기록)
+  - `researchProgress`, `selectedTech` (시간 기반 연구 시스템, Sprint 8)
+  - `opsRoles`, `citizens`, `specialists` (역할/시민/전문화 시스템, Sprint 8)
 
 **FAIL 시 조치:**
 - 누락된 속성을 `gs` 초기값에 추가
@@ -92,12 +94,12 @@ grep -n "const BUILDINGS = \[" js/game-data.js
 **PASS 기준:**
 - 각 건물은 `id`, `name`, `icon`, `produces`, `baseRate`, `baseCost`, `desc`, `wbClass` 속성 보유
 - `id`는 snake_case (예: `housing`, `ops_center`, `supply_depot`)
-- `produces` 값은 `money`, `metal`, `fuel`, `electronics`, `research`, `bonus` 중 하나
+- `produces` 값은 `money`, `iron`, `copper`, `fuel`, `electronics`, `research`, `bonus` 중 하나
 
 **위반 예시:**
 ```javascript
 // FAIL — desc 누락
-{ id:'mine', name:'철광석 채굴기', icon:'[MIN]', produces:'metal', baseRate:20, baseCost:{money:2000}, wbClass:'wb-mine' }
+{ id:'mine', name:'철광석 채굴기', icon:'[MIN]', produces:'iron', baseRate:20, baseCost:{money:2000}, wbClass:'wb-mine' }
 ```
 
 ### Step 2b: 파츠 정의 일관성
@@ -239,6 +241,47 @@ grep -n "parts:" js/game-state.js
 ```
 
 **PASS 기준:** `gs.parts` 초기값이 `PARTS` 배열의 모든 `id`를 포함 (값: 0)
+
+### Step 5b: gs.res 리소스 키 확인
+
+```bash
+grep -A 1 "res: {" js/game-state.js
+```
+
+**PASS 기준 (Sprint 8+):** `gs.res`에 다음 키가 포함되어야 합니다:
+- `money`, `iron`, `copper`, `fuel`, `electronics`, `research`
+- **`metal`은 더 이상 사용하지 않음** — Sprint 8에서 `iron`/`copper`로 분리됨
+
+**FAIL 예시:**
+```javascript
+// FAIL — metal 잔존 (Sprint 8 마이그레이션 미완료)
+res: { money:1500, metal:0, fuel:0, electronics:0, research:0 }
+
+// PASS — iron/copper 분리
+res: { money:1500, iron:0, copper:0, fuel:0, electronics:0, research:0 }
+```
+
+---
+
+## Step 5c: 신규 데이터 상수 정의 확인 (Sprint 8)
+
+**파일:** `js/game-data.js`
+
+**검사:** Sprint 8에서 추가된 데이터 상수가 정의되어 있는지 확인합니다.
+
+```bash
+grep -n "const OPS_ROLES\|const BLD_STAFF_NAMES\|const BLD_STAFF_ICONS\|const SPECIALIST_ROLES\|const RESEARCH_BRANCHES" js/game-data.js
+```
+
+**PASS 기준:** 4개 상수 모두 정의됨:
+- `OPS_ROLES` — 운영센터 역할 배열 (`sales`, `accounting`, `consulting`)
+- `BLD_STAFF_NAMES` — 건물별 직원 명칭 맵
+- `BLD_STAFF_ICONS` — 건물별 직원 아이콘 HTML 맵
+- `SPECIALIST_ROLES` — 전문화 역할 정의 (`research_lab`, `ops_center` 등)
+- `RESEARCH_BRANCHES` — 연구 브랜치 배열 (시간 기반 연구 시스템, Sprint 8)
+
+**FAIL 시 조치:**
+- 누락된 상수를 `js/game-data.js`에 추가 (프로그래밍팀장 담당)
 
 ---
 

@@ -1,38 +1,20 @@
 {
-  "model": "opusplan",
+  "model": "sonnet",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "permissions": {
     "allow": [
-      "Bash(git pull:*)",
-      "Bash(git push:*)",
-      "Bash(git status:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git checkout:*)",
-      "Bash(git merge:*)",
-      "Bash(git branch:*)",
-      "Bash(git tag:*)",
-      "Bash(git worktree:*)",
-      "Bash(git stash:*)",
-      "Bash(git rev-parse:*)",
-      "Bash(git show:*)",
-      "Bash(git remote:*)",
-      "Bash(python:*)",
-      "Bash(pip:*)",
-      "Bash(powershell -Command:*)",
-      "Bash(ls:*)",
-      "Bash(mkdir:*)",
-      "Bash(cp:*)",
-      "Bash(mv:*)",
-      "Bash(rm:*)",
-      "Bash(node:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(GIT_AUTHOR_NAME=*)"
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "WebFetch",
+      "WebSearch",
+      "Task",
+      "mcp__*"
     ]
   }
 }

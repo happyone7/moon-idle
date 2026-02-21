@@ -17,7 +17,7 @@
 // ============================================================
 
 const BGM = {
-  volume: 0.6,
+  volume: 0.2,
   playing: false,
 
   _phase: null,          // 'early' | 'mid' | 'late' | 'post_moon'
@@ -31,7 +31,7 @@ const BGM = {
   // ─── 페이즈별 플레이리스트 ────────────────────────────────
   PLAYLISTS: {
     early:     [
-      'audio/bgm/bgm_09_moon_approach.mp3',
+      'audio/bgm/Circuit Breaker Protocol.mp3',
     ],
     mid:       [
       'audio/bgm/bgm_04_assembly_focus.mp3',
@@ -288,7 +288,7 @@ const BGM = {
   // ─── UI 라벨 ─────────────────────────────────────────────
   _updateUI() {
     const labels = {
-      early:     '[BGM: APPROACH]',
+      early:     '[BGM: CIRCUIT]',
       mid:       '[BGM: GRID]',
       late:      '[BGM: DRIVE]',
       post_moon: '[BGM: EPIC]',

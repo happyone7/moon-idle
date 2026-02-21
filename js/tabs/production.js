@@ -53,8 +53,13 @@ function buyBuilding(bid) {
   renderAll();
   // 건설 애니메이션
   if (typeof _triggerBuildAnim === 'function') _triggerBuildAnim(bid);
-  // 건물 오버레이 닫기 (ghost popup → actual building)
-  if (typeof closeBldOv === 'function') closeBldOv();
+  // 건설 후 오버레이 갱신 (ghost → real overlay, keepPosition=true — 위치 드리프트 방지)
+  setTimeout(() => {
+    const freshPre = document.querySelector('.world-bld[data-bid="' + bid + '"]');
+    if (freshPre && typeof openBldOv === 'function') {
+      openBldOv(bld, freshPre, true);
+    }
+  }, 60);
   // 파티클 이펙트: 건물 pre 위치 기준 버스트
   if (typeof spawnAsciiParticles === 'function') {
     setTimeout(() => {
@@ -145,6 +150,11 @@ function renderProductionTab() {
     statusEl.innerHTML = `인원: ${assignedW}/${totalW} &nbsp; 수입: +${fmtDec(totalIncome, 1)}/s${withdrawBtn}`;
   }
 
+  // 튜토리얼 힌트: ops_center 미건설 시 안내
+  // 기존 텍스트 튜토리얼 영역 비움 (LUNA-7 봇이 대체)
+  const tutEl = document.getElementById('prod-tutorial');
+  if (tutEl) tutEl.innerHTML = '';
+
   // 건물 리스트: 버튼 없이 상태만 표시 (건설은 월드 호버 팝업에서)
   let html = '';
   BUILDINGS.forEach(b => {
@@ -173,7 +183,7 @@ function renderProductionTab() {
           <button class="blr-wbtn${canPlus ? '' : ' dis'}" onclick="quickAssign('${b.id}')" ${canPlus ? '' : 'disabled'}>+</button>
         </span>`
       : `<span class="blr-wkr-empty"></span>`;
-    html += `<div class="bld-list-row">
+    html += `<div class="bld-list-row" data-bld="${b.id}">
       <span class="blr-icon">${b.icon}</span>
       <span class="blr-name">${b.name}</span>
       <span class="blr-cnt">×${cnt}</span>

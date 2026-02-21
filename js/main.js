@@ -11,39 +11,14 @@ function switchMainTab(tabId) {
   }
   activeTab = tabId;
   document.body.className = 'tab-' + tabId;
+  // U8-4: 연구 탭 활성 시 research-active 클래스 토글 (풀-레이아웃용)
+  document.body.classList.toggle('research-active', tabId === 'research');
   document.querySelectorAll('.nav-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tabId);
   });
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
   const pane = document.getElementById('pane-' + tabId);
   if (pane) pane.classList.add('active');
-
-  // 생산 허브 첫 방문: 운영센터 + 연구소 무상 건설
-  if (tabId === 'production' && !gs._prodHubVisited) {
-    gs._prodHubVisited = true;
-    let hubChanged = false;
-    if ((gs.buildings.ops_center || 0) === 0) {
-      gs.buildings.ops_center = 1;
-      gs.workers = (gs.workers || 2) + 1;
-      if (!gs.assignments) gs.assignments = {};
-      gs.assignments.ops_center = 1;
-      hubChanged = true;
-      setTimeout(() => notify('[운영센터] 무상 건설!', 'amber'), 200);
-    }
-    if ((gs.buildings.research_lab || 0) === 0) {
-      gs.buildings.research_lab = 1;
-      gs.workers = (gs.workers || 2) + 1;
-      if (!gs.assignments) gs.assignments = {};
-      gs.assignments.research_lab = 1;
-      gs.unlocks.tab_research = true;
-      hubChanged = true;
-      setTimeout(() => notify('[연구소] 무상 건설 — 연구 탭 해금!', 'amber'), 500);
-    }
-    if (hubChanged) {
-      if (typeof syncWorkerDots === 'function') syncWorkerDots();
-      if (typeof renderUnlocks === 'function') renderUnlocks();
-    }
-  }
 
   renderAll();
 }
@@ -54,58 +29,91 @@ function switchMainTab(tabId) {
 // ============================================================
 function renderResources() {
   const prod = getProduction();
-
-  // Left panel — categories inline (no tabs)
   const rlInner = document.getElementById('rl-inner');
-  if (rlInner) {
-    const RES_MAX = { money:1e12, metal:5e7, fuel:2e7, electronics:1e7, research:50000 };
-    const CAT_HEADERS = { money: t('cat_funds'), metal: t('cat_materials'), research: t('cat_research') };
+  if (!rlInner) return;
 
-    let html = '';
-    RESOURCES.forEach(r => {
-      const hd = CAT_HEADERS[r.id];
-      if (hd) html += `<div class="rl-cat-hd">${hd}</div>`;
-      const val     = gs.res[r.id] || 0;
-      const rate    = prod[r.id] || 0;
-      const max     = RES_MAX[r.id] || 10000;
-      const pct     = Math.min(100, (val / max) * 100);
-      const isAmber = r.id === 'money';
-      const rateStr = rate > 0.001 ? `+${fmtDec(rate, 2)}/s` : '';
-      html += `<div class="rl-item">
-        <div class="rl-row">
-          <span class="rl-sym" style="color:${r.color}">${r.symbol}</span>
-          <span class="rl-name">${t('res_' + r.id) || r.name}</span>
-          <span class="rl-val" style="color:${r.color}">${fmt(val)}</span>
-          <span class="rl-rate">${rateStr}</span>
+  const RES_MAX  = { money:1e12, iron:5e7, copper:2e7, fuel:2e7, electronics:1e7, research:50000 };
+  const LOW_THRESH = { iron:500, copper:200, fuel:200, electronics:100 };
+
+  // ── 자금 섹션 ──────────────────────────────────────────────
+  const moneyVal  = gs.res.money || 0;
+  const moneyRate = prod.money   || 0;
+  const moneyPct  = Math.min(100, (moneyVal / RES_MAX.money) * 100);
+  const moneyRateStr = moneyRate >= 0.001 ? `(+${fmtDec(moneyRate,1)}/s)` : '';
+
+  let html = `
+    <div class="rl-fund-sect">
+      <div class="rl-fund-title">기금 <span class="rl-en">(FUND)</span></div>
+      <div class="rl-fund-main">
+        <span class="rl-fund-val">$ ${fmtComma(moneyVal)}</span>
+        <span class="rl-fund-rate">${moneyRateStr}</span>
+      </div>
+      <div class="rl-bar"><div class="rl-bar-fill amber" style="width:${moneyPct.toFixed(1)}%"></div></div>
+    </div>`;
+
+  // ── 리소스 아이템 헬퍼 ──────────────────────────────────────
+  function resItem(id, kor, eng) {
+    const val  = gs.res[id] || 0;
+    const rate = prod[id]   || 0;
+    const max  = RES_MAX[id] || 10000;
+    const pct  = Math.min(100, (val / max) * 100);
+    const rateStr = rate >= 0.001 ? `(+${fmtDec(rate,2)}/s)` : '';
+    const isLow   = (LOW_THRESH[id] !== undefined) && val < LOW_THRESH[id];
+    const barColor = id === 'copper' ? ' background:#b87333;' : '';
+    return `
+      <div class="rl-v7item">
+        <div class="rl-v7hd">
+          <span class="rl-v7name">${kor} <span class="rl-en">(${eng})</span></span>
+          <span class="rl-v7rate">${rateStr}</span>
         </div>
-        <div class="rl-bar"><div class="rl-bar-fill${isAmber ? ' amber' : ''}" style="width:${pct.toFixed(1)}%"></div></div>
+        <div class="rl-v7val">${fmtComma(Math.floor(val))}</div>
+        <div class="rl-bar" style="position:relative">
+          <div class="rl-bar-fill" style="width:${pct.toFixed(1)}%;${barColor}"></div>
+          ${isLow ? '<span class="rl-low-badge">LOW</span>' : ''}
+        </div>
       </div>`;
-    });
-    // Worker status
-    const avail     = getAvailableWorkers();
-    const totalW    = gs.workers || 1;
-    const assignedW = totalW - avail;
-    html += `<div class="rl-item rl-worker-row">
-      <div class="rl-row">
-        <span class="rl-sym">&#128100;</span>
-        <span class="rl-name">${t('res_workers')}</span>
-        <span class="rl-val" style="color:var(--white)">${assignedW}/${totalW}</span>
-        <span class="rl-rate">${t('res_free')} ${avail}</span>
+  }
+
+  // ■ 원자재
+  html += `<div class="rl-sect-hd">&#9632; 원자재</div>`;
+  html += resItem('iron',        '철광석',   'Iron');
+  html += resItem('copper',      '구리',     'Copper');
+  html += resItem('electronics', '전자부품', 'Electronics');
+
+  // ■ 추진재
+  html += `<div class="rl-sect-hd">&#9632; 추진재</div>`;
+  html += resItem('fuel', 'LOX', '액체산소');
+
+  // ■ 연구
+  html += `<div class="rl-sect-hd">&#9632; 연구</div>`;
+  html += resItem('research', '연구 포인트', 'Research');
+
+  // 인원
+  const avail     = getAvailableWorkers();
+  const totalW    = gs.workers || 1;
+  const assignedW = totalW - avail;
+  html += `
+    <div class="rl-v7workers">
+      <div class="rl-v7hd">
+        <span class="rl-v7name">&#128100; 인원 <span class="rl-en">(Workers)</span></span>
+        <span class="rl-v7right">
+          <span class="rl-v7val" style="color:var(--white)">${assignedW}/${totalW}</span>
+          <span class="rl-v7rate">여유 ${avail}</span>
+        </span>
       </div>
     </div>`;
-    rlInner.innerHTML = html;
-  }
 
+  rlInner.innerHTML = html;
+
+  // 문스톤
   const rlMs = document.getElementById('rl-ms-box');
   if (rlMs) {
-    if (gs.moonstone > 0) {
-      rlMs.innerHTML = `<div class="rl-ms-row"><div class="rl-ms-label">&#9670; MOONSTONE</div><div class="rl-ms-val">${gs.moonstone}</div></div>`;
-    } else {
-      rlMs.innerHTML = '';
-    }
+    rlMs.innerHTML = gs.moonstone > 0
+      ? `<div class="rl-ms-row"><div class="rl-ms-label">&#9670; MOONSTONE</div><div class="rl-ms-val">${gs.moonstone}</div></div>`
+      : '';
   }
 
-  // Update sound button (navbar)
+  // 사운드 버튼
   const sndBtn = document.getElementById('sound-btn');
   if (sndBtn) {
     sndBtn.textContent = gs.settings.sound ? 'SND:ON' : 'SND:OFF';
@@ -130,6 +138,8 @@ function renderAll() {
   if (typeof updateTopBarEra === 'function') updateTopBarEra(); // P4-6
   // BGM 페이즈 갱신 (unlock 상태 변화 반영)
   if (typeof BGM !== 'undefined' && BGM.playing) BGM.refreshPhase();
+  // LUNA-7 튜토리얼 봇 업데이트
+  if (typeof tutBot !== 'undefined') tutBot.update();
   // document.title 동적 업데이트
   _updateDocTitle();
 }
@@ -184,9 +194,9 @@ function startTitleSequence() {
 
 function startNewGame(slot) {
   currentSaveSlot = slot || 1;
-  gs.res = { money:5000, metal:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:2000, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
-  gs.workers = 2;  // 주거시설 1동 = 기본 1 + housing +1
+  gs.workers = 1;  // 주거시설 1동 = 인원 1명
   gs.assignments = {};
   gs._prodHubVisited = false;
   gs.bldLevels = {};
@@ -196,7 +206,10 @@ function startNewGame(slot) {
   gs.addonUpgrades = {};
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
   gs.assembly = { selectedQuality:'proto', jobs:[] };
+  gs.fuelLoaded = false;
   gs.upgrades = {};
+  gs.researchProgress = {};
+  gs.maxResearchSlots = 1;
   gs.msUpgrades = {};
   gs.achievements = {};       // P4-2
   gs.prestigeStars = {};      // P4-3
