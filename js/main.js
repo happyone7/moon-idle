@@ -59,8 +59,8 @@ function renderResources() {
   const rlInner = document.getElementById('rl-inner');
   if (!rlInner) return;
 
-  const RES_MAX  = { money:1e12, metal:5e7, fuel:2e7, electronics:1e7, research:50000 };
-  const LOW_THRESH = { metal:500, fuel:200, electronics:100 };
+  const RES_MAX  = { money:1e12, iron:5e7, copper:2e7, fuel:2e7, electronics:1e7, research:50000 };
+  const LOW_THRESH = { iron:500, copper:200, fuel:200, electronics:100 };
 
   // ── 자금 섹션 ──────────────────────────────────────────────
   const moneyVal  = gs.res.money || 0;
@@ -86,17 +86,16 @@ function renderResources() {
     const pct  = Math.min(100, (val / max) * 100);
     const rateStr = rate >= 0.001 ? `(+${fmtDec(rate,2)}/s)` : '';
     const isLow   = (LOW_THRESH[id] !== undefined) && val < LOW_THRESH[id];
+    const barColor = id === 'copper' ? ' background:#b87333;' : '';
     return `
       <div class="rl-v7item">
-        <div class="rl-v7hd">
-          <span class="rl-v7name">${kor} <span class="rl-en">(${eng})</span></span>
-          <span class="rl-v7right">
-            <span class="rl-v7val">${fmtComma(Math.floor(val))}</span>
-            <span class="rl-v7rate">${rateStr}</span>
-          </span>
+        <div class="rl-v7name">${kor} <span class="rl-en">(${eng})</span></div>
+        <div class="rl-v7val-row">
+          <span class="rl-v7val">${fmtComma(Math.floor(val))}</span>
+          <span class="rl-v7rate">${rateStr}</span>
         </div>
         <div class="rl-bar" style="position:relative">
-          <div class="rl-bar-fill" style="width:${pct.toFixed(1)}%"></div>
+          <div class="rl-bar-fill" style="width:${pct.toFixed(1)}%;${barColor}"></div>
           ${isLow ? '<span class="rl-low-badge">LOW</span>' : ''}
         </div>
       </div>`;
@@ -104,7 +103,8 @@ function renderResources() {
 
   // ■ 원자재
   html += `<div class="rl-sect-hd">&#9632; 원자재</div>`;
-  html += resItem('metal',       '금속',     'Metal');
+  html += resItem('iron',        '철광석',   'Iron');
+  html += resItem('copper',      '구리',     'Copper');
   html += resItem('electronics', '전자부품', 'Electronics');
 
   // ■ 추진재
@@ -219,7 +219,7 @@ function startTitleSequence() {
 
 function startNewGame(slot) {
   currentSaveSlot = slot || 1;
-  gs.res = { money:5000, metal:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:5000, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.workers = 2;  // 주거시설 1동 = 기본 1 + housing +1
   gs.assignments = {};

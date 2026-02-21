@@ -2,7 +2,7 @@
 //  GAME STATE
 // ============================================================
 let gs = {
-  res: { money:1500, metal:0, fuel:0, electronics:0, research:0 },
+  res: { money:1500, iron:0, copper:0, fuel:0, electronics:0, research:0 },
   buildings: { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 },
   bldUpgrades: {},    // per-building named upgrades purchased
   bldLevels: {},      // { buildingId: statUpgradeCount } — 생산량 업그레이드 (getBldProdMult용)
@@ -133,7 +133,7 @@ function getBldUpgradeCost(bid) {
   const lv = getBldLevel(bid);
   return {
     money: Math.floor(300 * Math.pow(2.0, lv)),
-    metal: Math.floor(80 * Math.pow(1.6, lv)),
+    iron:  Math.floor(80 * Math.pow(1.6, lv)),
   };
 }
 
@@ -247,11 +247,15 @@ function getAddonPartCostMult() {
 }
 
 function canAfford(cost) {
-  return Object.entries(cost).every(([r, v]) => (gs.res[r] || 0) >= v);
+  return Object.entries(cost).every(([r, v]) => {
+    if (r === 'moonstone') return (gs.moonstone || 0) >= v;
+    return (gs.res[r] || 0) >= v;
+  });
 }
 
 function spend(cost) {
   Object.entries(cost).forEach(([r, v]) => {
+    if (r === 'moonstone') { gs.moonstone = Math.max(0, (gs.moonstone || 0) - v); return; }
     gs.res[r] = Math.max(0, (gs.res[r] || 0) - v);
   });
 }
@@ -336,7 +340,7 @@ function getPartCost(part) {
 }
 
 function getProduction() {
-  const prod = { money:0, metal:0, fuel:0, electronics:0, research:0 };
+  const prod = { money:0, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   BUILDINGS.forEach(b => {
     if (b.produces === 'bonus' || !(b.produces in prod)) return;
     // 생산량은 배치된 인원(assignments) 기반
@@ -428,6 +432,10 @@ function getAssemblyCost(qualityId) {
       total[r] = (total[r] || 0) + Math.floor(v * q.costMult * 0.32);
     });
   });
+  // MK2+ 추가 구리 비용
+  if (q.copperCost && q.copperCost > 0) {
+    total.copper = (total.copper || 0) + q.copperCost;
+  }
   return total;
 }
 
@@ -534,8 +542,15 @@ function loadGame(slot) {
     if (!raw) return false;
     const saved = JSON.parse(raw);
 
-    // Merge resources
-    if (saved.res) Object.assign(gs.res, saved.res);
+    // Merge resources (+ metal→iron migration)
+    if (saved.res) {
+      Object.assign(gs.res, saved.res);
+      if (gs.res.metal !== undefined && gs.res.iron === undefined) {
+        gs.res.iron = gs.res.metal;
+      }
+      delete gs.res.metal;
+      if (gs.res.copper === undefined) gs.res.copper = 0;
+    }
 
     // Merge buildings
     if (saved.buildings) Object.assign(gs.buildings, saved.buildings);
@@ -760,7 +775,7 @@ function _showOfflineReport(report) {
   const timeStr = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
 
   // 자원 수익 HTML
-  const RES_NAMES = { money:'₩ 자금', metal:'Fe 금속', fuel:'LOX 연료', electronics:'PCB 전자', research:'RP 연구' };
+  const RES_NAMES = { money:'₩ 자금', iron:'Fe 철광석', copper:'Cu 구리', fuel:'LOX 연료', electronics:'PCB 전자', research:'RP 연구' };
   let resHtml = '';
   Object.entries(report.resources).forEach(([rid, val]) => {
     if (val > 0.01) {
@@ -980,7 +995,7 @@ function tick() {
   gs.lastTick = now;
   if (dt < 0.001) return;  // 너무 짧은 tick 방지 (calcOffline 직후)
   const prod = getProduction();
-  const RES_MAX = { money:1e12, metal:5e7, fuel:2e7, electronics:1e7, research:50000 };
+  const RES_MAX = { money:1e12, iron:5e7, copper:2e7, fuel:2e7, electronics:1e7, research:50000 };
   RESOURCES.forEach(r => { gs.res[r.id] = Math.max(0, (gs.res[r.id] || 0) + prod[r.id] * dt); });
   // 자원 한도 도달 경고음 (생산 중인 자원이 한도에 근접/도달 시)
   if (now - _resCap_lastSfx > RES_CAP_COOLDOWN) {

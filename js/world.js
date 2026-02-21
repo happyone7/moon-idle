@@ -1619,7 +1619,7 @@ function initWorldDrag() {
 }
 
 // ─── 플로팅 숫자 스폰 ─────────────────────────────────────────
-// text: 표시 문자열, type: CSS 클래스 (money/metal/fuel/elec/research/ms)
+// text: 표시 문자열, type: CSS 클래스 (money/iron/copper/fuel/elec/research/ms)
 // x, y: 화면 좌표 (clientX/clientY 기준)
 function spawnFloatNum(text, type, x, y) {
   const el = document.createElement('div');

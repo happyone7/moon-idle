@@ -48,7 +48,8 @@ const I18N = {
 
     // Resource names
     res_money:      'Funds',
-    res_metal:      'Metal',
+    res_iron:       'Iron',
+    res_copper:     'Copper',
     res_fuel:       'Fuel',
     res_electronics:'Electronics',
     res_research:   'Research',
@@ -170,7 +171,8 @@ const I18N = {
     prod_no_worker: '인원 미배치',
 
     res_money:      '자금',
-    res_metal:      '금속',
+    res_iron:       '철광석',
+    res_copper:     '구리',
     res_fuel:       '연료',
     res_electronics:'전자부품',
     res_research:   '연구',

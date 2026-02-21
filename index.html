@@ -292,25 +292,27 @@ button:not(:disabled) { cursor: pointer; }
   margin-bottom: 4px;
 }
 .rl-v7name {
+  display: block;
   color: var(--text-primary);
   font-size: var(--fs-sm);
-  flex: 1;
   line-height: 1.4;
+  margin-bottom: 1px;
 }
 .rl-en { color: var(--text-dim); }
-.rl-v7right {
-  text-align: right;
-  flex-shrink: 0;
+/* 보유량 행: 이름 아래에 값+변화율 표시 */
+.rl-v7val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 3px;
 }
 .rl-v7val {
-  display: block;
   font-size: var(--fs-md);
   font-weight: bold;
   color: var(--white, #e8ffe8);
   font-variant-numeric: tabular-nums;
 }
 .rl-v7rate {
-  display: block;
   font-size: var(--fs-xs);
   color: var(--text-rate);
 }
@@ -1745,7 +1747,8 @@ body.tab-production .world-bld:hover { transform: scale(1.05); filter: brightnes
   animation: float-up 1.4s ease-out forwards;
 }
 .float-num.money    { color: #ffeb3b; text-shadow: 0 0 8px #ffeb3b80; }
-.float-num.metal    { color: #90caf9; text-shadow: 0 0 8px #90caf980; }
+.float-num.iron     { color: #90caf9; text-shadow: 0 0 8px #90caf980; }
+.float-num.copper   { color: #b87333; text-shadow: 0 0 8px #b8733380; }
 .float-num.fuel     { color: #a5d6a7; text-shadow: 0 0 8px #a5d6a780; }
 .float-num.elec     { color: #ce93d8; text-shadow: 0 0 8px #ce93d880; }
 .float-num.research { color: var(--amber); text-shadow: 0 0 8px rgba(255,171,0,0.5); }
