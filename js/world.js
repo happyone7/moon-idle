@@ -746,6 +746,7 @@ function buyBldSlotUpgrade(bldId) {
 let _bldOvTimer  = null;
 let _bldOvActions = [];
 let _bldOvBld    = null;
+let _specPanelBld = null;
 
 function openBldOv(bld, el, keepPosition = false) {
   clearTimeout(_bldOvTimer);
@@ -768,9 +769,10 @@ function openBldOv(bld, el, keepPosition = false) {
       // 주거 시설: 시민 분양
       const citizenCost = typeof getCitizenCost === 'function' ? getCitizenCost() : 500;
       const citizenAfford = (gs.res.money || 0) >= citizenCost;
+      const citizenIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS['housing']) || '';
       actions.push({ type: 'sep', label: '// 시민 관리' });
       actions.push({
-        label: `시민 분양 (현재 ${gs.citizens || 0}명)`,
+        label: `${citizenIcon} 시민 분양 (현재 ${gs.citizens || 0}명)`,
         info: `$${fmt(citizenCost)}`,
         disabled: false,
         affordable: citizenAfford,
@@ -781,9 +783,10 @@ function openBldOv(bld, el, keepPosition = false) {
       // 생산 건물: 건물별 직접 직원 고용 (슬롯 제한 없음, 비용만 기하급수적 증가)
       const hireCost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bld.id) : getWorkerHireCost();
       const hireAfford = (gs.res.money || 0) >= hireCost;
+      const wkIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS[bld.id]) || '';
       actions.push({ type: 'sep', label: '// 직원 고용' });
       actions.push({
-        label: `직원 고용 — ${bld.name} 배치 (현재 ${assigned}명)`,
+        label: `${wkIcon} 직원 고용 — ${bld.name} 배치 (현재 ${assigned}명)`,
         info: `$${fmt(hireCost)}`,
         disabled: false,
         affordable: hireAfford,
@@ -941,6 +944,15 @@ function openBldOv(bld, el, keepPosition = false) {
       ovEl.style.top  = ty + 'px';
     }
   });
+
+  // ── 전문화 서브패널 (연구소/운영센터만) ─────────────────────
+  const _specRoles = typeof SPECIALIST_ROLES !== 'undefined' && SPECIALIST_ROLES[bld.id];
+  if (_specRoles && cnt >= 1) {
+    // spec panel opened via rAF so bld-ov is positioned first
+    requestAnimationFrame(() => openSpecPanel(bld));
+  } else {
+    closeSpecPanel();
+  }
 }
 
 function bovHover(idx) {
@@ -1231,6 +1243,65 @@ function hireBldWorker(bldId) {
   renderAll();
 }
 
+// ─── SPECIALIZATION SUB-PANEL ────────────────────────────────
+function openSpecPanel(bld) {
+  const panel = document.getElementById('spec-panel');
+  if (!panel) return;
+  _specPanelBld = bld;
+  const roles = (typeof SPECIALIST_ROLES !== 'undefined' && SPECIALIST_ROLES[bld.id]) || [];
+  const assigned = (gs.assignments && gs.assignments[bld.id]) || 0;
+  const wkIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS[bld.id]) || '';
+  const specs = (gs.specialists && gs.specialists[bld.id]) || {};
+
+  let html = `<div class="sp2-head">${wkIcon}&nbsp;직원 전문화</div><div class="sp2-body">`;
+  roles.forEach(r => {
+    const count = specs[r.id] || 0;
+    const canPromote = assigned >= 1;
+    const descHtml = r.desc.replace(/\n/g, '<br>');
+    html += `<div class="sp2-role">
+      <div class="sp2-role-icon ${r.iconCls}"></div>
+      <div class="sp2-role-info">
+        <div class="sp2-role-name">${r.name} <span class="sp2-count">(${count}명)</span></div>
+        <div class="sp2-role-desc">${descHtml}</div>
+        <div class="sp2-cost">${wkIcon}&thinsp;×1
+          <button class="sp2-btn${canPromote ? '' : ' dis'}" onclick="specClick('${bld.id}','${r.id}')">[전직]</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += `</div><div class="sp2-avail">배치 직원: ${assigned}명</div>`;
+  panel.innerHTML = html;
+
+  // Position: right side of #bld-ov
+  const ovEl = document.getElementById('bld-ov');
+  if (!ovEl) return;
+  const ovRect = ovEl.getBoundingClientRect();
+  panel.style.display = 'block';
+  panel.style.top  = ovRect.top + 'px';
+  panel.style.left = (ovRect.right + 6) + 'px';
+}
+
+function closeSpecPanel() {
+  const p = document.getElementById('spec-panel');
+  if (p) p.style.display = 'none';
+  _specPanelBld = null;
+}
+
+function specClick(bldId, specId) {
+  if (typeof promoteToSpecialist !== 'function' || !promoteToSpecialist(bldId, specId)) {
+    notify('배치 직원이 없습니다 — 먼저 직원을 고용하세요', 'red');
+    return;
+  }
+  const role = ((typeof SPECIALIST_ROLES !== 'undefined' && SPECIALIST_ROLES[bldId]) || []).find(r => r.id === specId);
+  notify(`${role ? role.name : specId} 전직 완료`, 'green');
+  playSfx('triangle', 600, 0.1, 0.04, 800);
+  const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+  const bldDef = typeof BUILDINGS !== 'undefined' ? BUILDINGS.find(b => b.id === bldId) : null;
+  if (el && bldDef) openBldOv(bldDef, el, true);
+  if (typeof saveGame === 'function') saveGame();
+  if (typeof renderAll === 'function') renderAll();
+}
+
 // ─── GHOST BUILDING POPUP (미건설 건물 클릭/호버) ────────────
 function openGhostOv(bld, el) {
   clearTimeout(_bldOvTimer);
@@ -1301,11 +1372,13 @@ function _triggerUpgradeAnim(bid) {
 function scheduleBldOvClose() {
   _bldOvTimer = setTimeout(() => {
     const ov = document.getElementById('bld-ov');
-    if (ov && !ov.matches(':hover')) closeBldOv();
+    const sp = document.getElementById('spec-panel');
+    if (ov && !ov.matches(':hover') && !(sp && sp.matches(':hover'))) closeBldOv();
   }, 150);
 }
 
 function closeBldOv() {
+  closeSpecPanel();
   const ov = document.getElementById('bld-ov');
   if (ov) ov.style.display = 'none';
 }
