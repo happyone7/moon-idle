@@ -776,21 +776,27 @@ function openBldOv(bld, el, keepPosition = false) {
         info: `$${fmt(citizenCost)}`,
         disabled: false,
         affordable: citizenAfford,
-        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명\n분양 비용: $${fmt(citizenCost)}\n// 시민 1명당 자금 +10/s 수입`,
+        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명 (여유 인원: ${avail}/${gs.workers || 1})\n분양 비용: $${fmt(citizenCost)}\n// 시민은 여유 인원으로 배치됩니다`,
         type: 'alloc_citizen',
       });
     } else {
-      // 생산 건물: 건물별 직접 직원 고용 (슬롯 제한 없음, 비용만 기하급수적 증가)
+      // 생산 건물: 여유 시민을 배치 (시민 총수 증가 없음)
       const hireCost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bld.id) : getWorkerHireCost();
       const hireAfford = (gs.res.money || 0) >= hireCost;
+      const hasIdleWorker = avail > 0;
       const wkIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS[bld.id]) || '';
       actions.push({ type: 'sep', label: '// 직원 고용' });
       actions.push({
-        label: `${wkIcon} 직원 고용 — ${bld.name} 배치 (현재 ${assigned}명)`,
+        label: hasIdleWorker
+          ? `${wkIcon} 직원 고용 — ${bld.name} 배치 (현재 ${assigned}명)`
+          : `${wkIcon} [시민 부족] — 여유 시민 없음 (배치 ${assigned}명)`,
         info: `$${fmt(hireCost)}`,
-        disabled: false,
+        disabled: !hasIdleWorker,
         affordable: hireAfford,
-        desc: `직원 1명 고용 후 ${bld.name}에 즉시 배치\n현재 배치: ${assigned}명\n고용 비용: $${fmt(hireCost)}\n// 고용할수록 비용이 기하급수적으로 증가`,
+        hasIdleWorker: hasIdleWorker,
+        desc: hasIdleWorker
+          ? `여유 시민 ${avail}명 중 1명 ${bld.name}에 배치\n현재 배치: ${assigned}명\n고용 비용: $${fmt(hireCost)}\n// 고용할수록 비용이 기하급수적으로 증가`
+          : `여유 시민이 없습니다 (${avail}/${gs.workers || 1})\n// 주거시설 업그레이드로 시민 상한을 늘리세요`,
         type: 'hire_bld_worker',
         bldId: bld.id,
       });
@@ -803,18 +809,33 @@ function openBldOv(bld, el, keepPosition = false) {
     actions.push({ type: 'sep', label: '// 업그레이드' });
   }
   bldUpgs.forEach(upg => {
-    const done     = !!(gs.bldUpgrades && gs.bldUpgrades[upg.id]);
+    const rawLevel = gs.bldUpgrades && gs.bldUpgrades[upg.id];
+    const level    = typeof rawLevel === 'number' ? rawLevel : (rawLevel ? 1 : 0);
+    const done     = !upg.repeatable && level >= 1;
     const reqMet   = !upg.req || !!(gs.bldUpgrades && gs.bldUpgrades[upg.req]);
-    const affordable = canAfford(upg.cost);
+    // Scale cost by level for repeatable upgrades
+    const costScale = upg.costScale || 1;
+    const scaledCost = {};
+    Object.entries(upg.cost).forEach(([r, v]) => {
+      scaledCost[r] = Math.floor(v * Math.pow(costScale, level));
+    });
+    const affordable = canAfford(scaledCost);
     const reqName  = upg.req ? (bldUpgs.find(u => u.id === upg.req)?.name || upg.req) : null;
+    const levelLabel = upg.repeatable && level > 0 ? ` (Lv.${level})` : '';
+    const premiumTag = upg.premium ? ' ★' : '';
     actions.push({
-      label: upg.name,
-      info:  done ? '[완료]' : getCostStr(upg.cost),
+      label: upg.name + levelLabel + premiumTag,
+      info:  done ? '[완료]' : getCostStr(scaledCost),
       done, affordable, reqMet,
       disabled: done || !reqMet || cnt === 0,
-      desc:  upg.desc + (reqName && !reqMet ? `\n// 선행 필요: ${reqName}` : '') + (cnt === 0 ? '\n// 건물을 먼저 건설하세요' : ''),
+      desc:  upg.desc
+        + (upg.repeatable ? `\n// 현재 ${level}단계 · 다음 비용: ${getCostStr(scaledCost)}` : '')
+        + (upg.premium ? '\n// ★ 프리미엄 — 단 1회, 강력한 효과' : '')
+        + (reqName && !reqMet ? `\n// 선행 필요: ${reqName}` : '')
+        + (cnt === 0 ? '\n// 건물을 먼저 건설하세요' : ''),
       type: 'upgrade',
       upgId: upg.id,
+      premium: !!upg.premium,
     });
   });
 
@@ -877,20 +898,33 @@ function openBldOv(bld, el, keepPosition = false) {
     if (act.done)                                                   rowCls = 'bov-done';
     else if (act.disabled)                                          rowCls = 'bov-locked';
     else if ((act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker' || act.type === 'hire_bld_worker' || act.type === 'alloc_citizen') && !act.affordable) rowCls = 'bov-need';
+    if (act.premium && !act.done && !act.disabled) rowCls += (rowCls ? ' ' : '') + 'bov-premium';
 
     const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker' || act.type === 'hire_bld_worker' || act.type === 'alloc_citizen';
     const isWorker = act.type === 'assign' || act.type === 'unassign';
-    let btnTxt = (act.type === 'hire_bld_worker' || act.type === 'alloc_citizen')
-      ? '[고용]'
-      : act.done ? '[완료]' : act.disabled ? '[잠금]' : (isUpg && !act.affordable) ? '[부족]' : '[실행]';
+    let btnTxt;
+    if (act.type === 'hire_bld_worker') {
+      btnTxt = act.hasIdleWorker ? '[고용]' : '[시민 부족]';
+    } else if (act.type === 'alloc_citizen') {
+      btnTxt = '[분양]';
+    } else if (act.done) {
+      btnTxt = '[완료]';
+    } else if (act.disabled) {
+      btnTxt = '[잠금]';
+    } else if (isUpg && !act.affordable) {
+      btnTxt = '[부족]';
+    } else {
+      btnTxt = '[실행]';
+    }
     const btnDis = act.done || act.disabled || (isUpg && !act.affordable);
+    const infoExtraCls = (isUpg && !act.affordable && !act.done) ? ' red' : (act.premium && !act.done ? ' amber' : '');
 
     actRows += `<div class="bov-act ${rowCls}${isWorker ? ' bov-worker' : ''}" data-idx="${i}"
       onmouseenter="bovHover(${i})"
       onclick="bovClick(${i})">
       <span class="bov-act-label">${act.label}</span>
       <button class="bov-act-btn${btnDis ? ' dis' : ''}" tabindex="-1">${btnTxt}</button>
-      <span class="bov-act-info${isUpg&&!act.affordable&&!act.done?' red':''}">${act.info}</span>
+      <span class="bov-act-info${infoExtraCls}">${act.info}</span>
     </div>`;
   });
 
@@ -1003,16 +1037,27 @@ function buyBldUpgrade(upgId, bldId) {
   const upg  = bldUpgList.find(u => u.id === upgId);
   if (!upg || !bld) return;
   if (!gs.bldUpgrades) gs.bldUpgrades = {};
-  if (gs.bldUpgrades[upgId]) { notify('이미 완료된 업그레이드', 'amber'); return; }
+  const rawLevel   = gs.bldUpgrades[upgId];
+  const currLevel  = typeof rawLevel === 'number' ? rawLevel : (rawLevel ? 1 : 0);
+  // 일회성 업그레이드: 이미 완료 시 차단
+  if (!upg.repeatable && currLevel >= 1) { notify('이미 완료된 업그레이드', 'amber'); return; }
   if (upg.req && !gs.bldUpgrades[upg.req]) { notify('선행 업그레이드 필요', 'red'); return; }
-  if (!canAfford(upg.cost)) { notify('자원 부족', 'red'); return; }
-  spend(upg.cost);
-  gs.bldUpgrades[upgId] = true;
-  // Side-effects
+  // 반복 업그레이드: 레벨별 비용 스케일
+  const costScale  = upg.costScale || 1;
+  const scaledCost = {};
+  Object.entries(upg.cost).forEach(([r, v]) => {
+    scaledCost[r] = Math.floor(v * Math.pow(costScale, currLevel));
+  });
+  if (!canAfford(scaledCost)) { notify('자원 부족', 'red'); return; }
+  spend(scaledCost);
+  gs.bldUpgrades[upgId] = currLevel + 1;
+  // Side-effects (레벨마다 누적 적용)
   if (upg.wkr) { gs.workers = (gs.workers || 1) + upg.wkr; syncWorkerDots(); }
   if (upg.rel) reliabilityBonus += upg.rel;
-  notify(`${bld.icon} ${upg.name} 완료`);
-  playSfx('triangle', 520, 0.1, 0.04, 780);
+  const newLevel = currLevel + 1;
+  const levelStr = upg.repeatable ? ` Lv.${newLevel}` : '';
+  notify(`${bld.icon} ${upg.name}${levelStr} 완료`);
+  playSfx('triangle', 520, 0.12, 0.06, 780);
   _triggerUpgradeAnim(bldId);
   // Refresh overlay
   const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
@@ -1226,6 +1271,11 @@ function _refreshBldOvHousingPanel() {
 function hireBldWorker(bldId) {
   const cost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bldId) : (getWorkerHireCost ? getWorkerHireCost() : 100);
   if (!gs || !gs.res) return;
+  // 여유 시민 확인 — 새 시민을 만들지 않고 기존 여유 인원을 배치
+  if (getAvailableWorkers() <= 0) {
+    notify('여유 시민 없음 — 주거시설 업그레이드로 시민 상한을 늘리세요', 'red');
+    return;
+  }
   if ((gs.res.money || 0) < cost) {
     notify('자금 부족 — 직원 고용 불가', 'red');
     return;
@@ -1233,9 +1283,10 @@ function hireBldWorker(bldId) {
   gs.res.money -= cost;
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bldId] = (gs.assignments[bldId] || 0) + 1;
-  gs.workers = (gs.workers || 0) + 1;
-  notify(`직원 고용 완료 — ${bldId} 배치 / 전체 ${gs.workers}명`, 'green');
-  playSfx('triangle', 400, 0.1, 0.05, 600);
+  // gs.workers는 변경하지 않음 — 기존 여유 시민을 배치하는 것
+  const assigned = gs.assignments[bldId];
+  notify(`직원 배치 완료 — ${bldId} ×${assigned}명`, 'green');
+  playSfx('triangle', 400, 0.12, 0.07, 600);
   if (typeof syncWorkerDots === 'function') syncWorkerDots();
   // 오버레이 갱신 (keepPosition=true — 위치 드리프트 방지)
   const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');

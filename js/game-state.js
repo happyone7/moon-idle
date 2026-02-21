@@ -168,10 +168,16 @@ function getSolarBonus() {
 }
 
 // Returns multiplicative stack from all purchased per-building upgrades
+// Handles both one-time (boolean/1) and repeatable (number N → mult^N) upgrades
 function getBldUpgradeMult(bldId) {
   if (!gs.bldUpgrades) return 1;
   const upgrades = (typeof BUILDING_UPGRADES !== 'undefined' && BUILDING_UPGRADES[bldId]) || [];
-  return upgrades.reduce((m, u) => (gs.bldUpgrades[u.id] && u.mult) ? m * u.mult : m, 1);
+  return upgrades.reduce((m, u) => {
+    const raw = gs.bldUpgrades[u.id];
+    if (!raw || !u.mult) return m;
+    const lvl = typeof raw === 'number' ? raw : 1;
+    return m * Math.pow(u.mult, lvl);
+  }, 1);
 }
 
 // ─── ADD-ON HELPERS ──────────────────────────────────────────
@@ -354,8 +360,6 @@ function getProduction() {
   });
   // Add RP bonus from tech hub addon
   prod.research += getAddonRpBonus();
-  // 시민 수동 수입: 시민 1명당 10/s (P8-4)
-  prod.money += (gs.citizens || 0) * 10;
   // 주거시설 상가 업그레이드: +50/s (P8-4)
   if (gs.bldUpgrades && gs.bldUpgrades.housing_market) {
     prod.money += 50;
@@ -449,28 +453,39 @@ function ensureAudio() {
   if (!audioCtx) {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
-    audioCtx = new Ctx();
+    try { audioCtx = new Ctx(); } catch(e) { return null; }
+    // 첫 사용자 상호작용 시 오디오 컨텍스트 자동 활성화
+    const _unlock = () => {
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+      document.removeEventListener('pointerdown', _unlock);
+    };
+    document.addEventListener('pointerdown', _unlock, { passive: true });
   }
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+    return null; // 이번 사운드는 생략, 다음 클릭부터 재생됨
+  }
   return audioCtx;
 }
 
-function playSfx(type='sine', freq=440, dur=0.08, vol=0.03, targetFreq=null) {
+function playSfx(type='sine', freq=440, dur=0.08, vol=0.05, targetFreq=null) {
   if (!gs.settings.sound) return;
   const ctx = ensureAudio();
   if (!ctx) return;
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  const now = ctx.currentTime;
-  osc.type = type;
-  osc.frequency.setValueAtTime(freq, now);
-  if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, now + dur);
-  gain.gain.setValueAtTime(vol, now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.start(now);
-  osc.stop(now + dur);
+  try {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const now  = ctx.currentTime;
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, now);
+    if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, now + dur);
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + dur);
+  } catch(e) {}
 }
 
 function playLaunchSfx() {
@@ -658,10 +673,12 @@ function loadGame(slot) {
     // Re-apply building upgrade side-effects (rel only; wkr is already in gs.workers)
     if (typeof BUILDING_UPGRADES !== 'undefined') {
       Object.keys(gs.bldUpgrades || {}).forEach(uid => {
-        if (!gs.bldUpgrades[uid]) return;
+        const raw = gs.bldUpgrades[uid];
+        if (!raw) return;
+        const level = typeof raw === 'number' ? raw : 1;
         for (const bldId in BUILDING_UPGRADES) {
           const upg = BUILDING_UPGRADES[bldId].find(u => u.id === uid);
-          if (upg && upg.rel) reliabilityBonus += upg.rel;
+          if (upg && upg.rel) reliabilityBonus += upg.rel * level;
         }
       });
     }
