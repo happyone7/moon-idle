@@ -292,29 +292,23 @@ button:not(:disabled) { cursor: pointer; }
   margin-bottom: 4px;
 }
 .rl-v7name {
-  display: block;
   color: var(--text-primary);
   font-size: var(--fs-sm);
   line-height: 1.4;
-  margin-bottom: 1px;
 }
 .rl-en { color: var(--text-dim); }
-/* 보유량 행: 이름 아래에 값+변화율 표시 */
-.rl-v7val-row {
-  display: flex;
-  align-items: baseline;
-  gap: 5px;
-  margin-bottom: 3px;
-}
 .rl-v7val {
-  font-size: var(--fs-md);
+  font-size: 16px;
   font-weight: bold;
   color: var(--white, #e8ffe8);
   font-variant-numeric: tabular-nums;
+  margin-bottom: 3px;
 }
 .rl-v7rate {
   font-size: var(--fs-xs);
   color: var(--text-rate);
+  text-align: right;
+  white-space: nowrap;
 }
 .rl-low-badge {
   position: absolute;

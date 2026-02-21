@@ -89,11 +89,11 @@ function renderResources() {
     const barColor = id === 'copper' ? ' background:#b87333;' : '';
     return `
       <div class="rl-v7item">
-        <div class="rl-v7name">${kor} <span class="rl-en">(${eng})</span></div>
-        <div class="rl-v7val-row">
-          <span class="rl-v7val">${fmtComma(Math.floor(val))}</span>
+        <div class="rl-v7hd">
+          <span class="rl-v7name">${kor} <span class="rl-en">(${eng})</span></span>
           <span class="rl-v7rate">${rateStr}</span>
         </div>
+        <div class="rl-v7val">${fmtComma(Math.floor(val))}</div>
         <div class="rl-bar" style="position:relative">
           <div class="rl-bar-fill" style="width:${pct.toFixed(1)}%;${barColor}"></div>
           ${isLow ? '<span class="rl-low-badge">LOW</span>' : ''}
