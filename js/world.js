@@ -771,7 +771,7 @@ function openBldOv(bld, el, keepPosition = false) {
       actions.push({ type: 'sep', label: '// 시민 관리' });
       actions.push({
         label: `시민 분양 (현재 ${gs.citizens || 0}명)`,
-        info: citizenAfford ? `$${fmt(citizenCost)}` : `[자금 부족]`,
+        info: `$${fmt(citizenCost)}`,
         disabled: false,
         affordable: citizenAfford,
         desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명\n분양 비용: $${fmt(citizenCost)}\n// 시민 1명당 자금 +10/s 수입`,
@@ -784,7 +784,7 @@ function openBldOv(bld, el, keepPosition = false) {
       actions.push({ type: 'sep', label: '// 직원 고용' });
       actions.push({
         label: `직원 고용 — ${bld.name} 배치 (현재 ${assigned}명)`,
-        info: hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
+        info: `$${fmt(hireCost)}`,
         disabled: false,
         affordable: hireAfford,
         desc: `직원 1명 고용 후 ${bld.name}에 즉시 배치\n현재 배치: ${assigned}명\n고용 비용: $${fmt(hireCost)}\n// 고용할수록 비용이 기하급수적으로 증가`,
@@ -877,7 +877,9 @@ function openBldOv(bld, el, keepPosition = false) {
 
     const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker' || act.type === 'hire_bld_worker';
     const isWorker = act.type === 'assign' || act.type === 'unassign';
-    let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : (isUpg && !act.affordable) ? '[부족]' : '[실행]';
+    let btnTxt = (act.type === 'hire_bld_worker' || act.type === 'alloc_citizen')
+      ? '[고용]'
+      : act.done ? '[완료]' : act.disabled ? '[잠금]' : (isUpg && !act.affordable) ? '[부족]' : '[실행]';
     const btnDis = act.done || act.disabled || (isUpg && !act.affordable);
 
     actRows += `<div class="bov-act ${rowCls}${isWorker ? ' bov-worker' : ''}" data-idx="${i}"
