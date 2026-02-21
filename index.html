@@ -1287,26 +1287,40 @@ body.tab-research #pane-research {
 .lc-mp-val.red   { color: var(--red); }
 .lc-mp-label { font-size: 8px; color: var(--green-dim); letter-spacing: .08em; text-transform: uppercase; margin-top: 1px; }
 
-/* 발사 커밋 박스 */
-#lc-commit-box { margin: 8px auto 12px; border: 2px solid var(--amber); padding: 10px 12px; background: #000d01; animation: pulse-amber 3s ease-in-out infinite; width: 100%; max-width: 380px; box-sizing: border-box; flex-shrink: 0; }
-@keyframes pulse-amber { 0%,100% { box-shadow: 0 0 4px #ffab0060; border-color: var(--amber); } 50% { box-shadow: 0 0 20px #ffab00cc, 0 0 40px #ffab0040; border-color: #ffd050; } }
-.lc-commit-hd    { color: var(--amber); font-size: 11px; letter-spacing: .15em; text-shadow: 0 0 8px #ffab0080; text-align: center; margin-bottom: 8px; }
-.lc-commit-stats { display: flex; justify-content: space-around; margin-bottom: 10px; }
+/* 발사 커밋 바 (프로그레스바 바로 위, 가로형 스트립) */
+#lc-commit-box { display: flex; align-items: center; gap: 10px; padding: 7px 16px; background: #000a02; border-top: 1px solid #1a3d20; border-bottom: none; margin: 0; width: 100%; max-width: none; box-sizing: border-box; flex-shrink: 0; animation: none; transition: border-color .4s, box-shadow .4s; }
+#lc-commit-box.lc-commit-ready { border-top-color: var(--amber); animation: pulse-amber 3s ease-in-out infinite; }
+@keyframes pulse-amber { 0%,100% { box-shadow: 0 0 4px #ffab0060; } 50% { box-shadow: 0 0 18px #ffab00aa, 0 0 36px #ffab0030; } }
+.lc-commit-hd { color: #2a4a2a; font-size: 9px; letter-spacing: .18em; text-shadow: none; white-space: nowrap; flex-shrink: 0; margin-bottom: 0; transition: color .4s, text-shadow .4s; }
+#lc-commit-box.lc-commit-ready .lc-commit-hd { color: var(--amber); text-shadow: 0 0 8px #ffab0060; }
+.lc-commit-stats { display: flex; justify-content: flex-start; gap: 18px; flex: 1; margin-bottom: 0; }
 .lc-cs           { text-align: center; }
-.lc-cs-val       { display: block; font-size: 18px; letter-spacing: .05em; margin-bottom: 2px; }
+.lc-cs-val       { display: block; font-size: 14px; letter-spacing: .04em; margin-bottom: 1px; color: #334433; }
 .lc-cs-val.green { color: var(--green); text-shadow: var(--glow-strong); }
-.lc-cs-val.amber { color: var(--amber); text-shadow: 0 0 8px #ffab0080; }
-.lc-cs-val.red   { color: var(--red);   text-shadow: 0 0 8px #ff174480; }
-.lc-cs-label     { font-size: 10px; color: var(--green-dim); letter-spacing: .1em; }
-#lc-btn-launch { display: block; width: 100%; padding: 10px 0; background: rgba(255,171,0,.08); border: 2px solid var(--amber); color: var(--amber); font-family: var(--font); font-size: 14px; letter-spacing: .2em; cursor: pointer; text-shadow: 0 0 8px #ffab0080; transition: background .2s; margin-bottom: 6px; }
-#lc-btn-launch:hover:not(:disabled) { background: rgba(255,171,0,.2); }
-#lc-btn-launch:disabled { opacity: .5; cursor: not-allowed; }
-#lc-btn-abort  { display: block; width: 100%; padding: 5px 0; background: rgba(255,23,68,.07); border: 1px solid var(--red); color: var(--red); font-family: var(--font); font-size: 11px; letter-spacing: .15em; cursor: pointer; transition: background .2s; }
-#lc-btn-abort:hover { background: rgba(255,23,68,.16); }
+.lc-cs-val.amber { color: var(--amber); text-shadow: 0 0 8px #ffab0060; }
+.lc-cs-val.red   { color: var(--red);   text-shadow: 0 0 8px #ff174460; }
+.lc-cs-label     { font-size: 8px; color: var(--green-dim); letter-spacing: .08em; }
+#lc-btn-launch { padding: 8px 20px; background: rgba(0,0,0,.4); border: 1px solid #2a4a2a; color: #3d6040; font-family: var(--font); font-size: 12px; letter-spacing: .18em; cursor: pointer; text-shadow: none; transition: background .2s, border-color .2s, color .2s; flex-shrink: 0; white-space: nowrap; margin-bottom: 0; }
+#lc-btn-launch:hover:not(:disabled) { background: rgba(255,171,0,.14); }
+#lc-btn-launch:disabled { cursor: not-allowed; }
+#lc-btn-abort  { padding: 6px 14px; background: rgba(255,23,68,.07); border: 1px solid var(--red); color: var(--red); font-family: var(--font); font-size: 10px; letter-spacing: .12em; cursor: pointer; transition: background .2s; flex-shrink: 0; white-space: nowrap; margin-bottom: 0; }
+#lc-btn-abort:hover { background: rgba(255,23,68,.18); }
 
 /* 발사 버튼 상태별 */
-#lc-btn-launch.lc-btn-launch-standby { opacity: 0.45; border-style: dashed; animation: none; color: var(--green-dim); }
-#lc-btn-launch.lc-btn-launch-go { opacity: 1; border-style: solid; animation: pulse-amber 3s ease-in-out infinite; color: var(--amber); }
+#lc-btn-launch.lc-btn-launch-standby { border-color: #1a3a1a; color: #2a4a2a; animation: none; }
+#lc-btn-launch.lc-btn-launch-go { border-color: var(--amber); color: var(--amber); background: rgba(255,171,0,.08); text-shadow: 0 0 8px #ffab0070; animation: pulse-amber 3s ease-in-out infinite; }
+
+/* 조립/연료 상태 패널 */
+#lc-status-panel { width: 100%; max-width: 420px; margin: 4px auto 2px; padding: 4px 12px 0; box-sizing: border-box; }
+.lc-sp-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
+.lc-sp-label { font-size: 9px; color: var(--green-dim); letter-spacing: .08em; min-width: 58px; text-align: right; flex-shrink: 0; }
+.lc-sp-bar-wrap { flex: 1; height: 5px; background: rgba(0,230,118,.06); overflow: hidden; border: 1px solid #0d3d1f; }
+.lc-sp-bar-fill { height: 100%; background: var(--green-dim); transition: width .5s; }
+.lc-sp-bar-fill.amber { background: var(--amber); }
+.lc-sp-bar-fill.red   { background: var(--red); }
+.lc-sp-pct { font-size: 9px; color: var(--green-mid); min-width: 36px; font-family: 'Courier New', Consolas, monospace; }
+.lc-sp-pct.amber { color: var(--amber); }
+.lc-sp-pct.red   { color: var(--red); }
 
 /* anim zone */
 #lc-anim-zone  { width: 100%; display: none; flex-direction: column; align-items: center; }
@@ -1339,7 +1353,7 @@ body.tab-research #pane-research {
 
 /* Phase header */
 .lc-phase-header { display: grid; grid-template-columns: 3fr 5fr 3fr; }
-.lc-phase-group { text-align: center; font-size: 7px; letter-spacing: 0.2em; padding: 3px 4px 2px; text-transform: uppercase; border-bottom: 1px solid #0a2210; transition: color 0.5s, text-shadow 0.5s, border-color 0.5s; }
+.lc-phase-group { text-align: center; font-size: 9px; letter-spacing: 0.2em; padding: 4px 4px 3px; text-transform: uppercase; border-bottom: 1px solid #0a2210; transition: color 0.5s, text-shadow 0.5s, border-color 0.5s; }
 .lc-phase-group + .lc-phase-group { border-left: 1px solid #0a2210; }
 .lc-phase-pre    { color: #1a4428; }
 .lc-phase-ascent { color: #0e2a18; }
@@ -1352,12 +1366,12 @@ body.tab-research #pane-research {
 .lc-phase-lunar.phase-done  { color: var(--amber);      text-shadow: 0 0 10px rgba(255,171,0,.5); border-bottom-color: var(--amber); }
 
 /* Stage track */
-.lc-stage-track { display: flex; width: 100%; height: 52px; position: relative; }
+.lc-stage-track { display: flex; width: 100%; height: 70px; position: relative; }
 .lc-stage-seg { flex: 1; position: relative; cursor: default; }
 
 /* 연결선: ::before = 왼쪽 절반, ::after = 오른쪽 절반 */
 .lc-stage-seg::before,
-.lc-stage-seg::after  { content: ''; position: absolute; top: 19px; height: 2px; z-index: 1; background: #0a2210; transition: background 0.4s; }
+.lc-stage-seg::after  { content: ''; position: absolute; top: 22px; height: 2px; z-index: 1; background: #0a2210; transition: background 0.4s; }
 .lc-stage-seg::before { left: 0; right: 50%; }
 .lc-stage-seg::after  { left: 50%; right: 0; }
 .lc-stage-seg:first-child::before { display: none; }
@@ -1373,23 +1387,23 @@ body.tab-research #pane-research {
 .lc-stage-seg[data-phase="lunar"].active::before { background: #7a4800; }
 
 /* 노드 원형 */
-.lc-node { position: absolute; top: 7px; left: 50%; transform: translateX(-50%); width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid #0d3d1f; background: #000a02; display: flex; align-items: center; justify-content: center; z-index: 2; transition: border-color 0.4s, background 0.4s, box-shadow 0.4s; }
-.lc-node::after { content: '◦'; font-size: 8px; color: #1a4428; }
+.lc-node { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid #0d3d1f; background: #000a02; display: flex; align-items: center; justify-content: center; z-index: 2; transition: border-color 0.4s, background 0.4s, box-shadow 0.4s; }
+.lc-node::after { content: '◦'; font-size: 10px; color: #1a4428; }
 /* Done */
 .lc-stage-seg.done .lc-node { border-color: #00a84f; background: rgba(0,168,79,.1); animation: lc-node-pop .4s cubic-bezier(.175,.885,.32,1.275) both; }
-.lc-stage-seg.done .lc-node::after { content: '✓'; font-size: 11px; font-weight: bold; color: var(--green-mid); }
+.lc-stage-seg.done .lc-node::after { content: '✓'; font-size: 14px; font-weight: bold; color: var(--green-mid); }
 /* Active */
-.lc-stage-seg.active .lc-node { border-color: var(--amber); background: rgba(255,171,0,.12); box-shadow: 0 0 0 3px rgba(255,171,0,.15), 0 0 16px rgba(255,171,0,.45); animation: lc-pulse-amber 1.8s ease-in-out infinite; width: 28px; height: 28px; top: 5px; }
-.lc-stage-seg.active .lc-node::after { content: '▶'; font-size: 9px; color: var(--amber); margin-left: 1px; }
+.lc-stage-seg.active .lc-node { border-color: var(--amber); background: rgba(255,171,0,.14); box-shadow: 0 0 0 4px rgba(255,171,0,.15), 0 0 18px rgba(255,171,0,.5); animation: lc-pulse-amber 1.8s ease-in-out infinite; width: 36px; height: 36px; top: 5px; }
+.lc-stage-seg.active .lc-node::after { content: '▶'; font-size: 12px; color: var(--amber); margin-left: 2px; }
 /* Fail */
 .lc-stage-seg.fail .lc-node { border-color: var(--red); background: rgba(255,23,68,.08); }
-.lc-stage-seg.fail .lc-node::after { content: '✕'; font-size: 10px; color: var(--red); }
+.lc-stage-seg.fail .lc-node::after { content: '✕'; font-size: 13px; color: var(--red); }
 /* LANDING 완료 — 앰버 별 */
-.lc-stage-seg[data-idx="10"].done .lc-node { border-color: var(--amber); background: rgba(255,171,0,.18); box-shadow: 0 0 0 4px rgba(255,171,0,.12), 0 0 18px rgba(255,171,0,.55); animation: lc-landing-glow 2s ease-in-out infinite; }
-.lc-stage-seg[data-idx="10"].done .lc-node::after { content: '★'; font-size: 12px; color: var(--amber); }
+.lc-stage-seg[data-idx="10"].done .lc-node { border-color: var(--amber); background: rgba(255,171,0,.2); box-shadow: 0 0 0 5px rgba(255,171,0,.13), 0 0 22px rgba(255,171,0,.6); animation: lc-landing-glow 2s ease-in-out infinite; }
+.lc-stage-seg[data-idx="10"].done .lc-node::after { content: '★'; font-size: 14px; color: var(--amber); }
 
 /* 세그먼트 레이블 */
-.lc-seg-lbl { position: absolute; top: 37px; left: 0; right: 0; text-align: center; font-size: 7px; letter-spacing: .08em; text-transform: uppercase; color: #1a4428; transition: color .4s; white-space: nowrap; }
+.lc-seg-lbl { position: absolute; top: 45px; left: 0; right: 0; text-align: center; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: #1a4428; transition: color .4s; white-space: nowrap; }
 .lc-stage-seg.done  .lc-seg-lbl { color: var(--green-dim); }
 .lc-stage-seg.active .lc-seg-lbl { color: var(--green); }
 .lc-stage-seg.fail  .lc-seg-lbl { color: var(--red); opacity: .7; }
@@ -3064,12 +3078,8 @@ body.ignition-flash::before {
                 <div class="lc-rocket-disp">
                   <div class="lc-rocket-art" id="lc-rocket-pre"></div>
                 </div>
-                <div id="lc-commit-box">
-                  <div class="lc-commit-hd">&#9474; LAUNCH COMMIT &#9474;</div>
-                  <div class="lc-commit-stats" id="lc-commit-stats"></div>
-                  <button id="lc-btn-launch" onclick="launchReady()" disabled>[ ··· 발사 준비 중 ··· ]</button>
-                  <button id="lc-btn-abort" onclick="abortAssembly()" style="display:none;">[ ABORT ]</button>
-                </div>
+                <!-- 조립/연료 상태 패널 -->
+                <div id="lc-status-panel"></div>
               </div>
               <!-- 발사 애니메이션 존 (launch.js가 toggle) -->
               <div id="lc-anim-zone">
@@ -3116,6 +3126,14 @@ body.ignition-flash::before {
               </div>
             </div>
 
+          </div>
+
+          <!-- ── 커밋 스트립 (진행 바 바로 위, 가로형) ── -->
+          <div id="lc-commit-box">
+            <div class="lc-commit-hd">&#9672; LAUNCH COMMIT</div>
+            <div class="lc-commit-stats" id="lc-commit-stats"></div>
+            <button id="lc-btn-launch" onclick="launchReady()" disabled>[ ··· 준비 중 ··· ]</button>
+            <button id="lc-btn-abort" onclick="abortAssembly()" style="display:none;">[ ABORT ]</button>
           </div>
 
           <!-- ── 하단: 11단계 진행 바 (타임라인 노드형) ── -->

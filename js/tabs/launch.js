@@ -380,7 +380,8 @@ function _lcRocketArtHtml() {
   let inProgressJob = null;
   jobs.forEach(j => { if (j && !j.ready && j.endAt && !inProgressJob) inProgressJob = j; });
 
-  const col = (key) => readyJob ? 'var(--green)' : (p[key] ? 'var(--amber)' : '#1f3520');
+  // 완료 안된 파트: '#1f3520' → '#3d6040' (어둡지만 윤곽이 보이는 올리브 그린)
+  const col = (key) => readyJob ? 'var(--green)' : (p[key] ? 'var(--amber)' : '#3d6040');
 
   const partsDone  = PARTS.filter(pt => p[pt.id]).length;
   const partsPct   = Math.round((partsDone / PARTS.length) * 100);
@@ -424,21 +425,7 @@ function _lcRocketArtHtml() {
     sp('var(--green-dim)', '     [== PAD ==]      '),
   ];
 
-  const barLen = 12;
-  const barC   = readyJob ? 'var(--green)' : 'var(--amber)';
-  const fpBar  = '█'.repeat(Math.round(partsPct / 100 * barLen)) + '░'.repeat(barLen - Math.round(partsPct / 100 * barLen));
-  const faBar  = '█'.repeat(Math.round(asmPct   / 100 * barLen)) + '░'.repeat(barLen - Math.round(asmPct   / 100 * barLen));
-
-  let prog = `<div style="font-size:10px;color:var(--green-dim);text-align:center;margin-top:8px;font-family:'Courier New',Consolas,monospace;">`;
-  prog += `<span style="color:var(--green-dim)">부품: </span><span style="color:${barC}">${fpBar}</span> <span style="color:${barC}">${partsPct}%</span>`;
-  if (inProgressJob || readyJob) {
-    const ac = readyJob ? 'var(--green)' : 'var(--amber)';
-    prog += `<br><span style="color:var(--green-dim)">조립: </span><span style="color:${ac}">${faBar}</span> <span style="color:${ac}">${Math.round(asmPct)}%</span>`;
-  }
-  if (readyJob) prog += `<br><span style="color:var(--green);text-shadow:0 0 8px #00e676;">&#9654; LAUNCH READY</span>`;
-  prog += `</div>`;
-
-  return `<div style="font-family:'Courier New',Consolas,monospace;font-size:14px;line-height:1.3;white-space:pre;text-align:left;display:inline-block;">${lines.join('\n')}</div>${prog}`;
+  return `<div style="font-family:'Courier New',Consolas,monospace;font-size:15px;line-height:1.3;white-space:pre;text-align:left;display:inline-block;">${lines.join('\n')}</div>`;
 }
 
 // ============================================================
@@ -506,6 +493,43 @@ function renderLaunchTab() {
   // ASCII 로켓
   const rocketPre = document.getElementById('lc-rocket-pre');
   if (rocketPre) rocketPre.innerHTML = _lcRocketArtHtml();
+
+  // 커밋 박스 상태: allGo → 앰버 활성, 아닐 때 → 회색 비활성
+  const commitBox = document.getElementById('lc-commit-box');
+  if (commitBox) commitBox.classList.toggle('lc-commit-ready', allGo);
+
+  // 조립/연료 상태 패널
+  const statusPanel = document.getElementById('lc-status-panel');
+  if (statusPanel) {
+    const p2        = gs.parts || {};
+    const jobs2     = (gs.assembly && gs.assembly.jobs) || [];
+    const now2      = Date.now();
+    const partsDone = PARTS.filter(pt => p2[pt.id]).length;
+    const partsPct  = Math.round((partsDone / PARTS.length) * 100);
+    let asmPct = 0;
+    const readyJob2  = jobs2.find(j => j && j.ready);
+    const inProgJob2 = jobs2.find(j => j && !j.ready && j.endAt);
+    if (readyJob2) {
+      asmPct = 100;
+    } else if (inProgJob2) {
+      const el2 = Math.max(0, now2 - inProgJob2.startAt);
+      const to2 = Math.max(1, inProgJob2.endAt - inProgJob2.startAt);
+      asmPct = Math.min(100, (el2 / to2) * 100);
+    }
+    const fuelVal   = gs.res.fuel || 0;
+    const fuelOk    = fuelVal > 50;
+    const fuelPct   = Math.min(100, Math.round((fuelVal / Math.max(500, fuelVal)) * 100));
+    const partsClr  = partsPct === 100 ? '' : 'amber';
+    const asmClr    = asmPct  === 100 ? '' : 'amber';
+    const fuelClr   = fuelOk          ? '' : 'red';
+
+    let spHtml = `<div class="lc-sp-row"><span class="lc-sp-label">부품 조달</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${partsClr}" style="width:${partsPct}%"></div></div><span class="lc-sp-pct ${partsClr}">${partsDone}/${PARTS.length}</span></div>`;
+    if (asmPct > 0 || readyJob2) {
+      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">조립 진행</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${asmClr}" style="width:${asmPct}%"></div></div><span class="lc-sp-pct ${asmClr}">${Math.round(asmPct)}%</span></div>`;
+    }
+    spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 충전</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${fuelClr}" style="width:${fuelPct}%"></div></div><span class="lc-sp-pct ${fuelClr}">${fuelVal.toLocaleString()}</span></div>`;
+    statusPanel.innerHTML = spHtml;
+  }
 
   // 미션 파라미터 (HUD)
   const missionParams = document.getElementById('lc-mission-params');
