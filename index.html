@@ -805,6 +805,201 @@ body.tab-research #pane-research {
 .prod-tut-btn { padding:4px 8px; background:rgba(255,171,0,.12); border:1px solid var(--amber); color:var(--amber); font-family:var(--font); font-size:10px; letter-spacing:.1em; cursor:pointer; white-space:nowrap; flex-shrink:0; }
 .prod-tut-btn:hover { background:rgba(255,171,0,.24); }
 .prod-tut-btn.dis { border-color:#3a3010; color:#3a3010; cursor:not-allowed; background:none; }
+
+/* ===========================
+   LUNA-7 TUTORIAL BOT
+   =========================== */
+#luna-bot {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 9800;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+#luna-bot.hidden { display: none; }
+#luna-bot.appear .luna-body-wrap { animation: luna-appear 0.5s cubic-bezier(.16,.84,.44,1) both; }
+#luna-bot.dismiss-anim .luna-body-wrap { animation: luna-dismiss 0.35s ease-in both; }
+#luna-bot.dismiss-anim .luna-bubble    { animation: luna-dismiss 0.3s ease-in both; }
+
+@keyframes luna-appear  { from { transform:translateY(60px) scale(.7); opacity:0; } to { transform:none; opacity:1; } }
+@keyframes luna-dismiss { from { transform:none; opacity:1; } to { transform:translateY(50px) scale(.7); opacity:0; } }
+
+/* 말풍선 */
+.luna-bubble {
+  background: #000d06;
+  border: 1px solid #00e5ff;
+  box-shadow: 0 0 10px rgba(0,229,255,.3), inset 0 0 18px rgba(0,229,255,.04);
+  padding: 8px 12px;
+  max-width: 260px;
+  min-height: 38px;
+  font-family: var(--font, monospace);
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: #c8ffee;
+  letter-spacing: .04em;
+  position: relative;
+  pointer-events: none;
+}
+/* 말풍선 꼬리 (봇을 가리키는 삼각형) */
+.luna-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px; right: 38px;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 8px solid #00e5ff;
+}
+/* 커서 깜박임 */
+.luna-cursor {
+  display: inline-block;
+  color: #00e5ff;
+  animation: luna-blink 0.65s step-end infinite;
+  font-size: 9px;
+  vertical-align: middle;
+  margin-left: 1px;
+}
+@keyframes luna-blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* 봇 몸체 래퍼 */
+.luna-body-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  pointer-events: auto;
+}
+
+/* 헤드 (모니터 화면) */
+.luna-head {
+  width: 72px;
+  height: 60px;
+  background: #010f06;
+  border: 2px solid #00e5ff;
+  box-shadow: 0 0 14px rgba(0,229,255,.5), inset 0 0 12px rgba(0,229,255,.08);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+/* CRT 스캔라인 효과 */
+.luna-scanlines {
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 3px,
+    rgba(0,0,0,.25) 3px, rgba(0,0,0,.25) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+/* 눈(카메라) */
+.luna-eyes-row {
+  display: flex;
+  gap: 12px;
+  z-index: 3;
+}
+.luna-eye {
+  display: block;
+  width: 14px; height: 14px;
+  border: 2px solid #00e5ff;
+  background: #001a0a;
+  box-shadow: 0 0 8px rgba(0,229,255,.8), inset 0 0 4px rgba(0,229,255,.4);
+  animation: luna-eye-blink 4s ease-in-out infinite;
+}
+.luna-eye.right { animation-delay: .1s; }
+@keyframes luna-eye-blink {
+  0%,90%,100% { transform: scaleY(1); }
+  95%          { transform: scaleY(.08); }
+}
+/* 입(수평 바) */
+.luna-mouth-bar {
+  width: 32px; height: 3px;
+  background: #00e5ff;
+  box-shadow: 0 0 6px rgba(0,229,255,.9);
+  z-index: 3;
+  animation: luna-mouth 3s ease-in-out infinite;
+}
+@keyframes luna-mouth {
+  0%,100% { width:32px; }
+  50%      { width:20px; }
+}
+/* 이름 표시 */
+.luna-nameplate {
+  position: absolute;
+  bottom: 3px; left: 0; right: 0;
+  text-align: center;
+  font-family: var(--font, monospace);
+  font-size: 8px;
+  color: rgba(0,229,255,.6);
+  letter-spacing: .15em;
+  z-index: 3;
+}
+.luna-dash { opacity: .5; }
+
+/* 몸통 */
+.luna-torso {
+  width: 52px; height: 26px;
+  background: #010f06;
+  border: 1.5px solid #00a070;
+  border-top: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,.6);
+}
+.luna-chest-light {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00e5ff;
+  box-shadow: 0 0 8px rgba(0,229,255,1);
+  animation: luna-pulse 1.8s ease-in-out infinite;
+}
+@keyframes luna-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* 닫기 버튼 */
+.luna-dismiss-btn {
+  position: absolute;
+  top: -9px; right: -9px;
+  width: 18px; height: 18px;
+  background: #001a10;
+  border: 1px solid #00e5ff;
+  color: rgba(0,229,255,.7);
+  font-size: 9px;
+  cursor: pointer;
+  font-family: var(--font, monospace);
+  padding: 0;
+  line-height: 18px;
+  text-align: center;
+  z-index: 10;
+}
+.luna-dismiss-btn:hover { background:#002a1a; color:#00e5ff; }
+
+/* ops_center 행 하이라이트 (튜토리얼 포인팅) */
+.bld-list-row.tut-highlight {
+  background: rgba(0,229,255,.07);
+  border: 1px solid rgba(0,229,255,.5) !important;
+  border-bottom: 1px solid rgba(0,229,255,.5) !important;
+  box-shadow: 0 0 8px rgba(0,229,255,.25) inset;
+  animation: tut-pulse 1.4s ease-in-out infinite;
+  position: relative;
+}
+.bld-list-row.tut-highlight::before {
+  content: '▶';
+  position: absolute;
+  left: -14px;
+  color: #00e5ff;
+  font-size: 9px;
+  animation: tut-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tut-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
 .bld-list-row { display:flex; align-items:center; gap:4px; padding:3px 0; border-bottom:1px solid var(--green-deep); }
 .blr-icon { color:var(--green-mid); min-width:28px; font-size:10px; }
 .blr-name { flex:1; color:var(--text-primary); font-size:var(--fs-sm); white-space:nowrap; overflow:hidden; }
@@ -3401,6 +3596,36 @@ setInterval(function() {
 <script src="js/tabs/automation.js"></script>
 <script src="js/milestones.js"></script>
 <script src="js/audio-bgm.js"></script>
+<script src="js/tutorial-bot.js"></script>
 <script src="js/main.js"></script>
+
+<!-- ===== LUNA-7 TUTORIAL BOT ===== -->
+<div id="luna-bot" class="hidden">
+  <!-- 말풍선 -->
+  <div class="luna-bubble">
+    <span id="luna-text"></span><span class="luna-cursor">█</span>
+  </div>
+  <!-- 로봇 몸체 -->
+  <div class="luna-body-wrap">
+    <button class="luna-dismiss-btn" onclick="tutBot.dismiss()" title="닫기">✕</button>
+    <!-- 헤드 / 모니터 화면 -->
+    <div class="luna-head">
+      <div class="luna-scanlines"></div>
+      <div class="luna-face">
+        <div class="luna-eyes-row">
+          <span class="luna-eye left"></span>
+          <span class="luna-eye right"></span>
+        </div>
+        <div class="luna-mouth-bar"></div>
+      </div>
+      <div class="luna-nameplate">LUNA<span class="luna-dash">-</span>7</div>
+    </div>
+    <!-- 몸통 -->
+    <div class="luna-torso">
+      <div class="luna-chest-light"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
