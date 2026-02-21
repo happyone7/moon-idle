@@ -869,8 +869,11 @@ function _completeResearch(uid) {
   upg.effect();
   if (upg.unlocks) applyUnlocks(upg.unlocks);
   recentResearches.push({ name: upg.name, ts: Date.now() });
-  notify(`${upg.icon} ${upg.name} 연구 완료!`);
-  playSfx('sawtooth', 440, 0.1, 0.028, 700);
+  notify(`✓ ${upg.icon} ${upg.name} 연구 완료!`, 'green');
+  // 연구 완료 팡파레 (3화음 상승)
+  playSfx('triangle', 440, 0.09, 0.025, 660);
+  setTimeout(() => playSfx('triangle', 660, 0.08, 0.022, 880), 130);
+  setTimeout(() => playSfx('triangle', 880, 0.07, 0.02, 1100), 260);
 }
 
 /** tick마다 호출 — 시간 기반 연구 진행 (dt: 경과 시간, 초 단위) */

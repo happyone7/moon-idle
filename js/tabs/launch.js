@@ -513,18 +513,37 @@ function renderLaunchTab() {
   else if (hasProdSetup) _setLcStage(1); // ASSY active (0 done)
   else                   _setLcStage(0); // PROD active
 
-  // 프리-플라이트 체크리스트
+  // 프리-플라이트 체크리스트 + 완성도 표시
+  const p2 = gs.parts || {};
+  const pdone = PARTS.filter(pt => p2[pt.id]).length;
+  const items = [
+    { done: hasProdSetup,               label: `생산 가동`,  short: '생산가동'  },
+    { done: pdone === PARTS.length,     label: `부품 조달 (${pdone}/${PARTS.length})`, short: '부품조달' },
+    { done: !!hasReady,                 label: `조립 완료`,  short: '조립완료'  },
+    { done: (gs.buildings.launch_pad || 0) >= 1, label: `발사대 건설`, short: '발사대' },
+    { done: hasFuel,                    label: `연료 주입`,  short: '연료주입'  },
+  ];
+  const doneCnt = items.filter(i => i.done).length;
+  const readinessPct = Math.round((doneCnt / items.length) * 100);
+
+  // 완성도 바
+  const readinessEl = document.getElementById('lc-readiness');
+  if (readinessEl) {
+    const rColor = readinessPct === 100 ? 'var(--amber)' : readinessPct >= 60 ? 'var(--green)' : 'var(--green-mid)';
+    const badges = items.map(it =>
+      `<span class="lc-rd-badge${it.done ? ' done' : ''}">${it.done ? '✓' : '○'} ${it.short}</span>`
+    ).join('');
+    readinessEl.innerHTML =
+      `<div class="lc-rd-row">` +
+      `<span class="lc-rd-pct" style="color:${rColor}">${readinessPct}<span class="lc-rd-pct-unit">%</span></span>` +
+      `<span class="lc-rd-label">완성도</span>` +
+      `<span class="lc-rd-sep">|</span>` +
+      `${badges}` +
+      `</div>`;
+  }
+
   const checklistEl = document.getElementById('lc-checklist');
   if (checklistEl) {
-    const p2 = gs.parts || {};
-    const pdone = PARTS.filter(pt => p2[pt.id]).length;
-    const items = [
-      { done: hasProdSetup,               label: `생산 가동` },
-      { done: pdone === PARTS.length,     label: `부품 조달 (${pdone}/${PARTS.length})` },
-      { done: !!hasReady,                 label: `조립 완료` },
-      { done: (gs.buildings.launch_pad || 0) >= 1, label: `발사대 건설` },
-      { done: hasFuel,                    label: `연료 주입` },
-    ];
     checklistEl.innerHTML = items.map(it =>
       `<div class="lc-cl-item${it.done ? ' done' : ''}">` +
       `<span class="lc-cl-chk">${it.done ? '✓' : '○'}</span>` +

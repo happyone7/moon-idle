@@ -540,6 +540,12 @@ body.tab-research #pane-research {
 @keyframes notif-in { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
 @keyframes notif-out { to { opacity: 0; transform: translateX(40px); } }
 
+/* 경고 토스트 — 상단 중앙 (액션 불가 메시지용) */
+#notif-warn { position: fixed; top: 52px; left: 50%; transform: translateX(-50%); z-index: 9000; pointer-events: none; background: rgba(16,4,4,0.97); border: 1px solid var(--red); color: var(--red); font-size: 13px; letter-spacing: .08em; padding: 8px 22px; text-shadow: 0 0 8px #ff174480; opacity: 0; white-space: nowrap; }
+#notif-warn.notif-warn-show { animation: warn-drop 0.18s ease forwards, warn-fade 0.35s ease 1.8s forwards; }
+@keyframes warn-drop { from { opacity:0; transform:translateX(-50%) translateY(-12px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+@keyframes warn-fade { to { opacity:0; } }
+
 /* ===========================
    RIGHT PANEL
    =========================== */
@@ -1345,8 +1351,18 @@ body.tab-research #pane-research {
 #lc-btn-launch.lc-btn-launch-standby { border-color: #1a3a1a; color: #2a4a2a; animation: none; }
 #lc-btn-launch.lc-btn-launch-go { border-color: var(--amber); color: var(--amber); background: rgba(255,171,0,.08); text-shadow: 0 0 8px #ffab0070; animation: pulse-amber 3s ease-in-out infinite; }
 
+/* 완성도 바 (체크리스트 위) */
+#lc-readiness { width: 100%; padding: 6px 16px 2px; box-sizing: border-box; }
+.lc-rd-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.lc-rd-pct { font-size: 36px; font-weight: 700; letter-spacing: -.02em; line-height: 1; flex-shrink: 0; }
+.lc-rd-pct-unit { font-size: 18px; }
+.lc-rd-label { font-size: 11px; color: var(--green-mid); letter-spacing: .12em; flex-shrink: 0; margin-right: 2px; }
+.lc-rd-sep { color: #1a4428; font-size: 18px; flex-shrink: 0; }
+.lc-rd-badge { font-size: 10px; letter-spacing: .06em; color: #2a4a2a; border: 1px solid #0f2010; padding: 2px 6px; border-radius: 2px; white-space: nowrap; }
+.lc-rd-badge.done { color: var(--text-primary); border-color: var(--green-dim); text-shadow: none; }
+
 /* 프리-플라이트 체크리스트 (로켓 위) */
-#lc-checklist { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; padding: 6px 12px 2px; }
+#lc-checklist { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; padding: 4px 12px 2px; }
 .lc-cl-item { display: flex; align-items: center; gap: 5px; font-size: 11px; letter-spacing: .06em; color: #2a4a2a; }
 .lc-cl-item.done { color: var(--text-primary); }
 .lc-cl-chk { font-size: 12px; color: #1a4428; flex-shrink: 0; }
@@ -3125,6 +3141,8 @@ body.ignition-flash::before {
             <div id="lc-rocket-zone">
               <!-- 발사 전 정적 패널 -->
               <div id="lc-pre-launch">
+                <!-- 완성도 표시 -->
+                <div id="lc-readiness"></div>
                 <!-- 프리-플라이트 체크리스트 -->
                 <div id="lc-checklist"></div>
                 <div class="lc-rocket-disp">
@@ -3309,6 +3327,8 @@ body.ignition-flash::before {
 
 <!-- NOTIFICATIONS -->
 <div id="notif"></div>
+<!-- 경고 토스트 (상단 중앙, 액션 불가 메시지) -->
+<div id="notif-warn"></div>
 
 <!-- BUILDING HOVER OVERLAY (dynamic innerHTML via openBldOv) -->
 <div id="bld-ov"></div>

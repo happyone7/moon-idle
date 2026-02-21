@@ -20,33 +20,6 @@ function switchMainTab(tabId) {
   const pane = document.getElementById('pane-' + tabId);
   if (pane) pane.classList.add('active');
 
-  // 생산 허브 첫 방문: 운영센터 + 연구소 무상 건설
-  if (tabId === 'production' && !gs._prodHubVisited) {
-    gs._prodHubVisited = true;
-    let hubChanged = false;
-    if ((gs.buildings.ops_center || 0) === 0) {
-      gs.buildings.ops_center = 1;
-      gs.workers = (gs.workers || 2) + 1;
-      if (!gs.assignments) gs.assignments = {};
-      gs.assignments.ops_center = 1;
-      hubChanged = true;
-      setTimeout(() => notify('[운영센터] 무상 건설!', 'amber'), 200);
-    }
-    if ((gs.buildings.research_lab || 0) === 0) {
-      gs.buildings.research_lab = 1;
-      gs.workers = (gs.workers || 2) + 1;
-      if (!gs.assignments) gs.assignments = {};
-      gs.assignments.research_lab = 1;
-      gs.unlocks.tab_research = true;
-      hubChanged = true;
-      setTimeout(() => notify('[연구소] 무상 건설 — 연구 탭 해금!', 'amber'), 500);
-    }
-    if (hubChanged) {
-      if (typeof syncWorkerDots === 'function') syncWorkerDots();
-      if (typeof renderUnlocks === 'function') renderUnlocks();
-    }
-  }
-
   renderAll();
 }
 

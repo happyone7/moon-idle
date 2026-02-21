@@ -113,6 +113,22 @@ function checkAutoUnlocks() {
 //  NOTIFICATIONS
 // ============================================================
 function notify(msg, type='', silent=false) {
+  if (type === 'red') {
+    // 액션 불가 경고 → 상단 중앙 경고 토스트
+    const warn = document.getElementById('notif-warn');
+    if (warn) {
+      warn.textContent = '⚠ ' + msg;
+      warn.classList.remove('notif-warn-show');
+      // reflow trick for re-trigger animation
+      void warn.offsetWidth;
+      warn.classList.add('notif-warn-show');
+    }
+    if (!silent && typeof playSfx === 'function') {
+      // 짧은 경고음
+      playSfx('square', 220, 0.12, 0.06, 180);
+    }
+    return;
+  }
   const el = document.createElement('div');
   el.className = 'notif-item' + (type ? ' ' + type : '');
   el.textContent = msg;
@@ -123,8 +139,6 @@ function notify(msg, type='', silent=false) {
   if (!silent && typeof playSfx === 'function') {
     if (type === 'green') {
       playSfx('triangle', 520, 0.08, 0.03, 680);
-    } else if (type === 'red') {
-      playSfx('sawtooth', 180, 0.1, 0.05, 120);
     }
   }
 }
