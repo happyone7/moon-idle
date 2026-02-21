@@ -542,15 +542,9 @@ function renderLaunchTab() {
       `</div>`;
   }
 
+  // 체크리스트: 아래 상태 패널과 중복되므로 숨김
   const checklistEl = document.getElementById('lc-checklist');
-  if (checklistEl) {
-    checklistEl.innerHTML = items.map(it =>
-      `<div class="lc-cl-item${it.done ? ' done' : ''}">` +
-      `<span class="lc-cl-chk">${it.done ? '✓' : '○'}</span>` +
-      `<span class="lc-cl-text">${it.label}</span>` +
-      `</div>`
-    ).join('');
-  }
+  if (checklistEl) checklistEl.innerHTML = '';
 
   // ASCII 로켓
   const rocketPre = document.getElementById('lc-rocket-pre');
@@ -594,8 +588,10 @@ function renderLaunchTab() {
     if (gs.fuelLoaded) {
       spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 주입</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill" style="width:100%"></div></div><span class="lc-sp-pct">완료 ✓</span></div>`;
     } else {
-      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">LOX 보유</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${canInject ? '' : 'red'}" style="width:${fuelPct}%"></div></div><span class="lc-sp-pct ${canInject ? '' : 'red'}">${storedFuel.toLocaleString()}/${FUEL_LOAD_REQ}</span></div>`;
-      spHtml += `<div class="lc-sp-row lc-sp-inject-row"><button class="lc-inject-btn" onclick="loadFuelToRocket()" ${canInject ? '' : 'disabled'}>${canInject ? '[ ▶ 연료 주입 실행 ]' : '[ LOX ' + FUEL_LOAD_REQ + ' 필요 ]'}</button></div>`;
+      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 충전</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${canInject ? '' : 'red'}" style="width:${fuelPct}%"></div></div><span class="lc-sp-pct ${canInject ? '' : 'red'}">${storedFuel.toLocaleString()}/${FUEL_LOAD_REQ}</span></div>`;
+      if (canInject) {
+        spHtml += `<div class="lc-sp-row lc-sp-inject-row"><button class="lc-inject-btn" onclick="loadFuelToRocket()">[ ▶ 연료 주입 실행 ]</button></div>`;
+      }
     }
     statusPanel.innerHTML = spHtml;
   }

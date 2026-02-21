@@ -155,60 +155,60 @@ const RESEARCH_BRANCHES = [
 const BUILDING_UPGRADES = {
   housing: [
     { id:'hsg_dorm',       name:'기숙사 증설',          cost:{money:200},                             desc:'인원 상한 +1명',                  wkr:1, repeatable:true, costScale:2.0 },
-    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:600,iron:30},                     desc:'인원 +1명 추가',                  wkr:1, repeatable:true, costScale:2.2, req:'hsg_dorm' },
-    { id:'hsg_township',   name:'★ 타운십 조성',        cost:{money:5000,iron:400},                   desc:'인원 +5명 — 대규모 주거 허브',    wkr:5, premium:true, req:'hsg_welfare' },
+    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:800},                             desc:'인원 +1명 추가',                  wkr:1, repeatable:true, costScale:2.2, req:'hsg_dorm' },
+    { id:'hsg_township',   name:'★ 타운십 조성',        cost:{money:8000},                            desc:'인원 +5명 — 대규모 주거 허브',    wkr:5, premium:true, req:'hsg_welfare' },
     { id:'housing_school', name:'★ 단지 내 학원',       cost:{money:8000},                            desc:'생산 전체 +10%',                  mult:1.10, effect:'specialist_rate', premium:true, req:'hsg_township' },
     { id:'housing_market', name:'★ 단지 내 상가',       cost:{money:5000},                            desc:'자금 +50/s 수익',                 effect:'passive_income', premium:true, req:'hsg_township' },
   ],
   ops_center: [
     { id:'ops_sales',     name:'영업팀 강화',           cost:{money:400},                             desc:'이 건물 수익 +5%',                mult:1.05, repeatable:true, costScale:1.8 },
-    { id:'ops_24h',       name:'★ 24시간 풀가동',      cost:{money:8000,electronics:300},            desc:'이 건물 수익 ×2.0 — 프리미엄',    mult:2.00, premium:true, req:'ops_sales' },
+    { id:'ops_24h',       name:'★ 24시간 풀가동',      cost:{money:12000},                           desc:'이 건물 수익 ×2.0 — 프리미엄',    mult:2.00, premium:true, req:'ops_sales' },
   ],
   supply_depot: [
-    { id:'dep_logistics', name:'물류 최적화',           cost:{money:500,iron:60},                     desc:'이 건물 수익 +8%',                mult:1.08, repeatable:true, costScale:1.7 },
-    { id:'dep_autoware',  name:'★ 자동화 창고',        cost:{money:5000,electronics:200},            desc:'이 건물 수익 ×2.0 — 프리미엄',    mult:2.00, premium:true, req:'dep_logistics' },
+    { id:'dep_logistics', name:'물류 최적화',           cost:{money:500},                             desc:'이 건물 수익 +8%',                mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'dep_autoware',  name:'★ 자동화 창고',        cost:{money:8000},                            desc:'이 건물 수익 ×2.0 — 프리미엄',    mult:2.00, premium:true, req:'dep_logistics' },
   ],
   mine: [
-    { id:'mine_bit',      name:'강화 드릴 비트',        cost:{money:200,iron:30},                     desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.7 },
-    { id:'mine_deep',     name:'심층 채굴 기술',        cost:{money:500,iron:80},                     desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.9, req:'mine_bit' },
-    { id:'mine_robot',    name:'★ 로봇 채굴기',        cost:{money:6000,electronics:300},            desc:'이 건물 철광석 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'mine_deep' },
+    { id:'mine_bit',      name:'강화 드릴 비트',        cost:{money:300},                             desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'mine_deep',     name:'심층 채굴 기술',        cost:{money:800},                             desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.9, req:'mine_bit' },
+    { id:'mine_robot',    name:'★ 로봇 채굴기',        cost:{money:9000},                            desc:'이 건물 철광석 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'mine_deep' },
   ],
   extractor: [
-    { id:'ext_pump',      name:'고속 추출 펌프',        cost:{money:400,iron:60},                     desc:'이 건물 구리 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
-    { id:'ext_filter',    name:'★ 순도 향상 필터',     cost:{money:4000,iron:600},                   desc:'이 건물 구리 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'ext_pump' },
+    { id:'ext_pump',      name:'고속 추출 펌프',        cost:{money:600},                             desc:'이 건물 구리 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'ext_filter',    name:'★ 순도 향상 필터',     cost:{money:8000},                            desc:'이 건물 구리 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'ext_pump' },
   ],
   refinery: [
-    { id:'ref_catalyst',  name:'촉매 반응로',           cost:{money:300,iron:50},                     desc:'이 건물 연료 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
-    { id:'ref_highpress', name:'★ 고압 정제 시스템',   cost:{money:5000,iron:600},                   desc:'이 건물 연료 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'ref_catalyst' },
+    { id:'ref_catalyst',  name:'촉매 반응로',           cost:{money:500},                             desc:'이 건물 연료 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'ref_highpress', name:'★ 고압 정제 시스템',   cost:{money:9000},                            desc:'이 건물 연료 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'ref_catalyst' },
   ],
   cryo_plant: [
-    { id:'cry_heatex',    name:'열교환 최적화',         cost:{money:600,electronics:30},              desc:'이 건물 연료 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
-    { id:'cry_supercon',  name:'★ 초전도 냉각 코일',   cost:{money:6000,electronics:500},            desc:'이 건물 연료 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'cry_heatex' },
+    { id:'cry_heatex',    name:'열교환 최적화',         cost:{money:900},                             desc:'이 건물 연료 생산 +8%',           mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'cry_supercon',  name:'★ 초전도 냉각 코일',   cost:{money:10000},                           desc:'이 건물 연료 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'cry_heatex' },
   ],
   elec_lab: [
-    { id:'elb_smd',       name:'SMD 자동 납땜',         cost:{money:400,iron:60},                     desc:'이 건물 전자부품 생산 +8%',       mult:1.08, repeatable:true, costScale:1.7 },
-    { id:'elb_nano',      name:'★ 나노 패터닝',        cost:{money:5000,electronics:400},            desc:'이 건물 전자부품 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'elb_smd' },
+    { id:'elb_smd',       name:'SMD 자동 납땜',         cost:{money:600},                             desc:'이 건물 전자부품 생산 +8%',       mult:1.08, repeatable:true, costScale:1.7 },
+    { id:'elb_nano',      name:'★ 나노 패터닝',        cost:{money:8000},                            desc:'이 건물 전자부품 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'elb_smd' },
   ],
   fab_plant: [
-    { id:'fab_euv',       name:'EUV 리소그래피',        cost:{money:1500,electronics:100},            desc:'이 건물 전자부품 생산 +8%',       mult:1.08, repeatable:true, costScale:1.8 },
-    { id:'fab_3d',        name:'★ 3D 적층 기술',       cost:{money:12000,electronics:1500},          desc:'이 건물 전자부품 생산 ×2.5 — 프리미엄', mult:2.50, premium:true, req:'fab_euv' },
+    { id:'fab_euv',       name:'EUV 리소그래피',        cost:{money:2500},                            desc:'이 건물 전자부품 생산 +8%',       mult:1.08, repeatable:true, costScale:1.8 },
+    { id:'fab_3d',        name:'★ 3D 적층 기술',       cost:{money:20000},                           desc:'이 건물 전자부품 생산 ×2.5 — 프리미엄', mult:2.50, premium:true, req:'fab_euv' },
   ],
   research_lab: [
     { id:'rsh_equip',     name:'최신 장비 도입',        cost:{money:400},                             desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:1.8 },
-    { id:'rsh_cross',     name:'융합 연구 프로그램',    cost:{money:1000,electronics:60},             desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:2.0, req:'rsh_equip' },
-    { id:'rsh_super',     name:'★ 슈퍼컴퓨터 연결',   cost:{money:12000,electronics:1500},          desc:'이 건물 RP 생산 ×3.0 — 프리미엄', mult:3.00, premium:true, req:'rsh_cross' },
+    { id:'rsh_cross',     name:'융합 연구 프로그램',    cost:{money:1500},                            desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:2.0, req:'rsh_equip' },
+    { id:'rsh_super',     name:'★ 슈퍼컴퓨터 연결',   cost:{money:20000},                           desc:'이 건물 RP 생산 ×3.0 — 프리미엄', mult:3.00, premium:true, req:'rsh_cross' },
   ],
   r_and_d: [
-    { id:'rnd_collab',    name:'외부 연구 협력',        cost:{money:1500,electronics:100},            desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:1.8 },
-    { id:'rnd_patent',    name:'★ 특허 풀 구축',       cost:{money:20000,electronics:2000},          desc:'이 건물 RP 생산 ×3.0 — 프리미엄', mult:3.00, premium:true, req:'rnd_collab' },
+    { id:'rnd_collab',    name:'외부 연구 협력',        cost:{money:2500},                            desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:1.8 },
+    { id:'rnd_patent',    name:'★ 특허 풀 구축',       cost:{money:30000},                           desc:'이 건물 RP 생산 ×3.0 — 프리미엄', mult:3.00, premium:true, req:'rnd_collab' },
   ],
   solar_array: [
-    { id:'sol_hieff',     name:'고효율 패널',           cost:{money:600,electronics:50},              desc:'태양광 보너스 +5%/개 추가\n→ +15%/개로 증가', solarBonus:0.05 },
-    { id:'sol_tracker',   name:'★ 추적 시스템',        cost:{money:3000,electronics:200},            desc:'태양광 보너스 추가 +5%/개\n→ +20%/개로 증가 (프리미엄)', solarBonus:0.05, premium:true, req:'sol_hieff' },
+    { id:'sol_hieff',     name:'고효율 패널',           cost:{money:800},                             desc:'태양광 보너스 +5%/개 추가\n→ +15%/개로 증가', solarBonus:0.05 },
+    { id:'sol_tracker',   name:'★ 추적 시스템',        cost:{money:5000},                            desc:'태양광 보너스 추가 +5%/개\n→ +20%/개로 증가 (프리미엄)', solarBonus:0.05, premium:true, req:'sol_hieff' },
   ],
   launch_pad: [
-    { id:'pad_reinforce', name:'발사대 보강',           cost:{money:800,iron:300},                    desc:'발사 신뢰도 +5%',                 rel:5, repeatable:true, costScale:2.0 },
-    { id:'pad_fuelfeed',  name:'★ 연료 공급 가속',     cost:{money:10000,iron:2500,electronics:500}, desc:'조립 시간 -20% — 프리미엄',       timeMult:0.8, premium:true, req:'pad_reinforce' },
+    { id:'pad_reinforce', name:'발사대 보강',           cost:{money:1500},                            desc:'발사 신뢰도 +5%',                 rel:5, repeatable:true, costScale:2.0 },
+    { id:'pad_fuelfeed',  name:'★ 연료 공급 가속',     cost:{money:25000},                           desc:'조립 시간 -20% — 프리미엄',       timeMult:0.8, premium:true, req:'pad_reinforce' },
   ],
 };
 
