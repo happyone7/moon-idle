@@ -95,8 +95,8 @@ const UPGRADES = [
   // ── Branch S (구조 · STRUCTURE) ──────────────────────────────
   { id:'basic_prod',   name:'기초 용접술',     icon:'S01', cost:{research:15},                       req:null,          time:  60, desc:'광산·생산 시설 잠금 해제',       effect:()=>{},                                                      unlocks:['bld_mine'] },
   { id:'drill',        name:'알루미늄 가공',   icon:'S02', cost:{research:80},                       req:'basic_prod',  time: 180, desc:'철광석 생산 +25%',               effect:()=>{ prodMult.iron=(prodMult.iron||1)*1.25; },              unlocks:[] },
-  { id:'alloy',        name:'CFRP 적층',       icon:'S03', cost:{research:350,iron:600},             req:'drill',       time: 480, desc:'부품 비용 -20%',                 effect:()=>{ partCostMult*=0.8; },                                  unlocks:['bld_r_and_d'] },
-  { id:'rocket_eng',   name:'티타늄 가공',     icon:'S04', cost:{research:900,iron:800},             req:'alloy',       time: 720, desc:'조립동 해금 + 로켓 제조 시작',   effect:()=>{},                                                      unlocks:['tab_assembly','bld_launch_pad'] },
+  { id:'alloy',        name:'CFRP 적층',       icon:'M02', cost:{research:600,iron:400},             req:'rocket_eng',  time: 480, desc:'부품 비용 -20%',                 effect:()=>{ partCostMult*=0.8; },                                  unlocks:['bld_r_and_d'] },
+  { id:'rocket_eng',   name:'로켓 조립 공학', icon:'M01', cost:{research:300},                      req:null,          time: 300, desc:'조립동 해금 + 로켓 제조 시작',   effect:()=>{},                                                      unlocks:['tab_assembly','bld_launch_pad'] },
   { id:'copper_mining',name:'구리 채굴 기술',  icon:'S05', cost:{research:500,moonstone:1},          req:'drill',       time: 480, desc:'구리 채굴기 해금 — MK2+ 필수 원자재', effect:()=>{},                                                  unlocks:['bld_extractor'] },
   // ── Branch P (추진 · PROPULSION) ─────────────────────────────
   { id:'fuel_chem',    name:'고압 연소실 I',   icon:'P01', cost:{research:150,iron:150},             req:null,          time: 240, desc:'연료 정제 시설 해금',             effect:()=>{},                                                      unlocks:['bld_refinery'] },
@@ -129,7 +129,7 @@ const UPGRADES = [
 // Research branch definitions for column layout
 const RESEARCH_BRANCHES = [
   { id:'R', label:'채굴·생산', nodes:['basic_prod','drill','copper_mining'] },
-  { id:'M', label:'제조·조립', nodes:['alloy','rocket_eng'] },
+  { id:'M', label:'제조·조립', nodes:['rocket_eng','alloy'] },
   { id:'P', label:'추진',      nodes:['fuel_chem','catalyst','lightweight','fusion'] },
   { id:'A', label:'항전',      nodes:['electronics_basics','microchip','reliability','automation'] },
   { id:'T', label:'열보호',    nodes:['hire_worker_1','launch_ctrl','mission_sys','multipad'] },
