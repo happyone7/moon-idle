@@ -1313,7 +1313,6 @@ function specClick(bldId, specId) {
     notify('배치 직원이 없습니다 — 먼저 직원을 고용하세요', 'red');
     return;
   }
-  const role = ((typeof SPECIALIST_ROLES !== 'undefined' && SPECIALIST_ROLES[bldId]) || []).find(r => r.id === specId);
   notify(`${role ? role.name : specId} 전직 완료`, 'green');
   playSfx('triangle', 600, 0.1, 0.04, 800);
   const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
