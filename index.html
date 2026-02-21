@@ -610,9 +610,9 @@ body.tab-research #pane-research {
 .world-bld.active-bld { color: var(--green); text-shadow: 0 0 8px #00e67680; }
 
 /* ── Building state classes ── */
-.world-bld.wb-state-ghost  { opacity: 0.38; color: #1a3020; cursor: pointer; animation: ghost-pulse 3s ease-in-out infinite; }
-.world-bld.wb-state-ghost:hover { opacity: 0.65; color: var(--green-dim); animation: none; }
-@keyframes ghost-pulse { 0%,100% { opacity:0.30; } 50% { opacity:0.50; } }
+.world-bld.wb-state-ghost  { opacity: 0.62; color: #2a5c3a; cursor: pointer; animation: ghost-pulse 2.5s ease-in-out infinite; }
+.world-bld.wb-state-ghost:hover { opacity: 0.90; color: var(--green-dim); animation: none; text-shadow: 0 0 8px rgba(0,230,118,0.3); }
+@keyframes ghost-pulse { 0%,100% { opacity:0.50; } 50% { opacity:0.72; } }
 .world-bld.wb-state-idle   { opacity: 0.60; color: #2a5a38; }
 .world-bld.wb-state-active { opacity: 1; color: var(--green); text-shadow: 0 0 8px rgba(0,230,118,0.55); }
 .world-bld.wb-state-active:hover { text-shadow: 0 0 16px #00e676cc; }
@@ -645,6 +645,7 @@ body.tab-research #pane-research {
 /* Worker dots */
 .wkr {
   position: absolute;
+  display: inline-block;
   color: var(--green);
   font-size: 11px;
   line-height: 1;
@@ -652,6 +653,22 @@ body.tab-research #pane-research {
   bottom: 6px;
   pointer-events: none;
 }
+/* 워커 아이콘 머리 — 배치/전문화 시 건물 아이콘 표시 */
+.wkr-head {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 1px;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 9px;
+  line-height: 1;
+  transition: opacity 0.3s;
+}
+.wkr-head:empty { display: none; }
+/* 전문가: 골드 글로우 강조 */
+.wkr-head-spec .wk-icon { filter: brightness(1.8); text-shadow: 0 0 5px gold; }
 
 /* ===========================
    BUILDING HOVER OVERLAY
@@ -1698,9 +1715,9 @@ body.tab-production .world-bld:hover { transform: scale(1.05); filter: brightnes
 .mg-next { font-size: 10px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
 
 /* ── 미건설 건물 ghost 표시 ── */
-.ghost-bld { opacity: 0.5; filter: grayscale(0.7); border: 1px dashed #1a4a2a !important; }
-.ghost-bld .wb-name { color: #2a5a3a !important; font-size: 10px; }
-.ghost-bld:hover { opacity: 0.7; border-color: var(--green-dim) !important; }
+.ghost-bld { filter: grayscale(0.15); border: 1px dashed #2a6a3a !important; }
+.ghost-bld .wb-name { color: #3a7a4a !important; font-size: 10px; }
+.ghost-bld:hover { border-color: var(--green-dim) !important; }
 
 /* ── 활성 건물 강조 이펙트 ── */
 .world-bld.active-bld {

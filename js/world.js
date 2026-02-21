@@ -945,10 +945,12 @@ function openBldOv(bld, el, keepPosition = false) {
     }
   });
 
-  // ── 전문화 서브패널 (연구소/운영센터만) ─────────────────────
+  // ── 전문화 서브패널 (해금된 역할이 있는 경우에만) ──────────
   const _specRoles = typeof SPECIALIST_ROLES !== 'undefined' && SPECIALIST_ROLES[bld.id];
-  if (_specRoles && cnt >= 1) {
-    // spec panel opened via rAF so bld-ov is positioned first
+  const _hasUnlocked = _specRoles && _specRoles.some(
+    r => !r.unlockResearch || !!(gs.upgrades && gs.upgrades[r.unlockResearch])
+  );
+  if (_hasUnlocked && cnt >= 1) {
     requestAnimationFrame(() => openSpecPanel(bld));
   } else {
     closeSpecPanel();
@@ -1253,34 +1255,25 @@ function openSpecPanel(bld) {
   const wkIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS[bld.id]) || '';
   const specs = (gs.specialists && gs.specialists[bld.id]) || {};
 
+  // 해금된 역할만 표시 — 미해금은 패널 자체를 숨김
+  const unlockedRoles = roles.filter(r => !r.unlockResearch || !!(gs.upgrades && gs.upgrades[r.unlockResearch]));
+  if (unlockedRoles.length === 0) { closeSpecPanel(); return; }
+
   let html = `<div class="sp2-head">${wkIcon}&nbsp;직원 전문화</div><div class="sp2-body">`;
-  roles.forEach(r => {
+  unlockedRoles.forEach(r => {
     const count = specs[r.id] || 0;
-    const isUnlocked = !r.unlockResearch || !!(gs.upgrades && gs.upgrades[r.unlockResearch]);
-    const canPromote = isUnlocked && assigned >= 1;
+    const canPromote = assigned >= 1;
     const descHtml = r.desc.replace(/\n/g, '<br>');
-    if (!isUnlocked) {
-      // 미해금: 잠금 상태 표시
-      html += `<div class="sp2-role sp2-locked">
-        <div class="sp2-role-icon ${r.iconCls}" style="opacity:0.3"></div>
-        <div class="sp2-role-info">
-          <div class="sp2-role-name" style="color:var(--locked)">${r.name}</div>
-          <div class="sp2-role-desc" style="color:var(--locked)">연구 필요: <em>${r.unlockResearch}</em></div>
-          <div class="sp2-cost" style="color:var(--locked)">[연구탭에서 해금]</div>
+    html += `<div class="sp2-role">
+      <div class="sp2-role-icon ${r.iconCls}"></div>
+      <div class="sp2-role-info">
+        <div class="sp2-role-name">${r.name} <span class="sp2-count">(${count}명)</span></div>
+        <div class="sp2-role-desc">${descHtml}</div>
+        <div class="sp2-cost">${wkIcon}&thinsp;×1
+          <button class="sp2-btn${canPromote ? '' : ' dis'}" onclick="specClick('${bld.id}','${r.id}')">[전직]</button>
         </div>
-      </div>`;
-    } else {
-      html += `<div class="sp2-role">
-        <div class="sp2-role-icon ${r.iconCls}"></div>
-        <div class="sp2-role-info">
-          <div class="sp2-role-name">${r.name} <span class="sp2-count">(${count}명)</span></div>
-          <div class="sp2-role-desc">${descHtml}</div>
-          <div class="sp2-cost">${wkIcon}&thinsp;×1
-            <button class="sp2-btn${canPromote ? '' : ' dis'}" onclick="specClick('${bld.id}','${r.id}')">[전직]</button>
-          </div>
-        </div>
-      </div>`;
-    }
+      </div>
+    </div>`;
   });
   html += `</div><div class="sp2-avail">배치 직원: ${assigned}명</div>`;
   panel.innerHTML = html;
@@ -1369,13 +1362,49 @@ function openGhostOv(bld, el) {
 }
 
 // ─── BUILDING ANIMATIONS ──────────────────────────────────
+const _BUILD_GLITCH = '▓▒░█╔╗╚╝║═│┌┐└┘├┤┬┴┼*#+@$%&~^±';
 function _triggerBuildAnim(bid) {
   setTimeout(() => {
     const pre = document.querySelector('.world-bld[data-bid="' + bid + '"]');
-    if (pre) {
-      pre.classList.add('wb-anim-build');
-      setTimeout(() => pre.classList.remove('wb-anim-build'), 1000);
-    }
+    if (!pre) return;
+
+    const target = pre.textContent;
+    const rows = target.split('\n');
+    const n = rows.length;
+    const totalFrames = 20;
+    const frameDur = 48; // ms — 약 960ms 총 애니메이션
+    let frame = 0;
+
+    pre.classList.add('wb-anim-build');
+
+    const iv = setInterval(() => {
+      frame++;
+      if (frame >= totalFrames) {
+        pre.textContent = target;
+        pre.classList.remove('wb-anim-build');
+        clearInterval(iv);
+        return;
+      }
+
+      // 아래줄부터 위로 순차 해독 (건설 상향 효과)
+      const result = rows.map((row, ri) => {
+        const rowDelay = (n - 1 - ri) / n * 0.45; // 아래줄이 먼저 해독됨
+        const progress = Math.max(0, Math.min(1, (frame / totalFrames - rowDelay) / 0.65));
+        if (progress >= 1) return row;
+        if (progress <= 0) {
+          // 아직 미해독: 전체 글리치
+          return row.split('').map(c => c === ' ' ? ' ' : _BUILD_GLITCH[Math.floor(Math.random() * _BUILD_GLITCH.length)]).join('');
+        }
+        // 부분 해독: 왼쪽부터 실제 문자로, 오른쪽은 글리치
+        const revealed = Math.floor(row.length * progress);
+        return row.split('').map((c, ci) => {
+          if (ci < revealed || c === ' ') return c;
+          return _BUILD_GLITCH[Math.floor(Math.random() * _BUILD_GLITCH.length)];
+        }).join('');
+      }).join('\n');
+
+      pre.textContent = result;
+    }, frameDur);
   }, 60);
 }
 
@@ -1405,6 +1434,7 @@ function closeBldOv() {
 
 // ─── WORKER DOTS ─────────────────────────────────────────────
 let _workerDots = [];
+let _wkrIconTick = 0;
 
 function syncWorkerDots() {
   const layer = document.getElementById('workers-layer');
@@ -1418,13 +1448,59 @@ function syncWorkerDots() {
   while (_workerDots.length < total) {
     const el = document.createElement('span');
     el.className = 'wkr';
-    el.textContent = '●';
+    // 아이콘 머리 (배치/전문화 시 건물 아이콘 표시)
+    const headEl = document.createElement('span');
+    headEl.className = 'wkr-head';
+    el.appendChild(headEl);
+    el.appendChild(document.createTextNode('●'));
     const x = 80 + Math.random() * 2600;
     el.style.left = Math.round(x) + 'px';
     layer.appendChild(el);
     const spd = 0.2 + Math.random() * 0.4;
-    _workerDots.push({ el, x, vx: Math.random() < 0.5 ? spd : -spd });
+    _workerDots.push({ el, headEl, x, vx: Math.random() < 0.5 ? spd : -spd });
   }
+  _updateWorkerDotIcons();
+}
+
+// 배치/전문화 상태에 따라 각 dot 아이콘 갱신
+function _updateWorkerDotIcons() {
+  if (!_workerDots.length || typeof BUILDINGS === 'undefined' || typeof BLD_STAFF_ICONS === 'undefined') return;
+
+  // 아이콘 목록 구성: 전문가 먼저(골드), 일반 배치 직원, 나머지는 빈칸
+  const iconList = []; // { html, isSpec }
+
+  // 전문가 (specialists)
+  if (gs.specialists && typeof SPECIALIST_ROLES !== 'undefined') {
+    Object.entries(gs.specialists).forEach(([bldId, specMap]) => {
+      const icon = BLD_STAFF_ICONS[bldId] || '';
+      Object.values(specMap || {}).forEach(cnt => {
+        for (let i = 0; i < (cnt || 0); i++) iconList.push({ html: icon, isSpec: true });
+      });
+    });
+  }
+
+  // 일반 배치 직원 (전문가 수 제외)
+  BUILDINGS.forEach(b => {
+    const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
+    const specCount = gs.specialists && gs.specialists[b.id]
+      ? Object.values(gs.specialists[b.id]).reduce((a, v) => a + v, 0)
+      : 0;
+    const regular = Math.max(0, assigned - specCount);
+    const icon = BLD_STAFF_ICONS[b.id] || '';
+    for (let i = 0; i < regular; i++) iconList.push({ html: icon, isSpec: false });
+  });
+
+  _workerDots.forEach((d, idx) => {
+    if (!d.headEl) return;
+    const entry = iconList[idx];
+    if (entry && entry.html) {
+      d.headEl.innerHTML = entry.html;
+      d.headEl.className = 'wkr-head' + (entry.isSpec ? ' wkr-head-spec' : '');
+    } else {
+      d.headEl.innerHTML = '';
+      d.headEl.className = 'wkr-head';
+    }
+  });
 }
 
 function _tickWorkers() {
@@ -1434,6 +1510,8 @@ function _tickWorkers() {
     if (d.x > 3100) { d.x = 3100; d.vx = -Math.abs(d.vx) * (0.85 + Math.random() * 0.3); }
     d.el.style.left = Math.round(d.x) + 'px';
   });
+  // 아이콘 주기적 갱신 (~480ms마다)
+  if (++_wkrIconTick % 6 === 0) _updateWorkerDotIcons();
 }
 
 function hideTechTip() {
