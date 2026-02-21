@@ -468,6 +468,9 @@ function ensureAudio() {
   return audioCtx;
 }
 
+// SFX 전체 볼륨 배율 — BGM(0.2) 대비 SFX가 너무 작아서 보정
+const SFX_GLOBAL_VOL = 5.0;
+
 function playSfx(type='sine', freq=440, dur=0.08, vol=0.05, targetFreq=null) {
   if (!gs.settings.sound) return;
   const ctx = ensureAudio();
@@ -479,7 +482,7 @@ function playSfx(type='sine', freq=440, dur=0.08, vol=0.05, targetFreq=null) {
     osc.type = type;
     osc.frequency.setValueAtTime(freq, now);
     if (targetFreq) osc.frequency.exponentialRampToValueAtTime(targetFreq, now + dur);
-    gain.gain.setValueAtTime(vol, now);
+    gain.gain.setValueAtTime(Math.min(1.0, vol * SFX_GLOBAL_VOL), now);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
     osc.connect(gain);
     gain.connect(ctx.destination);

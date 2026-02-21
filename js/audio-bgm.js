@@ -17,7 +17,7 @@
 // ============================================================
 
 const BGM = {
-  volume: 0.6,
+  volume: 0.2,
   playing: false,
 
   _phase: null,          // 'early' | 'mid' | 'late' | 'post_moon'

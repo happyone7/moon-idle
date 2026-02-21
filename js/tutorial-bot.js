@@ -57,6 +57,12 @@ const tutBot = (() => {
       // 한 글자씩 타이핑
       _charIdx++;
       textEl.textContent = msg.text.slice(0, _charIdx);
+      // 로봇 삐빅 소리 — 2글자마다 1회, 공백 제외
+      const ch = msg.text[_charIdx - 1];
+      if (ch !== ' ' && _charIdx % 2 === 0 && typeof playSfx === 'function') {
+        const freq = 1100 + Math.random() * 400; // 1100~1500Hz 랜덤 피치
+        playSfx('square', freq, 0.022, 0.012);   // SFX_GLOBAL_VOL(5x) 적용 시 실효 0.06
+      }
       const jitter = msg.delay + (Math.random() * 16 - 8);
       _timer = setTimeout(_tick, jitter);
     } else {
