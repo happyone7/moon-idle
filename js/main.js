@@ -138,6 +138,8 @@ function renderAll() {
   if (typeof updateTopBarEra === 'function') updateTopBarEra(); // P4-6
   // BGM 페이즈 갱신 (unlock 상태 변화 반영)
   if (typeof BGM !== 'undefined' && BGM.playing) BGM.refreshPhase();
+  // LUNA-7 튜토리얼 봇 업데이트
+  if (typeof tutBot !== 'undefined') tutBot.update();
   // document.title 동적 업데이트
   _updateDocTitle();
 }
