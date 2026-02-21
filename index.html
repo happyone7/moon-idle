@@ -1228,162 +1228,115 @@ body.tab-research #pane-research {
 .bom-sub td:first-child { padding-left: 12px; }
 
 /* ===========================
-   LAUNCH TAB — V7D 3-COLUMN
+   LAUNCH TAB — SPACEX STYLE
    =========================== */
-/* pane-launch 활성화 시 flex 3컬럼 */
-#pane-launch.active { display: flex; height: 100%; padding: 0; overflow: hidden; }
+#pane-launch.active { display: flex; flex-direction: column; height: 100%; padding: 0; overflow: hidden; }
 
-/* 컬럼 공통 */
-.lc-col { overflow-y: auto; overflow-x: hidden; flex-shrink: 0; font-size: var(--fs-sm); }
-.lc-col::-webkit-scrollbar { width: 3px; }
-.lc-col::-webkit-scrollbar-thumb { background: var(--green-dim); }
-.lc-col-left   { flex: 0 0 28%; max-width: 28%; border-right: 1px solid var(--green-dim); background: var(--panel-bg); }
-.lc-col-center { flex: 0 0 44%; max-width: 44%; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
-.lc-col-right  { flex: 0 0 28%; max-width: 28%; border-left: 1px solid var(--green-dim); background: var(--panel-bg); }
+/* 헤더 바 */
+#lc-header { display: flex; align-items: center; justify-content: space-between; padding: 6px 16px; background: var(--panel-bg); border-bottom: 2px solid var(--green-dim); flex-shrink: 0; }
+#lc-mission-id { color: var(--green-mid); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; }
+#lc-mission-id span { color: var(--green); text-shadow: var(--glow); }
+#lc-t-timer { font-size: 20px; font-weight: bold; color: var(--amber); font-family: 'Courier New', Consolas, monospace; letter-spacing: .08em; text-shadow: 0 0 10px var(--amber); }
+#lc-status-text { color: var(--green-dim); font-size: 10px; letter-spacing: .15em; text-align: right; min-width: 120px; }
 
-/* LC 패널 (v7d 스타일) */
-.lc-panel { padding: 8px 10px; border-bottom: 1px solid var(--green-dim); }
-.lc-pnl-title { color: var(--green-dim); font-size: var(--fs-sm); letter-spacing: .15em; text-transform: uppercase; margin-bottom: 5px; border-bottom: 1px solid var(--green-dim); padding-bottom: 3px; }
-.lc-pnl-title.green { color: var(--green); text-shadow: var(--glow); border-bottom-color: var(--green-mid); }
-.lc-pnl-title.amber { color: var(--amber); border-bottom-color: #5a3c00; }
-.lc-pnl-title.cyan { color: #00cfff; border-bottom-color: #004466; }
+/* 메인 영역 */
+#lc-main-area { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 
-/* 온보딩 퀘스트 패널 */
-.qs-section-hd { color: var(--green-dim); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; padding: 6px 0 3px; border-bottom: 1px solid var(--green-deep); margin-bottom: 4px; }
-.qs-sub-hd { margin-top: 8px; border-top: 1px solid var(--green-dim); padding-top: 6px; }
-.qs-cnt { color: var(--amber); margin-left: 6px; }
-/* Main mission row */
-.lc-quest-main { margin-bottom: 0; }
-.lc-quest-main-row { display: flex; align-items: flex-start; gap: 6px; padding: 4px 0; }
-.qs-main-text { flex: 1; color: var(--amber); font-size: 10px; line-height: 1.5; }
-/* Complete state */
-.lc-quest-main-done { padding: 4px 0; }
-.lc-quest-main-done .lc-quest-main-title { color: var(--green); font-size: 10px; letter-spacing: .1em; text-shadow: var(--glow); margin-bottom: 3px; }
-.lc-quest-main-done .lc-quest-main-desc  { color: var(--green-dim); font-size: 10px; line-height: 1.5; }
-/* Sub missions */
-.lc-quest-subs { display: flex; flex-direction: column; }
-.lc-quest-sub  { display: flex; align-items: center; gap: 5px; font-size: 10px; padding: 3px 0; border-bottom: 1px solid var(--green-deep); }
-.lc-quest-sub:last-child { border-bottom: none; }
-/* Bracket icons (ASCII style, matches building icons) */
-.qs-icon-bracket { font-size: 10px; flex-shrink: 0; min-width: 38px; color: var(--green-dim); font-family: 'Courier New', Consolas, monospace; letter-spacing: 0; opacity: 0.65; }
-.qs-icon-bracket.done { color: var(--green); text-shadow: var(--glow); opacity: 1; }
-.qs-text { flex: 1; color: var(--text-muted); font-size: 10px; }
-.qs-text.done { color: var(--green-dim); text-decoration: line-through; opacity: 0.7; }
-.qs-chk { font-size: 12px; flex-shrink: 0; min-width: 14px; text-align: right; }
-.qs-chk.done { color: var(--green); text-shadow: var(--glow); }
-.qs-chk.todo { color: #334433; }
-/* 완료된 서브미션 행 전체 dim */
-.lc-quest-sub.sub-done { opacity: 0.55; border-bottom-color: #060f06; }
-.qs-all-ready { color: var(--amber); font-size: 10px; margin-top: 6px; letter-spacing: .08em; border-top: 1px solid #5a3c00; padding-top: 4px; }
-/* 진행 미니 바 */
-.qs-progress-bar  { height: 2px; background: var(--green-dim); margin: 2px 0 4px; overflow: hidden; }
-.qs-progress-fill { height: 100%; background: var(--green); box-shadow: var(--glow); transition: width 0.4s ease; }
+/* 로켓 존 */
+#lc-rocket-zone { flex: 0 0 55%; border-right: 1px solid var(--green-dim); overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: var(--bg); }
+#lc-rocket-zone::-webkit-scrollbar { width: 3px; }
+#lc-rocket-zone::-webkit-scrollbar-thumb { background: var(--green-dim); }
+#lc-pre-launch { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.lc-rocket-disp { padding: 10px 0 6px; text-align: center; width: 100%; }
+.lc-rocket-art  { display: inline-block; text-align: left; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; }
 
-/* GO/NO-GO 체크리스트 */
-.chk-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #0d2010; font-size: 11px; }
-.chk-row:last-child { border-bottom: none; }
-.chk-name  { color: #8aaa8a; flex: 1; }
-.chk-badge { font-size: 10px; padding: 1px 6px; border: 1px solid var(--green-mid); color: var(--green); background: rgba(0,230,118,.07); text-shadow: var(--glow); white-space: nowrap; }
-.chk-badge.nogo { border-color: var(--red); color: var(--red); background: rgba(255,23,68,.08); text-shadow: none; }
-.chk-all-go { background: rgba(0,230,118,.07); border: 1px solid var(--green); padding: 5px 8px; text-align: center; color: var(--green); font-size: 11px; letter-spacing: .1em; text-shadow: var(--glow); margin-top: 6px; animation: pulse-green 2.5s ease-in-out infinite; }
-.chk-no-go  { background: rgba(255,23,68,.04); border: 1px solid #3a0a10; padding: 5px 8px; text-align: center; color: #8a3a3a; font-size: 11px; letter-spacing: .1em; margin-top: 6px; }
-@keyframes pulse-green { 0%,100% { box-shadow: 0 0 4px #00e67660; } 50% { box-shadow: 0 0 14px #00e676bb, 0 0 28px #00e67640; } }
+/* 텔레메트리 존 */
+#lc-telem-zone { flex: 0 0 45%; padding: 10px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: var(--panel-bg); }
+#lc-telem-zone::-webkit-scrollbar { width: 3px; }
+#lc-telem-zone::-webkit-scrollbar-thumb { background: var(--green-dim); }
 
-/* 데이터 행 */
-.lc-drow     { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 2px 0; color: #8aaa8a; }
-.lc-drow .v  { color: var(--green); text-shadow: var(--glow); }
-.lc-drow .va { color: var(--amber); }
+/* SpaceX 게이지 블록 */
+.lc-gauge-block { background: var(--bg); border: 1px solid var(--green-dim); padding: 8px 12px; }
+.lc-gauge-title { font-size: 10px; color: var(--green-dim); letter-spacing: .22em; text-transform: uppercase; margin-bottom: 4px; }
+.lc-gauge-readout { display: flex; align-items: baseline; gap: 6px; margin-bottom: 5px; }
+.lc-gauge-readout > span:first-child { font-size: 32px; font-weight: bold; color: var(--white, #e8ffe8); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px var(--green); }
+.lc-gauge-unit { font-size: 12px; color: var(--green-mid); }
+.lc-gauge-bar-track { height: 3px; background: rgba(26,92,52,.35); overflow: hidden; }
+.lc-gauge-bar-fill  { height: 100%; background: var(--green); box-shadow: 0 0 4px var(--green); width: 0%; transition: width .25s; }
 
-/* 중앙: pre-launch vs anim zone */
-#lc-pre-launch { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
-#lc-anim-zone  { flex: 1; overflow-y: auto; display: none; padding: 8px 12px; }
-#lc-anim-zone.active { display: block; }
-
-/* 로켓 디스플레이 */
-.lc-rocket-disp { padding: 12px 0 8px; text-align: center; border-bottom: 1px solid var(--green-dim); flex-shrink: 0; }
-.lc-rocket-art { display: inline-block; text-align: left; font-size: 11px; line-height: 1.35; white-space: pre; letter-spacing: 0; }
-
-/* 조립 현황 슬롯 (LEFT 컬럼) */
-.lc-asm-slot { padding: 6px; margin-bottom: 6px; border: 1px solid var(--green-dim); }
-.lc-asm-slot-hd { font-size: 10px; color: var(--green-dim); letter-spacing: .08em; margin-bottom: 4px; }
-.lc-asm-ready { border-color: var(--green); background: rgba(0,230,118,.04); }
-.lc-asm-busy  { border-color: var(--amber); }
-.lc-asm-prog-wrap { height: 3px; background: var(--green-deep); border-radius: 2px; overflow: hidden; margin-bottom: 2px; }
-.lc-asm-prog-fill { height: 100%; background: var(--amber); border-radius: 2px; }
-.lc-parts-status { border-top: 1px solid var(--green-dim); margin-top: 6px; padding-top: 6px; }
-
-/* 발사 버튼 상태별 스타일 */
-#lc-btn-launch.lc-btn-launch-standby { opacity: 0.45; border-style: dashed; animation: none; color: var(--green-dim); }
-#lc-btn-launch.lc-btn-launch-go { opacity: 1; border-style: solid; animation: pulse-amber 3s ease-in-out infinite; color: var(--amber); }
-
-/* 상태 바 */
-.lc-sbar-wrap { padding: 8px 12px; border-bottom: 1px solid var(--green-dim); background: var(--panel-bg); flex-shrink: 0; }
-.lc-sbar-row  { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.lc-sbar-lbl  { width: 60px; font-size: 10px; color: var(--green-mid); flex-shrink: 0; }
-.lc-sbar-track { flex: 1; height: 8px; background: rgba(26,92,52,.35); border: 1px solid var(--green-dim); overflow: hidden; }
-.lc-sbar-fill  { height: 100%; background: var(--green); box-shadow: 0 0 4px var(--green); transition: width .4s; }
-.lc-sbar-fill.amber { background: var(--amber); box-shadow: 0 0 4px var(--amber); }
-.lc-sbar-fill.red   { background: var(--red);   box-shadow: 0 0 4px var(--red); }
-.lc-sbar-pct  { width: 34px; text-align: right; font-size: 10px; color: var(--green); flex-shrink: 0; }
-
-/* 실패 확률 분석 */
-.lc-fail-wrap { padding: 8px 12px; border-bottom: 1px solid var(--green-dim); flex-shrink: 0; }
-.lc-fail-row  { display: flex; align-items: center; gap: 5px; margin-bottom: 4px; font-size: 10px; }
-.lc-fail-name { width: 80px; color: #8aaa8a; flex-shrink: 0; }
-.lc-fail-bar  { flex: 1; color: var(--red); font-size: 11px; letter-spacing: -1px; overflow: hidden; white-space: nowrap; }
-.lc-fail-pct  { width: 30px; text-align: right; color: var(--amber); flex-shrink: 0; }
-.lc-fail-lvl  { font-size: 10px; padding: 0 4px; border: 1px solid; flex-shrink: 0; }
-.lc-fail-lvl.low  { border-color: var(--green-dim); color: var(--green-mid); }
-.lc-fail-lvl.mid  { border-color: #5a3c00; color: var(--amber); }
-.lc-fail-lvl.high { border-color: var(--red); color: var(--red); }
+/* 미션 파라미터 그리드 */
+#lc-mission-params { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
+.lc-mp-block { background: var(--bg); border: 1px solid var(--green-dim); padding: 6px 10px; }
+.lc-mp-val   { font-size: 16px; font-weight: bold; color: var(--green); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; }
+.lc-mp-val.amber { color: var(--amber); }
+.lc-mp-val.red   { color: var(--red); }
+.lc-mp-label { font-size: 9px; color: var(--green-dim); letter-spacing: .1em; text-transform: uppercase; margin-top: 1px; }
 
 /* 발사 커밋 박스 */
-#lc-commit-box { margin: 10px 12px 12px; border: 2px solid var(--amber); padding: 12px; background: #000d01; animation: pulse-amber 3s ease-in-out infinite; flex-shrink: 0; }
+#lc-commit-box { margin: 8px 16px 12px; border: 2px solid var(--amber); padding: 10px 12px; background: #000d01; animation: pulse-amber 3s ease-in-out infinite; width: calc(100% - 32px); box-sizing: border-box; flex-shrink: 0; }
 @keyframes pulse-amber { 0%,100% { box-shadow: 0 0 4px #ffab0060; border-color: var(--amber); } 50% { box-shadow: 0 0 20px #ffab00cc, 0 0 40px #ffab0040; border-color: #ffd050; } }
-.lc-commit-hd    { color: var(--amber); font-size: 12px; letter-spacing: .15em; text-shadow: 0 0 8px #ffab0080; text-align: center; margin-bottom: 10px; }
-.lc-commit-stats { display: flex; justify-content: space-around; margin-bottom: 12px; }
+.lc-commit-hd    { color: var(--amber); font-size: 11px; letter-spacing: .15em; text-shadow: 0 0 8px #ffab0080; text-align: center; margin-bottom: 8px; }
+.lc-commit-stats { display: flex; justify-content: space-around; margin-bottom: 10px; }
 .lc-cs           { text-align: center; }
-.lc-cs-val       { display: block; font-size: 20px; letter-spacing: .05em; margin-bottom: 2px; }
+.lc-cs-val       { display: block; font-size: 18px; letter-spacing: .05em; margin-bottom: 2px; }
 .lc-cs-val.green { color: var(--green); text-shadow: var(--glow-strong); }
 .lc-cs-val.amber { color: var(--amber); text-shadow: 0 0 8px #ffab0080; }
 .lc-cs-val.red   { color: var(--red);   text-shadow: 0 0 8px #ff174480; }
 .lc-cs-label     { font-size: 10px; color: var(--green-dim); letter-spacing: .1em; }
-#lc-btn-launch { display: block; width: 100%; padding: 10px 0; background: rgba(255,171,0,.08); border: 2px solid var(--amber); color: var(--amber); font-family: var(--font); font-size: 15px; letter-spacing: .2em; cursor: pointer; text-shadow: 0 0 8px #ffab0080; transition: background .2s; margin-bottom: 7px; }
+#lc-btn-launch { display: block; width: 100%; padding: 10px 0; background: rgba(255,171,0,.08); border: 2px solid var(--amber); color: var(--amber); font-family: var(--font); font-size: 14px; letter-spacing: .2em; cursor: pointer; text-shadow: 0 0 8px #ffab0080; transition: background .2s; margin-bottom: 6px; }
 #lc-btn-launch:hover:not(:disabled) { background: rgba(255,171,0,.2); }
 #lc-btn-launch:disabled { opacity: .5; cursor: not-allowed; }
-#lc-btn-abort  { display: block; width: 100%; padding: 6px 0; background: rgba(255,23,68,.07); border: 1px solid var(--red); color: var(--red); font-family: var(--font); font-size: 11px; letter-spacing: .15em; cursor: pointer; transition: background .2s; }
+#lc-btn-abort  { display: block; width: 100%; padding: 5px 0; background: rgba(255,23,68,.07); border: 1px solid var(--red); color: var(--red); font-family: var(--font); font-size: 11px; letter-spacing: .15em; cursor: pointer; transition: background .2s; }
 #lc-btn-abort:hover { background: rgba(255,23,68,.16); }
 
-/* 이력 테이블 (우측) */
-.lc-hist-table    { width: 100%; border-collapse: collapse; font-size: 10px; }
-.lc-hist-table th { color: var(--green-dim); padding: 3px 5px; text-align: left; border-bottom: 1px solid var(--green-dim); }
-.lc-hist-table td { padding: 4px 5px; border-bottom: 1px solid #0d1a0d; color: #8aaa8a; vertical-align: top; }
+/* 발사 버튼 상태별 */
+#lc-btn-launch.lc-btn-launch-standby { opacity: 0.45; border-style: dashed; animation: none; color: var(--green-dim); }
+#lc-btn-launch.lc-btn-launch-go { opacity: 1; border-style: solid; animation: pulse-amber 3s ease-in-out infinite; color: var(--amber); }
 
-/* 통계 행 (우측) */
-.lc-stat-row      { display: flex; justify-content: space-between; padding: 2px 0; font-size: 10px; color: #8aaa8a; }
-.lc-stat-row .sv  { color: var(--green); }
-.lc-stat-row .sva { color: var(--amber); }
-
-/* 기존 animation 클래스 유지 */
-.telemetry-wrap { border: var(--border); background: var(--bg); padding: 12px 14px; font-size: 13px; min-height: 120px; }
-.telem-line { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--green-deep); color: var(--green-mid); }
-.telem-time  { color: var(--green-mid); min-width: 55px; font-size: 12px; }
-.telem-event { min-width: 140px; color: var(--green); text-transform: uppercase; font-size: 12px; }
-.telem-bar   { flex: 1; height: 6px; border: 1px solid var(--green-dim); }
-.telem-bar-fill { height: 100%; background: var(--green-mid); transition: width 0.5s; }
-.telem-pct   { color: var(--green); font-size: 12px; min-width: 38px; text-align: right; }
-.launch-anim-wrap { text-align: center; padding: 14px; min-height: 150px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); }
-.launch-rocket-ascii { font-size: 12px; white-space: pre; color: var(--green); display: inline-block; }
+/* anim zone */
+#lc-anim-zone  { width: 100%; display: none; flex-direction: column; align-items: center; }
+#lc-anim-zone.active { display: flex; }
+.launch-anim-wrap { text-align: center; padding: 14px; min-height: 160px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); width: 100%; box-sizing: border-box; }
+.launch-rocket-ascii { font-size: 13px; white-space: pre; color: var(--green); display: inline-block; }
 .launch-rocket-ascii.launching { animation: rocket-launch 3s ease-in forwards; }
 @keyframes rocket-launch { 0% { transform: translateY(0); } 100% { transform: translateY(-400px); } }
 .exhaust-anim { font-size: 12px; white-space: pre; color: var(--amber); text-shadow: 0 0 6px var(--amber); display: inline-block; animation: exhaust-flicker 0.15s step-start infinite; }
 @keyframes exhaust-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-.launch-result { display: none; border: 1px solid var(--amber); background: rgba(255,171,0,0.05); padding: 14px; font-size: 13px; color: var(--amber); margin-top: 12px; }
+.launch-result { display: none; border: 1px solid var(--amber); background: rgba(255,171,0,0.05); padding: 12px; font-size: 13px; color: var(--amber); margin-top: 8px; width: 100%; box-sizing: border-box; }
 .launch-result.show { display: block; }
 .launch-result-title { font-size: 16px; letter-spacing: 3px; text-transform: uppercase; text-shadow: 0 0 12px var(--amber); margin-bottom: 8px; }
 .launch-result-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 12px; margin-bottom: 10px; }
 .launch-result-stat-lbl { color: var(--green-mid); }
 .launch-result-stat-val { color: var(--amber); }
+
+/* 텔레메트리 로그 */
+.telemetry-wrap { border: var(--border); background: var(--bg); padding: 8px 10px; font-size: 12px; }
+.telem-line { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--green-deep); color: var(--green-mid); }
+.telem-time  { color: var(--green-mid); min-width: 45px; font-size: 11px; }
+.telem-event { flex: 1; color: var(--green); text-transform: uppercase; font-size: 11px; }
+.telem-pct   { color: var(--green); font-size: 11px; min-width: 32px; text-align: right; }
+.telem-fail .telem-event { color: var(--red); }
+.telem-fail .telem-pct   { color: var(--red); }
+.telem-fail .telem-time  { color: var(--red); }
+
+/* 단계 진행 바 */
+#lc-stagebar { flex-shrink: 0; background: var(--panel-bg); border-top: 2px solid var(--green-dim); padding: 0; }
+.lc-stage-track { display: flex; width: 100%; }
+.lc-stage-seg { flex: 1; text-align: center; padding: 5px 3px 5px; font-size: 9px; letter-spacing: .05em; color: #334433; border-right: 1px solid var(--green-deep); position: relative; text-transform: uppercase; cursor: default; transition: background .3s; }
+.lc-stage-seg:last-child { border-right: none; }
+.lc-stage-seg::before { content: '○'; display: block; font-size: 8px; color: #334433; margin-bottom: 2px; }
+.lc-stage-seg.done { color: var(--green-mid); background: rgba(0,230,118,.04); }
+.lc-stage-seg.done::before { content: '✓'; color: var(--green-dim); }
+.lc-stage-seg.active { color: var(--green); background: rgba(0,230,118,.12); }
+.lc-stage-seg.active::before { content: '▼'; color: var(--amber); text-shadow: 0 0 6px var(--amber); animation: pulse-amber 1.5s ease-in-out infinite; }
+.lc-stage-seg.fail { color: var(--red); background: rgba(255,23,68,.07); }
+.lc-stage-seg.fail::before { content: '✗'; color: var(--red); animation: none; }
+
+/* 데이터 행 */
+.lc-drow     { display: flex; justify-content: space-between; align-items: center; font-size: 11px; padding: 2px 0; color: #8aaa8a; }
+.lc-drow .v  { color: var(--green); text-shadow: var(--glow); }
+.lc-drow .va { color: var(--amber); }
+@keyframes pulse-green { 0%,100% { box-shadow: 0 0 4px #00e67660; } 50% { box-shadow: 0 0 14px #00e676bb, 0 0 28px #00e67640; } }
 
 /* ===========================
    MISSION TAB
@@ -3024,64 +2977,83 @@ body.ignition-flash::before {
 
         </div>
 
-        <!-- ===== LAUNCH TAB (v7d 3-column) ===== -->
+        <!-- ===== LAUNCH TAB (SpaceX style) ===== -->
         <div class="tab-pane" id="pane-launch">
 
-          <!-- ── LEFT: 체크리스트 + 조립 현황 ── -->
-          <div class="lc-col lc-col-left">
-            <div class="lc-panel">
-              <div class="lc-pnl-title green">PRE-LAUNCH GO / NO-GO</div>
-              <div id="lc-checklist"></div>
-            </div>
-            <div class="lc-panel">
-              <div class="lc-pnl-title">// 조립 현황</div>
-              <div id="lc-asm-slots"></div>
-            </div>
+          <!-- ── 헤더: 미션 ID + T+ 타이머 + 상태 ── -->
+          <div id="lc-header">
+            <div id="lc-mission-id">&#9670; MISSION <span id="lc-mission-num">---</span></div>
+            <div id="lc-t-timer">T+ 00:00</div>
+            <div id="lc-status-text">// PRE-LAUNCH</div>
           </div>
 
-          <!-- ── CENTER: 로켓 아트 + 상태 바 + 실패 분석 + 커밋 박스 ── -->
-          <div class="lc-col lc-col-center">
-            <!-- 발사 전 정적 패널 -->
-            <div id="lc-pre-launch">
-              <div class="lc-rocket-disp">
-                <div class="lc-rocket-art" id="lc-rocket-pre"></div>
+          <!-- ── 메인: 로켓 존 + 텔레메트리 존 ── -->
+          <div id="lc-main-area">
+
+            <!-- 로켓 존 (55%) -->
+            <div id="lc-rocket-zone">
+              <!-- 발사 전 정적 패널 -->
+              <div id="lc-pre-launch">
+                <div class="lc-rocket-disp">
+                  <div class="lc-rocket-art" id="lc-rocket-pre"></div>
+                </div>
+                <div id="lc-commit-box">
+                  <div class="lc-commit-hd">&#9474; LAUNCH COMMIT &#9474;</div>
+                  <div class="lc-commit-stats" id="lc-commit-stats"></div>
+                  <button id="lc-btn-launch" onclick="launchReady()" disabled>[ ··· 발사 준비 중 ··· ]</button>
+                  <button id="lc-btn-abort" onclick="abortAssembly()" style="display:none;">[ ABORT ]</button>
+                </div>
               </div>
-              <div class="lc-sbar-wrap" id="lc-sbar-wrap"></div>
-              <div class="lc-fail-wrap" id="lc-fail-wrap"></div>
-              <div id="lc-commit-box">
-                <div class="lc-commit-hd">&#9474; LAUNCH COMMIT &#9474;</div>
-                <div class="lc-commit-stats" id="lc-commit-stats"></div>
-                <button id="lc-btn-launch" onclick="launchReady()" disabled>[ ··· 발사 준비 중 ··· ]</button>
-                <button id="lc-btn-abort" onclick="abortAssembly()" style="display:none;">[ ABORT ]</button>
+              <!-- 발사 애니메이션 존 (launch.js가 toggle) -->
+              <div id="lc-anim-zone">
+                <div class="launch-anim-wrap" id="launch-anim-wrap">
+                  <div style="color:var(--green-mid);font-size:13px;">// 발사 대기 중</div>
+                </div>
+                <div class="launch-result" id="launch-result">
+                  <div class="launch-result-title" id="lr-title">발사 성공</div>
+                  <div class="launch-result-stats" id="lr-stats"></div>
+                  <div id="lr-ms" style="font-size:14px;margin-bottom:8px;"></div>
+                </div>
               </div>
             </div>
-            <!-- 발사 애니메이션 존 (launch.js가 toggle) -->
-            <div id="lc-anim-zone">
-              <div class="launch-anim-wrap" id="launch-anim-wrap">
-                <div style="color:var(--green-mid);font-size:13px;">// 발사 대기 중</div>
+
+            <!-- 텔레메트리 존 (45%) -->
+            <div id="lc-telem-zone">
+              <!-- 속도 게이지 -->
+              <div class="lc-gauge-block">
+                <div class="lc-gauge-title">SPEED</div>
+                <div class="lc-gauge-readout">
+                  <span id="lc-speed-val">0</span>
+                  <span class="lc-gauge-unit">km/h</span>
+                </div>
+                <div class="lc-gauge-bar-track"><div class="lc-gauge-bar-fill" id="lc-speed-bar"></div></div>
               </div>
+              <!-- 고도 게이지 -->
+              <div class="lc-gauge-block">
+                <div class="lc-gauge-title">ALTITUDE</div>
+                <div class="lc-gauge-readout">
+                  <span id="lc-alt-val">0</span>
+                  <span class="lc-gauge-unit">km</span>
+                </div>
+                <div class="lc-gauge-bar-track"><div class="lc-gauge-bar-fill" id="lc-alt-bar"></div></div>
+              </div>
+              <!-- 미션 파라미터 -->
+              <div id="lc-mission-params"></div>
+              <!-- 텔레메트리 로그 -->
               <div id="telem-wrap"></div>
-              <div class="launch-result" id="launch-result">
-                <div class="launch-result-title">발사 성공</div>
-                <div class="launch-result-stats" id="lr-stats"></div>
-                <div id="lr-ms" style="color:var(--amber);font-size:15px;margin-bottom:10px;"></div>
-              </div>
             </div>
+
           </div>
 
-          <!-- ── RIGHT: 미션 목표 + 발사 이력 + 통계 ── -->
-          <div class="lc-col lc-col-right">
-            <div class="lc-panel" id="lc-quest-panel">
-              <div class="lc-pnl-title cyan">// MISSION OBJECTIVES</div>
-              <div id="lc-quest"></div>
-            </div>
-            <div class="lc-panel">
-              <div class="lc-pnl-title">발사 이력</div>
-              <div id="lc-history"></div>
-            </div>
-            <div class="lc-panel">
-              <div class="lc-pnl-title">통계</div>
-              <div id="lc-stats-panel"></div>
+          <!-- ── 하단: 단계 진행 바 ── -->
+          <div id="lc-stagebar">
+            <div class="lc-stage-track">
+              <div class="lc-stage-seg active" data-idx="0"><span>PRE-LAUNCH</span></div>
+              <div class="lc-stage-seg" data-idx="1"><span>IGNITION</span></div>
+              <div class="lc-stage-seg" data-idx="2"><span>MAX-Q</span></div>
+              <div class="lc-stage-seg" data-idx="3"><span>MECO</span></div>
+              <div class="lc-stage-seg" data-idx="4"><span>STAGE SEP</span></div>
+              <div class="lc-stage-seg" data-idx="5"><span>ORBIT</span></div>
             </div>
           </div>
 
