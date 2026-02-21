@@ -2,23 +2,19 @@
 let _prevAllGo = false; // ALL SYSTEMS GO 전환 감지용
 
 function launchFromSlot(slotIdx) {
-  if (launchInProgress) return; // 중복 발사 방지
+  if (launchInProgress) return;
   ensureAssemblyState();
   const job = gs.assembly.jobs[slotIdx];
   if (!job || !job.ready) return;
   const q = getQuality(job.qualityId);
   const sci = getRocketScience(q.id);
 
-  // 신뢰도 기반 성공/실패 판정 (첫 발사는 무조건 성공 — DESIGN-005)
   const rollSuccess = gs.launches === 0 || Math.random() * 100 < sci.reliability;
   const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
 
-  // P5-1: 실패 시 부품 일부 손실 (50% 확률로 각 부품 소실)
   if (!rollSuccess) {
     PARTS.forEach(p => {
-      if (gs.parts[p.id] && Math.random() < 0.5) {
-        gs.parts[p.id] = 0;
-      }
+      if (gs.parts[p.id] && Math.random() < 0.5) gs.parts[p.id] = 0;
     });
   }
 
@@ -40,15 +36,23 @@ function launchFromSlot(slotIdx) {
   pendingLaunchMs = earned;
   pendingLaunchData = { q, sci, earned, success: rollSuccess };
 
-  // Switch to launch tab
   switchMainTab('launch');
-
-  // Run animation sequence
   _runLaunchAnimation(q, sci, earned, rollSuccess);
 }
 
 // ============================================================
-//  STAGE BAR HELPERS
+//  HUD 토글
+// ============================================================
+function lcHudToggle(btn) {
+  const body = document.getElementById('lc-hud-body');
+  if (!body) return;
+  const collapsed = body.style.display === 'none';
+  body.style.display = collapsed ? '' : 'none';
+  btn.innerHTML = collapsed ? '&#8722;' : '+';
+}
+
+// ============================================================
+//  STAGE BAR HELPERS (11단계: 0-10)
 // ============================================================
 function _setLcStage(activeIdx) {
   document.querySelectorAll('.lc-stage-seg').forEach(seg => {
@@ -60,12 +64,12 @@ function _setLcStage(activeIdx) {
 }
 
 function _setLcStageFail() {
+  // 실패 시: MAX-Q(4)까지 done, MECO(5)부터 fail
   document.querySelectorAll('.lc-stage-seg').forEach(seg => {
     const idx = parseInt(seg.dataset.idx, 10);
     seg.classList.remove('active', 'done', 'fail');
-    if (idx === 0) seg.classList.add('done');
-    if (idx === 1 || idx === 2) seg.classList.add('done');
-    if (idx >= 3) seg.classList.add('fail');
+    if (idx <= 4) seg.classList.add('done');
+    else          seg.classList.add('fail');
   });
 }
 
@@ -76,16 +80,14 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   launchInProgress = true;
   if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('launch');
 
-  // 헤더 업데이트
   const missionNumEl = document.getElementById('lc-mission-num');
   if (missionNumEl) missionNumEl.textContent = String(gs.launches).padStart(3, '0');
   const statusTextEl = document.getElementById('lc-status-text');
   if (statusTextEl) statusTextEl.textContent = '// LAUNCHING';
 
-  // Stage bar: T+0 이전에는 PRE-LAUNCH 표시
-  _setLcStage(0);
+  // 발사 시작 전 카운트다운 단계(2)를 done으로 표시
+  _setLcStage(3); // LIFTOFF active, 0-2 done
 
-  // 중앙 존 토글
   const preLaunch = document.getElementById('lc-pre-launch');
   const animZone  = document.getElementById('lc-anim-zone');
   if (preLaunch) preLaunch.style.display = 'none';
@@ -94,7 +96,6 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   const animWrap = document.getElementById('launch-anim-wrap');
   if (!animWrap) return;
 
-  // ASCII 로켓 + 배기
   animWrap.innerHTML = `
 <div id="launch-rocket-cnt" style="text-align:center;position:relative;">
 <pre class="launch-rocket-ascii" id="launch-rocket-pre">    *
@@ -127,23 +128,23 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   }, 1000);
 
   // 라이브 속도/고도 게이지
-  const maxSpeed = Math.round(sci.deltaV * 3600); // km/s → km/h
+  const maxSpeed = Math.round(sci.deltaV * 3600);
   const maxAlt   = Math.floor(sci.altitude);
-  const animDuration = success ? 3000 : 2000;
+  const animEndMs = success ? 4300 : 2600;
 
   const gaugeInterval = setInterval(() => {
-    const elapsed = Date.now() - launchTime;
-    const speedEl  = document.getElementById('lc-speed-val');
-    const altEl    = document.getElementById('lc-alt-val');
-    const speedBar = document.getElementById('lc-speed-bar');
-    const altBar   = document.getElementById('lc-alt-bar');
+    const elapsed   = Date.now() - launchTime;
+    const speedEl   = document.getElementById('lc-speed-val');
+    const altEl     = document.getElementById('lc-alt-val');
+    const speedBar  = document.getElementById('lc-speed-bar');
+    const altBar    = document.getElementById('lc-alt-bar');
 
     if (success) {
-      const t = Math.min(1, elapsed / animDuration);
+      const t = Math.min(1, elapsed / animEndMs);
       const easedSpeed = t * t;
-      const easedAlt   = t < 0.8 ? (t / 0.8) * (t / 0.8) : 1;
-      const curSpeed = Math.round(easedSpeed * maxSpeed);
-      const curAlt   = Math.round(easedAlt   * maxAlt);
+      const easedAlt   = t < 0.7 ? (t / 0.7) * (t / 0.7) : 1;
+      const curSpeed   = Math.round(easedSpeed * maxSpeed);
+      const curAlt     = Math.round(easedAlt   * maxAlt);
       if (speedEl)  speedEl.textContent  = curSpeed.toLocaleString();
       if (altEl)    altEl.textContent    = curAlt.toLocaleString();
       if (speedBar) speedBar.style.width = Math.min(100, (curSpeed / (maxSpeed || 1)) * 100).toFixed(1) + '%';
@@ -151,7 +152,7 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
     } else {
       const anomalyT = 1200;
       if (elapsed < anomalyT) {
-        const t2 = elapsed / anomalyT;
+        const t2  = elapsed / anomalyT;
         const spd = Math.round(t2 * t2 * maxSpeed * 0.45);
         const alt = Math.round(t2 * maxAlt * 0.35);
         if (speedEl)  speedEl.textContent  = spd.toLocaleString();
@@ -159,12 +160,11 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
         if (speedBar) speedBar.style.width = Math.min(100, (spd / (maxSpeed || 1)) * 100).toFixed(1) + '%';
         if (altBar)   altBar.style.width   = Math.min(100, (alt  / (maxAlt   || 1)) * 100).toFixed(1) + '%';
       } else {
-        // 폭발 후 드롭
-        const t3 = Math.min(1, (elapsed - anomalyT) / 600);
-        const peakSpd = Math.round(maxSpeed * 0.45 * 1);
+        const t3      = Math.min(1, (elapsed - anomalyT) / 600);
+        const peakSpd = Math.round(maxSpeed * 0.45);
         const peakAlt = Math.round(maxAlt * 0.35);
-        const spd = Math.round(peakSpd * (1 - t3));
-        const alt = Math.round(peakAlt * (1 - t3));
+        const spd     = Math.round(peakSpd * (1 - t3));
+        const alt     = Math.round(peakAlt * (1 - t3));
         if (speedEl)  speedEl.textContent  = Math.max(0, spd).toLocaleString();
         if (altEl)    altEl.textContent    = Math.max(0, alt).toLocaleString();
         if (speedBar) { speedBar.style.width = '0%'; speedBar.style.background = 'var(--red)'; }
@@ -173,40 +173,45 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
     }
   }, 50);
 
-  // 게이지 인터벌 해제
-  setTimeout(() => clearInterval(gaugeInterval), success ? 4000 : 3500);
+  setTimeout(() => clearInterval(gaugeInterval), animEndMs + 800);
 
   // 텔레메트리 로그
   const telemWrap = document.getElementById('telem-wrap');
-  if (telemWrap) telemWrap.innerHTML = '<div style="color:var(--green-dim);font-size:10px;letter-spacing:.15em;padding:4px 0 4px;border-bottom:1px solid var(--green-dim);margin-bottom:4px;">// TELEMETRY LOG</div>';
+  if (telemWrap) telemWrap.innerHTML =
+    '<div style="color:var(--green-dim);font-size:9px;letter-spacing:.15em;padding:3px 0;border-bottom:1px solid var(--green-dim);margin-bottom:3px;">// TELEMETRY LOG</div>';
 
   const telemDiv = document.createElement('div');
   telemDiv.className = 'telemetry-wrap';
   if (telemWrap) telemWrap.appendChild(telemDiv);
 
+  // 성공: 8단계 비행 시퀀스 (index 3-10)
+  // 실패: 3단계 이후 이상징후
   const steps = success ? [
-    { delay: 0,    label: 'T+0',  event: 'IGNITION',                              pct: 15,  stage: 1 },
-    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',                             pct: 35,  stage: 2 },
-    { delay: 1200, label: 'T+8',  event: 'MECO',                                  pct: 60,  stage: 3 },
-    { delay: 1800, label: 'T+12', event: '단계 분리',                               pct: 78,  stage: 4 },
-    { delay: 2400, label: 'T+20', event: `목표 고도 달성 ${Math.floor(sci.altitude)}km`, pct: 100, stage: 5 },
+    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                    pct: 5,   stage: 3 },
+    { delay: 500,  label: 'T+3',  event: 'MAX-Q 통과',                  pct: 18,  stage: 4 },
+    { delay: 1000, label: 'T+8',  event: 'MECO — 1단 엔진 종료',        pct: 35,  stage: 5 },
+    { delay: 1500, label: 'T+12', event: '단계분리 / 2단 점화',          pct: 50,  stage: 6 },
+    { delay: 2000, label: 'T+20', event: '지구 궤도 진입',              pct: 65,  stage: 7 },
+    { delay: 2600, label: 'T+28', event: 'TLI — 달 전이 궤도 점화',    pct: 78,  stage: 8 },
+    { delay: 3200, label: 'T+38', event: 'LOI — 달 궤도 진입',         pct: 90,  stage: 9 },
+    { delay: 3800, label: 'T+50', event: `달 착륙 성공 ◆ TOUCHDOWN`,    pct: 100, stage: 10 },
   ] : [
-    { delay: 0,    label: 'T+0',  event: 'IGNITION',                              pct: 15,  stage: 1 },
-    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',                             pct: 35,  stage: 2 },
-    { delay: 1200, label: 'T+7',  event: '!! ANOMALY DETECTED !!',                pct: 48,  stage: -1, fail: true },
-    { delay: 1800, label: 'T+8',  event: '!! STRUCTURAL FAILURE !!',              pct: 48,  stage: -1, fail: true },
-    { delay: 2400, label: 'T+14', event: '// MISSION LOST — RUD',                 pct: 0,   stage: -1, fail: true },
+    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                     pct: 5,   stage: 3 },
+    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',                   pct: 18,  stage: 4 },
+    { delay: 1200, label: 'T+7',  event: '!! ANOMALY DETECTED !!',      pct: 35,  stage: -1, fail: true },
+    { delay: 1800, label: 'T+8',  event: '!! STRUCTURAL FAILURE !!',    pct: 35,  stage: -1, fail: true },
+    { delay: 2400, label: 'T+14', event: '// MISSION LOST — RUD',       pct: 0,   stage: -1, fail: true },
   ];
 
   steps.forEach((step, i) => {
     setTimeout(() => {
-      // 단계 바 갱신
       if (step.fail) _setLcStageFail();
-      else _setLcStage(step.stage);
+      else           _setLcStage(step.stage);
 
-      // 상태 텍스트
       if (statusTextEl) {
-        statusTextEl.textContent = step.fail ? '// ANOMALY' : `// ${step.event.replace(/!+/g, '').trim().toUpperCase()}`;
+        statusTextEl.textContent = step.fail
+          ? '// ANOMALY'
+          : `// ${step.event.split('◆')[0].replace(/!+/g,'').trim().toUpperCase()}`;
       }
 
       const line = document.createElement('div');
@@ -216,6 +221,10 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
         `<span class="telem-event">${step.event}</span>` +
         `<span class="telem-pct">${step.pct}%</span>`;
       telemDiv.appendChild(line);
+
+      // HUD 자동 스크롤
+      const hudBody = document.getElementById('lc-hud-body');
+      if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
 
       if (step.fail) {
         playSfx('sawtooth', 180 - i * 20, 0.14, 0.05, 80);
@@ -228,24 +237,9 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   // 실패 프레임
   if (!success) {
     const FAIL_FRAMES = [
-      '       *\n' +
-      '     /\\!\\  GYRO ALERT\n' +
-      '    / !! \\\n' +
-      '   / WARN \\\n' +
-      '  |  ROLL  |\n' +
-      '  |__+47°__|',
-      '    \\  * . /\n' +
-      '  . * \u2554\u2550\u2557 * .\n' +
-      ' * \u2591\u2591\u2591\u2551!\u2551\u2591\u2591\u2591 *\n' +
-      '  \u2591\u2592\u2593\u2593\u2588\u2588\u2588\u2593\u2593\u2592\u2591\n' +
-      '   \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n' +
-      '  ~~ FIRE ~~',
-      '     .   \u00b7   .\n' +
-      '   \u00b7   .   \u00b7\n' +
-      '    \u2591  \u2592\u2593\u2592  \u2591\n' +
-      '  \u2591\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\u2591\n' +
-      '  \u2500\u2500\u2500\u2550\u2550\u2564\u2550\u2550\u2500\u2500\u2500\n' +
-      '  \u2593\u2593 DAMAGED \u2593\u2593',
+      '       *\n     /\\!\\  GYRO ALERT\n    / !! \\\n   / WARN \\\n  |  ROLL  |\n  |__+47°__|',
+      '    \\  * . /\n  . * \u2554\u2550\u2557 * .\n * \u2591\u2591\u2591\u2551!\u2551\u2591\u2591\u2591 *\n  \u2591\u2592\u2593\u2593\u2588\u2588\u2588\u2593\u2593\u2592\u2591\n   \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n  ~~ FIRE ~~',
+      '     .   \u00b7   .\n   \u00b7   .   \u00b7\n    \u2591  \u2592\u2593\u2592  \u2591\n  \u2591\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\u2591\n  \u2500\u2500\u2500\u2550\u2550\u2564\u2550\u2550\u2500\u2500\u2500\n  \u2593\u2593 DAMAGED \u2593\u2593',
     ];
     FAIL_FRAMES.forEach((frame, fi) => {
       setTimeout(() => {
@@ -259,13 +253,16 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
     });
   }
 
-  // 3000ms: 결과 패널 표시
+  // 결과 패널 표시
+  const resultDelay  = success ? 4300 : 3000;
+  const overlayDelay = success ? 4800 : 3500;
+
   setTimeout(() => {
     const lr = document.getElementById('launch-result');
     if (lr) {
       lr.classList.add('show');
       const lrTitle = document.getElementById('lr-title');
-      if (lrTitle) lrTitle.textContent = success ? '// 발사 성공' : '// 발사 실패';
+      if (lrTitle) lrTitle.textContent = success ? '// 달 착륙 성공' : '// 발사 실패';
       const lrStats = document.getElementById('lr-stats');
       if (lrStats) lrStats.innerHTML =
         `<span class="launch-result-stat-lbl">기체</span><span class="launch-result-stat-val">${q.name}</span>` +
@@ -285,11 +282,10 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
       }
     }
     if (statusTextEl) statusTextEl.textContent = success ? '// MISSION COMPLETE' : '// MISSION LOST';
-    if (success) _setLcStage(5);
+    if (success) _setLcStage(10); // LANDING done
     clearInterval(timerInterval);
-  }, 3000);
+  }, resultDelay);
 
-  // 3500ms: 오버레이 + 완료 처리
   setTimeout(() => {
     launchInProgress = false;
     if (success) {
@@ -299,12 +295,12 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
     }
     if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.stopEvent();
     _showLaunchOverlay(q, sci, earned, success);
-  }, 3500);
+  }, overlayDelay);
 }
 
 function _showLaunchOverlay(q, sci, earned, success = true) {
   const loTitle = document.getElementById('lo-title');
-  if (loTitle) loTitle.textContent = success ? '// 달 탐사 성공' : '// 발사 실패';
+  if (loTitle) loTitle.textContent = success ? '// 달 착륙 성공' : '// 발사 실패';
   const loRocket = document.getElementById('lo-rocket-art');
   if (loRocket) loRocket.textContent =
 `    *
@@ -319,7 +315,7 @@ function _showLaunchOverlay(q, sci, earned, success = true) {
   const loMs = document.getElementById('lo-ms');
   if (loMs) {
     if (success) {
-      loMs.textContent = `✓ 발사 성공 — 문스톤 +${earned}개`;
+      loMs.textContent = `✓ 달 착륙 성공 — 문스톤 +${earned}개`;
       loMs.style.color = 'var(--green)';
       playSfx('sine', 1200, 0.10, 0.03, 1600);
     } else {
@@ -334,7 +330,7 @@ function _showLaunchOverlay(q, sci, earned, success = true) {
 }
 
 // ============================================================
-//  LAUNCH READY — 첫 번째 완성 슬롯 발사
+//  LAUNCH READY
 // ============================================================
 function launchReady() {
   ensureAssemblyState();
@@ -346,91 +342,81 @@ function launchReady() {
 }
 
 // ============================================================
-//  ROCKET ASCII ART HELPER — per-part color HTML
+//  ROCKET ASCII ART — per-part color
 // ============================================================
 function _lcRocketArtHtml() {
-  const p = gs.parts || {};
+  const p    = gs.parts || {};
   const jobs = (gs.assembly && gs.assembly.jobs) || [];
-  const now = Date.now();
+  const now  = Date.now();
 
   let readyJob = null;
   jobs.forEach(j => { if (j && j.ready && !readyJob) readyJob = j; });
   let inProgressJob = null;
   jobs.forEach(j => { if (j && !j.ready && j.endAt && !inProgressJob) inProgressJob = j; });
 
-  const col = (partKey) => {
-    if (readyJob) return 'var(--green)';
-    return (p[partKey]) ? 'var(--amber)' : '#1f3520';
-  };
+  const col = (key) => readyJob ? 'var(--green)' : (p[key] ? 'var(--amber)' : '#1f3520');
 
   const partsDone  = PARTS.filter(pt => p[pt.id]).length;
-  const totalParts = PARTS.length;
-  const partsPct   = Math.round((partsDone / totalParts) * 100);
+  const partsPct   = Math.round((partsDone / PARTS.length) * 100);
 
   let asmPct = 0;
   if (readyJob) {
     asmPct = 100;
   } else if (inProgressJob) {
-    const elapsed = Math.max(0, now - inProgressJob.startAt);
-    const total   = Math.max(1, inProgressJob.endAt - inProgressJob.startAt);
-    asmPct = Math.min(100, (elapsed / total) * 100);
+    const el = Math.max(0, now - inProgressJob.startAt);
+    const to = Math.max(1, inProgressJob.endAt - inProgressJob.startAt);
+    asmPct = Math.min(100, (el / to) * 100);
   }
 
-  const payC = col('payload');
-  const ctlC = col('control');
-  const hulC = col('hull');
-  const ftkC = col('fueltank');
-  const engC = col('engine');
-
-  const span = (color, text) => `<span style="color:${color}">${text}</span>`;
+  const payC = col('payload'), ctlC = col('control'), hulC = col('hull');
+  const ftkC = col('fueltank'), engC = col('engine');
+  const sp   = (c, t) => `<span style="color:${c}">${t}</span>`;
 
   const lines = [
-    span('var(--green-dim)', '         *          '),
-    span(payC,               '        /|\\         '),
-    span(payC,               '       / | \\        '),
-    span(payC,               '      /  |  \\       '),
-    span(payC,               '     / PYLD \\       '),
-    span(payC,               '    |---------|      '),
-    span(payC,               '    | PAYLOAD |      '),
-    span(hulC,               '    |=========|      '),
-    span(ctlC,               readyJob ? '    | [READY] |      ' : '    | CONTROL |      '),
-    span(hulC,               '    |=========|      '),
-    span(hulC,               '    |  HULL   |      '),
-    span(hulC,               '    |         |      '),
-    span(hulC,               '    |  HULL   |      '),
-    span(hulC,               '    |=========|      '),
-    span(ftkC,               '    |[== LOX ==]|    '),
-    span(ftkC,               '    |[== RP1 ==]|    '),
-    span(ftkC,               '    |===========|    '),
-    span(engC,               '   /|   ENGINE  |\\   '),
-    span(engC,               '  / |___________|\\   '),
-    span('var(--green-dim)', ' *     |  |  |   *  '),
-    span(engC,               '       | ||  |       '),
-    span(engC,               '      |||||||         '),
-    span('var(--green-dim)', '     [== PAD ==]      '),
+    sp('var(--green-dim)', '         *          '),
+    sp(payC,               '        /|\\         '),
+    sp(payC,               '       / | \\        '),
+    sp(payC,               '      /  |  \\       '),
+    sp(payC,               '     / PYLD \\       '),
+    sp(payC,               '    |---------|      '),
+    sp(payC,               '    | PAYLOAD |      '),
+    sp(hulC,               '    |=========|      '),
+    sp(ctlC,               readyJob ? '    | [READY] |      ' : '    | CONTROL |      '),
+    sp(hulC,               '    |=========|      '),
+    sp(hulC,               '    |  HULL   |      '),
+    sp(hulC,               '    |         |      '),
+    sp(hulC,               '    |  HULL   |      '),
+    sp(hulC,               '    |=========|      '),
+    sp(ftkC,               '    |[== LOX ==]|    '),
+    sp(ftkC,               '    |[== RP1 ==]|    '),
+    sp(ftkC,               '    |===========|    '),
+    sp(engC,               '   /|   ENGINE  |\\   '),
+    sp(engC,               '  / |___________|\\   '),
+    sp('var(--green-dim)', ' *     |  |  |   *  '),
+    sp(engC,               '       | ||  |       '),
+    sp(engC,               '      |||||||         '),
+    sp('var(--green-dim)', '     [== PAD ==]      '),
   ];
 
   const barLen = 12;
-  const filledP = Math.round(partsPct / 100 * barLen);
-  const filledA = Math.round(asmPct   / 100 * barLen);
-  const barColor = readyJob ? 'var(--green)' : 'var(--amber)';
+  const barC   = readyJob ? 'var(--green)' : 'var(--amber)';
+  const fpBar  = '█'.repeat(Math.round(partsPct / 100 * barLen)) + '░'.repeat(barLen - Math.round(partsPct / 100 * barLen));
+  const faBar  = '█'.repeat(Math.round(asmPct   / 100 * barLen)) + '░'.repeat(barLen - Math.round(asmPct   / 100 * barLen));
 
-  let progressHtml = `<div style="font-size:10px;color:var(--green-dim);text-align:center;margin-top:8px;font-family:'Courier New',Consolas,monospace;">`;
-  progressHtml += `<span style="color:var(--green-dim)">부품: </span><span style="color:${barColor}">${'█'.repeat(filledP)}${'░'.repeat(barLen - filledP)}</span> <span style="color:${barColor}">${partsPct}%</span>`;
+  let prog = `<div style="font-size:10px;color:var(--green-dim);text-align:center;margin-top:8px;font-family:'Courier New',Consolas,monospace;">`;
+  prog += `<span style="color:var(--green-dim)">부품: </span><span style="color:${barC}">${fpBar}</span> <span style="color:${barC}">${partsPct}%</span>`;
   if (inProgressJob || readyJob) {
-    const asmColor = readyJob ? 'var(--green)' : 'var(--amber)';
-    progressHtml += `<br><span style="color:var(--green-dim)">조립: </span><span style="color:${asmColor}">${'█'.repeat(filledA)}${'░'.repeat(barLen - filledA)}</span> <span style="color:${asmColor}">${Math.round(asmPct)}%</span>`;
+    const ac = readyJob ? 'var(--green)' : 'var(--amber)';
+    prog += `<br><span style="color:var(--green-dim)">조립: </span><span style="color:${ac}">${faBar}</span> <span style="color:${ac}">${Math.round(asmPct)}%</span>`;
   }
-  if (readyJob) {
-    progressHtml += `<br><span style="color:var(--green);text-shadow:0 0 8px #00e676;">&#9654; LAUNCH READY</span>`;
-  }
-  progressHtml += `</div>`;
+  if (readyJob) prog += `<br><span style="color:var(--green);text-shadow:0 0 8px #00e676;">&#9654; LAUNCH READY</span>`;
+  prog += `</div>`;
 
-  return `<div style="font-family:'Courier New',Consolas,monospace;font-size:13px;line-height:1.3;white-space:pre;text-align:left;display:inline-block;">${lines.join('\n')}</div>${progressHtml}`;
+  return `<div style="font-family:'Courier New',Consolas,monospace;font-size:14px;line-height:1.3;white-space:pre;text-align:left;display:inline-block;">${lines.join('\n')}</div>${prog}`;
 }
 
 // ============================================================
-//  RENDER: LAUNCH TAB (SpaceX style)
+//  RENDER: LAUNCH TAB
 // ============================================================
 function renderLaunchTab() {
   ensureAssemblyState();
@@ -451,19 +437,15 @@ function renderLaunchTab() {
     if (speedBar) { speedBar.style.width = '0%'; speedBar.style.background = ''; }
     if (altBar)   { altBar.style.width   = '0%'; altBar.style.background   = ''; }
 
-    // 타이머 + 상태 리셋
     const timerEl  = document.getElementById('lc-t-timer');
     const statusEl = document.getElementById('lc-status-text');
     if (timerEl)  timerEl.textContent  = 'T+ 00:00';
     if (statusEl) statusEl.textContent = '// PRE-LAUNCH';
-
-    // 단계 바 리셋
-    _setLcStage(0);
   } else {
-    return; // 발사 애니메이션 중 DOM 재렌더링 방지 (BUG-007)
+    return; // 발사 중 리렌더 방지 (BUG-007)
   }
 
-  // ── 준비된 슬롯 탐색 ──────────────────────────────────────
+  // 준비된 슬롯 탐색
   let readySlot = -1, readyJob = null;
   gs.assembly.jobs.forEach((job, idx) => {
     if (job && job.ready && readySlot === -1) { readySlot = idx; readyJob = job; }
@@ -476,11 +458,11 @@ function renderLaunchTab() {
     earned = getMoonstoneReward(q.id);
   }
 
-  // ── 미션 번호 ──────────────────────────────────────────────
+  // 미션 번호
   const missionNumEl = document.getElementById('lc-mission-num');
   if (missionNumEl) missionNumEl.textContent = String((gs.launches || 0) + 1).padStart(3, '0');
 
-  // ── ALL SYSTEMS GO 전환 감지 → 알림음 ─────────────────────
+  // ALL GO 체크
   const launchPadBuilt = (gs.buildings.launch_pad || 0) >= 1;
   const hasFuel        = (gs.res.fuel || 0) > 50;
   const allGo = hasReady && launchPadBuilt && hasFuel;
@@ -490,34 +472,39 @@ function renderLaunchTab() {
   }
   _prevAllGo = allGo;
 
-  // ── ASCII 로켓 ────────────────────────────────────────────
+  // 프리론치 단계 바 — 게임 상태 반영
+  if (allGo)        _setLcStage(2); // T-MINUS active (0,1 done)
+  else if (hasReady) _setLcStage(1); // FUEL active (0 done)
+  else               _setLcStage(0); // ASSY active
+
+  // ASCII 로켓
   const rocketPre = document.getElementById('lc-rocket-pre');
   if (rocketPre) rocketPre.innerHTML = _lcRocketArtHtml();
 
-  // ── 미션 파라미터 (텔레메트리 존) ──────────────────────────
+  // 미션 파라미터 (HUD)
   const missionParams = document.getElementById('lc-mission-params');
   if (missionParams) {
     if (hasReady) {
       const rc = sci.reliability > 80 ? 'green' : sci.reliability > 60 ? 'amber' : 'red';
       missionParams.innerHTML =
-        `<div class="lc-mp-block"><div class="lc-mp-val green">${sci.deltaV.toFixed(1)}<span style="font-size:9px"> km/s</span></div><div class="lc-mp-label">Delta-V</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val green">${sci.deltaV.toFixed(1)}</div><div class="lc-mp-label">Δv (km/s)</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val">${sci.twr.toFixed(2)}</div><div class="lc-mp-label">TWR</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val ${rc}">${sci.reliability.toFixed(0)}%</div><div class="lc-mp-label">신뢰도</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val amber">+${earned}</div><div class="lc-mp-label">문스톤 보상</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val">${Math.floor(sci.altitude)}<span style="font-size:9px"> km</span></div><div class="lc-mp-label">목표 고도</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--green-dim)">&#9670; ${gs.moonstone || 0}</div><div class="lc-mp-label">보유 문스톤</div></div>`;
+        `<div class="lc-mp-block"><div class="lc-mp-val amber">+${earned}</div><div class="lc-mp-label">문스톤</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val">${Math.floor(sci.altitude)}</div><div class="lc-mp-label">목표고도 km</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--green-dim)">&#9670;${gs.moonstone||0}</div><div class="lc-mp-label">문스톤 보유</div></div>`;
     } else {
       missionParams.innerHTML =
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">Delta-V</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">Δv (km/s)</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">TWR</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">신뢰도</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">문스톤 보상</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">목표 고도</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--green-dim)">&#9670; ${gs.moonstone || 0}</div><div class="lc-mp-label">보유 문스톤</div></div>`;
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">문스톤</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">목표고도</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--green-dim)">&#9670;${gs.moonstone||0}</div><div class="lc-mp-label">문스톤 보유</div></div>`;
     }
   }
 
-  // ── 커밋 박스 통계 ──────────────────────────────────────────
+  // 커밋 박스
   const commitStats = document.getElementById('lc-commit-stats');
   if (commitStats) {
     if (hasReady) {
@@ -534,7 +521,7 @@ function renderLaunchTab() {
     }
   }
 
-  // ── 발사 버튼 상태 ──────────────────────────────────────────
+  // 발사 버튼
   const launchBtn = document.getElementById('lc-btn-launch');
   if (launchBtn) {
     if (allGo) {
@@ -548,7 +535,7 @@ function renderLaunchTab() {
     }
   }
 
-  // ── ABORT 버튼 ──────────────────────────────────────────────
+  // ABORT 버튼
   const hasInProgress = gs.assembly && gs.assembly.jobs &&
     gs.assembly.jobs.some(j => j && !j.ready && j.endAt);
   const abortBtn = document.getElementById('lc-btn-abort');
@@ -556,64 +543,41 @@ function renderLaunchTab() {
 }
 
 
-// ── 온보딩 퀘스트 렌더링 (레거시 — DOM 미존재 시 early-return) ─────────
+// ── 온보딩 퀘스트 렌더링 (DOM 없으면 early-return) ────────────
 function _renderLcQuest() {
   const el = document.getElementById('lc-quest');
   if (!el) return;
 
-  const bld  = gs.buildings || {};
-  const upgs = gs.upgrades || {};
+  const bld = gs.buildings || {}, upgs = gs.upgrades || {};
   const jobs = (gs.assembly && gs.assembly.jobs) || [];
   const hasLaunched = (gs.launches || 0) >= 1;
-
   const mainDone = hasLaunched;
 
   const subs = [
-    { icon: '[OPS]', key: 'q_sub_ops',      done: (gs.assignments && (gs.assignments.ops_center || 0) >= 1) },
-    { icon: '[FND]', key: 'q_sub_money',    done: (gs.res.money || 0) >= 1000 },
-    { icon: '[MIN]', key: 'q_sub_mine',     done: (bld.mine || 0) >= 1 },
-    { icon: '[RSH]', key: 'q_sub_lab',      done: (bld.research_lab || 0) >= 1 },
-    { icon: '[TEC]', key: 'q_sub_research', done: Object.keys(upgs).length >= 1 },
-    { icon: '[PAD]', key: 'q_sub_pad',      done: (bld.launch_pad || 0) >= 1 },
-    { icon: '[ASM]', key: 'q_sub_assemble', done: jobs.some(j => j && (j.ready || j.endAt)) },
+    { icon:'[OPS]', key:'q_sub_ops',      done: (gs.assignments && (gs.assignments.ops_center||0)>=1) },
+    { icon:'[FND]', key:'q_sub_money',    done: (gs.res.money||0)>=1000 },
+    { icon:'[MIN]', key:'q_sub_mine',     done: (bld.mine||0)>=1 },
+    { icon:'[RSH]', key:'q_sub_lab',      done: (bld.research_lab||0)>=1 },
+    { icon:'[TEC]', key:'q_sub_research', done: Object.keys(upgs).length>=1 },
+    { icon:'[PAD]', key:'q_sub_pad',      done: (bld.launch_pad||0)>=1 },
+    { icon:'[ASM]', key:'q_sub_assemble', done: jobs.some(j=>j&&(j.ready||j.endAt)) },
   ];
-  const doneCount   = subs.filter(s => s.done).length;
-  const allSubsDone = doneCount === subs.length;
+  const doneCount = subs.filter(s=>s.done).length;
 
   let html = '';
   if (mainDone) {
-    html += `<div class="lc-quest-main-done">
-      <div class="lc-quest-main-title">&#9632; MISSION COMPLETE</div>
-      <div class="lc-quest-main-desc">${t('q_done_desc')}</div>
-    </div>`;
+    html += `<div class="lc-quest-main-done"><div class="lc-quest-main-title">&#9632; MISSION COMPLETE</div><div class="lc-quest-main-desc">${t('q_done_desc')}</div></div>`;
   } else {
-    html += `<div class="lc-quest-main">
-      <div class="qs-section-hd">// MAIN MISSION</div>
-      <div class="lc-quest-main-row">
-        <span class="qs-icon-bracket">[GO!]</span>
-        <span class="qs-main-text">${t('q_main_desc')}</span>
-        <span class="qs-chk todo">&#9675;</span>
-      </div>
-    </div>`;
-  }
-
-  if (!mainDone) {
-    const pct = (doneCount / subs.length * 100).toFixed(0);
+    html += `<div class="lc-quest-main"><div class="qs-section-hd">// MAIN MISSION</div><div class="lc-quest-main-row"><span class="qs-icon-bracket">[GO!]</span><span class="qs-main-text">${t('q_main_desc')}</span><span class="qs-chk todo">&#9675;</span></div></div>`;
+    const pct = (doneCount/subs.length*100).toFixed(0);
     html += `<div class="qs-section-hd qs-sub-hd">// SUB MISSIONS <span class="qs-cnt">${doneCount}/${subs.length}</span></div>`;
     html += `<div class="qs-progress-bar"><div class="qs-progress-fill" style="width:${pct}%"></div></div>`;
     html += `<div class="lc-quest-subs">`;
     subs.forEach(s => {
-      html += `<div class="lc-quest-sub${s.done ? ' sub-done' : ''}">
-        <span class="qs-icon-bracket${s.done ? ' done' : ''}">${s.icon}</span>
-        <span class="qs-text${s.done ? ' done' : ''}">${t(s.key)}</span>
-        <span class="qs-chk ${s.done ? 'done' : 'todo'}">${s.done ? '&#10003;' : '&#9675;'}</span>
-      </div>`;
+      html += `<div class="lc-quest-sub${s.done?' sub-done':''}"><span class="qs-icon-bracket${s.done?' done':''}">${s.icon}</span><span class="qs-text${s.done?' done':''}">${t(s.key)}</span><span class="qs-chk ${s.done?'done':'todo'}">${s.done?'&#10003;':'&#9675;'}</span></div>`;
     });
     html += `</div>`;
-    if (allSubsDone) {
-      html += `<div class="qs-all-ready">&gt;&gt; ${t('q_ready')}</div>`;
-    }
+    if (doneCount===subs.length) html += `<div class="qs-all-ready">&gt;&gt; ${t('q_ready')}</div>`;
   }
-
   el.innerHTML = html;
 }

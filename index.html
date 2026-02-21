@@ -1240,40 +1240,55 @@ body.tab-research #pane-research {
 #lc-status-text { color: var(--green-dim); font-size: 10px; letter-spacing: .15em; text-align: right; min-width: 120px; }
 
 /* 메인 영역 */
-#lc-main-area { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+#lc-main-area { flex: 1; overflow: hidden; min-height: 0; position: relative; }
 
-/* 로켓 존 */
-#lc-rocket-zone { flex: 0 0 55%; border-right: 1px solid var(--green-dim); overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: var(--bg); }
+/* 로켓 존 (전폭) */
+#lc-rocket-zone { width: 100%; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: var(--bg); }
 #lc-rocket-zone::-webkit-scrollbar { width: 3px; }
 #lc-rocket-zone::-webkit-scrollbar-thumb { background: var(--green-dim); }
 #lc-pre-launch { display: flex; flex-direction: column; align-items: center; width: 100%; }
 .lc-rocket-disp { padding: 10px 0 6px; text-align: center; width: 100%; }
-.lc-rocket-art  { display: inline-block; text-align: left; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; }
+.lc-rocket-art  { display: inline-block; text-align: left; font-size: 14px; line-height: 1.3; white-space: pre; letter-spacing: 0; }
 
-/* 텔레메트리 존 */
-#lc-telem-zone { flex: 0 0 45%; padding: 10px 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: var(--panel-bg); }
-#lc-telem-zone::-webkit-scrollbar { width: 3px; }
-#lc-telem-zone::-webkit-scrollbar-thumb { background: var(--green-dim); }
+/* HUD 플로팅 창 */
+#lc-hud {
+  position: absolute; top: 8px; right: 8px; width: 198px;
+  background: rgba(0,8,2,0.93); border: 1px solid var(--green-dim);
+  box-shadow: 0 0 16px rgba(0,20,5,0.85), 0 2px 8px rgba(0,0,0,0.6);
+  z-index: 20; display: flex; flex-direction: column;
+  max-height: calc(100% - 16px); backdrop-filter: blur(4px);
+}
+#lc-hud-titlebar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 3px 7px; background: rgba(0,230,118,0.07);
+  border-bottom: 1px solid var(--green-dim); flex-shrink: 0; cursor: default;
+}
+.lc-hud-title { color: var(--green-dim); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
+#lc-hud-toggle { background: none; border: 1px solid var(--green-dim); color: var(--green-dim); font-size: 10px; width: 16px; height: 14px; cursor: pointer; font-family: var(--font); line-height: 1; padding: 0; }
+#lc-hud-toggle:hover { color: var(--green); border-color: var(--green); }
+#lc-hud-body { padding: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
+#lc-hud-body::-webkit-scrollbar { width: 2px; }
+#lc-hud-body::-webkit-scrollbar-thumb { background: var(--green-dim); }
 
-/* SpaceX 게이지 블록 */
-.lc-gauge-block { background: var(--bg); border: 1px solid var(--green-dim); padding: 8px 12px; }
-.lc-gauge-title { font-size: 10px; color: var(--green-dim); letter-spacing: .22em; text-transform: uppercase; margin-bottom: 4px; }
-.lc-gauge-readout { display: flex; align-items: baseline; gap: 6px; margin-bottom: 5px; }
-.lc-gauge-readout > span:first-child { font-size: 32px; font-weight: bold; color: var(--white, #e8ffe8); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; text-shadow: 0 0 14px var(--green); }
-.lc-gauge-unit { font-size: 12px; color: var(--green-mid); }
+/* HUD 게이지 (컴팩트) */
+.lc-gauge-block { background: rgba(0,0,0,.3); border: 1px solid var(--green-dim); padding: 5px 8px; }
+.lc-gauge-title { font-size: 9px; color: var(--green-dim); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 2px; }
+.lc-gauge-readout { display: flex; align-items: baseline; gap: 5px; margin-bottom: 4px; }
+.lc-gauge-readout > span:first-child { font-size: 22px; font-weight: bold; color: var(--white, #e8ffe8); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px var(--green); }
+.lc-gauge-unit { font-size: 11px; color: var(--green-mid); }
 .lc-gauge-bar-track { height: 3px; background: rgba(26,92,52,.35); overflow: hidden; }
 .lc-gauge-bar-fill  { height: 100%; background: var(--green); box-shadow: 0 0 4px var(--green); width: 0%; transition: width .25s; }
 
-/* 미션 파라미터 그리드 */
-#lc-mission-params { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; }
-.lc-mp-block { background: var(--bg); border: 1px solid var(--green-dim); padding: 6px 10px; }
-.lc-mp-val   { font-size: 16px; font-weight: bold; color: var(--green); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; }
+/* HUD 미션 파라미터 */
+#lc-mission-params { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; }
+.lc-mp-block { background: rgba(0,0,0,.3); border: 1px solid var(--green-dim); padding: 4px 6px; }
+.lc-mp-val   { font-size: 13px; font-weight: bold; color: var(--green); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; }
 .lc-mp-val.amber { color: var(--amber); }
 .lc-mp-val.red   { color: var(--red); }
-.lc-mp-label { font-size: 9px; color: var(--green-dim); letter-spacing: .1em; text-transform: uppercase; margin-top: 1px; }
+.lc-mp-label { font-size: 8px; color: var(--green-dim); letter-spacing: .08em; text-transform: uppercase; margin-top: 1px; }
 
 /* 발사 커밋 박스 */
-#lc-commit-box { margin: 8px 16px 12px; border: 2px solid var(--amber); padding: 10px 12px; background: #000d01; animation: pulse-amber 3s ease-in-out infinite; width: calc(100% - 32px); box-sizing: border-box; flex-shrink: 0; }
+#lc-commit-box { margin: 8px auto 12px; border: 2px solid var(--amber); padding: 10px 12px; background: #000d01; animation: pulse-amber 3s ease-in-out infinite; width: 100%; max-width: 380px; box-sizing: border-box; flex-shrink: 0; }
 @keyframes pulse-amber { 0%,100% { box-shadow: 0 0 4px #ffab0060; border-color: var(--amber); } 50% { box-shadow: 0 0 20px #ffab00cc, 0 0 40px #ffab0040; border-color: #ffd050; } }
 .lc-commit-hd    { color: var(--amber); font-size: 11px; letter-spacing: .15em; text-shadow: 0 0 8px #ffab0080; text-align: center; margin-bottom: 8px; }
 .lc-commit-stats { display: flex; justify-content: space-around; margin-bottom: 10px; }
@@ -2987,10 +3002,10 @@ body.ignition-flash::before {
             <div id="lc-status-text">// PRE-LAUNCH</div>
           </div>
 
-          <!-- ── 메인: 로켓 존 + 텔레메트리 존 ── -->
+          <!-- ── 메인: 로켓 (전폭) + HUD 플로팅 ── -->
           <div id="lc-main-area">
 
-            <!-- 로켓 존 (55%) -->
+            <!-- 로켓 존 (전폭, 중앙 정렬) -->
             <div id="lc-rocket-zone">
               <!-- 발사 전 정적 패널 -->
               <div id="lc-pre-launch">
@@ -3017,43 +3032,54 @@ body.ignition-flash::before {
               </div>
             </div>
 
-            <!-- 텔레메트리 존 (45%) -->
-            <div id="lc-telem-zone">
-              <!-- 속도 게이지 -->
-              <div class="lc-gauge-block">
-                <div class="lc-gauge-title">SPEED</div>
-                <div class="lc-gauge-readout">
-                  <span id="lc-speed-val">0</span>
-                  <span class="lc-gauge-unit">km/h</span>
-                </div>
-                <div class="lc-gauge-bar-track"><div class="lc-gauge-bar-fill" id="lc-speed-bar"></div></div>
+            <!-- HUD 플로팅 창 (우상단 오버레이) -->
+            <div id="lc-hud">
+              <div id="lc-hud-titlebar">
+                <span class="lc-hud-title">&#9632; TELEMETRY HUD</span>
+                <button id="lc-hud-toggle" onclick="lcHudToggle(this)">&#8722;</button>
               </div>
-              <!-- 고도 게이지 -->
-              <div class="lc-gauge-block">
-                <div class="lc-gauge-title">ALTITUDE</div>
-                <div class="lc-gauge-readout">
-                  <span id="lc-alt-val">0</span>
-                  <span class="lc-gauge-unit">km</span>
+              <div id="lc-hud-body">
+                <!-- 속도 게이지 -->
+                <div class="lc-gauge-block">
+                  <div class="lc-gauge-title">SPEED</div>
+                  <div class="lc-gauge-readout">
+                    <span id="lc-speed-val">0</span>
+                    <span class="lc-gauge-unit">km/h</span>
+                  </div>
+                  <div class="lc-gauge-bar-track"><div class="lc-gauge-bar-fill" id="lc-speed-bar"></div></div>
                 </div>
-                <div class="lc-gauge-bar-track"><div class="lc-gauge-bar-fill" id="lc-alt-bar"></div></div>
+                <!-- 고도 게이지 -->
+                <div class="lc-gauge-block">
+                  <div class="lc-gauge-title">ALTITUDE</div>
+                  <div class="lc-gauge-readout">
+                    <span id="lc-alt-val">0</span>
+                    <span class="lc-gauge-unit">km</span>
+                  </div>
+                  <div class="lc-gauge-bar-track"><div class="lc-gauge-bar-fill" id="lc-alt-bar"></div></div>
+                </div>
+                <!-- 미션 파라미터 -->
+                <div id="lc-mission-params"></div>
+                <!-- 텔레메트리 로그 -->
+                <div id="telem-wrap"></div>
               </div>
-              <!-- 미션 파라미터 -->
-              <div id="lc-mission-params"></div>
-              <!-- 텔레메트리 로그 -->
-              <div id="telem-wrap"></div>
             </div>
 
           </div>
 
-          <!-- ── 하단: 단계 진행 바 ── -->
+          <!-- ── 하단: 11단계 진행 바 ── -->
           <div id="lc-stagebar">
             <div class="lc-stage-track">
-              <div class="lc-stage-seg active" data-idx="0"><span>PRE-LAUNCH</span></div>
-              <div class="lc-stage-seg" data-idx="1"><span>IGNITION</span></div>
-              <div class="lc-stage-seg" data-idx="2"><span>MAX-Q</span></div>
-              <div class="lc-stage-seg" data-idx="3"><span>MECO</span></div>
-              <div class="lc-stage-seg" data-idx="4"><span>STAGE SEP</span></div>
-              <div class="lc-stage-seg" data-idx="5"><span>ORBIT</span></div>
+              <div class="lc-stage-seg active" data-idx="0"><span>ASSY</span></div>
+              <div class="lc-stage-seg" data-idx="1"><span>FUEL</span></div>
+              <div class="lc-stage-seg" data-idx="2"><span>T-MINUS</span></div>
+              <div class="lc-stage-seg" data-idx="3"><span>LIFTOFF</span></div>
+              <div class="lc-stage-seg" data-idx="4"><span>MAX-Q</span></div>
+              <div class="lc-stage-seg" data-idx="5"><span>MECO</span></div>
+              <div class="lc-stage-seg" data-idx="6"><span>STG SEP</span></div>
+              <div class="lc-stage-seg" data-idx="7"><span>ORBIT</span></div>
+              <div class="lc-stage-seg" data-idx="8"><span>TLI</span></div>
+              <div class="lc-stage-seg" data-idx="9"><span>LOI</span></div>
+              <div class="lc-stage-seg" data-idx="10"><span>LANDING</span></div>
             </div>
           </div>
 
