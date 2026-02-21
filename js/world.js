@@ -785,16 +785,17 @@ function openBldOv(bld, el, keepPosition = false) {
     const hireCost = getWorkerHireCost();
     const hireAfford = (gs.res.money || 0) >= hireCost;
     if (isHousingBld) {
-      // 주거 시설: 인원 상한 정보 + 직원 고용 버튼
+      // 주거 시설: 시민 분양
+      const citizenCost = typeof getCitizenCost === 'function' ? getCitizenCost() : 500;
+      const citizenAfford = (gs.res.money || 0) >= citizenCost;
       actions.push({ type: 'sep', label: '// 시민 관리' });
       actions.push({
-        label: `직원 고용 — 주거 배치 (현재 ${gs.workers}명)`,
-        info: hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
+        label: `시민 분양 (현재 ${gs.citizens || 0}명)`,
+        info: citizenAfford ? `$${fmt(citizenCost)}` : `[자금 부족]`,
         disabled: false,
-        affordable: hireAfford,
-        desc: `직원 1명 고용 후 주거 시설에 배치\n현재 인원: ${gs.workers}명\n고용 비용: $${fmt(hireCost)}\n// 주거 시설 수가 인원 상한을 결정`,
-        type: 'hire_bld_worker',
-        bldId: bld.id,
+        affordable: citizenAfford,
+        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명\n분양 비용: $${fmt(citizenCost)}\n// 시민 1명당 자금 +10/s 수입`,
+        type: 'alloc_citizen',
       });
     } else {
       // 생산 건물: 건물별 직접 직원 고용
@@ -956,6 +957,16 @@ function bovClick(idx) {
   else if (act.type === 'unassign') unassignWorker(_bldOvBld.id);
   else if (act.type === 'hire_worker') hireWorker();
   else if (act.type === 'hire_bld_worker') hireBldWorker(act.bldId || _bldOvBld.id);
+  else if (act.type === 'alloc_citizen') {
+    if (typeof allocateCitizen === 'function' && allocateCitizen()) {
+      notify(`시민 분양 완료 — 현재 ${gs.citizens}명`, 'green');
+      playSfx('triangle', 400, 0.1, 0.05, 600);
+      const el = document.querySelector('.world-bld[data-bid="housing"]');
+      const bldDef = BUILDINGS ? BUILDINGS.find(b => b.id === 'housing') : null;
+      if (el && bldDef) openBldOv(bldDef, el, true);
+      saveGame(); renderAll();
+    } else { notify('자금 부족 — 시민 분양 불가', 'red'); }
+  }
   else if (act.type === 'upgrade') {
     if (!act.affordable) { notify('자원 부족', 'red'); return; }
     buyBldUpgrade(act.upgId, _bldOvBld.id);
