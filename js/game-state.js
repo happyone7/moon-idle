@@ -288,9 +288,15 @@ function getBldPurchaseCost(bldId) {
   return getBuildingCost(bld);
 }
 
-// 직원 고용 비용: 500 × 2.0^(workers-1)
+// 직원 고용 비용: 500 × 2.0^(workers-1) — 전체 인원 기반 (레거시)
 function getWorkerHireCost() {
   return Math.floor(500 * Math.pow(2.0, (gs.workers || 1) - 1));
+}
+
+// 건물별 직원 고용 비용: 100 × 3.0^(해당건물 배치 인원) — 슬롯 제한 없이 비용만 증가
+function getBldWorkerCost(bldId) {
+  const assigned = (gs.assignments && gs.assignments[bldId]) || 0;
+  return Math.floor(100 * Math.pow(3.0, assigned));
 }
 
 // 시민 분양 비용: 500 × 1.8^(citizens) (P8-4)

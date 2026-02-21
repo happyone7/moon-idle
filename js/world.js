@@ -760,8 +760,45 @@ function openBldOv(bld, el, keepPosition = false) {
   // ── Build action list ──────────────────────────────────────
   const actions = [];
 
-  // Named building upgrades
+  // ── 직원 고용 / 시민 관리 섹션 (항상 맨 위) ───────────────
+  const isHousingBld = bld.id === 'housing';
+  const isProductionBld = bld.produces !== 'bonus' || bld.id === 'ops_center';
+  if (cnt >= 1 && (isProductionBld || isHousingBld)) {
+    if (isHousingBld) {
+      // 주거 시설: 시민 분양
+      const citizenCost = typeof getCitizenCost === 'function' ? getCitizenCost() : 500;
+      const citizenAfford = (gs.res.money || 0) >= citizenCost;
+      actions.push({ type: 'sep', label: '// 시민 관리' });
+      actions.push({
+        label: `시민 분양 (현재 ${gs.citizens || 0}명)`,
+        info: citizenAfford ? `$${fmt(citizenCost)}` : `[자금 부족]`,
+        disabled: false,
+        affordable: citizenAfford,
+        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명\n분양 비용: $${fmt(citizenCost)}\n// 시민 1명당 자금 +10/s 수입`,
+        type: 'alloc_citizen',
+      });
+    } else {
+      // 생산 건물: 건물별 직접 직원 고용 (슬롯 제한 없음, 비용만 기하급수적 증가)
+      const hireCost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bld.id) : getWorkerHireCost();
+      const hireAfford = (gs.res.money || 0) >= hireCost;
+      actions.push({ type: 'sep', label: '// 직원 고용' });
+      actions.push({
+        label: `직원 고용 — ${bld.name} 배치 (현재 ${assigned}명)`,
+        info: hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
+        disabled: false,
+        affordable: hireAfford,
+        desc: `직원 1명 고용 후 ${bld.name}에 즉시 배치\n현재 배치: ${assigned}명\n고용 비용: $${fmt(hireCost)}\n// 고용할수록 비용이 기하급수적으로 증가`,
+        type: 'hire_bld_worker',
+        bldId: bld.id,
+      });
+    }
+  }
+
+  // ── 건물 업그레이드 ────────────────────────────────────────
   const bldUpgs = (typeof BUILDING_UPGRADES !== 'undefined' && BUILDING_UPGRADES[bld.id]) || [];
+  if (bldUpgs.length > 0) {
+    actions.push({ type: 'sep', label: '// 업그레이드' });
+  }
   bldUpgs.forEach(upg => {
     const done     = !!(gs.bldUpgrades && gs.bldUpgrades[upg.id]);
     const reqMet   = !upg.req || !!(gs.bldUpgrades && gs.bldUpgrades[upg.req]);
@@ -777,42 +814,6 @@ function openBldOv(bld, el, keepPosition = false) {
       upgId: upg.id,
     });
   });
-
-  // ── 직원 고용 섹션 (생산 건물 및 ops_center) ──────────────
-  const isHousingBld = bld.id === 'housing';
-  const isProductionBld = bld.produces !== 'bonus' || bld.id === 'ops_center';
-  if (cnt >= 1 && (isProductionBld || isHousingBld)) {
-    const hireCost = getWorkerHireCost();
-    const hireAfford = (gs.res.money || 0) >= hireCost;
-    if (isHousingBld) {
-      // 주거 시설: 시민 분양
-      const citizenCost = typeof getCitizenCost === 'function' ? getCitizenCost() : 500;
-      const citizenAfford = (gs.res.money || 0) >= citizenCost;
-      actions.push({ type: 'sep', label: '// 시민 관리' });
-      actions.push({
-        label: `시민 분양 (현재 ${gs.citizens || 0}명)`,
-        info: citizenAfford ? `$${fmt(citizenCost)}` : `[자금 부족]`,
-        disabled: false,
-        affordable: citizenAfford,
-        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명\n분양 비용: $${fmt(citizenCost)}\n// 시민 1명당 자금 +10/s 수입`,
-        type: 'alloc_citizen',
-      });
-    } else {
-      // 생산 건물: 건물별 직접 직원 고용
-      actions.push({ type: 'sep', label: '// 직원 고용' });
-      const slotCap = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bld.id]) || 0);
-      const slotFull = assigned >= slotCap;
-      actions.push({
-        label: `직원 고용 — ${bld.name} 배치 (${assigned}/${slotCap}명)`,
-        info: slotFull ? '[슬롯 만원]' : hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
-        disabled: slotFull,
-        affordable: hireAfford && !slotFull,
-        desc: `직원 1명 고용 후 ${bld.name}에 즉시 배치\n현재 배치: ${assigned}/${slotCap}명\n고용 비용: $${fmt(hireCost)}\n전체 인원: ${gs.workers}명`,
-        type: 'hire_bld_worker',
-        bldId: bld.id,
-      });
-    }
-  }
 
   // ── Add-on A/B choice section ────────────────────────────
   const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bld.id];
@@ -1207,7 +1208,7 @@ function _refreshBldOvHousingPanel() {
 
 // ─── 건물별 직접 직원 고용 ─────────────────────────────────────
 function hireBldWorker(bldId) {
-  const cost = getWorkerHireCost ? getWorkerHireCost() : 100;
+  const cost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bldId) : (getWorkerHireCost ? getWorkerHireCost() : 100);
   if (!gs || !gs.res) return;
   if ((gs.res.money || 0) < cost) {
     notify('자금 부족 — 직원 고용 불가', 'red');
