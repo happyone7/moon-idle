@@ -16,6 +16,7 @@ let gs = {
   upgrades: {},
   researchProgress: {},  // { upgradeId: { rpSpent: number, timeSpent: number } } — 진행 중인 연구
   opsRoles: { sales: 0, accounting: 0, consulting: 0 },
+  citizens: 0,         // 분양된 시민 수 (P8-4)
   selectedTech: null,
   msUpgrades: {},
   autoEnabled: {},
@@ -292,6 +293,20 @@ function getWorkerHireCost() {
   return Math.floor(500 * Math.pow(2.0, (gs.workers || 1) - 1));
 }
 
+// 시민 분양 비용: 500 × 1.8^(citizens) (P8-4)
+function getCitizenCost() {
+  return Math.floor(500 * Math.pow(1.8, gs.citizens || 0));
+}
+
+// 시민 분양: 자금 차감 후 시민 수 증가 (P8-4)
+function allocateCitizen() {
+  const cost = getCitizenCost();
+  if ((gs.res.money || 0) < cost) return false;
+  gs.res.money = Math.max(0, (gs.res.money || 0) - cost);
+  gs.citizens = (gs.citizens || 0) + 1;
+  return true;
+}
+
 function getPartCost(part) {
   const cost = {};
   const addonMult = getAddonPartCostMult();
@@ -314,6 +329,12 @@ function getProduction() {
   });
   // Add RP bonus from tech hub addon
   prod.research += getAddonRpBonus();
+  // 시민 수동 수입: 시민 1명당 10/s (P8-4)
+  prod.money += (gs.citizens || 0) * 10;
+  // 주거시설 상가 업그레이드: +50/s (P8-4)
+  if (gs.bldUpgrades && gs.bldUpgrades.housing_market) {
+    prod.money += 50;
+  }
   return prod;
 }
 
@@ -515,6 +536,8 @@ function loadGame(slot) {
     }
     gs.opsRoles = saved.opsRoles || { sales: 0, accounting: 0, consulting: 0 };
     if (!gs.opsRoles) gs.opsRoles = { sales: 0, accounting: 0, consulting: 0 };
+    // 시민 수 마이그레이션 (P8-4)
+    gs.citizens = saved.citizens !== undefined ? saved.citizens : 0;
     // 기존 ops_center 배치 인원을 역할로 분배 (마이그레이션)
     if (gs.assignments && gs.assignments.ops_center &&
         gs.opsRoles.sales === 0 && gs.opsRoles.accounting === 0 && gs.opsRoles.consulting === 0) {

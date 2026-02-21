@@ -107,9 +107,11 @@ const RESEARCH_BRANCHES = [
 // ============================================================
 const BUILDING_UPGRADES = {
   housing: [
-    { id:'hsg_dorm',      name:'기숙사 증설',          cost:{money:250},                          desc:'인원 상한 +2명 추가',              wkr:2 },
-    { id:'hsg_welfare',   name:'복리 후생 강화',        cost:{money:800,metal:50},                 desc:'인원 +3명 추가',                   wkr:3,  req:'hsg_dorm' },
-    { id:'hsg_township',  name:'타운십 조성',           cost:{money:3000,metal:200},               desc:'인원 +5명 대규모 주거 허브',       wkr:5,  req:'hsg_welfare' },
+    { id:'hsg_dorm',       name:'기숙사 증설',          cost:{money:250},                          desc:'인원 상한 +2명 추가',                           wkr:2 },
+    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:800,metal:50},                 desc:'인원 +3명 추가',                                wkr:3,  req:'hsg_dorm' },
+    { id:'hsg_township',   name:'타운십 조성',           cost:{money:3000,metal:200},               desc:'인원 +5명 대규모 주거 허브',                    wkr:5,  req:'hsg_welfare' },
+    { id:'housing_school', name:'단지 내 학원 개설',     cost:{money:5000},                         desc:'주민을 전문 기술자로 훈련 (생산 +10%)',          mult:1.10, effect:'specialist_rate', req:'hsg_township' },
+    { id:'housing_market', name:'단지 내 상가',          cost:{money:3000},                         desc:'상가 수익으로 자금 +50/s',                      effect:'passive_income',   req:'hsg_township' },
   ],
   ops_center: [
     { id:'ops_sales',     name:'영업팀 강화',           cost:{money:400},                          desc:'이 건물 수익 +35%',                mult:1.35 },
