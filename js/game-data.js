@@ -47,12 +47,12 @@ const BLD_STAFF_ICONS = {
 
 const SPECIALIST_ROLES = {
   research_lab: [
-    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 생산 +25%\n실험 결과 가속',      effect:'res_research_mult', val:0.25 },
-    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 생산 효율 +8%\n공정 최적화 적용', effect:'all_prod_mult',     val:0.08 },
+    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 포인트 생산 +25%/명',    effect:'res_research_mult', val:0.25 },
+    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 자원 생산 +8%/명',       effect:'all_prod_mult',     val:0.08 },
   ],
   ops_center: [
-    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%\n거래 채널 확대',      effect:'money_mult',    val:0.20 },
-    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'건물 유지비 -15%\n운영 자동화 적용',  effect:'upkeep_reduce', val:0.15 },
+    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%/명',          effect:'money_mult',    val:0.20 },
+    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'(미구현) 건물 유지비 -15%/명', effect:'upkeep_reduce', val:0.15 },
   ],
 };
 

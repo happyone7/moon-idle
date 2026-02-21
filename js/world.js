@@ -1278,7 +1278,10 @@ function openSpecPanel(bld) {
   const ovRect = ovEl.getBoundingClientRect();
   panel.style.display = 'block';
   panel.style.top  = ovRect.top + 'px';
-  panel.style.left = (ovRect.right + 6) + 'px';
+  panel.style.left = (ovRect.right + 1) + 'px';   // 1px 간격 — 사실상 인접
+  // 마우스가 spec-panel 위에 있는 동안 메인 오버레이 닫힘 방지
+  panel.onmouseenter = () => clearTimeout(_bldOvTimer);
+  panel.onmouseleave = () => scheduleBldOvClose();
 }
 
 function closeSpecPanel() {
