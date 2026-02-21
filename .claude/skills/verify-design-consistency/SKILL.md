@@ -51,6 +51,7 @@ grep -A 20 "^:root {" index.html
 - 폰트: `--font`
 - 테두리: `--border`
 - 글로우: `--glow`, `--glow-strong`, `--amber-glow`
+- 글꼴 크기 (Sprint 8+): `--fs-xs`, `--fs-sm`, `--fs-md`, `--fs-lg`, `--fs-xl`
 
 **FAIL 시 조치:**
 - 누락된 토큰을 `:root` 블록에 추가
@@ -172,13 +173,28 @@ grep -oP 'class="[^"]+' index.html | cut -d'"' -f2 | cut -d' ' -f1 | grep -oP '^
 - `title-` — 타이틀 화면 관련
 - `nav-` — 내비게이션 탭
 - `bld-` — 건물 리스트/카드
-- `wb-` — 월드 건물 (배경 렌더링)
-- `r-panel-` — 우측 패널
-- `rl-` — 리소스 왼쪽 패널
+- `wb-` — 월드 건물 (배경 렌더링, JS에서 동적 적용)
+- `r-panel-` — 우측 패널 (JS에서 동적 적용)
+- `rl-` — 리소스 왼쪽 패널 (JS에서 동적 적용)
 - `tab-` — 탭 페인 및 관련 요소
 - `save-` — 세이브 슬롯 모달
 - `tuf-` — 토글/유틸리티 (toggle utility flag)
 - `ms-` — 마일스톤 (milestone)
+- `asm-` — 조립 탭 레이아웃 컴포넌트
+- `tb-` — 상단 토픽바 (era badge, subtitle 등)
+- `lo-` — 발사 완료 화면 (launch outcome: `lo-title`, `lo-rocket`)
+- `msn-` — 미션 탭 서브탭 버튼
+- `panel-` — 연구/미션 탭 공용 패널 컨테이너
+- `quality-` — 로켓 품질 선택기
+- `rocket-` — 조립 탭 로켓 아트 영역
+- `science-` — 연구 탭 사이언스 박스
+- `wk-` — 워커/직원 아이콘 (Sprint 8: `wk-icon`, `wk-ops`, `wk-mine` 등)
+- `wkr-` — 워커 패널 헤더/행 컨테이너 (Sprint 8: `wkr-head-spec` 등)
+- `sp2-` — 전문화 서브패널 (Sprint 8: `sp2-head`, `sp2-body`, `sp2-role` 등)
+- `sp-` — 전문화 역할 아이콘 pseudo-element (Sprint 8: `sp-exp`, `sp-data`, `sp-sales`, `sp-sys`)
+- `lc-` — 발사관제 HUD/패널 (Sprint 8: `lc-header`, `lc-hud`, `lc-rocket-disp` 등)
+- `launch-` — 발사 애니메이션/결과 영역 (Sprint 8: `launch-anim-wrap`, `launch-result`)
+- `phase-` — 연구 페이즈 타임라인 노드 (Sprint 8)
 
 **위반 예시:**
 ```html
