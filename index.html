@@ -1246,9 +1246,10 @@ body.tab-research #pane-research {
 #lc-rocket-zone { width: 100%; height: 100%; overflow-y: auto; display: flex; flex-direction: column; align-items: center; background: var(--bg); }
 #lc-rocket-zone::-webkit-scrollbar { width: 3px; }
 #lc-rocket-zone::-webkit-scrollbar-thumb { background: var(--green-dim); }
-#lc-pre-launch { display: flex; flex-direction: column; align-items: center; width: 100%; }
-.lc-rocket-disp { padding: 10px 0 6px; text-align: center; width: 100%; }
-.lc-rocket-art  { display: inline-block; text-align: left; font-size: 14px; line-height: 1.3; white-space: pre; letter-spacing: 0; }
+/* flex:1 + justify-content:center → 로켓 수직 정중앙 */
+#lc-pre-launch { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1; justify-content: center; padding: 8px 0; }
+.lc-rocket-disp { text-align: center; width: 100%; }
+.lc-rocket-art  { display: inline-block; text-align: left; font-size: 15px; line-height: 1.3; white-space: pre; letter-spacing: 0; }
 
 /* HUD 플로팅 창 */
 #lc-hud {
@@ -1263,7 +1264,7 @@ body.tab-research #pane-research {
   padding: 3px 7px; background: rgba(0,230,118,0.07);
   border-bottom: 1px solid var(--green-dim); flex-shrink: 0; cursor: default;
 }
-.lc-hud-title { color: var(--green-dim); font-size: 9px; letter-spacing: .2em; text-transform: uppercase; }
+.lc-hud-title { color: var(--green-dim); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
 #lc-hud-toggle { background: none; border: 1px solid var(--green-dim); color: var(--green-dim); font-size: 10px; width: 16px; height: 14px; cursor: pointer; font-family: var(--font); line-height: 1; padding: 0; }
 #lc-hud-toggle:hover { color: var(--green); border-color: var(--green); }
 #lc-hud-body { padding: 6px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; }
@@ -1272,7 +1273,7 @@ body.tab-research #pane-research {
 
 /* HUD 게이지 (컴팩트) */
 .lc-gauge-block { background: rgba(0,0,0,.3); border: 1px solid var(--green-dim); padding: 5px 8px; }
-.lc-gauge-title { font-size: 9px; color: var(--green-dim); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 2px; }
+.lc-gauge-title { font-size: 11px; color: var(--green-dim); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 2px; }
 .lc-gauge-readout { display: flex; align-items: baseline; gap: 5px; margin-bottom: 4px; }
 .lc-gauge-readout > span:first-child { font-size: 22px; font-weight: bold; color: var(--white, #e8ffe8); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px var(--green); }
 .lc-gauge-unit { font-size: 11px; color: var(--green-mid); }
@@ -1285,13 +1286,13 @@ body.tab-research #pane-research {
 .lc-mp-val   { font-size: 13px; font-weight: bold; color: var(--green); font-family: 'Courier New', Consolas, monospace; font-variant-numeric: tabular-nums; }
 .lc-mp-val.amber { color: var(--amber); }
 .lc-mp-val.red   { color: var(--red); }
-.lc-mp-label { font-size: 8px; color: var(--green-dim); letter-spacing: .08em; text-transform: uppercase; margin-top: 1px; }
+.lc-mp-label { font-size: 10px; color: var(--green-dim); letter-spacing: .08em; text-transform: uppercase; margin-top: 1px; }
 
 /* 발사 커밋 바 (프로그레스바 바로 위, 가로형 스트립) */
 #lc-commit-box { display: flex; align-items: center; gap: 10px; padding: 7px 16px; background: #000a02; border-top: 1px solid #1a3d20; border-bottom: none; margin: 0; width: 100%; max-width: none; box-sizing: border-box; flex-shrink: 0; animation: none; transition: border-color .4s, box-shadow .4s; }
 #lc-commit-box.lc-commit-ready { border-top-color: var(--amber); animation: pulse-amber 3s ease-in-out infinite; }
 @keyframes pulse-amber { 0%,100% { box-shadow: 0 0 4px #ffab0060; } 50% { box-shadow: 0 0 18px #ffab00aa, 0 0 36px #ffab0030; } }
-.lc-commit-hd { color: #2a4a2a; font-size: 9px; letter-spacing: .18em; text-shadow: none; white-space: nowrap; flex-shrink: 0; margin-bottom: 0; transition: color .4s, text-shadow .4s; }
+.lc-commit-hd { color: #2a4a2a; font-size: 11px; letter-spacing: .18em; text-shadow: none; white-space: nowrap; flex-shrink: 0; margin-bottom: 0; transition: color .4s, text-shadow .4s; }
 #lc-commit-box.lc-commit-ready .lc-commit-hd { color: var(--amber); text-shadow: 0 0 8px #ffab0060; }
 .lc-commit-stats { display: flex; justify-content: flex-start; gap: 18px; flex: 1; margin-bottom: 0; }
 .lc-cs           { text-align: center; }
@@ -1299,7 +1300,7 @@ body.tab-research #pane-research {
 .lc-cs-val.green { color: var(--green); text-shadow: var(--glow-strong); }
 .lc-cs-val.amber { color: var(--amber); text-shadow: 0 0 8px #ffab0060; }
 .lc-cs-val.red   { color: var(--red);   text-shadow: 0 0 8px #ff174460; }
-.lc-cs-label     { font-size: 8px; color: var(--green-dim); letter-spacing: .08em; }
+.lc-cs-label     { font-size: 10px; color: var(--green-dim); letter-spacing: .08em; }
 #lc-btn-launch { padding: 8px 20px; background: rgba(0,0,0,.4); border: 1px solid #2a4a2a; color: #3d6040; font-family: var(--font); font-size: 12px; letter-spacing: .18em; cursor: pointer; text-shadow: none; transition: background .2s, border-color .2s, color .2s; flex-shrink: 0; white-space: nowrap; margin-bottom: 0; }
 #lc-btn-launch:hover:not(:disabled) { background: rgba(255,171,0,.14); }
 #lc-btn-launch:disabled { cursor: not-allowed; }
@@ -1313,12 +1314,12 @@ body.tab-research #pane-research {
 /* 조립/연료 상태 패널 */
 #lc-status-panel { width: 100%; max-width: 420px; margin: 4px auto 2px; padding: 4px 12px 0; box-sizing: border-box; }
 .lc-sp-row { display: flex; align-items: center; gap: 7px; padding: 2px 0; }
-.lc-sp-label { font-size: 9px; color: var(--green-dim); letter-spacing: .08em; min-width: 58px; text-align: right; flex-shrink: 0; }
-.lc-sp-bar-wrap { flex: 1; height: 5px; background: rgba(0,230,118,.06); overflow: hidden; border: 1px solid #0d3d1f; }
+.lc-sp-label { font-size: 11px; color: var(--green-dim); letter-spacing: .08em; min-width: 64px; text-align: right; flex-shrink: 0; }
+.lc-sp-bar-wrap { flex: 1; height: 6px; background: rgba(0,230,118,.06); overflow: hidden; border: 1px solid #0d3d1f; }
 .lc-sp-bar-fill { height: 100%; background: var(--green-dim); transition: width .5s; }
 .lc-sp-bar-fill.amber { background: var(--amber); }
 .lc-sp-bar-fill.red   { background: var(--red); }
-.lc-sp-pct { font-size: 9px; color: var(--green-mid); min-width: 36px; font-family: 'Courier New', Consolas, monospace; }
+.lc-sp-pct { font-size: 11px; color: var(--green-mid); min-width: 40px; font-family: 'Courier New', Consolas, monospace; }
 .lc-sp-pct.amber { color: var(--amber); }
 .lc-sp-pct.red   { color: var(--red); }
 

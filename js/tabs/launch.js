@@ -380,8 +380,13 @@ function _lcRocketArtHtml() {
   let inProgressJob = null;
   jobs.forEach(j => { if (j && !j.ready && j.endAt && !inProgressJob) inProgressJob = j; });
 
-  // 완료 안된 파트: '#1f3520' → '#3d6040' (어둡지만 윤곽이 보이는 올리브 그린)
-  const col = (key) => readyJob ? 'var(--green)' : (p[key] ? 'var(--amber)' : '#3d6040');
+  // 4단계 색상: 완성=밝은녹색, 조립중=노란색, 파트보유=주황색, 미획득=어두운주황
+  const col = (key) => {
+    if (readyJob)      return '#00e676';  // 완성 — 밝은 녹색
+    if (inProgressJob) return '#ffd700';  // 조립 진행 중 — 노란색
+    if (p[key])        return '#ff9000';  // 파트 보유(미조립) — 주황색
+    return '#7a5500';                     // 미획득 — 어두운 주황 (윤곽 보임)
+  };
 
   const partsDone  = PARTS.filter(pt => p[pt.id]).length;
   const partsPct   = Math.round((partsDone / PARTS.length) * 100);
@@ -414,11 +419,11 @@ function _lcRocketArtHtml() {
     sp(hulC,               '    |         |      '),
     sp(hulC,               '    |  HULL   |      '),
     sp(hulC,               '    |=========|      '),
-    sp(ftkC,               '    |[== LOX ==]|    '),
-    sp(ftkC,               '    |[== RP1 ==]|    '),
-    sp(ftkC,               '    |===========|    '),
-    sp(engC,               '   /|   ENGINE  |\\   '),
-    sp(engC,               '  / |___________|\\   '),
+    sp(ftkC,               '    |   LOX   |      '),
+    sp(ftkC,               '    |   RP1   |      '),
+    sp(ftkC,               '    |=========|      '),
+    sp(engC,               '   /| ENGINE  |\\     '),
+    sp(engC,               '  / |_________|\\     '),
     sp('var(--green-dim)', ' *     |  |  |   *  '),
     sp(engC,               '       | ||  |       '),
     sp(engC,               '      |||||||         '),
