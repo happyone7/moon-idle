@@ -1123,6 +1123,23 @@ body.tab-research #pane-research {
 .rsh-branch-col[data-branch="O"] .rsh-bcard-progress .rsh-bc-hd { color:#ce93d8; }
 .rsh-branch-col[data-branch="O"] .rsh-branch-arrow { color:#9c27b0; }
 @keyframes node-purple-pulse { 0%,100%{box-shadow:0 0 4px rgba(156,39,176,0.3)} 50%{box-shadow:0 0 10px rgba(187,134,252,0.5)} }
+/* ── X 전문화 브랜치 (파란색) ─────────────────────────────── */
+.rsh-branch-col[data-branch="X"] .rsh-branch-hd { color:#4fc3f7; border-color:#0277bd; text-shadow:0 0 8px #4fc3f760; }
+.rsh-branch-col[data-branch="X"] .rsh-bcard-available { border-color:#0277bd; background:rgba(3,169,244,0.06); }
+.rsh-branch-col[data-branch="X"] .rsh-bcard-available:hover { border-color:#4fc3f7; background:rgba(3,169,244,0.13); }
+.rsh-branch-col[data-branch="X"] .rsh-bcard-available .rsh-bc-hd { color:#81d4fa; }
+.rsh-branch-col[data-branch="X"] .rsh-bcard-available .rsh-bc-cost { color:#4fc3f7; }
+.rsh-branch-col[data-branch="X"] .rsh-bcard-complete { border-color:#0288d1; background:rgba(3,169,244,0.09); }
+.rsh-branch-col[data-branch="X"] .rsh-bcard-complete .rsh-bc-hd { color:#4fc3f7; }
+.rsh-branch-col[data-branch="X"] .rsh-bcard-progress { border-color:#039be5; background:rgba(3,169,244,0.07); }
+.rsh-branch-col[data-branch="X"] .rsh-branch-arrow { color:#0288d1; }
+/* ── F 미래 연구 열 (어두운 잠금 스타일) ──────────────────── */
+.rsh-branch-future .rsh-branch-hd { color:#555; border-color:#333; text-shadow:none; }
+.rsh-future-card { opacity:0.55; filter:blur(0.3px); }
+.rsh-future-desc { color:#555 !important; font-style:italic; }
+/* ── 프리미엄 업그레이드 (앰버 강조) ─────────────────────── */
+.bov-premium .bov-act-label { color:var(--amber); }
+.bov-premium { border-left:2px solid var(--amber) !important; }
 
 /* ===========================
    ASSEMBLY TAB
@@ -3141,8 +3158,6 @@ body.ignition-flash::before {
             <div id="lc-rocket-zone">
               <!-- 발사 전 정적 패널 -->
               <div id="lc-pre-launch">
-                <!-- 완성도 표시 -->
-                <div id="lc-readiness"></div>
                 <!-- 프리-플라이트 체크리스트 -->
                 <div id="lc-checklist"></div>
                 <div class="lc-rocket-disp">
@@ -3150,6 +3165,8 @@ body.ignition-flash::before {
                 </div>
                 <!-- 조립/연료 상태 패널 -->
                 <div id="lc-status-panel"></div>
+                <!-- 완성도 표시 (연료 바 아래) -->
+                <div id="lc-readiness"></div>
               </div>
               <!-- 발사 애니메이션 존 (launch.js가 toggle) -->
               <div id="lc-anim-zone">
