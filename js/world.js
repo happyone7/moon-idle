@@ -747,7 +747,7 @@ let _bldOvTimer  = null;
 let _bldOvActions = [];
 let _bldOvBld    = null;
 
-function openBldOv(bld, el) {
+function openBldOv(bld, el, keepPosition = false) {
   clearTimeout(_bldOvTimer);
   const ovEl = document.getElementById('bld-ov');
   if (!ovEl) return;
@@ -778,19 +778,39 @@ function openBldOv(bld, el) {
     });
   });
 
-  // ── 운영 센터: 직원 고용 섹션 ────────────────────────────
-  if (bld.id === 'ops_center' && cnt >= 1) {
+  // ── 직원 고용 섹션 (생산 건물 및 ops_center) ──────────────
+  const isHousingBld = bld.id === 'housing';
+  const isProductionBld = bld.produces !== 'bonus' || bld.id === 'ops_center';
+  if (cnt >= 1 && (isProductionBld || isHousingBld)) {
     const hireCost = getWorkerHireCost();
     const hireAfford = (gs.res.money || 0) >= hireCost;
-    actions.push({ type: 'sep', label: '// 직원 고용' });
-    actions.push({
-      label: `센터 직원 고용 (현재 ${gs.workers}명)`,
-      info: hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
-      disabled: false,
-      affordable: hireAfford,
-      desc: `센터 직원 1명 고용\n현재 인원: ${gs.workers}명\n고용 비용: $${fmt(hireCost)}\n// 배치는 [직원 배치 관리]에서`,
-      type: 'hire_worker',
-    });
+    if (isHousingBld) {
+      // 주거 시설: 인원 상한 정보 + 직원 고용 버튼
+      actions.push({ type: 'sep', label: '// 시민 관리' });
+      actions.push({
+        label: `직원 고용 — 주거 배치 (현재 ${gs.workers}명)`,
+        info: hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
+        disabled: false,
+        affordable: hireAfford,
+        desc: `직원 1명 고용 후 주거 시설에 배치\n현재 인원: ${gs.workers}명\n고용 비용: $${fmt(hireCost)}\n// 주거 시설 수가 인원 상한을 결정`,
+        type: 'hire_bld_worker',
+        bldId: bld.id,
+      });
+    } else {
+      // 생산 건물: 건물별 직접 직원 고용
+      actions.push({ type: 'sep', label: '// 직원 고용' });
+      const slotCap = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bld.id]) || 0);
+      const slotFull = assigned >= slotCap;
+      actions.push({
+        label: `직원 고용 — ${bld.name} 배치 (${assigned}/${slotCap}명)`,
+        info: slotFull ? '[슬롯 만원]' : hireAfford ? `$${fmt(hireCost)}` : `[자금 부족]`,
+        disabled: slotFull,
+        affordable: hireAfford && !slotFull,
+        desc: `직원 1명 고용 후 ${bld.name}에 즉시 배치\n현재 배치: ${assigned}/${slotCap}명\n고용 비용: $${fmt(hireCost)}\n전체 인원: ${gs.workers}명`,
+        type: 'hire_bld_worker',
+        bldId: bld.id,
+      });
+    }
   }
 
   // ── Add-on A/B choice section ────────────────────────────
@@ -851,9 +871,9 @@ function openBldOv(bld, el) {
     let rowCls = '';
     if (act.done)                                                   rowCls = 'bov-done';
     else if (act.disabled)                                          rowCls = 'bov-locked';
-    else if ((act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker') && !act.affordable) rowCls = 'bov-need';
+    else if ((act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker' || act.type === 'hire_bld_worker') && !act.affordable) rowCls = 'bov-need';
 
-    const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker';
+    const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker' || act.type === 'hire_bld_worker';
     const isWorker = act.type === 'assign' || act.type === 'unassign';
     let btnTxt = act.done ? '[완료]' : act.disabled ? '[잠금]' : (isUpg && !act.affordable) ? '[부족]' : '[실행]';
     const btnDis = act.done || act.disabled || (isUpg && !act.affordable);
@@ -905,15 +925,17 @@ function openBldOv(bld, el) {
   ovEl.style.width = ovW + 'px';
   ovEl.style.display = 'block';
   requestAnimationFrame(() => {
-    const r   = el.getBoundingClientRect();
-    const ovH = ovEl.offsetHeight || 260;
-    let lx = r.left - 10;
-    let ty = r.top - ovH - 8;
-    if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
-    if (lx < 4) lx = 4;
-    if (ty < 4) ty = r.bottom + 6;
-    ovEl.style.left = lx + 'px';
-    ovEl.style.top  = ty + 'px';
+    if (!keepPosition) {
+      const r   = el.getBoundingClientRect();
+      const ovH = ovEl.offsetHeight || 260;
+      let lx = r.left - 10;
+      let ty = r.top - ovH - 8;
+      if (lx + ovW > window.innerWidth - 6) lx = window.innerWidth - ovW - 6;
+      if (lx < 4) lx = 4;
+      if (ty < 4) ty = r.bottom + 6;
+      ovEl.style.left = lx + 'px';
+      ovEl.style.top  = ty + 'px';
+    }
   });
 }
 
@@ -933,6 +955,7 @@ function bovClick(idx) {
   else if (act.type === 'assign')   assignWorker(_bldOvBld.id);
   else if (act.type === 'unassign') unassignWorker(_bldOvBld.id);
   else if (act.type === 'hire_worker') hireWorker();
+  else if (act.type === 'hire_bld_worker') hireBldWorker(act.bldId || _bldOvBld.id);
   else if (act.type === 'upgrade') {
     if (!act.affordable) { notify('자원 부족', 'red'); return; }
     buyBldUpgrade(act.upgId, _bldOvBld.id);
@@ -1067,10 +1090,10 @@ function buyAddonOption(bldId, optionId) {
   const el  = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (bld && el) openBldOv(bld, el);
   renderAll();
-  // 오버레이 갱신
+  // 오버레이 갱신 (keepPosition=true — 위치 드리프트 방지)
   setTimeout(() => {
     const freshPre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
-    if (freshPre && typeof openBldOv === 'function') openBldOv(BUILDINGS.find(b => b.id === bldId), freshPre);
+    if (freshPre && typeof openBldOv === 'function') openBldOv(BUILDINGS.find(b => b.id === bldId), freshPre, true);
   }, 60);
 }
 
@@ -1169,6 +1192,29 @@ function _refreshBldOvHousingPanel() {
   } else {
     if (typeof syncWorkerDots === 'function') syncWorkerDots();
   }
+}
+
+// ─── 건물별 직접 직원 고용 ─────────────────────────────────────
+function hireBldWorker(bldId) {
+  const cost = getWorkerHireCost ? getWorkerHireCost() : 100;
+  if (!gs || !gs.res) return;
+  if ((gs.res.money || 0) < cost) {
+    notify('자금 부족 — 직원 고용 불가', 'red');
+    return;
+  }
+  gs.res.money -= cost;
+  if (!gs.assignments) gs.assignments = {};
+  gs.assignments[bldId] = (gs.assignments[bldId] || 0) + 1;
+  gs.workers = (gs.workers || 0) + 1;
+  notify(`직원 고용 완료 — ${bldId} 배치 / 전체 ${gs.workers}명`, 'green');
+  playSfx('triangle', 400, 0.1, 0.05, 600);
+  if (typeof syncWorkerDots === 'function') syncWorkerDots();
+  // 오버레이 갱신 (keepPosition=true — 위치 드리프트 방지)
+  const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
+  const bldDef = BUILDINGS ? BUILDINGS.find(b => b.id === bldId) : null;
+  if (el && bldDef) openBldOv(bldDef, el, true);
+  saveGame();
+  renderAll();
 }
 
 // ─── GHOST BUILDING POPUP (미건설 건물 클릭/호버) ────────────
@@ -1413,105 +1459,3 @@ function spawnAsciiParticles(x, y, count, color) {
   }
 }
 
-// ─── 직원 배치 관리 팝업 ──────────────────────────────────────
-function openStaffPopup() {
-  const pop = document.getElementById('staff-popup');
-  const ov  = document.getElementById('staff-popup-overlay');
-  if (!pop || !ov) return;
-  pop.classList.add('open');
-  ov.classList.add('open');
-  renderStaffPopup();
-}
-
-function closeStaffPopup() {
-  const pop = document.getElementById('staff-popup');
-  const ov  = document.getElementById('staff-popup-overlay');
-  if (pop) pop.classList.remove('open');
-  if (ov)  ov.classList.remove('open');
-}
-
-function renderStaffPopup() {
-  const bodyEl = document.getElementById('sp-body');
-  const availEl = document.getElementById('sp-avail-txt');
-  if (!bodyEl) return;
-
-  const avail = getAvailableWorkers();
-  if (availEl) availEl.textContent = `여유 ${avail}명 / 전체 ${gs.workers}명`;
-
-  // 건물 카테고리 정의
-  const SECTIONS = [
-    {
-      title: '■ 자원 생산',
-      blds: ['mine', 'extractor', 'refinery', 'cryo_plant'],
-    },
-    {
-      title: '■ 기술 생산',
-      blds: ['elec_lab', 'fab_plant'],
-    },
-    {
-      title: '■ 연구',
-      blds: ['research_lab', 'r_and_d'],
-    },
-    {
-      title: '■ 기타',
-      blds: ['supply_depot', 'solar_array', 'launch_pad'],
-    },
-  ];
-
-  let html = '';
-
-  // 운영 센터 역할 섹션 (OPS_ROLES 기반)
-  const opsCnt = gs.buildings.ops_center || 0;
-  if (opsCnt > 0 && typeof OPS_ROLES !== 'undefined') {
-    html += `<div class="sp-sect-hd">■ 운영 센터</div>`;
-    OPS_ROLES.forEach(role => {
-      const cur = (gs.opsRoles && gs.opsRoles[role.id]) || 0;
-      const max = opsCnt * role.maxSlotsPerBld;
-      const canAdd = avail > 0 && cur < max;
-      const canSub = cur > 0;
-      html += `<div class="sp-row">
-        <span class="sp-bld-icon">[OPS]</span>
-        <span class="sp-role-name">${role.name}</span>
-        <button class="sp-btn" onclick="unassignOpsRole('${role.id}'); renderStaffPopup();" ${canSub?'':'disabled'}>−</button>
-        <span class="sp-count">${cur}</span>
-        <button class="sp-btn" onclick="assignOpsRole('${role.id}'); renderStaffPopup();" ${canAdd?'':'disabled'}>+</button>
-        <span class="sp-max">/ ${max}</span>
-      </div>`;
-    });
-  }
-
-  // 일반 건물 섹션
-  SECTIONS.forEach(sect => {
-    const rows = sect.blds
-      .map(bid => {
-        const bld = BUILDINGS.find(b => b.id === bid);
-        if (!bld) return null;
-        const cnt = gs.buildings[bid] || 0;
-        if (cnt === 0) return null;  // 미건설 건물 숨김
-        const assigned = (gs.assignments && gs.assignments[bid]) || 0;
-        const slotCap  = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bid]) || 0);
-        const staffName = (typeof BLD_STAFF_NAMES !== 'undefined' && BLD_STAFF_NAMES[bid]) || '직원';
-        const canAdd = avail > 0 && assigned < slotCap;
-        const canSub = assigned > 0;
-        return `<div class="sp-row">
-          <span class="sp-bld-icon">${bld.icon}</span>
-          <span class="sp-role-name">${staffName}</span>
-          <button class="sp-btn" onclick="unassignWorker('${bid}'); renderStaffPopup();" ${canSub?'':'disabled'}>−</button>
-          <span class="sp-count">${assigned}</span>
-          <button class="sp-btn" onclick="assignWorker('${bid}'); renderStaffPopup();" ${canAdd?'':'disabled'}>+</button>
-          <span class="sp-max">/ ${slotCap}</span>
-        </div>`;
-      })
-      .filter(Boolean)
-      .join('');
-    if (rows) {
-      html += `<div class="sp-sect-hd">${sect.title}</div>${rows}`;
-    }
-  });
-
-  if (!html) {
-    html = '<div style="color:var(--text-dim);font-size:var(--fs-sm);padding:12px 0">건설된 건물이 없습니다.</div>';
-  }
-
-  bodyEl.innerHTML = html;
-}

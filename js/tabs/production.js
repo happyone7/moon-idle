@@ -53,11 +53,11 @@ function buyBuilding(bid) {
   renderAll();
   // 건설 애니메이션
   if (typeof _triggerBuildAnim === 'function') _triggerBuildAnim(bid);
-  // 건설 후 오버레이 갱신 (ghost → real overlay)
+  // 건설 후 오버레이 갱신 (ghost → real overlay, keepPosition=true — 위치 드리프트 방지)
   setTimeout(() => {
     const freshPre = document.querySelector('.world-bld[data-bid="' + bid + '"]');
     if (freshPre && typeof openBldOv === 'function') {
-      openBldOv(bld, freshPre);
+      openBldOv(bld, freshPre, true);
     }
   }, 60);
   // 파티클 이펙트: 건물 pre 위치 기준 버스트
