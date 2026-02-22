@@ -67,7 +67,7 @@ const BUILDINGS = [
   { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:35,  baseCost:{money:15000,iron:4000,electronics:800},        desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
   { id:'elec_lab',     name:'전자공학 연구소',  icon:'[PCB]', produces:'electronics', baseRate:18,  baseCost:{money:18000,iron:4000},                        desc:'회로 부품 생산',    wbClass:'wb-eleclab' },
   { id:'fab_plant',    name:'반도체 공장',      icon:'[FAB]', produces:'electronics', baseRate:35,  baseCost:{money:25000,iron:6000,electronics:1500},       desc:'고급 반도체',       wbClass:'wb-eleclab' },
-  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:1,   baseCost:{money:5000},                                   desc:'기술 연구 포인트',  wbClass:'wb-research' },
+  { id:'research_lab', name:'연구소',           icon:'[RSH]', produces:'research',    baseRate:1,   baseCost:{money:2000},                                   desc:'기술 연구 포인트',  wbClass:'wb-research' },
   { id:'r_and_d',      name:'R&D 센터',         icon:'[RND]', produces:'research',    baseRate:25,  baseCost:{money:40000,electronics:3000},                 desc:'고급 연구 가속',    wbClass:'wb-research' },
   { id:'solar_array',  name:'태양광 어레이',    icon:'[SOL]', produces:'bonus',       baseRate:0.1, baseCost:{money:35000,electronics:4000},                 desc:'전체 생산 +10%/개', wbClass:'wb-solar' },
   { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:120000,iron:25000,electronics:10000},    desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },

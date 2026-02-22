@@ -894,10 +894,10 @@ function openBldOv(bld, el, keepPosition = false) {
     let rowCls = '';
     if (act.done)                                                   rowCls = 'bov-done';
     else if (act.disabled)                                          rowCls = 'bov-locked';
-    else if ((act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker' || act.type === 'hire_bld_worker' || act.type === 'alloc_citizen') && !act.affordable) rowCls = 'bov-need';
+    else if ((act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'addon_choose' || act.type === 'hire_worker' || act.type === 'hire_bld_worker' || act.type === 'alloc_citizen') && !act.affordable) rowCls = 'bov-need';
     if (act.premium && !act.done && !act.disabled) rowCls += (rowCls ? ' ' : '') + 'bov-premium';
 
-    const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'hire_worker' || act.type === 'hire_bld_worker' || act.type === 'alloc_citizen';
+    const isUpg    = act.type === 'upgrade' || act.type === 'addon_upgrade' || act.type === 'addon_choose' || act.type === 'hire_worker' || act.type === 'hire_bld_worker' || act.type === 'alloc_citizen';
     const isWorker = act.type === 'assign' || act.type === 'unassign';
     let btnTxt;
     if (act.type === 'hire_bld_worker') {
