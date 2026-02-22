@@ -757,6 +757,19 @@ function openBldOv(bld, el, keepPosition = false) {
   const assigned = (gs.assignments && gs.assignments[bld.id]) || 0;
   const avail    = getAvailableWorkers();
   const prod     = getProduction();
+  // 건물 업그레이드 팝업 헤더: 재직 인원 표시 (일반 / 전문)
+  const specCountMap = (gs.specialists && gs.specialists[bld.id]) || {};
+  const specTotal = Object.values(specCountMap).reduce((a, b) => a + b, 0);
+  let wkrMeta;
+  if (cnt === 0) {
+    wkrMeta = '';
+  } else if (bld.produces === 'bonus') {
+    wkrMeta = '[설치]';
+  } else if (specTotal > 0) {
+    wkrMeta = `일반 ${assigned}명 / 전문 ${specTotal}명`;
+  } else {
+    wkrMeta = assigned > 0 ? `${assigned}명 배치` : '미배치';
+  }
 
   // ── Build action list ──────────────────────────────────────
   const actions = [];
@@ -946,7 +959,7 @@ function openBldOv(bld, el, keepPosition = false) {
   ovEl.innerHTML = `
 <div class="bov-head">
   <span class="bov-head-name">${bld.icon} ${bld.name}</span>
-  <span class="bov-head-meta">×${cnt} &nbsp; <span style="color:var(--green-mid);font-size:11px">${rateStr}</span></span>
+  <span class="bov-head-meta">${wkrMeta} &nbsp; <span style="color:var(--green-mid);font-size:11px">${rateStr}</span></span>
 </div>
 <div class="bov-body">
   <div class="bov-acts-col" id="bov-acts">
@@ -1050,10 +1063,12 @@ function buyBldUpgrade(upgId, bldId) {
   spend(scaledCost);
   gs.bldUpgrades[upgId] = currLevel + 1;
   // Side-effects (레벨마다 누적 적용)
-  if (upg.wkr)        { gs.citizens = (gs.citizens || 0) + upg.wkr; syncWorkerDots(); }
-  if (upg.rel)        reliabilityBonus += upg.rel;
-  if (upg.moneyBonus) { prodMult.money = (prodMult.money || 1) + upg.moneyBonus; }
-  if (upg.prodBonus)  { globalMult += upg.prodBonus; }
+  if (upg.wkr)             { gs.citizens = (gs.citizens || 0) + upg.wkr; syncWorkerDots(); }
+  if (upg.rel)             reliabilityBonus += upg.rel;
+  if (upg.moneyBonus)      { prodMult.money = (prodMult.money || 1) + upg.moneyBonus; }
+  if (upg.prodBonus)       { globalMult += upg.prodBonus; }
+  if (upg.ironBonus)       { prodMult.iron = (prodMult.iron || 1) + upg.ironBonus; }
+  if (upg.researchTimeMult){ researchTimeMult = Math.max(0.2, researchTimeMult - upg.researchTimeMult); }
   const newLevel = currLevel + 1;
   const levelStr = upg.repeatable ? ` Lv.${newLevel}` : '';
   notify(`${bld.icon} ${upg.name}${levelStr} 완료`);
@@ -1659,7 +1674,21 @@ function initWorldDrag() {
       }
     });
 
-    const newBid = found ? found.bid : null;
+    // 설치된 애드온 건물도 hit-test (마우스 오버 시 openAddonOv 호출)
+    let foundAddon = null;
+    if (!found) {
+      document.querySelectorAll('.world-bld[data-bid]').forEach(pre => {
+        const bid = pre.dataset.bid;
+        if (!bid || !bid.endsWith('_addon')) return;
+        const r = pre.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right &&
+            e.clientY >= r.top  && e.clientY <= r.bottom) {
+          foundAddon = { bid, pre };
+        }
+      });
+    }
+
+    const newBid = found ? found.bid : (foundAddon ? foundAddon.bid : null);
     if (newBid === _hoverBid) return;
     _hoverBid = newBid;
 
@@ -1669,6 +1698,15 @@ function initWorldDrag() {
         const cnt = gs.buildings[found.bid] || 0;
         if (cnt > 0) openBldOv(bld, found.pre);
         else         openGhostOv(bld, found.pre);
+      }
+    } else if (foundAddon) {
+      const parentBldId = foundAddon.bid.replace('_addon', '');
+      const addonChoice = gs.addons && gs.addons[parentBldId];
+      if (addonChoice) {
+        const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[parentBldId];
+        const opt = addonDef && addonDef.options.find(o => o.id === addonChoice);
+        const bld = BUILDINGS.find(b => b.id === parentBldId);
+        if (bld && opt) openAddonOv(bld, opt, foundAddon.pre);
       }
     } else {
       scheduleBldOvClose();

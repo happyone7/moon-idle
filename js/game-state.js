@@ -58,6 +58,7 @@ let gs = {
 let prodMult = {};
 let globalMult = 1;
 let partCostMult = 1;
+let researchTimeMult = 1;   // 건물 업그레이드로 감소. 연구 소요 시간 배율.
 let fusionBonus = 0;
 let reliabilityBonus = 0;
 let slotBonus = 0;
@@ -306,10 +307,24 @@ function getWorkerHireCost() {
   return Math.floor(500 * Math.pow(2.0, (gs.workers || 1) - 1));
 }
 
-// 건물별 직원 고용 비용: 100 × 3.0^(해당건물 배치 인원) — 슬롯 제한 없이 비용만 증가
+// 건물별 직원 고용 비용: buildingBase × 3.0^(해당건물 배치 인원)
+// 건물 단계별로 기본 비용이 달라짐 (후반 건물일수록 인력 비용 증가)
+const BLD_WORKER_BASE = {
+  ops_center:   150,
+  research_lab: 300,   // ops_center × 2배
+  supply_depot: 450,
+  mine:         600,
+  extractor:    900,
+  refinery:     1200,
+  cryo_plant:   1500,
+  elec_lab:     1800,
+  fab_plant:    2500,
+  r_and_d:      4000,
+};
 function getBldWorkerCost(bldId) {
   const assigned = (gs.assignments && gs.assignments[bldId]) || 0;
-  return Math.floor(100 * Math.pow(3.0, assigned));
+  const base = BLD_WORKER_BASE[bldId] || 150;
+  return Math.floor(base * Math.pow(3.0, assigned));
 }
 
 // 직원 전문화: 해당 건물 배치 인원 1명을 전문가로 전환 (P8-5)
@@ -428,7 +443,7 @@ function getMoonstoneReward(qualityId) {
 function getCostStr(cost) {
   return Object.entries(cost).map(([r, v]) => {
     const res = RESOURCES.find(x => x.id === r);
-    return `${res ? res.symbol : r}:${fmt(v)}`;
+    return `${res ? res.symbol : r}${fmt(v)}`;
   }).join(' ');
 }
 
@@ -668,6 +683,7 @@ function loadGame(slot) {
     prodMult = {};
     globalMult = 1;
     partCostMult = 1;
+    researchTimeMult = 1;
     fusionBonus = 0;
     reliabilityBonus = 0;
     slotBonus = 0;
@@ -685,9 +701,11 @@ function loadGame(slot) {
         for (const bldId in BUILDING_UPGRADES) {
           const upg = BUILDING_UPGRADES[bldId].find(u => u.id === uid);
           if (!upg) continue;
-          if (upg.rel)        reliabilityBonus += upg.rel * level;
-          if (upg.moneyBonus) { prodMult.money = (prodMult.money || 1) + upg.moneyBonus * level; }
-          if (upg.prodBonus)  { globalMult += upg.prodBonus * level; }
+          if (upg.rel)             reliabilityBonus += upg.rel * level;
+          if (upg.moneyBonus)      { prodMult.money = (prodMult.money || 1) + upg.moneyBonus * level; }
+          if (upg.prodBonus)       { globalMult += upg.prodBonus * level; }
+          if (upg.ironBonus)       { prodMult.iron = (prodMult.iron || 1) + upg.ironBonus * level; }
+          if (upg.researchTimeMult){ researchTimeMult = Math.max(0.2, researchTimeMult - upg.researchTimeMult * level); }
         }
       });
     }
@@ -913,7 +931,7 @@ function tickResearch(dt) {
     const upg = UPGRADES.find(u => u.id === uid);
     if (!upg) return;
 
-    const techTime    = upg.time || 60;                      // 기술 고정 시간(초)
+    const techTime    = (upg.time || 60) * researchTimeMult;  // 업그레이드로 감소 가능한 연구 시간
     const rpTotal     = upg.cost.research || 0;
     const rpPerSec    = techTime > 0 ? rpTotal / techTime : 0; // RP 소모 속도
     const prog        = gs.researchProgress[uid];

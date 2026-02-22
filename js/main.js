@@ -60,10 +60,13 @@ function renderResources() {
     const rateStr = rate >= 0.001 ? `(+${fmtDec(rate,2)}/s)` : '';
     const isLow   = (LOW_THRESH[id] !== undefined) && val < LOW_THRESH[id];
     const barColor = id === 'copper' ? ' background:#b87333;' : '';
+    const resDef  = typeof RESOURCES !== 'undefined' ? RESOURCES.find(r => r.id === id) : null;
+    const sym     = resDef ? resDef.symbol : '';
+    const symCol  = resDef ? resDef.color  : 'var(--green)';
     return `
       <div class="rl-v7item">
         <div class="rl-v7hd">
-          <span class="rl-v7name">${kor} <span class="rl-en">(${eng})</span></span>
+          <span class="rl-v7name">${kor} <span class="rl-en">(${eng})</span> <span class="rl-res-sym" style="color:${symCol}">${sym}</span></span>
           <span class="rl-v7rate">${rateStr}</span>
         </div>
         <div class="rl-v7val">${fmtComma(Math.floor(val))}</div>

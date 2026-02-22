@@ -170,7 +170,7 @@ const BUILDING_UPGRADES = {
   ],
   mine: [
     { id:'mine_bit',      name:'강화 드릴 비트',        cost:{money:300},                             desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.7 },
-    { id:'mine_deep',     name:'심층 채굴 기술',        cost:{money:800},                             desc:'이 건물 철광석 생산 +8%',         mult:1.08, repeatable:true, costScale:1.9, req:'mine_bit' },
+    { id:'mine_deep',     name:'심층 채굴 기술',        cost:{money:800},                             desc:'전체 철광석 생산 +5%/레벨',       ironBonus:0.05, repeatable:true, costScale:1.9, req:'mine_bit' },
     { id:'mine_robot',    name:'★ 로봇 채굴기',        cost:{money:9000},                            desc:'이 건물 철광석 생산 ×2.0 — 프리미엄', mult:2.00, premium:true, req:'mine_deep' },
   ],
   extractor: [
@@ -195,7 +195,7 @@ const BUILDING_UPGRADES = {
   ],
   research_lab: [
     { id:'rsh_equip',     name:'최신 장비 도입',        cost:{money:400},                             desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:1.8 },
-    { id:'rsh_cross',     name:'융합 연구 프로그램',    cost:{money:1500},                            desc:'이 건물 RP 생산 +10%',            mult:1.10, repeatable:true, costScale:2.0, req:'rsh_equip' },
+    { id:'rsh_cross',     name:'융합 연구 프로그램',    cost:{money:1500},                            desc:'연구 시간 -10%/레벨',             researchTimeMult:0.10, repeatable:true, costScale:2.0, req:'rsh_equip' },
     { id:'rsh_super',     name:'★ 슈퍼컴퓨터 연결',   cost:{money:20000},                           desc:'이 건물 RP 생산 ×3.0 — 프리미엄', mult:3.00, premium:true, req:'rsh_cross' },
   ],
   r_and_d: [
