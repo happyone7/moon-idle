@@ -508,27 +508,34 @@ function renderLaunchTab() {
   }
   _prevAllGo = allGo;
 
-  // 프리론치 단계 바 — PROD(0)→ASSY(1)→FUEL(2)→T-MINUS(3)
-  const hasProdSetup = Object.keys(gs.buildings).some(k => k !== 'housing' && (gs.buildings[k] || 0) >= 1);
-  const allPartsDone = _getRequiredParts().every(pt => (gs.parts[pt.id] || 0) >= pt.cycles);
-  if (allGo)             _setLcStage(3); // T-MINUS active (0-2 done)
-  else if (allPartsDone) _setLcStage(2); // FUEL active — 모든 부품 공정 완료
-  else if (hasProdSetup) _setLcStage(1); // ASSY active (0 done)
-  else                   _setLcStage(0); // PROD active
+  // 프리론치 단계 바 — PARTS(0)→FUEL(1)→ASSY(2)→T-MINUS(3)
+  const reqPartsAll = _getRequiredParts();
+  const allPartsDone = reqPartsAll.every(pt => (gs.parts[pt.id] || 0) >= pt.cycles);
+  const fuelFull = (gs.fuelInjection || 0) >= 100;
+  if (allGo)                          _setLcStage(3); // T-MINUS active (0-2 done)
+  else if (allPartsDone && fuelFull)  _setLcStage(2); // ASSY active — 부품+연료 완료
+  else if (allPartsDone)              _setLcStage(1); // FUEL active — 부품 완료, 연료 진행
+  else                                _setLcStage(0); // PARTS active — 부품 제작 중
 
-  // 프리-플라이트 체크리스트 + 완성도 표시
+  // 프리-플라이트 체크리스트 + 완성도 표시 — 조립동 기준
   const p2 = gs.parts || {};
   const reqParts2 = _getRequiredParts();
-  const pdone = reqParts2.filter(pt => (p2[pt.id] || 0) >= pt.cycles).length;
-  const items = [
-    { done: hasProdSetup,               label: `생산 가동`,  short: '생산가동'  },
-    { done: pdone === reqParts2.length,  label: `부품 조달 (${pdone}/${reqParts2.length})`, short: '부품조달' },
-    { done: !!hasReady,                 label: `조립 완료`,  short: '조립완료'  },
-    { done: (gs.buildings.launch_pad || 0) >= 1, label: `발사대 건설`, short: '발사대' },
-    { done: hasFuel,                    label: `연료 주입`,  short: '연료주입'  },
-  ];
-  const doneCnt = items.filter(i => i.done).length;
-  const readinessPct = Math.round((doneCnt / items.length) * 100);
+
+  // 조립동 기준 진행 항목
+  const items = [];
+  reqParts2.forEach(pt => {
+    const cur = p2[pt.id] || 0;
+    const done = cur >= pt.cycles;
+    items.push({ done, label: `${pt.name} (${cur}/${pt.cycles})`, short: pt.name });
+  });
+  // 연료 주입 (조립동에서도 관리)
+  const fuelPctVal = gs.fuelInjection || 0;
+  items.push({ done: fuelPctVal >= 100, label: `연료 (${Math.round(fuelPctVal)}%)`, short: '연료' });
+  // 조립 완료 여부
+  items.push({ done: !!hasReady, label: '조립', short: '조립' });
+
+  // 완성도 — 조립동의 getRocketCompletion() 사용
+  const readinessPct = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
 
   // 완성도 바
   const readinessEl = document.getElementById('lc-readiness');
@@ -561,43 +568,46 @@ function renderLaunchTab() {
   const commitStatsEl = document.getElementById('lc-commit-stats');
   if (commitStatsEl) commitStatsEl.style.display = hasReady ? '' : 'none';
 
-  // 조립/연료 상태 패널
+  // 조립동 기준 상태 패널 — 각 부품 진행바 + 연료 + 조립 상태
   const statusPanel = document.getElementById('lc-status-panel');
   if (statusPanel) {
     const p3        = gs.parts || {};
     const jobs2     = (gs.assembly && gs.assembly.jobs) || [];
     const now2      = Date.now();
     const reqParts3 = _getRequiredParts();
-    const partsDone = reqParts3.filter(pt => (p3[pt.id] || 0) >= pt.cycles).length;
-    const partsPct  = Math.round((partsDone / reqParts3.length) * 100);
-    let asmPct = 0;
+
+    let spHtml = '';
+
+    // 각 부품별 진행바
+    reqParts3.forEach(pt => {
+      const cur = p3[pt.id] || 0;
+      const pct = Math.round((Math.min(cur, pt.cycles) / pt.cycles) * 100);
+      const clr = cur >= pt.cycles ? '' : 'amber';
+      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">${pt.name}</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${clr}" style="width:${pct}%"></div></div><span class="lc-sp-pct ${clr}">${cur}/${pt.cycles}</span></div>`;
+    });
+
+    // 연료 주입 진행바
+    const fuelInjPct = Math.round(gs.fuelInjection || 0);
+    const fuelClr = fuelInjPct >= 100 ? '' : 'amber';
+    spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 주입</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${fuelClr}" style="width:${fuelInjPct}%"></div></div><span class="lc-sp-pct ${fuelClr}">${fuelInjPct}%</span></div>`;
+
+    // 조립 상태
     const readyJob2  = jobs2.find(j => j && j.ready);
     const inProgJob2 = jobs2.find(j => j && !j.ready && j.endAt);
+    let asmPct = 0;
+    let asmLabel = '대기';
     if (readyJob2) {
       asmPct = 100;
+      asmLabel = '완료';
     } else if (inProgJob2) {
       const el2 = Math.max(0, now2 - inProgJob2.startAt);
       const to2 = Math.max(1, inProgJob2.endAt - inProgJob2.startAt);
-      asmPct = Math.min(100, (el2 / to2) * 100);
+      asmPct = Math.min(100, Math.round((el2 / to2) * 100));
+      asmLabel = `${asmPct}%`;
     }
-    const storedFuel = Math.floor(gs.res.fuel || 0);
-    const fuelPct    = Math.min(100, Math.round((storedFuel / FUEL_LOAD_REQ) * 100));
-    const canInject  = storedFuel >= FUEL_LOAD_REQ;
-    const partsClr   = partsPct === 100 ? '' : 'amber';
-    const asmClr     = asmPct  === 100 ? '' : 'amber';
+    const asmClr = asmPct === 100 ? '' : 'amber';
+    spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">조립</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${asmClr}" style="width:${asmPct}%"></div></div><span class="lc-sp-pct ${asmClr}">${asmLabel}</span></div>`;
 
-    let spHtml = `<div class="lc-sp-row"><span class="lc-sp-label">부품 조달</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${partsClr}" style="width:${partsPct}%"></div></div><span class="lc-sp-pct ${partsClr}">${partsDone}/${reqParts3.length}</span></div>`;
-    if (asmPct > 0 || readyJob2) {
-      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">조립 진행</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${asmClr}" style="width:${asmPct}%"></div></div><span class="lc-sp-pct ${asmClr}">${Math.round(asmPct)}%</span></div>`;
-    }
-    if (gs.fuelLoaded) {
-      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 주입</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill" style="width:100%"></div></div><span class="lc-sp-pct">완료 ✓</span></div>`;
-    } else {
-      spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 충전</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${canInject ? '' : 'red'}" style="width:${fuelPct}%"></div></div><span class="lc-sp-pct ${canInject ? '' : 'red'}">${storedFuel.toLocaleString()}/${FUEL_LOAD_REQ}</span></div>`;
-      if (canInject) {
-        spHtml += `<div class="lc-sp-row lc-sp-inject-row"><button class="lc-inject-btn" onclick="loadFuelToRocket()">[ ▶ 연료 주입 실행 ]</button></div>`;
-      }
-    }
     statusPanel.innerHTML = spHtml;
   }
 
