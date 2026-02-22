@@ -1757,7 +1757,9 @@ body.tab-research #pane-research {
 .launch-anim-wrap { text-align: center; padding: 14px; min-height: 160px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); width: 100%; box-sizing: border-box; }
 .launch-rocket-ascii { font-size: 13px; white-space: pre; color: var(--green); display: inline-block; }
 .launch-rocket-ascii.launching { animation: rocket-launch 3s ease-in forwards; }
+.launch-rocket-ascii.exploding { animation: rocket-explode 0.3s ease-out both; }
 @keyframes rocket-launch { 0% { transform: translateY(0); } 100% { transform: translateY(-400px); } }
+@keyframes rocket-explode { 0% { transform: scale(1); opacity: 1; } 40% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
 .exhaust-anim { font-size: 12px; white-space: pre; color: var(--amber); text-shadow: 0 0 6px var(--amber); display: inline-block; animation: exhaust-flicker 0.15s step-start infinite; }
 @keyframes exhaust-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 .launch-result { display: none; border: 1px solid var(--amber); background: rgba(255,171,0,0.05); padding: 12px; font-size: 13px; color: var(--amber); margin-top: 8px; width: 100%; box-sizing: border-box; }
@@ -1776,6 +1778,8 @@ body.tab-research #pane-research {
 .telem-fail .telem-event { color: var(--red); }
 .telem-fail .telem-pct   { color: var(--red); }
 .telem-fail .telem-time  { color: var(--red); }
+/* 게이지 실패 시 빨간색 전환 */
+.gauge-fail { color: var(--red) !important; text-shadow: 0 0 8px rgba(255,23,68,0.6) !important; transition: color 0.4s; }
 
 /* ── 단계 진행 바 (타임라인 노드형) ── */
 #lc-stagebar { flex-shrink: 0; background: #000a02; border-top: 1px solid var(--green-deep); }
@@ -1793,6 +1797,10 @@ body.tab-research #pane-research {
 .lc-phase-pre.phase-done    { color: var(--green-dim);  text-shadow: 0 0 6px rgba(0,230,118,.3);  border-bottom-color: var(--green-dim); }
 .lc-phase-ascent.phase-done { color: var(--green-mid);  text-shadow: 0 0 8px rgba(0,230,118,.45); border-bottom-color: var(--green-mid); }
 .lc-phase-lunar.phase-done  { color: var(--amber);      text-shadow: 0 0 10px rgba(255,171,0,.5); border-bottom-color: var(--amber); }
+/* Phase fail (단계별 실패 시) */
+.lc-phase-pre.phase-fail,
+.lc-phase-ascent.phase-fail { color: var(--red); text-shadow: 0 0 8px rgba(255,23,68,.5); border-bottom-color: rgba(255,23,68,.6); }
+.lc-phase-lunar.phase-fail  { color: var(--red); text-shadow: 0 0 10px rgba(255,23,68,.6); border-bottom-color: rgba(255,23,68,.6); }
 
 /* Stage track */
 .lc-stage-track { display: flex; width: 100%; height: 70px; position: relative; }
@@ -1828,15 +1836,15 @@ body.tab-research #pane-research {
 .lc-stage-seg.fail .lc-node { border-color: var(--red); background: rgba(255,23,68,.08); }
 .lc-stage-seg.fail .lc-node::after { content: '✕'; font-size: 13px; color: var(--red); }
 /* LANDING 완료 — 앰버 별 */
-.lc-stage-seg[data-idx="10"].done .lc-node { border-color: var(--amber); background: rgba(255,171,0,.2); box-shadow: 0 0 0 5px rgba(255,171,0,.13), 0 0 22px rgba(255,171,0,.6); animation: lc-landing-glow 2s ease-in-out infinite; }
-.lc-stage-seg[data-idx="10"].done .lc-node::after { content: '★'; font-size: 14px; color: var(--amber); }
+.lc-stage-seg[data-idx="11"].done .lc-node { border-color: var(--amber); background: rgba(255,171,0,.2); box-shadow: 0 0 0 5px rgba(255,171,0,.13), 0 0 22px rgba(255,171,0,.6); animation: lc-landing-glow 2s ease-in-out infinite; }
+.lc-stage-seg[data-idx="11"].done .lc-node::after { content: '★'; font-size: 14px; color: var(--amber); }
 
 /* 세그먼트 레이블 */
 .lc-seg-lbl { position: absolute; top: 45px; left: 0; right: 0; text-align: center; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: #1a4428; transition: color .4s; white-space: nowrap; }
 .lc-stage-seg.done  .lc-seg-lbl { color: var(--green-dim); }
 .lc-stage-seg.active .lc-seg-lbl { color: var(--green); }
 .lc-stage-seg.fail  .lc-seg-lbl { color: var(--red); opacity: .7; }
-.lc-stage-seg[data-idx="10"].done .lc-seg-lbl { color: var(--amber); }
+.lc-stage-seg[data-idx="11"].done .lc-seg-lbl { color: var(--amber); }
 
 @keyframes lc-node-pop    { 0% { transform: translateX(-50%) scale(.6); } 65% { transform: translateX(-50%) scale(1.2); } 100% { transform: translateX(-50%) scale(1); } }
 @keyframes lc-pulse-amber { 0%,100% { box-shadow: 0 0 0 3px rgba(255,171,0,.12), 0 0 12px rgba(255,171,0,.35); } 50% { box-shadow: 0 0 0 5px rgba(255,171,0,.22), 0 0 24px rgba(255,171,0,.6); } }

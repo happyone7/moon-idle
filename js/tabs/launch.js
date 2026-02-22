@@ -20,6 +20,92 @@ function launchFromSlot(slotIdx) {
   executeLaunch();
 }
 
+// ── 단계별 실패 모드 (각 비행 단계 고유 실패 메시지) ──
+const STAGE_FAILURES = {
+  4:  { event: '!! ENGINE STARTUP FAILURE !!',  desc: '엔진 점화 실패' },
+  5:  { event: '!! MAX-Q STRUCTURAL FAIL !!',   desc: '최대 동압에서 기체 파손' },
+  6:  { event: '!! MECO ANOMALY !!',            desc: '메인 엔진 차단 이상' },
+  7:  { event: '!! SEPARATION FAILURE !!',      desc: '단계 분리 실패' },
+  8:  { event: '!! ORBIT INSERT FAIL !!',       desc: '궤도 진입 실패' },
+  9:  { event: '!! TLI BURN ANOMALY !!',        desc: '달 전이 궤도 점화 실패' },
+  10: { event: '!! LOI CAPTURE FAIL !!',        desc: '달 궤도 포획 실패' },
+  11: { event: '!! LANDING ABORT !!',           desc: '착륙 실패 — 충돌' },
+};
+
+// 단계별 이름 매핑
+const STAGE_NAMES = {
+  4: 'LIFTOFF', 5: 'MAX-Q', 6: 'MECO', 7: 'STG SEP',
+  8: 'ORBIT', 9: 'TLI', 10: 'LOI', 11: 'LANDING'
+};
+
+// 단계별 타이밍 (성공 시 총 ~8초)
+const STAGE_TIMING = {
+  4:  { delay: 0,    duration: 800  },
+  5:  { delay: 800,  duration: 1000 },
+  6:  { delay: 1800, duration: 800  },
+  7:  { delay: 2600, duration: 800  },
+  8:  { delay: 3400, duration: 1000 },
+  9:  { delay: 4400, duration: 1000 },
+  10: { delay: 5400, duration: 1000 },
+  11: { delay: 6400, duration: 1200 },
+};
+
+// 단계별 텔레메트리 라벨
+const STAGE_TELEM = {
+  4: 'T+0',  5: 'T+3',  6: 'T+8',  7: 'T+12',
+  8: 'T+20', 9: 'T+28', 10: 'T+38', 11: 'T+50'
+};
+
+// 단계별 성공 이벤트 메시지
+const STAGE_SUCCESS_EVENT = {
+  4: 'LIFTOFF',
+  5: 'MAX-Q 통과',
+  6: 'MECO — 1단 엔진 종료',
+  7: '단계분리 / 2단 점화',
+  8: '지구 궤도 진입',
+  9: 'TLI — 달 전이 궤도 점화',
+  10: 'LOI — 달 궤도 진입',
+  11: '달 착륙 성공 ◆ TOUCHDOWN',
+};
+
+// 단계별 진행률 (%)
+const STAGE_PCT = { 4: 5, 5: 18, 6: 35, 7: 50, 8: 65, 9: 78, 10: 90, 11: 100 };
+
+// 단계별 실패 ASCII 폭발 프레임 (실패 위치에 따라 다른 아트)
+const FAIL_FRAMES_BY_ZONE = {
+  // LIFTOFF/MAX-Q 실패: 지상 근처 폭발
+  ground: [
+    '       *\n     /\\!\\  GYRO ALERT\n    / !! \\\n   / WARN \\\n  |  ROLL  |\n  |__+47°__|',
+    '    \\  * . /\n  . * \u2554\u2550\u2557 * .\n * \u2591\u2591\u2591\u2551!\u2551\u2591\u2591\u2591 *\n  \u2591\u2592\u2593\u2593\u2588\u2588\u2588\u2593\u2593\u2592\u2591\n   \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n  ~~ FIRE ~~',
+    '     .   \u00b7   .\n   \u00b7   .   \u00b7\n    \u2591  \u2592\u2593\u2592  \u2591\n  \u2591\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\u2591\n  \u2500\u2500\u2500\u2550\u2550\u2564\u2550\u2550\u2500\u2500\u2500\n  \u2593\u2593 DAMAGED \u2593\u2593',
+  ],
+  // MECO/STG_SEP 실패: 고고도 분리 실패
+  high_atm: [
+    '       /|\\\n      / | \\\n     /  |! \\\n    / ALERT \\\n   |  SEPAR  |\n   |  FAIL   |',
+    '     .  *  .\n    * . | . *\n   / * .|. * \\\n  *\u2591\u2591\u2592\u2593\u2588|\u2588\u2593\u2592\u2591\u2591*\n   \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n ~~ BREAKUP ~~',
+    '   .  \u00b7  .  \u00b7  .\n  \u00b7  . \u00b7 . \u00b7  .\n    \u2591 . \u2592 . \u2591\n   \u2591  \u2592\u2593\u2592  \u2591\n    .  \u00b7  .  \u00b7\n  // DEBRIS //\n   .  .  .  .',
+  ],
+  // ORBIT/TLI 실패: 우주 공간 엔진 고장
+  space: [
+    '    .  *  .\n   *       *\n  . [ENGINE] .\n  . [CUTOFF] .\n   *   !   *\n    .  *  .',
+    '    .  \u00b7  .\n  \u00b7         \u00b7\n   . \u2591\u2592\u2593\u2592\u2591 .\n   \u2591\u2591 !! \u2591\u2591\n  \u00b7         \u00b7\n ~~ DRIFT ~~',
+    '   \u00b7    .    \u00b7\n .    \u00b7    .\n    . \u00b7 . \u00b7\n  \u00b7    .    \u00b7\n .    \u00b7    .\n // LOST //\n   .    .    .',
+  ],
+  // LOI/LANDING 실패: 달 표면 충돌
+  lunar: [
+    '    . * .\n   *     *\n  .  \\|/  .\n  . --*-- .\n  .  /|\\  .\n   *     *\n  ~IMPACT~',
+    '  \u2591\u2592\u2593\u2588\u2588\u2588\u2593\u2592\u2591\n \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n  \u2591\u2592\u2593\u2588\u2588\u2588\u2593\u2592\u2591\n ~~ CRASH ~~',
+    '    .  \u00b7  .\n  _____________\n /  .  \u00b7  .  \\\n/ \u00b7   RUD   . \\\n\\ .  \u00b7  .  \u00b7 /\n \\_____\u25cf_____/\n  // MOON //',
+  ],
+};
+
+function _getFailZone(stageIdx) {
+  if (stageIdx <= 5) return 'ground';
+  if (stageIdx <= 7) return 'high_atm';
+  if (stageIdx <= 9) return 'space';
+  return 'lunar';
+}
+
 function executeLaunch() {
   if (launchInProgress) return;
   // 발사 가능 조건: 부품+연료 100%
@@ -29,7 +115,20 @@ function executeLaunch() {
   const q = getQuality(gs.assembly.selectedQuality || 'proto');
   const sci = getRocketScience(q.id);
 
-  const rollSuccess = gs.launches === 0 || Math.random() * 100 < sci.reliability;
+  // ── 단계별 성공 확률 계산 ──
+  // 전체 reliability를 8단계에 분배: perStageProb = reliability^(1/8)
+  // 첫 발사(gs.launches === 0)는 전 단계 자동 성공
+  const isFirstLaunch = gs.launches === 0;
+  const perStageProb = isFirstLaunch ? 100 : Math.pow(sci.reliability / 100, 1 / 8) * 100;
+
+  const stageRolls = [];
+  let firstFailStage = -1;
+  for (let i = 4; i <= 11; i++) {
+    const success = Math.random() * 100 < perStageProb;
+    stageRolls.push({ stage: i, success });
+    if (!success && firstFailStage === -1) firstFailStage = i;
+  }
+  const rollSuccess = firstFailStage === -1; // 전 단계 통과 시 성공
   const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
 
   // 발사 후 항상 부품+연료 전체 초기화 (성공/실패 무관)
@@ -53,13 +152,15 @@ function executeLaunch() {
     reliability: sci.reliability.toFixed(1),
     success: rollSuccess,
     earned: earned,
+    failStage: firstFailStage,
+    failDesc: firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : null,
     date: `D+${gs.launches * 2}`,
   });
   pendingLaunchMs = earned;
-  pendingLaunchData = { q, sci, earned, success: rollSuccess };
+  pendingLaunchData = { q, sci, earned, success: rollSuccess, firstFailStage };
 
   switchMainTab('launch');
-  _runLaunchAnimation(q, sci, earned, rollSuccess);
+  _runLaunchAnimation(q, sci, earned, rollSuccess, stageRolls, firstFailStage);
 }
 
 // ============================================================
@@ -87,11 +188,15 @@ function _updateLcPhaseHeaders(activeIdx, isFail = false) {
   phases.forEach(ph => {
     const el = document.querySelector(ph.sel);
     if (!el) return;
-    el.classList.remove('phase-active', 'phase-done');
+    el.classList.remove('phase-active', 'phase-done', 'phase-fail');
     if (isFail) {
-      if (ph.sel === '.lc-phase-pre')    el.classList.add('phase-done');
-      else if (ph.sel === '.lc-phase-ascent') el.classList.add('phase-active');
-      // lunar: 그대로 dim
+      // activeIdx = 실패 단계 (4~11)
+      if (activeIdx > ph.end) {
+        el.classList.add('phase-done');  // 실패 이전 완료 페이즈
+      } else if (activeIdx >= ph.start) {
+        el.classList.add('phase-fail');  // 실패가 발생한 페이즈
+      }
+      // 실패 이후 페이즈: 그대로 dim
     } else if (activeIdx > ph.end) {
       el.classList.add('phase-done');
     } else if (activeIdx >= ph.start) {
@@ -110,21 +215,22 @@ function _setLcStage(activeIdx) {
   _updateLcPhaseHeaders(activeIdx);
 }
 
-function _setLcStageFail() {
-  // 실패 시: MAX-Q(5)까지 done, MECO(6)부터 fail
+function _setLcStageFail(failStageIdx) {
+  // failStageIdx: 실패가 발생한 단계 (4~11)
+  // 실패 단계 이전까지 done, 실패 단계부터 fail
   document.querySelectorAll('.lc-stage-seg').forEach(seg => {
     const idx = parseInt(seg.dataset.idx, 10);
     seg.classList.remove('active', 'done', 'fail');
-    if (idx <= 5) seg.classList.add('done');
-    else          seg.classList.add('fail');
+    if (idx < failStageIdx) seg.classList.add('done');
+    else                    seg.classList.add('fail');
   });
-  _updateLcPhaseHeaders(-1, true);
+  _updateLcPhaseHeaders(failStageIdx, true);
 }
 
 // ============================================================
-//  LAUNCH ANIMATION
+//  LAUNCH ANIMATION — 단계별 성공/실패 판정 시스템
 // ============================================================
-function _runLaunchAnimation(q, sci, earned, success = true) {
+function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage) {
   launchInProgress = true;
   if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('launch');
 
@@ -202,11 +308,19 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
     timerEl.textContent = `T+ ${mm}:${ss}`;
   }, 1000);
 
-  // 라이브 속도/고도 게이지
+  // ── 라이브 속도/고도 게이지 (단계별 연동) ──
   const maxSpeed = Math.round(sci.deltaV * 3600);
   const maxAlt   = Math.floor(sci.altitude);
-  const animEndMs = success ? 4300 : 2600;
+  // 실패 시: 실패 단계까지의 진행비율로 peak 계산
+  const failProgress = firstFailStage >= 0 ? (STAGE_PCT[firstFailStage] || 50) / 100 : 1;
+  // 실패 발생 시점 (ms) — 실패 단계 시작 + duration 절반
+  const failTimeMs = firstFailStage >= 0
+    ? STAGE_TIMING[firstFailStage].delay + STAGE_TIMING[firstFailStage].duration * 0.6
+    : 99999;
+  // 성공 시 총 애니메이션 시간
+  const totalAnimMs = success ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration) : (failTimeMs + 2000);
 
+  let gaugeFailTriggered = false;
   const gaugeInterval = setInterval(() => {
     const elapsed   = Date.now() - launchTime;
     const speedEl   = document.getElementById('lc-speed-val');
@@ -215,7 +329,8 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
     const altBar    = document.getElementById('lc-alt-bar');
 
     if (success) {
-      const t = Math.min(1, elapsed / animEndMs);
+      // 성공: 전 단계에 걸쳐 점진 증가
+      const t = Math.min(1, elapsed / totalAnimMs);
       const easedSpeed = t * t;
       const easedAlt   = t < 0.7 ? (t / 0.7) * (t / 0.7) : 1;
       const curSpeed   = Math.round(easedSpeed * maxSpeed);
@@ -225,32 +340,38 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
       if (speedBar) speedBar.style.width = Math.min(100, (curSpeed / (maxSpeed || 1)) * 100).toFixed(1) + '%';
       if (altBar)   altBar.style.width   = Math.min(100, (curAlt   / (maxAlt   || 1)) * 100).toFixed(1) + '%';
     } else {
-      const anomalyT = 1200;
-      if (elapsed < anomalyT) {
-        const t2  = elapsed / anomalyT;
-        const spd = Math.round(t2 * t2 * maxSpeed * 0.45);
-        const alt = Math.round(t2 * maxAlt * 0.35);
+      // 실패: 실패 시점까지 증가 후 빨갛게 감소
+      if (elapsed < failTimeMs) {
+        const t2  = elapsed / failTimeMs;
+        const spd = Math.round(t2 * t2 * maxSpeed * failProgress);
+        const alt = Math.round(t2 * maxAlt * failProgress);
         if (speedEl)  speedEl.textContent  = spd.toLocaleString();
         if (altEl)    altEl.textContent    = alt.toLocaleString();
         if (speedBar) speedBar.style.width = Math.min(100, (spd / (maxSpeed || 1)) * 100).toFixed(1) + '%';
         if (altBar)   altBar.style.width   = Math.min(100, (alt  / (maxAlt   || 1)) * 100).toFixed(1) + '%';
       } else {
-        const t3      = Math.min(1, (elapsed - anomalyT) / 600);
-        const peakSpd = Math.round(maxSpeed * 0.45);
-        const peakAlt = Math.round(maxAlt * 0.35);
+        if (!gaugeFailTriggered) {
+          gaugeFailTriggered = true;
+          // 게이지 빨간색 전환
+          if (speedEl) speedEl.classList.add('gauge-fail');
+          if (altEl)   altEl.classList.add('gauge-fail');
+        }
+        const t3      = Math.min(1, (elapsed - failTimeMs) / 1200);
+        const peakSpd = Math.round(maxSpeed * failProgress);
+        const peakAlt = Math.round(maxAlt * failProgress);
         const spd     = Math.round(peakSpd * (1 - t3));
         const alt     = Math.round(peakAlt * (1 - t3));
         if (speedEl)  speedEl.textContent  = Math.max(0, spd).toLocaleString();
         if (altEl)    altEl.textContent    = Math.max(0, alt).toLocaleString();
-        if (speedBar) { speedBar.style.width = '0%'; speedBar.style.background = 'var(--red)'; }
-        if (altBar)   { altBar.style.width   = '0%'; altBar.style.background   = 'var(--red)'; }
+        if (speedBar) { speedBar.style.width = Math.max(0, (1 - t3) * failProgress * 100).toFixed(1) + '%'; speedBar.style.background = 'var(--red)'; }
+        if (altBar)   { altBar.style.width   = Math.max(0, (1 - t3) * failProgress * 100).toFixed(1) + '%'; altBar.style.background   = 'var(--red)'; }
       }
     }
   }, 50);
 
-  setTimeout(() => clearInterval(gaugeInterval), animEndMs + 800);
+  setTimeout(() => clearInterval(gaugeInterval), totalAnimMs + 1500);
 
-  // 텔레메트리 로그
+  // ── 텔레메트리 로그 ──
   const telemWrap = document.getElementById('telem-wrap');
   if (telemWrap) telemWrap.innerHTML =
     '<div style="color:var(--green-dim);font-size:9px;letter-spacing:.15em;padding:3px 0;border-bottom:1px solid var(--green-dim);margin-bottom:3px;">// TELEMETRY LOG</div>';
@@ -259,107 +380,169 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   telemDiv.className = 'telemetry-wrap';
   if (telemWrap) telemWrap.appendChild(telemDiv);
 
-  // 성공: 8단계 비행 시퀀스 (index 3-10)
-  // 실패: 3단계 이후 이상징후
-  const steps = success ? [
-    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                    pct: 5,   stage: 4  },
-    { delay: 500,  label: 'T+3',  event: 'MAX-Q 통과',                  pct: 18,  stage: 5  },
-    { delay: 1000, label: 'T+8',  event: 'MECO — 1단 엔진 종료',        pct: 35,  stage: 6  },
-    { delay: 1500, label: 'T+12', event: '단계분리 / 2단 점화',          pct: 50,  stage: 7  },
-    { delay: 2000, label: 'T+20', event: '지구 궤도 진입',              pct: 65,  stage: 8  },
-    { delay: 2600, label: 'T+28', event: 'TLI — 달 전이 궤도 점화',    pct: 78,  stage: 9  },
-    { delay: 3200, label: 'T+38', event: 'LOI — 달 궤도 진입',         pct: 90,  stage: 10 },
-    { delay: 3800, label: 'T+50', event: `달 착륙 성공 ◆ TOUCHDOWN`,    pct: 100, stage: 11 },
-  ] : [
-    { delay: 0,    label: 'T+0',  event: 'LIFTOFF',                     pct: 5,   stage: 4  },
-    { delay: 600,  label: 'T+3',  event: 'MAX-Q 통과',                   pct: 18,  stage: 5  },
-    { delay: 1200, label: 'T+7',  event: '!! ANOMALY DETECTED !!',      pct: 35,  stage: -1, fail: true },
-    { delay: 1800, label: 'T+8',  event: '!! STRUCTURAL FAILURE !!',    pct: 35,  stage: -1, fail: true },
-    { delay: 2400, label: 'T+14', event: '// MISSION LOST — RUD',       pct: 0,   stage: -1, fail: true },
-  ];
+  // ── 단계별 순차 처리 ──
+  const stageIds = [4, 5, 6, 7, 8, 9, 10, 11];
 
-  steps.forEach((step, i) => {
+  stageIds.forEach((stageIdx, i) => {
+    const timing = STAGE_TIMING[stageIdx];
+    const roll = stageRolls[i];
+    const isFailStage = (stageIdx === firstFailStage);
+    const isAfterFail = (firstFailStage >= 0 && stageIdx > firstFailStage);
+
+    // 실패 이후 단계는 스킵 (표시만)
+    if (isAfterFail) return;
+
+    // 1. 단계 시작: active 표시 + 텔레메트리
     setTimeout(() => {
-      if (step.fail) _setLcStageFail();
-      else           _setLcStage(step.stage);
+      _setLcStage(stageIdx);
+      if (statusTextEl) statusTextEl.textContent = `// ${STAGE_NAMES[stageIdx]}`;
 
-      if (statusTextEl) {
-        statusTextEl.textContent = step.fail
-          ? '// ANOMALY'
-          : `// ${step.event.split('◆')[0].replace(/!+/g,'').trim().toUpperCase()}`;
-      }
+      // 단계 시작 SFX
+      playSfx('triangle', 300 + i * 40, 0.06, 0.02, 400 + i * 30);
 
+      // 텔레메트리 로그: 단계 시작
       const line = document.createElement('div');
-      line.className = 'telem-line' + (step.fail ? ' telem-fail' : '');
+      line.className = 'telem-line';
       line.innerHTML =
-        `<span class="telem-time">${step.label}</span>` +
-        `<span class="telem-event">${step.event}</span>` +
-        `<span class="telem-pct">${step.pct}%</span>`;
+        `<span class="telem-time">${STAGE_TELEM[stageIdx]}</span>` +
+        `<span class="telem-event">${STAGE_SUCCESS_EVENT[stageIdx]}</span>` +
+        `<span class="telem-pct">${STAGE_PCT[stageIdx]}%</span>`;
       telemDiv.appendChild(line);
 
-      // HUD 자동 스크롤
       const hudBody = document.getElementById('lc-hud-body');
       if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+    }, timing.delay);
 
-      if (step.fail) {
-        playSfx('sawtooth', 180 - i * 20, 0.14, 0.05, 80);
-      } else {
-        playSfx('triangle', 300 + i * 40, 0.06, 0.02, 400 + i * 30);
-      }
-    }, step.delay);
+    // 2. 단계 결과 (시작 후 duration*0.6 — 긴장감 유지)
+    const resultDelay = timing.delay + Math.round(timing.duration * 0.6);
+
+    if (isFailStage) {
+      // ── 실패 처리 ──
+      setTimeout(() => {
+        const failInfo = STAGE_FAILURES[stageIdx];
+
+        // 텔레메트리: ANOMALY DETECTED
+        const anomalyLine = document.createElement('div');
+        anomalyLine.className = 'telem-line telem-fail';
+        anomalyLine.innerHTML =
+          `<span class="telem-time">${STAGE_TELEM[stageIdx]}</span>` +
+          `<span class="telem-event">!! ANOMALY DETECTED !!</span>` +
+          `<span class="telem-pct">---</span>`;
+        telemDiv.appendChild(anomalyLine);
+
+        if (statusTextEl) statusTextEl.textContent = '// ANOMALY';
+        playSfx('sawtooth', 180, 0.14, 0.05, 80);
+
+        const hudBody = document.getElementById('lc-hud-body');
+        if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+      }, resultDelay);
+
+      // 실패 메시지 (anomaly 후 0.6초)
+      setTimeout(() => {
+        const failInfo = STAGE_FAILURES[stageIdx];
+
+        const failLine = document.createElement('div');
+        failLine.className = 'telem-line telem-fail';
+        failLine.innerHTML =
+          `<span class="telem-time">${STAGE_TELEM[stageIdx]}</span>` +
+          `<span class="telem-event">${failInfo.event}</span>` +
+          `<span class="telem-pct">FAIL</span>`;
+        telemDiv.appendChild(failLine);
+
+        playSfx('sawtooth', 140, 0.18, 0.06, 60);
+
+        // 단계 바: 실패 단계부터 전부 fail
+        _setLcStageFail(stageIdx);
+
+        if (statusTextEl) statusTextEl.textContent = `// ${failInfo.desc}`;
+
+        const hudBody = document.getElementById('lc-hud-body');
+        if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+      }, resultDelay + 600);
+
+      // MISSION LOST 메시지 (실패 후 1.2초)
+      setTimeout(() => {
+        const missionLostLine = document.createElement('div');
+        missionLostLine.className = 'telem-line telem-fail';
+        missionLostLine.innerHTML =
+          `<span class="telem-time">---</span>` +
+          `<span class="telem-event">// MISSION LOST — RUD</span>` +
+          `<span class="telem-pct">0%</span>`;
+        telemDiv.appendChild(missionLostLine);
+
+        playSfx('sawtooth', 100, 0.22, 0.05, 50);
+
+        const hudBody = document.getElementById('lc-hud-body');
+        if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+      }, resultDelay + 1200);
+
+      // 실패 로켓 폭발 프레임
+      const zone = _getFailZone(stageIdx);
+      const failFrames = FAIL_FRAMES_BY_ZONE[zone];
+      failFrames.forEach((frame, fi) => {
+        setTimeout(() => {
+          const rocketEl = document.getElementById('launch-rocket-pre');
+          if (rocketEl) {
+            rocketEl.classList.remove('launching');
+            rocketEl.classList.add('exploding');
+            rocketEl.style.color = 'var(--red)';
+            rocketEl.style.textShadow = '0 0 12px rgba(255,23,68,0.8)';
+            rocketEl.textContent = frame;
+          }
+          const exhaustEl = document.getElementById('exhaust-art');
+          if (exhaustEl) exhaustEl.style.display = 'none';
+        }, resultDelay + 600 + fi * 700);
+      });
+    }
   });
 
-  // 실패 프레임
-  if (!success) {
-    const FAIL_FRAMES = [
-      '       *\n     /\\!\\  GYRO ALERT\n    / !! \\\n   / WARN \\\n  |  ROLL  |\n  |__+47°__|',
-      '    \\  * . /\n  . * \u2554\u2550\u2557 * .\n * \u2591\u2591\u2591\u2551!\u2551\u2591\u2591\u2591 *\n  \u2591\u2592\u2593\u2593\u2588\u2588\u2588\u2593\u2593\u2592\u2591\n   \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n  ~~ FIRE ~~',
-      '     .   \u00b7   .\n   \u00b7   .   \u00b7\n    \u2591  \u2592\u2593\u2592  \u2591\n  \u2591\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\u2591\n  \u2500\u2500\u2500\u2550\u2550\u2564\u2550\u2550\u2500\u2500\u2500\n  \u2593\u2593 DAMAGED \u2593\u2593',
-    ];
-    FAIL_FRAMES.forEach((frame, fi) => {
-      setTimeout(() => {
-        const rocketEl = document.getElementById('launch-rocket-pre');
-        if (rocketEl) {
-          rocketEl.classList.remove('launching');
-          rocketEl.style.color = 'var(--red)';
-          rocketEl.textContent = frame;
-        }
-      }, 1400 + fi * 700);
-    });
-  }
+  // ── 결과 패널 표시 ──
+  // 성공: 마지막 단계 완료 후
+  // 실패: 실패 단계의 애니메이션 완료 후
+  const failAnimEndMs = firstFailStage >= 0
+    ? STAGE_TIMING[firstFailStage].delay + Math.round(STAGE_TIMING[firstFailStage].duration * 0.6) + 2800
+    : 0;
+  const resultPanelDelay = success
+    ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration + 200)
+    : failAnimEndMs;
+  const overlayDelay = resultPanelDelay + 600;
 
-  // 결과 패널 표시
-  const resultDelay  = success ? 4300 : 3000;
-  const overlayDelay = success ? 4800 : 3500;
+  const failDesc = firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : '';
+  const failStageName = firstFailStage >= 0 ? STAGE_NAMES[firstFailStage] : '';
 
   setTimeout(() => {
     const lr = document.getElementById('launch-result');
     if (lr) {
       lr.classList.add('show');
       const lrTitle = document.getElementById('lr-title');
-      if (lrTitle) lrTitle.textContent = success ? '// 달 착륙 성공' : '// 발사 실패';
+      if (lrTitle) {
+        lrTitle.textContent = success
+          ? '// 달 착륙 성공'
+          : `// 발사 실패 — ${failStageName}`;
+      }
       const lrStats = document.getElementById('lr-stats');
       if (lrStats) lrStats.innerHTML =
         `<span class="launch-result-stat-lbl">기체</span><span class="launch-result-stat-val">${q.name}</span>` +
-        `<span class="launch-result-stat-lbl">Δv</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>` +
+        `<span class="launch-result-stat-lbl">\u0394v</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>` +
         `<span class="launch-result-stat-lbl">TWR</span><span class="launch-result-stat-val">${sci.twr.toFixed(2)}</span>` +
         `<span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${success ? Math.floor(sci.altitude) : '---'} km</span>` +
-        `<span class="launch-result-stat-lbl">신뢰도</span><span class="launch-result-stat-val">${sci.reliability.toFixed(1)}%</span>`;
+        `<span class="launch-result-stat-lbl">신뢰도</span><span class="launch-result-stat-val">${sci.reliability.toFixed(1)}%</span>` +
+        (success ? '' : `<span class="launch-result-stat-lbl">실패 단계</span><span class="launch-result-stat-val" style="color:var(--red)">${failStageName} — ${failDesc}</span>`);
       const lrMs = document.getElementById('lr-ms');
       if (lrMs) {
         if (success) {
           lrMs.textContent = `문스톤 보상: +${earned}개`;
           lrMs.style.color = 'var(--amber)';
         } else {
-          lrMs.textContent = `발사 실패 — 문스톤 0 / 부품 일부 손실`;
+          lrMs.textContent = `${failStageName}에서 실패 — ${failDesc}`;
           lrMs.style.color = 'var(--red)';
         }
       }
     }
     if (statusTextEl) statusTextEl.textContent = success ? '// MISSION COMPLETE' : '// MISSION LOST';
-    if (success) _setLcStage(11); // LANDING done
+    if (success) _setLcStage(12); // 모든 단계 done (LANDING 포함)
     clearInterval(timerInterval);
-  }, resultDelay);
+  }, resultPanelDelay);
 
   setTimeout(() => {
     launchInProgress = false;
@@ -369,20 +552,30 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
       if (typeof playSfx_launchFail === 'function') playSfx_launchFail();
     }
     if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.stopEvent();
-    _showLaunchOverlay(q, sci, earned, success);
+    _showLaunchOverlay(q, sci, earned, success, firstFailStage);
   }, overlayDelay);
 }
 
-function _showLaunchOverlay(q, sci, earned, success = true) {
+function _showLaunchOverlay(q, sci, earned, success, firstFailStage) {
+  const failStageName = firstFailStage >= 0 ? STAGE_NAMES[firstFailStage] : '';
+  const failDesc = firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : '';
+
   const loTitle = document.getElementById('lo-title');
-  if (loTitle) loTitle.textContent = success ? '// 달 착륙 성공' : '// 발사 실패';
+  if (loTitle) {
+    loTitle.textContent = success
+      ? '// 달 착륙 성공'
+      : `// 발사 실패 — ${failStageName}`;
+  }
   const loRocket = document.getElementById('lo-rocket-art');
   if (loRocket) {
-    const _rcOv = (typeof ROCKET_CLASSES !== 'undefined')
-      ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'vega')) || ROCKET_CLASSES[0]
-      : null;
-    const _rvN = _rcOv ? _rcOv.name : 'NANO';
-    loRocket.textContent =
+    if (success) {
+      const _rcOv = (typeof ROCKET_CLASSES !== 'undefined')
+        ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'vega')) || ROCKET_CLASSES[0]
+        : null;
+      const _rvN = _rcOv ? _rcOv.name : 'NANO';
+      loRocket.style.color = '';
+      loRocket.style.textShadow = '';
+      loRocket.textContent =
 `           *
           /|\\
          / | \\
@@ -407,18 +600,31 @@ function _showLaunchOverlay(q, sci, earned, success = true) {
        |   |   |
       /|   |   |\\
      /_|___|___|_\\`;
+    } else {
+      // 실패 오버레이: 실패 존 ASCII 아트
+      const zone = _getFailZone(firstFailStage);
+      const frames = FAIL_FRAMES_BY_ZONE[zone];
+      loRocket.style.color = 'var(--red)';
+      loRocket.style.textShadow = '0 0 10px rgba(255,23,68,0.6)';
+      loRocket.textContent = frames[frames.length - 1]; // 마지막 프레임
+    }
   }
   const loStats = document.getElementById('lo-stats');
-  if (loStats) loStats.innerHTML =
-    `기체: ${q.name}  |  Δv: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${success ? Math.floor(sci.altitude) : '---'} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
+  if (loStats) {
+    let statsHtml = `기체: ${q.name}  |  \u0394v: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${success ? Math.floor(sci.altitude) : '---'} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
+    if (!success) {
+      statsHtml += `<br><span style="color:var(--red)">실패: ${failStageName} — ${failDesc}</span>`;
+    }
+    loStats.innerHTML = statsHtml;
+  }
   const loMs = document.getElementById('lo-ms');
   if (loMs) {
     if (success) {
-      loMs.textContent = `✓ 달 착륙 성공 — 문스톤 +${earned}개`;
+      loMs.textContent = '\u2713 달 착륙 성공 \u2014 문스톤 +' + earned + '개';
       loMs.style.color = 'var(--green)';
       playSfx('sine', 1200, 0.10, 0.03, 1600);
     } else {
-      loMs.textContent = `✗ 발사 실패 — 신뢰도 부족 (${sci.reliability.toFixed(1)}%)`;
+      loMs.textContent = '\u2717 ' + failStageName + '에서 실패 \u2014 ' + failDesc;
       loMs.style.color = 'var(--red)';
       playSfx('sawtooth', 220, 0.20, 0.06, 80);
       setTimeout(() => playSfx('sawtooth', 160, 0.22, 0.05, 60), 200);
@@ -460,8 +666,8 @@ function renderLaunchTab() {
     const altEl    = document.getElementById('lc-alt-val');
     const speedBar = document.getElementById('lc-speed-bar');
     const altBar   = document.getElementById('lc-alt-bar');
-    if (speedEl)  speedEl.textContent  = '0';
-    if (altEl)    altEl.textContent    = '0';
+    if (speedEl)  { speedEl.textContent = '0'; speedEl.classList.remove('gauge-fail'); }
+    if (altEl)    { altEl.textContent = '0'; altEl.classList.remove('gauge-fail'); }
     if (speedBar) { speedBar.style.width = '0%'; speedBar.style.background = ''; }
     if (altBar)   { altBar.style.width   = '0%'; altBar.style.background   = ''; }
 
