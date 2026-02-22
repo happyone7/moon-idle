@@ -324,9 +324,12 @@ function promoteToSpecialist(bldId, specId) {
   return true;
 }
 
-// 시민 분양 비용: 500 × 1.8^(citizens) (P8-4)
+// 시민 분양 비용: 10명까지 300×1.3^n (완만), 이후 pivot×1.8^(n-10) (기하급수)
 function getCitizenCost() {
-  return Math.floor(500 * Math.pow(1.8, gs.citizens || 0));
+  const n = gs.citizens || 0;
+  if (n < 10) return Math.floor(300 * Math.pow(1.3, n));
+  const pivot = Math.floor(300 * Math.pow(1.3, 10)); // ~4135
+  return Math.floor(pivot * Math.pow(1.8, n - 10));
 }
 
 // 시민 분양: 자금 차감 후 시민 수 증가 (P8-4)
