@@ -21,7 +21,7 @@ let gs = {
   researchQueue: [],     // 예약된 연구 목록 (최대 3개, FIFO)
   maxResearchSlots: 1,   // 활성 연구 슬롯 (항상 1)
   opsRoles: { sales: 0, accounting: 0, consulting: 0 },
-  citizens: 0,         // 분양된 시민 수 (P8-4)
+  citizens: 1,         // 분양된 시민 수 (P8-4) — 게임 시작 시 주거시설 1동에 입주한 시민 1명
   specialists: {},     // { bldId: { specId: count } } — 전문화된 직원
   selectedTech: null,
   msUpgrades: {},
@@ -139,7 +139,7 @@ function getBldProdMult(bid) {
 function getBldUpgradeCost(bid) {
   const lv = getBldLevel(bid);
   return {
-    money: Math.floor(300 * Math.pow(2.0, lv)),
+    money: Math.floor(5000 * Math.pow(2.0, lv)),
     iron:  Math.floor(80 * Math.pow(1.6, lv)),
   };
 }
@@ -349,6 +349,16 @@ function getCitizenCost() {
   if (n < 10) return Math.floor(300 * Math.pow(1.3, n));
   const pivot = Math.floor(300 * Math.pow(1.3, 10)); // ~4135
   return Math.floor(pivot * Math.pow(1.8, n - 10));
+}
+
+// 운영센터 코인 클릭 — 클릭 1회당 현재 수입×2 (최소 $25) 즉시 획득
+function clickOpsCoin() {
+  if ((gs.buildings.ops_center || 0) < 1) return;
+  const prod = typeof getProduction === 'function' ? getProduction() : { money: 0 };
+  const inc  = Math.max(25, Math.floor((prod.money || 0) * 2));
+  gs.res.money = (gs.res.money || 0) + inc;
+  notify(`◈ +$${fmt(inc)} 클릭 수익`, 'amber');
+  if (typeof renderAll === 'function') renderAll();
 }
 
 // 시민 분양: 자금 차감 후 시민 수 증가 (P8-4)
@@ -920,7 +930,7 @@ function _showOfflineReport(report) {
   const timeStr = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
 
   // 자원 수익 HTML
-  const RES_NAMES = { money:'₩ 자금', iron:'Fe 철광석', copper:'Cu 구리', fuel:'LOX 연료', electronics:'PCB 전자', research:'RP 연구' };
+  const RES_NAMES = { money:'$ 자금', iron:'Fe 철', copper:'Cu 구리', fuel:'LOX 연료', electronics:'PCB 전자', research:'RP 연구' };
   let resHtml = '';
   Object.entries(report.resources).forEach(([rid, val]) => {
     if (val > 0.01) {

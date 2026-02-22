@@ -79,7 +79,7 @@ function renderResources() {
 
   // ■ 원자재
   html += `<div class="rl-sect-hd">&#9632; 원자재</div>`;
-  html += resItem('iron',        '철광석',   'Iron');
+  html += resItem('iron',        '철',        'Iron');
   html += resItem('copper',      '구리',     'Copper');
   html += resItem('electronics', '전자부품', 'Electronics');
 
@@ -93,7 +93,7 @@ function renderResources() {
 
   // 인원
   const avail     = getAvailableWorkers();
-  const totalW    = gs.workers || 1;
+  const totalW    = typeof getTotalWorkers === 'function' ? getTotalWorkers() : (gs.citizens || 0);
   const assignedW = totalW - avail;
   html += `
     <div class="rl-v7workers">
@@ -201,18 +201,24 @@ function startNewGame(slot) {
   gs.res = { money:2000, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.workers = 1;  // 주거시설 1동 = 인원 1명
+  gs.citizens = 1; // 게임 시작 시 주거시설 1동에 입주한 시민 1명
   gs.assignments = {};
+  gs.specialists = {};
+  gs.opsRoles = { sales: 0, accounting: 0, consulting: 0 };
   gs._prodHubVisited = false;
   gs.bldLevels = {};
   gs.bldSlotLevels = {};
   gs.bldUpgrades = {};
   gs.addons = {};
   gs.addonUpgrades = {};
-  gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
+  gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
+  gs.mfgActive = {};
+  gs.fuelInjection = 0;
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.fuelLoaded = false;
   gs.upgrades = {};
   gs.researchProgress = {};
+  gs.researchQueue = [];
   gs.maxResearchSlots = 1;
   gs.msUpgrades = {};
   gs.achievements = {};       // P4-2
@@ -225,11 +231,12 @@ function startNewGame(slot) {
   gs.settings = { sound: true, lang: 'en' };
   gs.unlocks = {
     tab_production: true, tab_research: false, tab_assembly: false,
-    tab_launch: true,  tab_mission: false,
+    tab_launch: true,  tab_mission: false, tab_automation: false,
     bld_housing: true, bld_ops_center: true, bld_supply_depot: false, bld_mine: false,
     bld_extractor: false, bld_refinery: false, bld_cryo_plant: false,
     bld_elec_lab: false, bld_fab_plant: false, bld_research_lab: false,
     bld_r_and_d: false, bld_solar_array: false, bld_launch_pad: false,
+    addon_ops_center: false,
   };
   prodMult = {}; globalMult = 1; partCostMult = 1;
   fusionBonus = 0; reliabilityBonus = 0; slotBonus = 0;

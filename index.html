@@ -636,6 +636,38 @@ body.tab-research #pane-research {
 }
 .world-bld.wb-anim-upgrade { animation: wb-upgrade 0.7s ease-out forwards !important; }
 
+/* ── OPS CENTER: amber glow pulse animation ── */
+@keyframes ops-glow {
+  0%,100% { text-shadow: 0 0 6px rgba(0,230,118,0.55); }
+  50%      { text-shadow: 0 0 14px var(--amber), 0 0 24px rgba(255,180,0,0.35); }
+}
+.wb-ops-anim { animation: ops-glow 2.4s ease-in-out infinite; }
+.wb-ops-anim:hover { animation: none; text-shadow: 0 0 18px var(--amber) !important; }
+
+/* ── OPS CENTER coin click button ── */
+.ops-coin-btn {
+  position: absolute;
+  bottom: 20px;
+  width: 18px;
+  height: 18px;
+  background: var(--amber);
+  color: #000;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: var(--font);
+  z-index: 20;
+  user-select: none;
+  transition: transform 0.1s, background 0.1s;
+  box-shadow: 0 0 6px var(--amber);
+}
+.ops-coin-btn:hover  { transform: scale(1.25); background: #ffd740; box-shadow: 0 0 12px var(--amber); }
+.ops-coin-btn:active { transform: scale(0.9); }
+
 /* ── Add-on buildings ── */
 .world-bld.wb-addon         { color: var(--amber); text-shadow: 0 0 6px rgba(255,171,0,0.4); }
 .world-bld.wb-addon:hover   { color: #ffdd55; text-shadow: 0 0 14px rgba(255,171,0,0.8); }
@@ -3310,7 +3342,7 @@ body.ignition-flash::before {
     <span class="sep">|</span>
     <span class="clk" id="tb-clock">00:00:00</span>
     <span class="sep">|</span>
-    <span class="mny">&#8361;&thinsp;<span id="tb-money">0</span></span>
+    <span class="mny">$&thinsp;<span id="tb-money">0</span></span>
     <span class="sep">|</span>
     <span class="sys">인원 <span id="tb-workers" style="color:var(--white)">0/0</span></span>
     <div class="tb-r">

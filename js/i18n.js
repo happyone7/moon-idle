@@ -41,7 +41,7 @@ const I18N = {
 
     // Production tab
     prod_status:    (income, assigned, total) =>
-      `[ Income: ₩${income}/s ]  [ Workers: ${assigned}/${total} deployed ]`,
+      `[ Income: $${income}/s ]  [ Workers: ${assigned}/${total} deployed ]`,
     prod_hint:      '// Hover over world buildings to assign workers',
     prod_unbuilt:   'Not built',
     prod_no_worker: 'No workers',
@@ -72,7 +72,7 @@ const I18N = {
     q_done_title:   '✔ Mission Complete!',
     q_done_desc:    'First launch successful. Collect moonstones.',
     q_sub_ops:      'Deploy an Operations Center',
-    q_sub_money:    'Accumulate ₩1,000',
+    q_sub_money:    'Accumulate $1,000',
     q_sub_mine:     'Build a Mine',
     q_sub_lab:      'Build a Research Lab',
     q_sub_research: 'Research 1 technology',
@@ -165,7 +165,7 @@ const I18N = {
     ph_mission:     '미션 진행 현황',
 
     prod_status:    (income, assigned, total) =>
-      `[ 수입: ₩${income}/s ]  [ 인원: ${assigned}/${total}명 배치 ]`,
+      `[ 수입: $${income}/s ]  [ 인원: ${assigned}/${total}명 배치 ]`,
     prod_hint:      '// 세계관 건물에 마우스를 오버하면 인원 배치 메뉴가 열립니다',
     prod_unbuilt:   '미건설',
     prod_no_worker: '인원 미배치',
@@ -194,7 +194,7 @@ const I18N = {
     q_done_title:   '✔ 임무 완료!',
     q_done_desc:    '달 탐사 로켓 첫 발사 성공. 계속 발사하여 문스톤을 모으세요.',
     q_sub_ops:      '운영센터를 배치하세요',
-    q_sub_money:    '자금 ₩1,000 확보',
+    q_sub_money:    '자금 $1,000 확보',
     q_sub_mine:     '광산을 건설하세요',
     q_sub_lab:      '연구소를 건설하세요',
     q_sub_research: '기술을 1개 연구하세요',

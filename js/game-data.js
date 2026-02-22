@@ -2,7 +2,7 @@
 //  GAME DATA
 // ============================================================
 const RESOURCES = [
-  { id:'money',       name:'돈',       symbol:'₩',  color:'var(--amber)' },
+  { id:'money',       name:'돈',       symbol:'$',  color:'var(--amber)' },
   { id:'iron',        name:'철',       symbol:'Fe', color:'var(--green)' },
   { id:'copper',      name:'구리',     symbol:'Cu', color:'#b87333' },
   { id:'fuel',        name:'연료',     symbol:'LOX',color:'var(--green)' },
@@ -170,11 +170,11 @@ const RESEARCH_BRANCHES = [
 // premium:true    → 단 1회. 강력한 효과. 텍스트 앰버 강조.
 const BUILDING_UPGRADES = {
   housing: [
-    { id:'hsg_dorm',       name:'기숙사 증설',          cost:{money:200},                             desc:'직원 수익 +15%/레벨',             moneyBonus:0.15, repeatable:true, costScale:2.0 },
-    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:800},                             desc:'전체 생산량 +8%/레벨',             prodBonus:0.08,  repeatable:true, costScale:2.2, req:'hsg_dorm' },
-    { id:'hsg_township',   name:'★ 타운십 조성',        cost:{money:8000},                            desc:'인원 +5명 — 대규모 주거 허브',    wkr:5, premium:true, req:'hsg_welfare' },
-    { id:'housing_school', name:'★ 단지 내 학원',       cost:{money:8000},                            desc:'생산 전체 +10%',                  mult:1.10, effect:'specialist_rate', premium:true, req:'hsg_township' },
-    { id:'housing_market', name:'★ 단지 내 상가',       cost:{money:5000},                            desc:'자금 +50/s 수익',                 effect:'passive_income', premium:true, req:'hsg_township' },
+    { id:'hsg_dorm',       name:'기숙사 증설',          cost:{money:500},                             desc:'직원 수익 +15%/레벨',             moneyBonus:0.15, repeatable:true, costScale:2.0 },
+    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:2500},                            desc:'전체 생산량 +8%/레벨',             prodBonus:0.08,  repeatable:true, costScale:2.2, req:'hsg_dorm' },
+    { id:'hsg_township',   name:'★ 타운십 조성',        cost:{money:30000},                           desc:'인원 +5명 — 대규모 주거 허브',    wkr:5, premium:true, req:'hsg_welfare' },
+    { id:'housing_school', name:'★ 단지 내 학원',       cost:{money:200000},                          desc:'생산 전체 +10%',                  mult:1.10, effect:'specialist_rate', premium:true, req:'hsg_township' },
+    { id:'housing_market', name:'★ 단지 내 상가',       cost:{money:1200000},                         desc:'자금 +50/s 수익',                 effect:'passive_income', premium:true, req:'hsg_township' },
   ],
   ops_center: [
     { id:'ops_sales',     name:'영업팀 강화',           cost:{money:400},                             desc:'이 건물 수익 +5%',                mult:1.05, repeatable:true, costScale:1.8 },
@@ -741,7 +741,7 @@ const PRESTIGE_STAR_TREE = [
     cost: { moonstone: 1 },
     effect: { type: 'startingMoney', value: 5000 },
     requires: [],
-    desc: '프레스티지 후 시작 자금 ₩5,000 추가 지급. 초반 성장을 가속한다.',
+    desc: '프레스티지 후 시작 자금 $5,000 추가 지급. 초반 성장을 가속한다.',
   },
   {
     id: 'star_part_discount',
@@ -793,7 +793,7 @@ const PRESTIGE_STAR_TREE = [
     cost: { moonstone: 8 },
     effect: { type: 'startingMoney', value: 20000 },
     requires: ['star_seed_fund'],
-    desc: '프레스티지 후 시작 자금 ₩20,000 추가 지급. 건물 즉시 건설 가능.',
+    desc: '프레스티지 후 시작 자금 $20,000 추가 지급. 건물 즉시 건설 가능.',
   },
 
   // ── TIER 2 (최종 노드 — TIER 1 선행 필요) ──────────────────
@@ -838,7 +838,7 @@ const PRESTIGE_STAR_TREE = [
 // ============================================================
 const PRESTIGE_CONFIG = {
   resets: [
-    { id: 'money',          name: '자금(₩)',               desc: '보유 자금이 0으로 초기화된다.' },
+    { id: 'money',          name: '자금($)',               desc: '보유 자금이 0으로 초기화된다.' },
     { id: 'iron',           name: '철광석(Fe)',             desc: '보유 철광석이 0으로 초기화된다.' },
     { id: 'copper',         name: '구리(Cu)',               desc: '보유 구리가 0으로 초기화된다.' },
     { id: 'fuel',           name: '연료(LOX)',              desc: '보유 연료가 0으로 초기화된다.' },
