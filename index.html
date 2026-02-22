@@ -1445,8 +1445,9 @@ body.tab-research #pane-research {
 
 /* 기존 로켓 아트/부품/품질/슬롯 스타일 */
 .rocket-art-wrap { text-align: center; padding: 10px; border-bottom: 1px solid var(--green-dim); background: var(--bg); min-height: 220px; display: flex; align-items: center; justify-content: center; }
-#rocket-art-display { font-size: 12px; white-space: pre; line-height: 1.3; color: var(--green-dim); }
-#rocket-art-display .done { color: var(--green); text-shadow: var(--glow); }
+/* 공통 로켓 ASCII 아트 기반 스타일 — 조립동·발사통제·오버레이 통일 */
+.rocket-art-core { font-family: 'Courier New', Consolas, monospace; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; color: var(--green-dim); display: inline-block; text-align: left; }
+.rocket-art-core .done { color: var(--green); text-shadow: var(--glow); }
 /* 로켓 아트 섹션별 색상 클래스 */
 .r-nose, .r-payload, .r-avionics, .r-engine, .r-exhaust { color: var(--green-dim); transition: color 0.3s; }
 .r-nose.done, .r-payload.done, .r-avionics.done, .r-engine.done, .r-exhaust.done { color: var(--green); text-shadow: var(--glow); }
@@ -1651,7 +1652,6 @@ body.tab-research #pane-research {
 /* flex:1 + justify-content:center → 로켓 수직 정중앙 */
 #lc-pre-launch { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1; justify-content: center; padding: 8px 0; }
 .lc-rocket-disp { text-align: center; width: 100%; }
-.lc-rocket-art  { display: inline-block; text-align: left; font-size: 15px; line-height: 1.3; white-space: pre; letter-spacing: 0; }
 
 /* HUD 플로팅 창 */
 #lc-hud {
@@ -1755,12 +1755,12 @@ body.tab-research #pane-research {
 #lc-anim-zone  { width: 100%; display: none; flex-direction: column; align-items: center; }
 #lc-anim-zone.active { display: flex; }
 .launch-anim-wrap { text-align: center; padding: 14px; min-height: 160px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); width: 100%; box-sizing: border-box; }
-.launch-rocket-ascii { font-size: 13px; white-space: pre; color: var(--green); display: inline-block; }
+.launch-rocket-ascii { font-family: 'Courier New', Consolas, monospace; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; color: var(--green); display: inline-block; }
 .launch-rocket-ascii.launching { animation: rocket-launch 3s ease-in forwards; }
 .launch-rocket-ascii.exploding { animation: rocket-explode 0.3s ease-out both; }
 @keyframes rocket-launch { 0% { transform: translateY(0); } 100% { transform: translateY(-400px); } }
 @keyframes rocket-explode { 0% { transform: scale(1); opacity: 1; } 40% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-.exhaust-anim { font-size: 12px; white-space: pre; color: var(--amber); text-shadow: 0 0 6px var(--amber); display: inline-block; animation: exhaust-flicker 0.15s step-start infinite; }
+.exhaust-anim { font-family: 'Courier New', Consolas, monospace; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; color: var(--amber); text-shadow: 0 0 6px var(--amber); display: inline-block; animation: exhaust-flicker 0.15s step-start infinite; }
 @keyframes exhaust-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 .launch-result { display: none; border: 1px solid var(--amber); background: rgba(255,171,0,0.05); padding: 12px; font-size: 13px; color: var(--amber); margin-top: 8px; width: 100%; box-sizing: border-box; }
 .launch-result.show { display: block; }
@@ -2015,7 +2015,7 @@ body.tab-production .world-bld:hover { transform: scale(1.05); filter: brightnes
 #launch-overlay { display: none; position: fixed; inset: 0; background: rgba(1,8,0,0.97); z-index: 7000; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 24px; }
 #launch-overlay.show { display: flex; }
 .lo-title { font-size: 28px; letter-spacing: 8px; text-transform: uppercase; color: var(--amber); text-shadow: 0 0 20px var(--amber); margin-bottom: 14px; }
-.lo-rocket { font-size: 12px; white-space: pre; color: var(--amber); text-shadow: 0 0 6px #ffab0080; margin-bottom: 14px; animation: rocket-launch 4s ease-in forwards; }
+.lo-rocket { font-family: 'Courier New', Consolas, monospace; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; color: var(--amber); text-shadow: 0 0 6px #ffab0080; margin-bottom: 14px; animation: rocket-launch 4s ease-in forwards; }
 .lo-stats { font-size: 15px; color: var(--green); margin-bottom: 18px; line-height: 2.2; text-shadow: var(--glow); }
 .lo-ms { font-size: 20px; color: var(--amber); letter-spacing: 3px; margin-bottom: 24px; }
 .lo-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
@@ -3474,7 +3474,7 @@ body.ignition-flash::before {
 
           <!-- ── CENTER: 로켓 도면 + 조립 진행 + BOM ── -->
           <div class="asm-col asm-col-center">
-            <div class="rocket-art-wrap"><pre id="rocket-art-display"></pre></div>
+            <div class="rocket-art-wrap"><pre class="rocket-art-core" id="rocket-art-display"></pre></div>
             <div class="asm-panel">
               <div class="asm-pnl-title amber">// 조립 진행 상황</div>
               <pre id="asm-stage-progress"></pre>
@@ -3524,7 +3524,7 @@ body.ignition-flash::before {
                 <!-- 프리-플라이트 체크리스트 -->
                 <div id="lc-checklist"></div>
                 <div class="lc-rocket-disp">
-                  <div class="lc-rocket-art" id="lc-rocket-pre"></div>
+                  <pre class="rocket-art-core" id="lc-rocket-pre"></pre>
                 </div>
                 <!-- 조립/연료 상태 패널 -->
                 <div id="lc-status-panel"></div>
@@ -3697,7 +3697,7 @@ body.ignition-flash::before {
      =========================== -->
 <div id="launch-overlay">
   <div class="lo-title" id="lo-title">// 달 탐사 성공</div>
-  <pre class="lo-rocket" id="lo-rocket-art"></pre>
+  <pre class="rocket-art-core lo-rocket" id="lo-rocket-art"></pre>
   <div class="lo-stats" id="lo-stats"></div>
   <div class="lo-ms" id="lo-ms"></div>
   <div class="lo-btns">
