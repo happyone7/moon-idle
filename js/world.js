@@ -4,7 +4,7 @@
 const WORLD_POSITIONS = {
   housing:      310,  // 주거시설 맨 왼쪽
   ops_center:   510,  // addon @ 590
-  research_lab: 690,  r_and_d:      860,
+  research_lab: 770,  r_and_d:      950,
   supply_depot: 1210, mine:         1420, extractor:    1560,
   refinery:     1750, cryo_plant:   1930, elec_lab:     2130,
   fab_plant:    2300, solar_array:  2490, launch_pad:   2700,
@@ -13,7 +13,7 @@ const WORLD_POSITIONS = {
 
 // 애드온 건물 위치 (부모 건물 우측 밀착 — 문자 폭 6.6px 기준)
 const ADDON_POSITIONS = {
-  ops_center:  604,   // 510 + 14자×6.6px ≈ 92px → 602 (여유 2px)
+  ops_center:  630,   // 510 + 18자×6.6px ≈ 119px → 629 (여유 1px)
   launch_pad: 2800,   // 2700 + 15자×6.6px ≈ 99px → 2800
 };
 
@@ -145,107 +145,107 @@ function _bldAscii(bld, cnt) {
     case 'wb-ops': {
       const isOps = bld.id === 'ops_center';
 
-      // ── ops_center: money-themed, large design ──────────────
+      // ── ops_center: 18자 폭, money-themed ────────────────────
       if (isOps) {
         if (bu.ops_premium) {
           if (tier >= 2) return (
-            '╔════════════╗\n' +
-            '║  PREMIUM   ║\n' +
-            '║ $$ VIP $$ ║\n' +
-            '╠════════════╣\n' +
-            '║ ▓▓▓▓▓▓▓▓▓▓ ║\n' +
-            '╠════════════╣\n' +
-            '║  ◈ TRADE  ║\n' +
-            '╚════════════╝\n' +
-            '██████████████'
+            '╔════════════════╗\n' +
+            '║   $$ PREMIUM   ║\n' +
+            '║ $$ VIP ZONE $$ ║\n' +
+            '╠════════════════╣\n' +
+            '║ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓ ║\n' +
+            '╠════════════════╣\n' +
+            '║   ◈ TRADING ◈  ║\n' +
+            '╚════════════════╝\n' +
+            '██████████████████'
           );
           return (
-            '╔════════════╗\n' +
-            '║  PREMIUM   ║\n' +
-            '║ $$ VIP $$ ║\n' +
-            '╠════════════╣\n' +
-            '║  ◈ TRADE  ║\n' +
-            '╚════════════╝\n' +
-            '██████████████'
+            '╔════════════════╗\n' +
+            '║   $$ PREMIUM   ║\n' +
+            '║ $$ VIP ZONE $$ ║\n' +
+            '╠════════════════╣\n' +
+            '║   ◈ TRADING ◈  ║\n' +
+            '╚════════════════╝\n' +
+            '██████████████████'
           );
         }
         if (bu.ops_24h) {
           if (tier >= 2) return (
-            '╔════════════╗\n' +
-            '║  OPS CTR   ║\n' +
-            '║ $$ 24H $$ ║\n' +
-            '╠════════════╣\n' +
-            '║ ▓░▓░▓░▓░▓  ║\n' +
-            '╠════════════╣\n' +
-            '║  ◈ DEAL!  ║\n' +
-            '╚════════════╝\n' +
-            '██████████████'
+            '╔════════════════╗\n' +
+            '║   OPS CENTER   ║\n' +
+            '║  $$ 24HOUR $$  ║\n' +
+            '╠════════════════╣\n' +
+            '║ ▓░▓░▓░▓░▓░▓░▓░ ║\n' +
+            '╠════════════════╣\n' +
+            '║   ◈  DEAL!  ◈  ║\n' +
+            '╚════════════════╝\n' +
+            '██████████████████'
           );
           return (
-            '╔════════════╗\n' +
-            '║  OPS CTR   ║\n' +
-            '║ $$ 24H $$ ║\n' +
-            '╠════════════╣\n' +
-            '║  ◈ DEAL!  ║\n' +
-            '╚════════════╝\n' +
-            '██████████████'
+            '╔════════════════╗\n' +
+            '║   OPS CENTER   ║\n' +
+            '║  $$ 24HOUR $$  ║\n' +
+            '╠════════════════╣\n' +
+            '║   ◈  DEAL!  ◈  ║\n' +
+            '╚════════════════╝\n' +
+            '██████████████████'
           );
         }
         if (bu.ops_sales) {
           if (tier >= 2) return (
-            '╔════════════╗\n' +
-            '║  OPS CTR   ║\n' +
-            '║ $$  $$  $$ ║\n' +
-            '╠════════════╣\n' +
-            '║ ▓░▓░▓░▓░▓  ║\n' +
-            '╠════════════╣\n' +
-            '║ ░▓░▓░▓░▓░  ║\n' +
-            '╚════════════╝\n' +
-            '██████████████'
+            '╔════════════════╗\n' +
+            '║   OPS CENTER   ║\n' +
+            '║ $$  $$  $$  $$ ║\n' +
+            '╠════════════════╣\n' +
+            '║ ▓░▓░▓░▓░▓░▓░▓░ ║\n' +
+            '╠════════════════╣\n' +
+            '║ ░▓░▓░▓░▓░▓░▓░▓ ║\n' +
+            '╚════════════════╝\n' +
+            '██████████████████'
           );
           return (
-            '╔════════════╗\n' +
-            '║  OPS CTR   ║\n' +
-            '║ $$  $$  $$ ║\n' +
-            '╠════════════╣\n' +
-            '║ ▓░▓░▓░▓░▓  ║\n' +
-            '╚════════════╝\n' +
-            '██████████████'
+            '╔════════════════╗\n' +
+            '║   OPS CENTER   ║\n' +
+            '║ $$  $$  $$  $$ ║\n' +
+            '╠════════════════╣\n' +
+            '║ ▓░▓░▓░▓░▓░▓░▓░ ║\n' +
+            '╚════════════════╝\n' +
+            '██████████████████'
           );
         }
-        // 기본 ops_center
+        // 기본 ops_center (18자 폭)
         if (tier >= 3) return (
-          '╔════════════╗\n' +
-          '║  OPS CTR   ║\n' +
-          '║ $ TRADING $ ║\n' +
-          '╠════════════╣\n' +
-          '║ ▓░▓░▓░▓░▓  ║\n' +
-          '╠════════════╣\n' +
-          '║ ░▓░▓░▓░▓░  ║\n' +
-          '╠════════════╣\n' +
-          '║ ▓░▓░▓░▓░▓  ║\n' +
-          '╚════════════╝\n' +
-          '██████████████'
+          '╔════════════════╗\n' +
+          '║   OPS CENTER   ║\n' +
+          '║  $ TRADING  $  ║\n' +
+          '╠════════════════╣\n' +
+          '║ ▓░▓░▓░▓░▓░▓░▓░ ║\n' +
+          '╠════════════════╣\n' +
+          '║ ░▓░▓░▓░▓░▓░▓░▓ ║\n' +
+          '╠════════════════╣\n' +
+          '║ ▓░▓░▓░▓░▓░▓░▓░ ║\n' +
+          '╚════════════════╝\n' +
+          '██████████████████'
         );
         if (tier >= 1) return (
-          '╔════════════╗\n' +
-          '║  OPS CTR   ║\n' +
-          '║ $ TRADING $ ║\n' +
-          '╠════════════╣\n' +
-          '║ ▓░▓░▓░▓░▓  ║\n' +
-          '╠════════════╣\n' +
-          '║ ░▓░▓░▓░▓░  ║\n' +
-          '╚════════════╝\n' +
-          '██████████████'
+          '╔════════════════╗\n' +
+          '║   OPS CENTER   ║\n' +
+          '║  $ TRADING  $  ║\n' +
+          '╠════════════════╣\n' +
+          '║ ▓░▓░▓░▓░▓░▓░▓░ ║\n' +
+          '╠════════════════╣\n' +
+          '║ ░▓░▓░▓░▓░▓░▓░▓ ║\n' +
+          '╚════════════════╝\n' +
+          '██████████████████'
         );
         return (
-          '╔════════════╗\n' +
-          '║  OPS CTR   ║\n' +
-          '║ $ TRADING $ ║\n' +
-          '╠════════════╣\n' +
-          '║ ▓░▓░▓░▓░▓  ║\n' +
-          '╚════════════╝\n' +
-          '██████████████'
+          '╔════════════════╗\n' +
+          '║   OPS CENTER   ║\n' +
+          '║  $ TRADING  $  ║\n' +
+          '╠════════════════╣\n' +
+          '║ ▓░▓░▓░▓░▓░▓░▓░ ║\n' +
+          '╚════════════════╝\n' +
+          '██████████████████'
         );
       }
 
@@ -848,7 +848,7 @@ function openBldOv(bld, el, keepPosition = false) {
       const citizenIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS['housing']) || '';
       actions.push({ type: 'sep', label: '// 시민 관리' });
       actions.push({
-        label: `${citizenIcon} 시민 분양 (현재 ${gs.citizens || 0}명)`,
+        label: `${citizenIcon} 시민 분양`,
         info: `$${fmt(citizenCost)}`,
         disabled: false,
         affordable: citizenAfford,
@@ -889,6 +889,8 @@ function openBldOv(bld, el, keepPosition = false) {
     const level    = typeof rawLevel === 'number' ? rawLevel : (rawLevel ? 1 : 0);
     const done     = !upg.repeatable && level >= 1;
     const reqMet   = !upg.req || !!(gs.bldUpgrades && gs.bldUpgrades[upg.req]);
+    // 선행조건 미충족 + 미완료 → 비노출
+    if (!reqMet && !done) return;
     // Scale cost by level for repeatable upgrades
     const costScale = upg.costScale || 1;
     const scaledCost = {};
@@ -896,18 +898,16 @@ function openBldOv(bld, el, keepPosition = false) {
       scaledCost[r] = Math.floor(v * Math.pow(costScale, level));
     });
     const affordable = canAfford(scaledCost);
-    const reqName  = upg.req ? (bldUpgs.find(u => u.id === upg.req)?.name || upg.req) : null;
     const levelLabel = upg.repeatable && level > 0 ? ` (Lv.${level})` : '';
     const premiumTag = upg.premium ? ' ★' : '';
     actions.push({
       label: upg.name + levelLabel + premiumTag,
       info:  done ? '[완료]' : getCostStr(scaledCost),
       done, affordable, reqMet,
-      disabled: done || !reqMet || cnt === 0,
+      disabled: done || cnt === 0,
       desc:  upg.desc
         + (upg.repeatable ? `\n// 현재 ${level}단계 · 다음 비용: ${getCostStr(scaledCost)}` : '')
         + (upg.premium ? '\n// ★ 프리미엄 — 단 1회, 강력한 효과' : '')
-        + (reqName && !reqMet ? `\n// 선행 필요: ${reqName}` : '')
         + (cnt === 0 ? '\n// 건물을 먼저 건설하세요' : ''),
       type: 'upgrade',
       upgId: upg.id,
@@ -1161,13 +1161,15 @@ function openAddonOv(bld, opt, el) {
   (opt.upgrades || []).forEach(upg => {
     const done     = !!(gs.addonUpgrades && gs.addonUpgrades[upg.id]);
     const reqMet   = !upg.req || !!(gs.addonUpgrades && gs.addonUpgrades[upg.req]);
+    // 선행조건 미충족 + 미완료 → 비노출
+    if (!reqMet && !done) return;
     const affordable = canAfford(upg.cost);
     actions.push({
       label: upg.name,
       info:  done ? '[완료]' : getCostStr(upg.cost),
       done, affordable, reqMet,
-      disabled: done || !reqMet,
-      desc: upg.desc + (!reqMet ? '\n// 선행 업그레이드 필요' : ''),
+      disabled: done,
+      desc: upg.desc,
       type: 'addon_upgrade',
       upgId: upg.id,
       addonBldId: bld.id,
@@ -1293,10 +1295,11 @@ function assignWorker(bldId) {
   const assigned = gs.assignments[bldId] || 0;
   const slotCap  = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bldId]) || 0);
   if (cnt === 0)                    { notify('건물이 없습니다', 'red'); return; }
-  if (getAvailableWorkers() <= 0)   { notify('여유 인원 없음', 'red'); return; }
+  if (getAvailableWorkers() <= 0)   { notify('여유 시민 없음', 'red'); return; }
   if (assigned >= slotCap)          { notify('슬롯 수용 한도 초과 — 슬롯 업그레이드 필요', 'amber'); return; }
   gs.assignments[bldId] = assigned + 1;
-  notify(`${bld.icon} ${bld.name} — 인원 배치 (${gs.assignments[bldId]}명)`);
+  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
+  notify(`${bld.icon} ${bld.name} — 직원 배치 (${gs.assignments[bldId]}명)`);
   playSfx('triangle', 300, 0.04, 0.02, 400);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
   if (pre) openBldOv(bld, pre);
@@ -1316,7 +1319,8 @@ function unassignWorker(bldId) {
   const bld = BUILDINGS.find(b => b.id === bldId);
   gs.assignments[bldId] = Math.max(0, gs.assignments[bldId] - 1);
   if (gs.assignments[bldId] === 0) delete gs.assignments[bldId];
-  if (bld) notify(`${bld.icon} ${bld.name} — 인원 철수`);
+  gs.citizens = (gs.citizens || 0) + 1;
+  if (bld) notify(`${bld.icon} ${bld.name} — 직원 철수 → 시민 복귀`);
   playSfx('triangle', 400, 0.04, 0.02, 300);
   if (bld) {
     const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
@@ -1357,9 +1361,9 @@ function _refreshBldOvHousingPanel() {
 function hireBldWorker(bldId) {
   const cost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bldId) : (getWorkerHireCost ? getWorkerHireCost() : 100);
   if (!gs || !gs.res) return;
-  // 여유 시민 확인 — 새 시민을 만들지 않고 기존 여유 인원을 배치
+  // 여유 시민 확인 — 유휴 시민을 직원으로 배치
   if (getAvailableWorkers() <= 0) {
-    notify('여유 시민 없음 — 주거시설 업그레이드로 시민 상한을 늘리세요', 'red');
+    notify('여유 시민 없음 — 주거시설에서 시민을 분양하세요', 'red');
     return;
   }
   if ((gs.res.money || 0) < cost) {
@@ -1369,7 +1373,7 @@ function hireBldWorker(bldId) {
   gs.res.money -= cost;
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bldId] = (gs.assignments[bldId] || 0) + 1;
-  // gs.workers는 변경하지 않음 — 기존 여유 시민을 배치하는 것
+  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
   const assigned = gs.assignments[bldId];
   notify(`직원 배치 완료 — ${bldId} ×${assigned}명`, 'green');
   playSfx('triangle', 400, 0.12, 0.07, 600);
@@ -1593,7 +1597,7 @@ function refreshBovBuyButton() {
 function syncWorkerDots() {
   const layer = document.getElementById('workers-layer');
   if (!layer) return;
-  const total = gs.citizens || 0;
+  const total = (typeof getTotalWorkers === 'function') ? getTotalWorkers() : (gs.citizens || 0);
 
   while (_workerDots.length > total) {
     const d = _workerDots.pop();
