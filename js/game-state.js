@@ -596,6 +596,7 @@ function tickFuelInjection(dt) {
   if (gs.fuelInjection >= F.maxPct) {
     gs.fuelInjection = F.maxPct;
     gs.fuelInjecting = false;
+    gs.fuelLoaded = true;  // 연료 주입 100% → 자동으로 발사 준비 플래그 설정
     notify('✓ 연료 주입 완료 (100%)', 'green');
     playSfx('sine', 660, 0.09, 0.02, 880);
   }

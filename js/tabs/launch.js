@@ -498,10 +498,8 @@ function renderLaunchTab() {
   const missionNumEl = document.getElementById('lc-mission-num');
   if (missionNumEl) missionNumEl.textContent = String((gs.launches || 0) + 1).padStart(3, '0');
 
-  // ALL GO 체크
-  const launchPadBuilt = (gs.buildings.launch_pad || 0) >= 1;
-  const hasFuel        = !!gs.fuelLoaded;  // 연료는 수동 주입 후 활성화
-  const allGo = hasReady && launchPadBuilt && hasFuel;
+  // ALL GO 체크 — 조립 완료(hasReady)만 필수, 발사대/연료는 보너스
+  const allGo = hasReady;
   if (allGo && !_prevAllGo) {
     playSfx('sine', 440, 0.08, 0.04, 660);
     setTimeout(() => playSfx('sine', 660, 0.08, 0.04, 880), 100);
@@ -662,6 +660,29 @@ function renderLaunchTab() {
       launchBtn.disabled = true;
       launchBtn.textContent = '[ ··· 발사 준비 중 ··· ]';
       launchBtn.className = 'lc-btn-launch-standby';
+    }
+  }
+
+  // 조립 미완료 안내 — 완성도 100%인데 조립 안 한 경우
+  const lcGuideEl = document.getElementById('lc-assembly-guide');
+  if (lcGuideEl) {
+    const hasAssemblyInProgress = gs.assembly && gs.assembly.jobs &&
+      gs.assembly.jobs.some(j => j && !j.ready && j.endAt);
+    if (readinessPct >= 100 && !hasReady && !hasAssemblyInProgress) {
+      lcGuideEl.style.display = '';
+      lcGuideEl.innerHTML =
+        `<div style="font-size:11px;color:var(--cyan);margin-bottom:6px;">` +
+        `&#9654; 부품과 연료가 준비되었습니다. 조립동에서 조립을 시작하세요.</div>` +
+        `<button class="btn btn-sm" onclick="switchMainTab('assembly')" style="font-size:11px;padding:4px 12px;">` +
+        `&#9881; 조립동으로 이동</button>`;
+    } else if (!hasReady && hasAssemblyInProgress) {
+      lcGuideEl.style.display = '';
+      lcGuideEl.innerHTML =
+        `<div style="font-size:11px;color:var(--amber);">` +
+        `&#9881; 조립 진행 중 — 완료까지 대기하세요.</div>`;
+    } else {
+      lcGuideEl.style.display = 'none';
+      lcGuideEl.innerHTML = '';
     }
   }
 

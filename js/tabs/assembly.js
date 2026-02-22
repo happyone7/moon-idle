@@ -349,12 +349,30 @@ function _renderMk1Parts() {
   </div>
 </div>`;
 
-  // 조립 완료 시 발사 탭 이동 버튼
-  if (totalPct >= 100) {
+  // 조립 완료 여부에 따라 안내 표시
+  const _asmJobs = (gs.assembly && gs.assembly.jobs) || [];
+  const _hasReadyJob = _asmJobs.some(j => j && j.ready);
+  const _hasInProgressJob = _asmJobs.some(j => j && !j.ready && j.endAt);
+  if (_hasReadyJob) {
+    // 조립 완성 → 발사 탭 이동 버튼
     html += `<div class="mfg-launch-go-wrap">
   <button class="btn btn-full btn-launch-go" onclick="switchMainTab('launch')">
     &#128640; 발사하러 가기
   </button>
+</div>`;
+  } else if (_hasInProgressJob) {
+    // 조립 진행 중 → 대기 안내
+    html += `<div class="mfg-launch-go-wrap">
+  <div style="font-size:11px;color:var(--amber);text-align:center;padding:6px;">
+    &#9881; 조립 진행 중 — 완료까지 대기하세요
+  </div>
+</div>`;
+  } else if (totalPct >= 100) {
+    // 부품+연료 100% but 조립 미시작 → 조립 시작 유도
+    html += `<div class="mfg-launch-go-wrap">
+  <div style="font-size:11px;color:var(--cyan);text-align:center;padding:6px;">
+    &#9654; 아래 조립 슬롯에서 조립을 시작하세요
+  </div>
 </div>`;
   }
 
