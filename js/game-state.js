@@ -930,8 +930,6 @@ function calcOffline() {
   const report = {
     elapsed,
     resources: {},
-    assemblyCompleted: 0,
-    autoLaunches: [],
   };
 
   // 자원 수집
@@ -943,41 +941,8 @@ function calcOffline() {
 
   gs.lastTick = now;
 
-  // 조립 완료 처리
-  const beforeJobs = JSON.stringify((gs.assembly && gs.assembly.jobs) || []);
-  updateAssemblyJobs(now);
-  const afterJobs = JSON.stringify((gs.assembly && gs.assembly.jobs) || []);
-  // 새로 완료된 슬롯 수 세기
-  const jobsBefore = JSON.parse(beforeJobs);
-  const jobsAfter  = JSON.parse(afterJobs);
-  jobsAfter.forEach((job, idx) => {
-    if (job && job.ready && (!jobsBefore[idx] || !jobsBefore[idx].ready)) {
-      report.assemblyCompleted++;
-      // 자동 발사 처리 — auto_launch 구매 + 활성화된 경우에만
-      if (gs.msUpgrades && gs.msUpgrades['auto_launch'] && gs.autoEnabled && gs.autoEnabled['auto_launch'] !== false) {
-        const q = getQuality(job.qualityId);
-        const sci = getRocketScience(q.id);
-        const rollSuccess = Math.random() * 100 < sci.reliability;
-        const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
-        gs.launches++;
-        if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches || 0) + 1;
-        if (earned > 0) gs.moonstone += earned;
-        gs.history.push({
-          no: gs.launches,
-          quality: q.name,
-          qualityId: job.qualityId,
-          deltaV: sci.deltaV.toFixed(2),
-          altitude: rollSuccess ? Math.floor(sci.altitude) : 0,
-          reliability: sci.reliability.toFixed(1),
-          success: rollSuccess,
-          earned,
-          date: `D+${gs.launches * 2}`,
-        });
-        gs.assembly.jobs[idx] = null;
-        report.autoLaunches.push({ quality: q.name, qualityId: job.qualityId, success: rollSuccess, earned, altitude: Math.floor(sci.altitude), reliability: sci.reliability.toFixed(1) });
-      }
-    }
-  });
+  // 조립 프로세스 제거됨 — 오프라인 중 자동 발사 처리도 제거
+  // (자동 발사는 runAutomation에서 canLaunch 기반으로 처리)
 
   // 오프라인 보고서 표시
   if (elapsed >= BALANCE.OFFLINE.reportThreshold) {
@@ -1011,40 +976,6 @@ function _showOfflineReport(report) {
     }
   });
 
-  // 자동 발사 이력 HTML
-  let launchHtml = '';
-  if (report.autoLaunches.length > 0) {
-    // 기체 종류별 집계
-    const byQuality = {};
-    report.autoLaunches.forEach(l => {
-      if (!byQuality[l.quality]) byQuality[l.quality] = { total:0, success:0, earned:0, altMax:0 };
-      byQuality[l.quality].total++;
-      if (l.success) { byQuality[l.quality].success++; byQuality[l.quality].earned += l.earned; }
-      if (l.altitude > byQuality[l.quality].altMax) byQuality[l.quality].altMax = l.altitude;
-    });
-
-    const totalEarned = report.autoLaunches.reduce((s,l) => s + (l.earned||0), 0);
-    const totalSuccess = report.autoLaunches.filter(l => l.success).length;
-    const totalLaunches = report.autoLaunches.length;
-    const successRate = totalLaunches > 0 ? ((totalSuccess/totalLaunches)*100).toFixed(0) : 0;
-
-    launchHtml += `<div class="ofr-section-hd">// 자동 발사 (${totalLaunches}회 · 성공률 ${successRate}%)</div>`;
-    Object.entries(byQuality).forEach(([qname, stat]) => {
-      const qSuccessRate = stat.total > 0 ? ((stat.success/stat.total)*100).toFixed(0) : 0;
-      launchHtml += `<div class="ofr-launch-row">
-        <span class="ofr-quality">${qname}</span>
-        <span class="ofr-launch-stat">×${stat.total} 발사</span>
-        <span class="ofr-launch-stat" style="color:${stat.success===stat.total?'var(--green)':'var(--amber)'}">✓ ${stat.success}회 (${qSuccessRate}%)</span>
-        <span class="ofr-launch-stat">최고도 ${stat.altMax}km</span>
-      </div>`;
-    });
-    launchHtml += `<div class="ofr-row ofr-total"><span class="ofr-lbl">총 문스톤 획득</span><span class="ofr-val" style="color:var(--amber)">+${totalEarned}개</span></div>`;
-  }
-
-  const assemblyHtml = report.assemblyCompleted > 0
-    ? `<div class="ofr-section-hd">// 조립 완료</div><div class="ofr-row"><span class="ofr-lbl">조립 완료 슬롯</span><span class="ofr-val">${report.assemblyCompleted}개</span></div>`
-    : '';
-
   const modalHtml = `
 <div id="offline-report-modal" class="ofr-backdrop">
   <div class="ofr-box">
@@ -1052,8 +983,6 @@ function _showOfflineReport(report) {
     <div class="ofr-time">경과 시간: ${timeStr}</div>
     <div class="ofr-section-hd">// 자원 수익</div>
     ${resHtml || '<div class="ofr-empty">// 자원 생산 없음</div>'}
-    ${assemblyHtml}
-    ${launchHtml}
     <button class="ofr-confirm-btn" onclick="document.getElementById('offline-report-modal').remove()">[ 확인 ]</button>
   </div>
 </div>`;
@@ -1289,7 +1218,7 @@ function tick() {
   tickResearch(dt);  // 시간 기반 연구 진행
   tickFuelInjection(dt); // 연료 주입 진행
   updateMfgJobs(now); // 제작 공정 진행
-  updateAssemblyJobs(now);
+  // updateAssemblyJobs 제거됨 — 조립 프로세스 없음
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
   if (typeof runAutomation === 'function') runAutomation();
   if (typeof checkAchievements === 'function') checkAchievements(); // P4-2

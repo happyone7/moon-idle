@@ -224,53 +224,33 @@ function runAutomation() {
     craftPartCycle(partId);
   });
 
-  // auto_assemble: 빈 슬롯 + 모든 파트 준비 시 자동 조립 시작
-  if (isAutoOn('auto_assemble')) {
-    ensureAssemblyState();
-    const allPartsReady = _getRequiredParts().every(p => (gs.parts[p.id] || 0) >= p.cycles);
-    if (allPartsReady) {
-      const slots = getAssemblySlots();
-      for (let i = 0; i < slots; i++) {
-        const job = gs.assembly.jobs[i];
-        if (job) continue; // 슬롯 사용 중
-        const q = getQuality(gs.assembly.selectedQuality || 'proto');
-        const cost = getAssemblyCost(q.id);
-        if (!canAfford(cost)) break;
-        spend(cost);
-        const now = Date.now();
-        gs.assembly.jobs[i] = {
-          qualityId: q.id,
-          startAt: now,
-          endAt: now + q.timeSec * 1000
-            * (typeof getAddonTimeMult === 'function' ? getAddonTimeMult() : 1)
-            * (typeof getMilestoneAssemblyMult === 'function' ? getMilestoneAssemblyMult() : 1),
-          ready: false,
-        };
-        notify(`[AUTO] 슬롯 ${i + 1}: ${q.name} 조립 자동 시작`, 'amber');
-        break; // 한 번에 슬롯 하나씩
-      }
-    }
-  }
+  // auto_assemble: 조립 프로세스 제거됨 — 더 이상 사용하지 않음 (auto_launch에 통합)
 
-  // auto_launch: 완료된 슬롯 자동 발사 (오버레이 없이)
+  // auto_launch: 부품+연료 100% 시 자동 발사 (오버레이 없이)
   if (isAutoOn('auto_launch')) {
-    ensureAssemblyState();
-    updateAssemblyJobs();
-    for (let i = 0; i < gs.assembly.jobs.length; i++) {
-      const job = gs.assembly.jobs[i];
-      if (!job || !job.ready) continue;
-      if (launchInProgress) break; // 현재 발사 중이면 대기
-      const q = getQuality(job.qualityId);
+    if (launchInProgress) return;
+    const canAutoLaunch = (typeof getRocketCompletion === 'function' && getRocketCompletion() >= 100);
+    if (canAutoLaunch) {
+      const q = getQuality(gs.assembly.selectedQuality || 'proto');
       const sci = getRocketScience(q.id);
       const rollSuccess = Math.random() * 100 < sci.reliability;
       const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
+
+      // 발사 후 항상 부품+연료 전체 초기화
+      gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
+      gs.fuelInjection = 0;
+      gs.fuelLoaded = false;
+      gs.fuelInjecting = false;
+      gs.mfgActive = {};
+
       gs.launches++;
       if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches || 0) + 1;
       if (earned > 0) gs.moonstone += earned;
       gs.history.push({
         no: gs.launches,
         quality: q.name,
-        qualityId: job.qualityId,
+        qualityId: q.id,
+        rocketClass: gs.assembly.selectedClass || 'vega',
         deltaV: sci.deltaV.toFixed(2),
         altitude: rollSuccess ? Math.floor(sci.altitude) : 0,
         reliability: sci.reliability.toFixed(1),
@@ -278,7 +258,6 @@ function runAutomation() {
         earned,
         date: `D+${gs.launches * 2}`,
       });
-      gs.assembly.jobs[i] = null;
       const icon = rollSuccess ? '✓' : '✗';
       notify(`[AUTO] ${q.icon} 자동 발사 ${icon}${rollSuccess ? ` +${earned}◆` : ''}`, rollSuccess ? 'amber' : 'red');
     }

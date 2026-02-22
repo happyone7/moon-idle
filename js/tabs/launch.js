@@ -16,31 +16,38 @@ function loadFuelToRocket() {
 }
 
 function launchFromSlot(slotIdx) {
+  // 레거시 호환 — 새 시스템에서는 executeLaunch() 사용
+  executeLaunch();
+}
+
+function executeLaunch() {
   if (launchInProgress) return;
-  ensureAssemblyState();
-  const job = gs.assembly.jobs[slotIdx];
-  if (!job || !job.ready) return;
-  const q = getQuality(job.qualityId);
+  // 발사 가능 조건: 부품+연료 100%
+  const canLaunch = (typeof getRocketCompletion === 'function' && getRocketCompletion() >= 100);
+  if (!canLaunch) { notify('로켓 완성도 100% 필요', 'red'); return; }
+
+  const q = getQuality(gs.assembly.selectedQuality || 'proto');
   const sci = getRocketScience(q.id);
 
   const rollSuccess = gs.launches === 0 || Math.random() * 100 < sci.reliability;
   const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
 
-  if (!rollSuccess) {
-    PARTS.forEach(p => {
-      if (gs.parts[p.id] && Math.random() < 0.5) gs.parts[p.id] = 0;
-    });
-  }
+  // 발사 후 항상 부품+연료 전체 초기화 (성공/실패 무관)
+  gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
+  gs.fuelInjection = 0;
+  gs.fuelLoaded = false;
+  gs.fuelInjecting = false;
+  // 진행 중인 제작 공정도 초기화
+  gs.mfgActive = {};
 
-  gs.assembly.jobs[slotIdx] = null;
-  gs.fuelLoaded = false; // 발사 후 연료 주입 상태 초기화
   gs.launches++;
   if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches || 0) + 1;
 
   gs.history.push({
     no: gs.launches,
     quality: q.name,
-    qualityId: job.qualityId,
+    qualityId: q.id,
+    rocketClass: gs.assembly.selectedClass || 'vega',
     deltaV: sci.deltaV.toFixed(2),
     altitude: rollSuccess ? Math.floor(sci.altitude) : 0,
     reliability: sci.reliability.toFixed(1),
@@ -374,12 +381,7 @@ function _showLaunchOverlay(q, sci, earned, success = true) {
 //  LAUNCH READY
 // ============================================================
 function launchReady() {
-  ensureAssemblyState();
-  let readySlot = -1;
-  gs.assembly.jobs.forEach((job, idx) => {
-    if (job && job.ready && readySlot === -1) readySlot = idx;
-  });
-  if (readySlot >= 0) launchFromSlot(readySlot);
+  executeLaunch();
 }
 
 // ============================================================
@@ -387,18 +389,13 @@ function launchReady() {
 // ============================================================
 function _lcRocketArtHtml() {
   const p    = gs.parts || {};
-  const jobs = (gs.assembly && gs.assembly.jobs) || [];
-  const now  = Date.now();
 
-  let readyJob = null;
-  jobs.forEach(j => { if (j && j.ready && !readyJob) readyJob = j; });
-  let inProgressJob = null;
-  jobs.forEach(j => { if (j && !j.ready && j.endAt && !inProgressJob) inProgressJob = j; });
+  // 발사 가능 여부: 부품+연료 100%
+  const canLaunch = (typeof getRocketCompletion === 'function' && getRocketCompletion() >= 100);
 
-  // 4단계 색상: 완성=밝은녹색, 조립중=노란색, 공정완료=주황색, 진행중=어두운주황, 미획득=더어두운주황
+  // 3단계 색상: 발사준비=밝은녹색, 공정완료=주황색, 진행중=어두운주황, 미획득=더어두운주황
   const col = (key) => {
-    if (readyJob)      return '#00e676';  // 완성 — 밝은 녹색
-    if (inProgressJob) return '#ffd700';  // 조립 진행 중 — 노란색
+    if (canLaunch) return '#00e676';  // 발사 준비 — 밝은 녹색
     const pt = PARTS.find(x => x.id === key);
     if (pt && (p[key] || 0) >= pt.cycles) return '#ff9000';  // 공정 완료 — 주황색
     if (p[key])        return '#b06800';  // 진행 중(미완료) — 어두운 주황
@@ -408,15 +405,6 @@ function _lcRocketArtHtml() {
   const reqParts   = _getRequiredParts();
   const partsDone  = reqParts.filter(pt => (p[pt.id] || 0) >= pt.cycles).length;
   const partsPct   = Math.round((partsDone / reqParts.length) * 100);
-
-  let asmPct = 0;
-  if (readyJob) {
-    asmPct = 100;
-  } else if (inProgressJob) {
-    const el = Math.max(0, now - inProgressJob.startAt);
-    const to = Math.max(1, inProgressJob.endAt - inProgressJob.startAt);
-    asmPct = Math.min(100, (el / to) * 100);
-  }
 
   const payC = col('payload'), ctlC = col('control'), hulC = col('hull');
   const ftkC = col('fueltank'), engC = col('engine');
@@ -431,7 +419,7 @@ function _lcRocketArtHtml() {
     sp(payC,               '    |---------|      '),
     sp(payC,               '    | PAYLOAD |      '),
     sp(hulC,               '    |=========|      '),
-    sp(ctlC,               readyJob ? '    | [READY] |      ' : '    | CONTROL |      '),
+    sp(ctlC,               canLaunch ? '    | [READY] |      ' : '    | CONTROL |      '),
     sp(hulC,               '    |=========|      '),
     sp(hulC,               '    |  HULL   |      '),
     sp(hulC,               '    |         |      '),
@@ -481,15 +469,11 @@ function renderLaunchTab() {
     return; // 발사 중 리렌더 방지 (BUG-007)
   }
 
-  // 준비된 슬롯 탐색
-  let readySlot = -1, readyJob = null;
-  gs.assembly.jobs.forEach((job, idx) => {
-    if (job && job.ready && readySlot === -1) { readySlot = idx; readyJob = job; }
-  });
-  const hasReady = readySlot >= 0;
+  // 발사 가능 여부: 부품+연료 100% (조립 프로세스 제거됨)
+  const canLaunch = (typeof getRocketCompletion === 'function' && getRocketCompletion() >= 100);
   let q = null, sci = null, earned = 0;
-  if (hasReady) {
-    q      = getQuality(readyJob.qualityId);
+  if (canLaunch) {
+    q      = getQuality(gs.assembly.selectedQuality || 'proto');
     sci    = getRocketScience(q.id);
     earned = getMoonstoneReward(q.id);
   }
@@ -498,20 +482,20 @@ function renderLaunchTab() {
   const missionNumEl = document.getElementById('lc-mission-num');
   if (missionNumEl) missionNumEl.textContent = String((gs.launches || 0) + 1).padStart(3, '0');
 
-  // ALL GO 체크 — 조립 완료(hasReady)만 필수, 발사대/연료는 보너스
-  const allGo = hasReady;
+  // ALL GO 체크 — 부품+연료 100% = 즉시 발사 가능 (조립 프로세스 제거됨)
+  const allGo = canLaunch;
   if (allGo && !_prevAllGo) {
     playSfx('sine', 440, 0.08, 0.04, 660);
     setTimeout(() => playSfx('sine', 660, 0.08, 0.04, 880), 100);
   }
   _prevAllGo = allGo;
 
-  // 프리론치 단계 바 — PARTS(0)→FUEL(1)→ASSY(2)→T-MINUS(3)
+  // 프리론치 단계 바 — PARTS(0)→FUEL(1)→T-MINUS(3) (ASSY 단계 제거)
   const reqPartsAll = _getRequiredParts();
   const allPartsDone = reqPartsAll.every(pt => (gs.parts[pt.id] || 0) >= pt.cycles);
   const fuelFull = (gs.fuelInjection || 0) >= 100;
   if (allGo)                          _setLcStage(3); // T-MINUS active (0-2 done)
-  else if (allPartsDone && fuelFull)  _setLcStage(2); // ASSY active — 부품+연료 완료
+  else if (allPartsDone && fuelFull)  _setLcStage(3); // 부품+연료 완료 = 발사 준비 완료
   else if (allPartsDone)              _setLcStage(1); // FUEL active — 부품 완료, 연료 진행
   else                                _setLcStage(0); // PARTS active — 부품 제작 중
 
@@ -529,8 +513,8 @@ function renderLaunchTab() {
   // 연료 주입 (조립동에서도 관리)
   const fuelPctVal = gs.fuelInjection || 0;
   items.push({ done: fuelPctVal >= 100, label: `연료 (${Math.round(fuelPctVal)}%)`, short: '연료' });
-  // 조립 완료 여부
-  items.push({ done: !!hasReady, label: '조립', short: '조립' });
+  // 발사 준비 상태 (부품+연료 100%)
+  items.push({ done: canLaunch, label: '발사 준비', short: '준비' });
 
   // 완성도 — 조립동의 getRocketCompletion() 사용
   const readinessPct = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
@@ -564,14 +548,12 @@ function renderLaunchTab() {
   if (commitBox) commitBox.classList.toggle('lc-commit-ready', allGo);
   // 커밋 스탯: 로켓 완성 시만 표시
   const commitStatsEl = document.getElementById('lc-commit-stats');
-  if (commitStatsEl) commitStatsEl.style.display = hasReady ? '' : 'none';
+  if (commitStatsEl) commitStatsEl.style.display = canLaunch ? '' : 'none';
 
-  // 조립동 기준 상태 패널 — 각 부품 진행바 + 연료 + 조립 상태
+  // 상태 패널 — 각 부품 진행바 + 연료 (조립 상태 제거됨)
   const statusPanel = document.getElementById('lc-status-panel');
   if (statusPanel) {
     const p3        = gs.parts || {};
-    const jobs2     = (gs.assembly && gs.assembly.jobs) || [];
-    const now2      = Date.now();
     const reqParts3 = _getRequiredParts();
 
     let spHtml = '';
@@ -589,30 +571,13 @@ function renderLaunchTab() {
     const fuelClr = fuelInjPct >= 100 ? '' : 'amber';
     spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 주입</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${fuelClr}" style="width:${fuelInjPct}%"></div></div><span class="lc-sp-pct ${fuelClr}">${fuelInjPct}%</span></div>`;
 
-    // 조립 상태
-    const readyJob2  = jobs2.find(j => j && j.ready);
-    const inProgJob2 = jobs2.find(j => j && !j.ready && j.endAt);
-    let asmPct = 0;
-    let asmLabel = '대기';
-    if (readyJob2) {
-      asmPct = 100;
-      asmLabel = '완료';
-    } else if (inProgJob2) {
-      const el2 = Math.max(0, now2 - inProgJob2.startAt);
-      const to2 = Math.max(1, inProgJob2.endAt - inProgJob2.startAt);
-      asmPct = Math.min(100, Math.round((el2 / to2) * 100));
-      asmLabel = `${asmPct}%`;
-    }
-    const asmClr = asmPct === 100 ? '' : 'amber';
-    spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">조립</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${asmClr}" style="width:${asmPct}%"></div></div><span class="lc-sp-pct ${asmClr}">${asmLabel}</span></div>`;
-
     statusPanel.innerHTML = spHtml;
   }
 
   // 미션 파라미터 (HUD)
   const missionParams = document.getElementById('lc-mission-params');
   if (missionParams) {
-    if (hasReady) {
+    if (canLaunch) {
       const rc = sci.reliability > 80 ? 'green' : sci.reliability > 60 ? 'amber' : 'red';
       missionParams.innerHTML =
         `<div class="lc-mp-block"><div class="lc-mp-val green">${sci.deltaV.toFixed(1)}</div><div class="lc-mp-label">Δv (km/s)</div></div>` +
@@ -635,7 +600,7 @@ function renderLaunchTab() {
   // 커밋 박스
   const commitStats = document.getElementById('lc-commit-stats');
   if (commitStats) {
-    if (hasReady) {
+    if (canLaunch) {
       const rc = sci.reliability > 80 ? 'green' : sci.reliability > 60 ? 'amber' : 'red';
       commitStats.innerHTML =
         `<div class="lc-cs"><span class="lc-cs-val ${rc}">${sci.reliability.toFixed(0)}%</span><span class="lc-cs-label">${t('lc_success_pct')}</span></div>` +
@@ -663,34 +628,25 @@ function renderLaunchTab() {
     }
   }
 
-  // 조립 미완료 안내 — 완성도 100%인데 조립 안 한 경우
+  // 안내 — 완성도 100% 미만일 때 조립동 이동 안내
   const lcGuideEl = document.getElementById('lc-assembly-guide');
   if (lcGuideEl) {
-    const hasAssemblyInProgress = gs.assembly && gs.assembly.jobs &&
-      gs.assembly.jobs.some(j => j && !j.ready && j.endAt);
-    if (readinessPct >= 100 && !hasReady && !hasAssemblyInProgress) {
+    if (!canLaunch && readinessPct < 100) {
       lcGuideEl.style.display = '';
       lcGuideEl.innerHTML =
         `<div style="font-size:11px;color:var(--cyan);margin-bottom:6px;">` +
-        `&#9654; 부품과 연료가 준비되었습니다. 조립동에서 조립을 시작하세요.</div>` +
+        `&#9654; 조립동에서 부품 제작과 연료 주입을 완료하세요.</div>` +
         `<button class="btn btn-sm" onclick="switchMainTab('assembly')" style="font-size:11px;padding:4px 12px;">` +
         `&#9881; 조립동으로 이동</button>`;
-    } else if (!hasReady && hasAssemblyInProgress) {
-      lcGuideEl.style.display = '';
-      lcGuideEl.innerHTML =
-        `<div style="font-size:11px;color:var(--amber);">` +
-        `&#9881; 조립 진행 중 — 완료까지 대기하세요.</div>`;
     } else {
       lcGuideEl.style.display = 'none';
       lcGuideEl.innerHTML = '';
     }
   }
 
-  // ABORT 버튼
-  const hasInProgress = gs.assembly && gs.assembly.jobs &&
-    gs.assembly.jobs.some(j => j && !j.ready && j.endAt);
+  // ABORT 버튼 — 조립 프로세스 제거로 항상 숨김
   const abortBtn = document.getElementById('lc-btn-abort');
-  if (abortBtn) abortBtn.style.display = hasInProgress ? '' : 'none';
+  if (abortBtn) abortBtn.style.display = 'none';
 }
 
 
@@ -700,9 +656,9 @@ function _renderLcQuest() {
   if (!el) return;
 
   const bld = gs.buildings || {}, upgs = gs.upgrades || {};
-  const jobs = (gs.assembly && gs.assembly.jobs) || [];
   const hasLaunched = (gs.launches || 0) >= 1;
   const mainDone = hasLaunched;
+  const rktReady = (typeof getRocketCompletion === 'function' && getRocketCompletion() >= 100);
 
   const subs = [
     { icon:'[OPS]', key:'q_sub_ops',      done: (gs.assignments && (gs.assignments.ops_center||0)>=1) },
@@ -711,7 +667,7 @@ function _renderLcQuest() {
     { icon:'[RSH]', key:'q_sub_lab',      done: (bld.research_lab||0)>=1 },
     { icon:'[TEC]', key:'q_sub_research', done: Object.keys(upgs).length>=1 },
     { icon:'[PAD]', key:'q_sub_pad',      done: (bld.launch_pad||0)>=1 },
-    { icon:'[ASM]', key:'q_sub_assemble', done: jobs.some(j=>j&&(j.ready||j.endAt)) },
+    { icon:'[ASM]', key:'q_sub_assemble', done: rktReady || hasLaunched },
   ];
   const doneCount = subs.filter(s=>s.done).length;
 

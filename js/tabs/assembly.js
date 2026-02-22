@@ -139,17 +139,7 @@ function isPhaseComplete(phaseKey) {
 }
 
 function abortAssembly() {
-  ensureAssemblyState();
-  let aborted = false;
-  gs.assembly.jobs = gs.assembly.jobs.map(j => {
-    if (j && !j.ready) { aborted = true; return null; }
-    return j;
-  });
-  if (aborted) {
-    notify('조립 취소됨', 'red');
-    playSfx('triangle', 220, 0.08, 0.05, 180);
-    renderAll();
-  }
+  // 조립 프로세스 제거됨 — 더 이상 사용하지 않음
 }
 
 // craftPart: 공정 1회 시작 (craftPartCycle wrapper)
@@ -164,42 +154,11 @@ function selectQuality(qid) {
 }
 
 function startAssembly(slotIdx) {
-  ensureAssemblyState();
-  if (typeof getRocketCompletion === 'function' && getRocketCompletion() < 100) {
-    notify('로켓 완성도가 100%에 도달해야 발사 가능합니다', 'red'); return;
-  }
-  if (gs.assembly.jobs[slotIdx]) { notify('슬롯이 사용 중'); return; }
-  const q = getQuality(gs.assembly.selectedQuality);
-  const cost = getAssemblyCost(q.id);
-  if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
-  spend(cost);
-  const now = Date.now();
-  gs.assembly.jobs[slotIdx] = {
-    qualityId: q.id,
-    rocketClass: gs.assembly.selectedClass || 'vega',
-    startAt: now,
-    endAt: now + q.timeSec * 1000
-      * (typeof getAddonTimeMult === 'function' ? getAddonTimeMult() : 1)
-      * (typeof getMilestoneAssemblyMult === 'function' ? getMilestoneAssemblyMult() : 1),
-    ready: false,
-  };
-  notify(`슬롯 ${slotIdx + 1}: ${q.name} 조립 시작 (${fmtTime(q.timeSec)})`);
-  playSfx('triangle', 310, 0.09, 0.03, 430);
-  renderAll();
+  // 조립 프로세스 제거됨 — 부품+연료 100% 시 즉시 발사 가능
 }
 
 function updateAssemblyJobs(now=Date.now()) {
-  ensureAssemblyState();
-  for (let i = 0; i < gs.assembly.jobs.length; i++) {
-    const job = gs.assembly.jobs[i];
-    if (!job || job.ready) continue;
-    if (now >= job.endAt) {
-      job.ready = true;
-      notify(`슬롯 ${i + 1}: ${getQuality(job.qualityId).name} 조립 완료`);
-      playSfx('square', 660, 0.14, 0.07, 1000);
-      setTimeout(() => playSfx('sine', 880, 0.12, 0.04), 50);
-    }
-  }
+  // 조립 프로세스 제거됨 — 빈 함수로 유지 (호환성)
 }
 
 
@@ -349,30 +308,12 @@ function _renderMk1Parts() {
   </div>
 </div>`;
 
-  // 조립 완료 여부에 따라 안내 표시
-  const _asmJobs = (gs.assembly && gs.assembly.jobs) || [];
-  const _hasReadyJob = _asmJobs.some(j => j && j.ready);
-  const _hasInProgressJob = _asmJobs.some(j => j && !j.ready && j.endAt);
-  if (_hasReadyJob) {
-    // 조립 완성 → 발사 탭 이동 버튼
+  // 부품+연료 100% → 즉시 발사 가능 (조립 프로세스 제거됨)
+  if (totalPct >= 100) {
     html += `<div class="mfg-launch-go-wrap">
   <button class="btn btn-full btn-launch-go" onclick="switchMainTab('launch')">
     &#128640; 발사하러 가기
   </button>
-</div>`;
-  } else if (_hasInProgressJob) {
-    // 조립 진행 중 → 대기 안내
-    html += `<div class="mfg-launch-go-wrap">
-  <div style="font-size:11px;color:var(--amber);text-align:center;padding:6px;">
-    &#9881; 조립 진행 중 — 완료까지 대기하세요
-  </div>
-</div>`;
-  } else if (totalPct >= 100) {
-    // 부품+연료 100% but 조립 미시작 → 조립 시작 유도
-    html += `<div class="mfg-launch-go-wrap">
-  <div style="font-size:11px;color:var(--cyan);text-align:center;padding:6px;">
-    &#9654; 아래 조립 슬롯에서 조립을 시작하세요
-  </div>
 </div>`;
   }
 
@@ -547,52 +488,38 @@ function renderAssemblyTab() {
   qualSel = document.getElementById('quality-selector');
   if (qualSel) qualSel.innerHTML = qualHtml;
 
-  // ── LEFT COLUMN (parts + assembly slots) ──
+  // ── LEFT COLUMN (parts + launch status) ──
 
-  // 9. Assembly slots
+  // 9. 발사 준비 상태 (조립 슬롯 제거됨 — 부품+연료 100% = 즉시 발사 가능)
+  const rktCompletion = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
+  const canLaunchNow = rktCompletion >= 100;
+  const ms = getMoonstoneReward(gs.assembly.selectedQuality || 'proto');
   let slotsHtml = '';
-  const now = Date.now();
-  gs.assembly.jobs.forEach((job, idx) => {
-    if (!job) {
-      const rktCompletion = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
-      const canStart = rktCompletion >= 100;
-      slotsHtml += `<div class="slot-card">
-        <div class="slot-card-header">
-          <span class="slot-title">// 조립 슬롯 ${idx + 1}</span>
-          <span class="slot-state idle">빈 슬롯</span>
-        </div>
-        <div style="font-size:12px;color:var(--green-mid);margin-bottom:4px;">선택: ${q.name}</div>
-        <div style="font-size:11px;color:${canStart ? 'var(--green)' : 'var(--green-dim)'};margin-bottom:8px;">
-          로켓 완성도: ${rktCompletion}%  ${canStart ? '✓ 발사 준비 완료' : ''}
-        </div>
-        <button class="btn btn-full btn-sm${canStart ? '' : ' btn-amber'}" onclick="startAssembly(${idx})" ${canStart ? '' : 'disabled'}>
-          ${canStart ? '[ ▶▶ 발사 실행 ]' : `[ 완성도 ${rktCompletion}% — 대기 중 ]`}
-        </button>
-      </div>`;
-    } else if (job.ready) {
-      const ms = getMoonstoneReward(job.qualityId);
-      slotsHtml += `<div class="slot-card slot-ready">
-        <div class="slot-card-header">
-          <span class="slot-title glow">// 슬롯 ${idx + 1} — ${getQuality(job.qualityId).name}</span>
-          <span class="slot-state ready">준비 완료!</span>
-        </div>
-        <div style="font-size:12px;color:var(--green);margin-bottom:8px;text-shadow:var(--glow);">예상 문스톤: +${ms}개</div>
-        <button class="btn btn-full btn-sm btn-amber" onclick="launchFromSlot(${idx})">[ ▶▶ 발사 실행 ]</button>
-      </div>`;
-    } else {
-      const remain = Math.max(0, Math.floor((job.endAt - now) / 1000));
-      const total = Math.max(1, Math.floor((job.endAt - job.startAt) / 1000));
-      const pct = Math.min(100, ((total - remain) / total) * 100);
-      slotsHtml += `<div class="slot-card slot-busy">
-        <div class="slot-card-header">
-          <span class="slot-title">// 슬롯 ${idx + 1} — ${getQuality(job.qualityId).name}</span>
-          <span class="slot-state busy">조립 중...</span>
-        </div>
-        <div class="prog-wrap"><div class="prog-fill amber" style="width:${pct}%"></div></div>
-        <div class="prog-pct">${pct.toFixed(0)}% — 잔여 ${fmtTime(remain)}</div>
-      </div>`;
-    }
-  });
+  if (canLaunchNow) {
+    slotsHtml = `<div class="slot-card slot-ready">
+      <div class="slot-card-header">
+        <span class="slot-title glow">// 발사 준비 완료</span>
+        <span class="slot-state ready">GO!</span>
+      </div>
+      <div style="font-size:12px;color:var(--green);margin-bottom:4px;">선택: ${q.name}</div>
+      <div style="font-size:12px;color:var(--green);margin-bottom:8px;text-shadow:var(--glow);">예상 문스톤: +${ms}개</div>
+      <button class="btn btn-full btn-sm btn-amber" onclick="switchMainTab('launch')">[ &#128640; 발사하러 가기 ]</button>
+    </div>`;
+  } else {
+    slotsHtml = `<div class="slot-card">
+      <div class="slot-card-header">
+        <span class="slot-title">// 발사 대기</span>
+        <span class="slot-state idle">대기 중</span>
+      </div>
+      <div style="font-size:12px;color:var(--green-mid);margin-bottom:4px;">선택: ${q.name}</div>
+      <div style="font-size:11px;color:var(--green-dim);margin-bottom:8px;">
+        로켓 완성도: ${rktCompletion}% — 부품 제작 및 연료 주입을 완료하세요
+      </div>
+      <button class="btn btn-full btn-sm btn-amber" disabled>
+        [ 완성도 ${rktCompletion}% — 대기 중 ]
+      </button>
+    </div>`;
+  }
   const slotsWrap = document.getElementById('assembly-slots-wrap');
   if (slotsWrap) slotsWrap.innerHTML = slotsHtml;
 }
@@ -605,37 +532,18 @@ function renderAssemblyStageProgress() {
   const el = document.getElementById('asm-stage-progress');
   if (!el || typeof ASSEMBLY_STAGES === 'undefined') return;
 
-  // 현재 진행 중인 슬롯에서 진행률 계산
-  const now = Date.now();
-  let activeJob = null;
-  let activeJobPct = 0;
-  gs.assembly.jobs.forEach(job => {
-    if (job && !job.ready) {
-      activeJob = job;
-      const total = Math.max(1, job.endAt - job.startAt);
-      activeJobPct = Math.min(100, ((now - job.startAt) / total) * 100);
-    }
-  });
-
-  // 총 스테이지 수
+  // 조립 프로세스 제거됨 — 로켓 완성도 기반으로 스테이지 표시
   const totalStages = ASSEMBLY_STAGES.length;
-  // 진행 중인 스테이지 결정: 전체 진행률을 7단계에 매핑
-  let currentStageIdx = -1; // -1 = 아무 것도 시작 안 됨
-  let overallPct = 0;
+  let currentStageIdx = -1;
+  const overallPct = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
 
-  if (activeJob) {
-    overallPct = activeJobPct;
+  if (overallPct >= 100) {
+    currentStageIdx = totalStages; // 모두 완료
+  } else if (overallPct > 0) {
     currentStageIdx = Math.min(
-      Math.floor((activeJobPct / 100) * totalStages),
+      Math.floor((overallPct / 100) * totalStages),
       totalStages - 1
     );
-  } else {
-    // 완료된 슬롯이 있으면 100%
-    const hasReady = gs.assembly.jobs.some(j => j && j.ready);
-    if (hasReady) {
-      overallPct = 100;
-      currentStageIdx = totalStages; // 모두 완료
-    }
   }
 
   // 전체 진행 바 계산
@@ -665,7 +573,7 @@ function renderAssemblyStageProgress() {
       labelClass = 'ascii-stage-label-done';
       statusText = 'DONE';
       fillCount = stageBarLen;
-    } else if (currentStageIdx === i && activeJob) {
+    } else if (currentStageIdx === i) {
       // 진행 중 스테이지
       stateClass = 'ascii-stage-active';
       labelClass = 'ascii-stage-label-active';

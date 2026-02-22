@@ -157,13 +157,9 @@ function renderAll() {
 }
 
 function _updateDocTitle() {
-  const jobs = (gs.assembly && gs.assembly.jobs) || [];
-  const hasReady = jobs.some(j => j && j.ready);
-  const hasAssembling = jobs.some(j => j && !j.ready && j.endAt);
-  if (hasReady) {
+  const canLaunch = (typeof getRocketCompletion === 'function' && getRocketCompletion() >= 100);
+  if (canLaunch) {
     document.title = '[발사 준비] MoonIdle';
-  } else if (hasAssembling) {
-    document.title = '[조립 중] MoonIdle';
   } else {
     const prod = getProduction();
     const incomeStr = prod.money > 0 ? ` +${Math.floor(prod.money)}/s` : '';

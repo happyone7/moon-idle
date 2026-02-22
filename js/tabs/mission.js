@@ -115,7 +115,11 @@ function confirmLaunch() {
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.assignments = {};
   gs._prodHubVisited = false;
-  gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
+  gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
+  gs.fuelInjection = 0;
+  gs.fuelLoaded = false;
+  gs.fuelInjecting = false;
+  gs.mfgActive = {};
   gs.assembly = { selectedQuality:'proto', selectedClass:'vega', jobs:[] };
   gs.upgrades = {};
   gs.bldLevels = {};
