@@ -190,10 +190,11 @@ function renderProductionTab() {
       else if (b.id === 'launch_pad') rateStr = `<span style="color:var(--green-mid)">슬롯 ${cnt}</span>`;
       else if (b.id === 'housing')    rateStr = `<span style="color:var(--green-mid)">×${cnt}</span>`;
     }
+    const staffStr = (cnt > 0 && b.produces !== 'bonus') ? `${assigned}명` : '';
     html += `<div class="bld-list-row" data-bld="${b.id}">
       <span class="blr-icon">${b.icon}</span>
       <span class="blr-name">${b.name}</span>
-      <span class="blr-cnt">×${cnt}</span>
+      <span class="blr-cnt">${staffStr}</span>
       <span class="blr-rate">${rateStr}</span>
     </div>`;
   });
