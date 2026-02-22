@@ -152,18 +152,8 @@ function abortAssembly() {
   }
 }
 
-function craftPart(pid) {
-  const part = PARTS.find(p => p.id === pid);
-  if (!part) return;
-  if (gs.parts[pid]) { notify('이미 제작됨'); return; }
-  const cost = getPartCost(part);
-  if (!canAfford(cost)) { notify('자원 부족', 'red'); return; }
-  spend(cost);
-  gs.parts[pid] = 1;
-  notify(`${part.icon} ${part.name} 제작 완료`);
-  playSfx('square', 520, 0.11, 0.03, 760);
-  renderAll();
-}
+// craftPart: 공정 1회 시작 (craftPartCycle wrapper)
+function craftPart(pid) { craftPartCycle(pid); }
 
 function selectQuality(qid) {
   gs.assembly.selectedQuality = qid;
@@ -173,7 +163,9 @@ function selectQuality(qid) {
 
 function startAssembly(slotIdx) {
   ensureAssemblyState();
-  if (!PARTS.every(p => gs.parts[p.id])) { notify('부품을 모두 제작하세요', 'red'); return; }
+  if (typeof getRocketCompletion === 'function' && getRocketCompletion() < 100) {
+    notify('로켓 완성도가 100%에 도달해야 발사 가능합니다', 'red'); return;
+  }
   if (gs.assembly.jobs[slotIdx]) { notify('슬롯이 사용 중'); return; }
   const q = getQuality(gs.assembly.selectedQuality);
   const cost = getAssemblyCost(q.id);
@@ -226,23 +218,114 @@ function getBomForClass(classId) {
   }));
 }
 
-/** 간이 인벤토리: parts 보유 여부를 BOM 카테고리별로 매핑 */
+/** 간이 인벤토리: parts 완성도를 BOM 카테고리별로 매핑 */
 function getBomPartStatus(bomItem) {
-  // parts에 있는 5종 아이템과 BOM 카테고리를 대략 매핑
   const catMap = {
-    structure: 'hull',
-    propellant: 'fueltank',
+    structure:  'hull',
+    propellant: 'propellant',
     propulsion: 'engine',
-    electronics: 'control',
-    payload: 'payload',
+    electronics:'engine',
+    payload:    'hull',
   };
   const partId = catMap[bomItem.category];
-  if (partId && gs.parts[partId]) return 'ok';
-  // 조립 중인 슬롯이 있으면 in-progress
-  if (gs.assembly.jobs.some(j => j && !j.ready)) return 'progress';
+  if (partId) {
+    const p = PARTS.find(x => x.id === partId);
+    if (p && (gs.parts[partId]||0) >= p.cycles) return 'ok';
+    if ((gs.parts[partId]||0) > 0 || (gs.mfgActive && gs.mfgActive[partId])) return 'progress';
+  }
   return 'missing';
 }
 
+
+// ============================================================
+//  MK1 부품 제작 패널 헬퍼
+// ============================================================
+function _renderMk1Parts() {
+  const now = Date.now();
+  const mk1Parts = PARTS.filter(p => !p.minQuality);
+  let html = '';
+
+  mk1Parts.forEach(p => {
+    const count  = gs.parts[p.id] || 0;
+    const done   = count >= p.cycles;
+    const active = !!(gs.mfgActive && gs.mfgActive[p.id]);
+    const pct    = done ? 100 : Math.floor((count / p.cycles) * 100);
+    const cycleCostStr = getCostStr(p.cost);
+    const affordable   = canAfford(p.cost);
+
+    // 진행 바 (공정 전체)
+    const barFill  = Math.round((count / p.cycles) * 20);
+    const barEmpty = 20 - barFill;
+    const barHtml  = `<span style="color:var(--green)">${'█'.repeat(barFill)}</span><span style="color:var(--green-dim)">${'░'.repeat(barEmpty)}</span>`;
+
+    // 현재 공정 타이머
+    let cycleTimerHtml = '';
+    if (active && !done) {
+      const job = gs.mfgActive[p.id];
+      const remain = Math.max(0, Math.ceil((job.endAt - now) / 1000));
+      const total  = Math.max(1, Math.ceil((job.endAt - job.startAt) / 1000));
+      const cPct   = Math.min(100, Math.floor(((total - remain) / total) * 100));
+      cycleTimerHtml = `<div class="mfg-cycle-bar"><div class="mfg-cycle-fill" style="width:${cPct}%"></div></div>
+<div style="font-size:9px;color:var(--amber)">공정 중 ${cPct}% — ${remain}s 남음</div>`;
+    }
+
+    // 버튼
+    let btnHtml;
+    if (done) {
+      btnHtml = `<span style="color:var(--green);font-size:11px;">✓ 완성</span>`;
+    } else if (active) {
+      btnHtml = `<button class="btn btn-sm btn-amber" style="font-size:10px;padding:2px 8px" disabled>진행 중...</button>`;
+    } else {
+      btnHtml = `<button class="btn btn-sm${affordable ? '' : ' btn-amber'}" onclick="craftPartCycle('${p.id}')" ${affordable ? '' : 'disabled'} style="font-size:10px;padding:2px 8px">▶ 공정 시작</button>`;
+    }
+
+    html += `<div class="mfg-part-item${done ? ' mfg-part-done' : active ? ' mfg-part-active' : ''}">
+  <div class="mfg-part-header">
+    <span style="color:${done ? 'var(--green)' : 'var(--green-mid)'}">${p.icon} ${p.name}</span>
+    <span style="font-size:10px;color:${done ? 'var(--green)' : 'var(--green-dim)'};">${count}/${p.cycles}</span>
+  </div>
+  <div class="mfg-bar-row">${barHtml} <span style="font-size:9px;margin-left:4px;color:var(--green-dim)">${pct}%</span></div>
+  ${cycleTimerHtml}
+  <div class="mfg-part-footer">
+    ${done ? '' : `<span style="font-size:9px;color:var(--green-dim)">공정당: ${cycleCostStr} · ${p.cycleTime}초</span>`}
+    ${btnHtml}
+  </div>
+</div>`;
+  });
+
+  // 연료 주입 섹션
+  const fuelPct = gs.fuelInjection || 0;
+  const fuelBarFill  = Math.round((fuelPct / 100) * 20);
+  const fuelBarEmpty = 20 - fuelBarFill;
+  const fuelBarHtml  = `<span style="color:var(--amber)">${'█'.repeat(fuelBarFill)}</span><span style="color:var(--green-dim)">${'░'.repeat(fuelBarEmpty)}</span>`;
+  const fuelAfford   = canAfford({fuel:200});
+  html += `<div class="mfg-fuel-section">
+  <div class="mfg-part-header">
+    <span style="color:${fuelPct >= 100 ? 'var(--amber)' : 'var(--green-mid)'}">⛽ 연료 주입</span>
+    <span style="font-size:10px;color:${fuelPct >= 100 ? 'var(--amber)' : 'var(--green-dim)'};">${fuelPct}/100%</span>
+  </div>
+  <div class="mfg-bar-row">${fuelBarHtml}</div>
+  <div class="mfg-part-footer">
+    ${fuelPct < 100
+      ? `<span style="font-size:9px;color:var(--green-dim)">+10%당: LOX200</span>`
+      : `<span style="font-size:9px;color:var(--amber)">연료 탱크 가득</span>`}
+    <button class="btn btn-sm${fuelAfford && fuelPct < 100 ? '' : ' btn-amber'}" onclick="injectFuel()" ${(fuelAfford && fuelPct < 100) ? '' : 'disabled'} style="font-size:10px;padding:2px 8px">+10% 주입</button>
+  </div>
+</div>`;
+
+  // 전체 완성도 표시
+  const totalPct = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
+  const totalFill = Math.round((totalPct / 100) * 24);
+  html += `<div class="mfg-completion-bar">
+  <div style="font-size:10px;color:var(--green-mid);margin-bottom:3px">로켓 완성도</div>
+  <div style="font-size:13px;letter-spacing:1px">
+    <span style="color:${totalPct >= 100 ? 'var(--green)' : 'var(--amber)'}">${'█'.repeat(totalFill)}</span><span style="color:var(--green-dim)">${'░'.repeat(24 - totalFill)}</span>
+    <span style="font-size:11px;color:${totalPct >= 100 ? 'var(--green)' : 'var(--amber)'}"> ${totalPct}%</span>
+  </div>
+</div>`;
+
+  return html;
+}
 
 // ============================================================
 //  RENDER: ASSEMBLY TAB (Sprint 3 — 3-column)
@@ -303,22 +386,8 @@ function renderAssemblyTab() {
   let qualSel = document.getElementById('quality-selector');
   if (qualSel) qualSel.innerHTML = qualHtml;
 
-  // 4. Parts checklist
-  let partsHtml = '';
-  PARTS.forEach(p => {
-    const done = gs.parts[p.id];
-    const cost = getPartCost(p);
-    const costStr = getCostStr(cost);
-    const affordable = canAfford(cost);
-    partsHtml += `<div class="parts-list-item">
-      <span class="part-check ${done ? 'part-done' : 'part-pending'}">${done ? '[OK]' : '[--]'}</span>
-      <span style="flex:1;color:${done ? 'var(--green)' : 'var(--green-dim)'};">${p.icon} ${p.name}</span>
-      ${done
-        ? '<span style="color:var(--green);font-size:11px;">OK</span>'
-        : `<button class="btn btn-sm${affordable ? '' : ' btn-amber'}" onclick="craftPart('${p.id}')" ${affordable ? '' : 'disabled'} style="font-size:10px;padding:2px 6px;">제작</button>`}
-    </div>
-    ${!done ? `<div style="font-size:10px;color:var(--green-mid);padding:1px 0 3px 22px;">비용: ${costStr}</div>` : ''}`;
-  });
+  // 4. Parts checklist — 공정 기반 진행도 표시
+  let partsHtml = _renderMk1Parts();
   let checklist = document.getElementById('parts-checklist');
   if (checklist) checklist.innerHTML = partsHtml;
 
@@ -356,11 +425,12 @@ function renderAssemblyTab() {
   // ── CENTER COLUMN ──
 
   // 6. Rocket ASCII art
-  const noseClass   = 'r-nose'    + (pd.hull    ? ' done' : '');
-  const payClass    = 'r-payload' + (pd.payload  ? ' done' : '');
-  const aviClass    = 'r-avionics'+ (pd.control  ? ' done' : '');
-  const engClass    = 'r-engine'  + (pd.engine   ? ' done' : '');
-  const exhClass    = 'r-exhaust' + ((pd.fueltank && pd.engine) ? ' done' : '');
+  const _partDone = id => { const p = PARTS.find(x=>x.id===id); return p && (gs.parts[id]||0) >= p.cycles; };
+  const noseClass   = 'r-nose'    + (_partDone('hull')       ? ' done' : '');
+  const payClass    = 'r-payload' + (_partDone('propellant') ? ' done' : '');
+  const aviClass    = 'r-avionics'+ (_partDone('propellant') ? ' done' : '');
+  const engClass    = 'r-engine'  + (_partDone('engine')     ? ' done' : '');
+  const exhClass    = 'r-exhaust' + ((_partDone('engine') && (gs.fuelInjection||0)>=100) ? ' done' : '');
 
   const className = rc ? rc.name : 'NANO';
   const rocketInner = `<span class="${noseClass}">           *
@@ -403,24 +473,9 @@ function renderAssemblyTab() {
   // 8. BOM table (P3-3)
   renderBomTable(selClass);
 
-  // Parts checklist
-  partsHtml = '';
-  PARTS.forEach(p => {
-    const done = gs.parts[p.id];
-    const cost = getPartCost(p);
-    const costStr = getCostStr(cost);
-    const affordable = canAfford(cost);
-    partsHtml += `<div class="parts-list-item ${done ? 'part-item-done' : 'part-item-missing'}">
-      <span class="part-check ${done ? 'part-done' : 'part-pending'}">${done ? '[✓]' : '[✗]'}</span>
-      <span style="flex:1;color:${done ? 'var(--green)' : 'var(--green-dim)'};">${p.icon} ${p.name}</span>
-      ${done
-        ? '<span style="color:var(--green);font-size:12px;">완료</span>'
-        : `<span class="part-missing-badge">미제작</span><button class="btn btn-sm${affordable ? '' : ' btn-amber'}" onclick="craftPart('${p.id}')" ${affordable ? '' : 'disabled'}>제작</button>`}
-    </div>
-    ${!done ? `<div style="font-size:11px;color:var(--green-mid);padding:2px 0 5px 22px;">비용: ${costStr}</div>` : ''}`;
-  });
+  // Parts checklist — 공정 기반 (두 번째 렌더 패스)
   checklist = document.getElementById('parts-checklist');
-  if (checklist) checklist.innerHTML = partsHtml;
+  if (checklist) checklist.innerHTML = _renderMk1Parts();
 
   // Quality selector — with tier sub-labels (time + cost multiplier)
   qualHtml = '';
@@ -442,15 +497,19 @@ function renderAssemblyTab() {
   const now = Date.now();
   gs.assembly.jobs.forEach((job, idx) => {
     if (!job) {
-      const canStart = PARTS.every(p => gs.parts[p.id]) && canAfford(asmCost);
+      const rktCompletion = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
+      const canStart = rktCompletion >= 100;
       slotsHtml += `<div class="slot-card">
         <div class="slot-card-header">
           <span class="slot-title">// 조립 슬롯 ${idx + 1}</span>
           <span class="slot-state idle">빈 슬롯</span>
         </div>
-        <div style="font-size:12px;color:var(--green-mid);margin-bottom:8px;">선택: ${q.name}  |  비용: ${asmCostStr}</div>
+        <div style="font-size:12px;color:var(--green-mid);margin-bottom:4px;">선택: ${q.name}</div>
+        <div style="font-size:11px;color:${canStart ? 'var(--green)' : 'var(--green-dim)'};margin-bottom:8px;">
+          로켓 완성도: ${rktCompletion}%  ${canStart ? '✓ 발사 준비 완료' : ''}
+        </div>
         <button class="btn btn-full btn-sm${canStart ? '' : ' btn-amber'}" onclick="startAssembly(${idx})" ${canStart ? '' : 'disabled'}>
-          ${canStart ? '[ ▶ 조립 시작 ]' : '[ 부품/자원 부족 ]'}
+          ${canStart ? '[ ▶▶ 발사 실행 ]' : `[ 완성도 ${rktCompletion}% — 대기 중 ]`}
         </button>
       </div>`;
     } else if (job.ready) {

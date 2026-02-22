@@ -11,7 +11,9 @@ let gs = {
   addonUpgrades: {}, // { upgradeId: true }
   workers: 1,          // 총 인원
   assignments: {},     // { buildingId: workerCount }
-  parts: { engine:0, fueltank:0, control:0, hull:0, payload:0 },
+  parts: { hull:0, engine:0, propellant:0, pump_chamber:0 }, // 각 부품의 완성된 공정 횟수
+  mfgActive: {},         // { partId: {startAt, endAt} } — 진행 중인 제작 공정
+  fuelInjection: 0,      // 연료 주입 % (0-100)
   assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
   fuelLoaded: false,     // 연료 수동 주입 여부 (발사 전 주입 필요)
   upgrades: {},
@@ -467,6 +469,86 @@ function getAssemblyCost(qualityId) {
 
 
 // ============================================================
+//  MANUFACTURING (공정 기반 부품 제작)
+// ============================================================
+
+/** 공정 완료도 기반 로켓 전체 완성도 (0-100) */
+function getRocketCompletion() {
+  const mk1Parts = PARTS.filter(p => !p.minQuality);
+  if (mk1Parts.length === 0) return 0;
+  let partScore = 0;
+  mk1Parts.forEach(p => {
+    partScore += Math.min(1, (gs.parts[p.id] || 0) / p.cycles);
+  });
+  // 부품 75% + 연료 25%
+  const partsPct = (partScore / mk1Parts.length) * 75;
+  const fuelPct  = ((gs.fuelInjection || 0) / 100) * 25;
+  return Math.min(100, Math.floor(partsPct + fuelPct));
+}
+
+/** 공정 1회 시작. 자원 차감 → 타이머 설정 */
+function craftPartCycle(partId) {
+  const part = PARTS.find(p => p.id === partId);
+  if (!part) return;
+  if (!gs.mfgActive) gs.mfgActive = {};
+  if (gs.mfgActive[partId]) { notify(`${part.name} 공정이 이미 진행 중입니다`, 'amber'); return; }
+  const count = gs.parts[partId] || 0;
+  if (count >= part.cycles) { notify(`${part.name} 제작 완료 — 더 이상 공정 불필요`, 'amber'); return; }
+  if (!canAfford(part.cost)) { notify('자원 부족', 'red'); return; }
+  spend(part.cost);
+  const now = Date.now();
+  gs.mfgActive[partId] = { startAt: now, endAt: now + part.cycleTime * 1000 };
+  notify(`${part.icon} ${part.name} 공정 시작 (${count + 1}/${part.cycles})`);
+  playSfx('square', 520, 0.08, 0.03, 660);
+  renderAll();
+}
+
+/** tick에서 호출 — 완료된 공정 처리 + 자원 있으면 자동 연속 */
+function updateMfgJobs(now) {
+  if (!gs.mfgActive || Object.keys(gs.mfgActive).length === 0) return;
+  let changed = false;
+  Object.keys(gs.mfgActive).forEach(partId => {
+    const job = gs.mfgActive[partId];
+    if (!job || now < job.endAt) return;
+    // 공정 완료
+    const count = (gs.parts[partId] || 0) + 1;
+    gs.parts[partId] = count;
+    delete gs.mfgActive[partId];
+    changed = true;
+    const part = PARTS.find(p => p.id === partId);
+    if (!part) return;
+    if (count >= part.cycles) {
+      notify(`✓ ${part.icon} ${part.name} 제작 완료!`, 'green');
+      playSfx('triangle', 440, 0.09, 0.025, 660);
+      setTimeout(() => playSfx('triangle', 660, 0.07, 0.02, 880), 120);
+    } else {
+      // 자원 있으면 자동 다음 공정 시작
+      if (canAfford(part.cost)) {
+        spend(part.cost);
+        gs.mfgActive[partId] = { startAt: now, endAt: now + part.cycleTime * 1000 };
+      }
+    }
+  });
+  if (changed) renderAll();
+}
+
+/** 연료 주입 +10% (연료 자원 소모) */
+function injectFuel() {
+  if ((gs.fuelInjection || 0) >= 100) { notify('연료 탱크가 가득 찼습니다', 'amber'); return; }
+  const fuelCost = { fuel: 200 }; // 10%당 연료 200
+  if (!canAfford(fuelCost)) { notify('연료 부족', 'red'); return; }
+  spend(fuelCost);
+  gs.fuelInjection = Math.min(100, (gs.fuelInjection || 0) + 10);
+  if (gs.fuelInjection >= 100) {
+    notify('✓ 연료 주입 완료 (100%)', 'green');
+    playSfx('sine', 660, 0.09, 0.02, 880);
+  } else {
+    notify(`연료 주입 ${gs.fuelInjection}%`);
+  }
+  renderAll();
+}
+
+// ============================================================
 //  AUDIO
 // ============================================================
 function ensureAudio() {
@@ -595,8 +677,21 @@ function loadGame(slot) {
     // Merge buildings
     if (saved.buildings) Object.assign(gs.buildings, saved.buildings);
 
-    // Merge parts
-    if (saved.parts) Object.assign(gs.parts, saved.parts);
+    // Merge parts — 마이그레이션: 구 binary(0/1) → cycle count
+    if (saved.parts) {
+      // 구 부품 ID 제거, 신규 부품으로 변환
+      const oldToNew = { fueltank:'propellant', control:null, payload:null };
+      Object.entries(saved.parts).forEach(([id, val]) => {
+        if (id in oldToNew) {
+          if (oldToNew[id] && val > 0) gs.parts[oldToNew[id]] = gs.parts[oldToNew[id]] || 0; // ignore old binary
+        } else if (id in gs.parts) {
+          gs.parts[id] = val; // hull, engine: 구 binary 1 → 그대로 (완성된 것으로 간주하지 않음)
+        }
+      });
+    }
+    // mfgActive / fuelInjection 복원
+    gs.mfgActive = (saved.mfgActive && typeof saved.mfgActive === 'object') ? saved.mfgActive : {};
+    gs.fuelInjection = saved.fuelInjection || 0;
 
     // Worker system
     gs.workers = saved.workers || 1;
@@ -1097,6 +1192,7 @@ function tick() {
     }
   }
   tickResearch(dt);  // 시간 기반 연구 진행
+  updateMfgJobs(now); // 제작 공정 진행
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();
   if (typeof runAutomation === 'function') runAutomation();

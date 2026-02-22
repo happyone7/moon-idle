@@ -1423,6 +1423,38 @@ body.tab-research #pane-research {
 .part-pending { color: var(--green-dim); }
 .part-missing-badge { font-size: 10px; letter-spacing: .1em; color: var(--green-dim); border: 1px solid var(--green-dim); padding: 1px 5px; opacity: 0.6; }
 
+/* ── 공정 기반 부품 제작 패널 ─────────────────────── */
+.mfg-part-item {
+  border: 1px solid var(--green-dim);
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: rgba(0,12,0,0.5);
+  font-size: 11px;
+}
+.mfg-part-done   { border-color: var(--green) !important; background: rgba(0,40,0,0.4) !important; }
+.mfg-part-active { border-color: var(--amber, #e8a020) !important; }
+.mfg-part-header { display:flex; justify-content:space-between; margin-bottom:4px; }
+.mfg-bar-row     { font-size:12px; letter-spacing:0; margin-bottom:2px; }
+.mfg-part-footer { display:flex; justify-content:space-between; align-items:center; margin-top:4px; }
+.mfg-cycle-bar   { height:3px; background:var(--green-dim); border-radius:2px; margin:3px 0; }
+.mfg-cycle-fill  { height:100%; background:var(--amber, #e8a020); border-radius:2px; transition:width 0.5s linear; }
+.mfg-fuel-section {
+  border: 1px solid var(--amber, #e8a020);
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: rgba(30,18,0,0.4);
+  font-size: 11px;
+}
+.mfg-completion-bar {
+  border: 1px solid var(--green-mid);
+  border-radius: 3px;
+  padding: 6px 8px;
+  margin-top: 4px;
+  background: rgba(0,20,0,0.4);
+}
+
 /* Quality selector — tiered visual design */
 .quality-selector { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .q-btn {

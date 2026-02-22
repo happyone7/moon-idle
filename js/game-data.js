@@ -3,7 +3,7 @@
 // ============================================================
 const RESOURCES = [
   { id:'money',       name:'돈',       symbol:'₩',  color:'var(--amber)' },
-  { id:'iron',        name:'철광석',   symbol:'Fe', color:'var(--green)' },
+  { id:'iron',        name:'철',       symbol:'Fe', color:'var(--green)' },
   { id:'copper',      name:'구리',     symbol:'Cu', color:'#b87333' },
   { id:'fuel',        name:'연료',     symbol:'LOX',color:'var(--green)' },
   { id:'electronics', name:'전자부품', symbol:'PCB',color:'var(--green)' },
@@ -18,7 +18,7 @@ const OPS_ROLES = [
 
 const BLD_STAFF_NAMES = {
   supply_depot:  '물류 직원',
-  mine:          '채굴 직원',
+  mine:          '제철 직원',
   extractor:     '추출 직원',
   refinery:      '정제 직원',
   cryo_plant:    '냉각 직원',
@@ -61,7 +61,7 @@ const BUILDINGS = [
   { id:'housing',      name:'주거 시설',        icon:'[HSG]', produces:'bonus',       baseRate:0,   baseCost:{money:200},                                    desc:'인원 상한 +1',      wbClass:'wb-housing' },
   { id:'ops_center',   name:'운영 센터',        icon:'[OPS]', produces:'money',       baseRate:35,  baseCost:{money:300},                                   desc:'수익 창출 허브',    wbClass:'wb-ops' },
   { id:'supply_depot', name:'보급 창고',        icon:'[DEP]', produces:'money',       baseRate:25,  baseCost:{money:3000,iron:500,electronics:150},          desc:'물류 수익',         wbClass:'wb-ops' },
-  { id:'mine',         name:'철광석 채굴기',    icon:'[MIN]', produces:'iron',        baseRate:25,  baseCost:{money:800},                                    desc:'철광석 생산',       wbClass:'wb-mine' },
+  { id:'mine',         name:'제철소',           icon:'[MIN]', produces:'iron',        baseRate:25,  baseCost:{money:800},                                    desc:'철 생산',           wbClass:'wb-mine' },
   { id:'extractor',    name:'구리 채굴기',      icon:'[EXT]', produces:'copper',      baseRate:40,  baseCost:{money:6000,iron:1500},                         desc:'구리 채굴 — MK2+ 필요', wbClass:'wb-mine' },
   { id:'refinery',     name:'연료 정제소',      icon:'[REF]', produces:'fuel',        baseRate:20,  baseCost:{money:10000,iron:2500},                        desc:'LOX/RP-1 생산',    wbClass:'wb-refinery' },
   { id:'cryo_plant',   name:'극저온 플랜트',    icon:'[CRY]', produces:'fuel',        baseRate:35,  baseCost:{money:15000,iron:4000,electronics:800},        desc:'고순도 극저온 연료', wbClass:'wb-refinery' },
@@ -73,12 +73,15 @@ const BUILDINGS = [
   { id:'launch_pad',   name:'발사대',           icon:'[PAD]', produces:'bonus',       baseRate:0,   baseCost:{money:120000,iron:25000,electronics:10000},    desc:'발사 슬롯 +1',     wbClass:'wb-launchpad' },
 ];
 
+// 공정 기반 부품 제작 — cycles×cycleTime 동안 cycleCost 소모 반복
+// cost 필드 = cycleCost (getPartCost 호환 유지)
 const PARTS = [
-  { id:'engine',   name:'엔진',        icon:'[ENG]', cost:{iron:2500,fuel:1500,electronics:800} },
-  { id:'fueltank', name:'연료 탱크',   icon:'[TNK]', cost:{iron:3000,fuel:3000} },
-  { id:'control',  name:'제어 시스템', icon:'[CTL]', cost:{electronics:4000,iron:1500} },
-  { id:'hull',     name:'기체 선체',   icon:'[HUL]', cost:{iron:3500} },
-  { id:'payload',  name:'탑재체',      icon:'[PLD]', cost:{electronics:3000,iron:1000} },
+  // ── MK1 (모든 품질 공통) ──────────────────────────────────
+  { id:'hull',         name:'동체',        icon:'[HUL]', cycles:50, cycleTime:3,   cost:{iron:80}                   },
+  { id:'engine',       name:'엔진',        icon:'[ENG]', cycles:5,  cycleTime:10,  cost:{iron:300, copper:50}        },
+  { id:'propellant',   name:'추진체',      icon:'[PPL]', cycles:2,  cycleTime:60,  cost:{iron:200, fuel:300}         },
+  // ── MK2+ 전용 (standard 이상) ───────────────────────────
+  { id:'pump_chamber', name:'펌프/연소실', icon:'[PMP]', cycles:8,  cycleTime:30,  cost:{iron:500, copper:300}, minQuality:'standard' },
 ];
 
 const QUALITIES = [
