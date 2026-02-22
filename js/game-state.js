@@ -684,7 +684,10 @@ function loadGame(slot) {
         const level = typeof raw === 'number' ? raw : 1;
         for (const bldId in BUILDING_UPGRADES) {
           const upg = BUILDING_UPGRADES[bldId].find(u => u.id === uid);
-          if (upg && upg.rel) reliabilityBonus += upg.rel * level;
+          if (!upg) continue;
+          if (upg.rel)        reliabilityBonus += upg.rel * level;
+          if (upg.moneyBonus) { prodMult.money = (prodMult.money || 1) + upg.moneyBonus * level; }
+          if (upg.prodBonus)  { globalMult += upg.prodBonus * level; }
         }
       });
     }

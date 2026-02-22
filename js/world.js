@@ -1050,8 +1050,10 @@ function buyBldUpgrade(upgId, bldId) {
   spend(scaledCost);
   gs.bldUpgrades[upgId] = currLevel + 1;
   // Side-effects (레벨마다 누적 적용)
-  if (upg.wkr) { gs.citizens = (gs.citizens || 0) + upg.wkr; syncWorkerDots(); }
-  if (upg.rel) reliabilityBonus += upg.rel;
+  if (upg.wkr)        { gs.citizens = (gs.citizens || 0) + upg.wkr; syncWorkerDots(); }
+  if (upg.rel)        reliabilityBonus += upg.rel;
+  if (upg.moneyBonus) { prodMult.money = (prodMult.money || 1) + upg.moneyBonus; }
+  if (upg.prodBonus)  { globalMult += upg.prodBonus; }
   const newLevel = currLevel + 1;
   const levelStr = upg.repeatable ? ` Lv.${newLevel}` : '';
   notify(`${bld.icon} ${upg.name}${levelStr} 완료`);

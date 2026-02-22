@@ -154,8 +154,8 @@ const RESEARCH_BRANCHES = [
 // premium:true    → 단 1회. 강력한 효과. 텍스트 앰버 강조.
 const BUILDING_UPGRADES = {
   housing: [
-    { id:'hsg_dorm',       name:'기숙사 증설',          cost:{money:200},                             desc:'인원 상한 +1명',                  wkr:1, repeatable:true, costScale:2.0 },
-    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:800},                             desc:'인원 +1명 추가',                  wkr:1, repeatable:true, costScale:2.2, req:'hsg_dorm' },
+    { id:'hsg_dorm',       name:'기숙사 증설',          cost:{money:200},                             desc:'직원 수익 +15%/레벨',             moneyBonus:0.15, repeatable:true, costScale:2.0 },
+    { id:'hsg_welfare',    name:'복리 후생 강화',        cost:{money:800},                             desc:'전체 생산량 +8%/레벨',             prodBonus:0.08,  repeatable:true, costScale:2.2, req:'hsg_dorm' },
     { id:'hsg_township',   name:'★ 타운십 조성',        cost:{money:8000},                            desc:'인원 +5명 — 대규모 주거 허브',    wkr:5, premium:true, req:'hsg_welfare' },
     { id:'housing_school', name:'★ 단지 내 학원',       cost:{money:8000},                            desc:'생산 전체 +10%',                  mult:1.10, effect:'specialist_rate', premium:true, req:'hsg_township' },
     { id:'housing_market', name:'★ 단지 내 상가',       cost:{money:5000},                            desc:'자금 +50/s 수익',                 effect:'passive_income', premium:true, req:'hsg_township' },
