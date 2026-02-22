@@ -39,6 +39,12 @@ function buyBuilding(bid) {
   if (!canAfford(cost)) { notify(t('notif_afford'), 'red'); return; }
   spend(cost);
   gs.buildings[bid] = (gs.buildings[bid] || 0) + 1;
+  // 운영센터 완공 시 연구소 해금
+  if (bid === 'ops_center' && !gs.unlocks['bld_research_lab']) {
+    gs.unlocks['bld_research_lab'] = true;
+    if (typeof applyUnlocks === 'function') applyUnlocks([]);
+    notify('[RSH] 연구소 건설 가능 — 연구소가 해금됐습니다', 'green');
+  }
   // 모든 건물 구매마다 워커 상한 +1
   gs.workers = (gs.workers || 1) + 1;
   if (typeof syncWorkerDots === 'function') syncWorkerDots();

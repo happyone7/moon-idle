@@ -3,8 +3,8 @@
 // ============================================================
 const WORLD_POSITIONS = {
   housing:      310,  // 주거시설 맨 왼쪽
-  research_lab: 510,  r_and_d:      680,
-  ops_center:   860,  // addon @ 940
+  ops_center:   510,  // addon @ 590
+  research_lab: 690,  r_and_d:      860,
   supply_depot: 1210, mine:         1420, extractor:    1560,
   refinery:     1750, cryo_plant:   1930, elec_lab:     2130,
   fab_plant:    2300, solar_array:  2490, launch_pad:   2700,
@@ -13,7 +13,7 @@ const WORLD_POSITIONS = {
 
 // 애드온 건물 위치 (부모 건물 우측 밀착 — 문자 폭 6.6px 기준)
 const ADDON_POSITIONS = {
-  ops_center:  940,   // 860 + 12자×6.6px ≈ 79px → 940
+  ops_center:  590,   // 510 + 12자×6.6px ≈ 79px → 590
   launch_pad: 2800,   // 2700 + 15자×6.6px ≈ 99px → 2800
 };
 

@@ -49,7 +49,7 @@ let gs = {
     bld_cryo_plant: false,
     bld_elec_lab: false,
     bld_fab_plant: false,
-    bld_research_lab: true, // 연구소 구매 가능 (처음부터 표시)
+    bld_research_lab: false, // 운영센터 건설 후 해금
     bld_r_and_d: false,
     bld_solar_array: false,
     bld_launch_pad: false,
@@ -654,7 +654,7 @@ function loadGame(slot) {
       bld_cryo_plant: false,
       bld_elec_lab: false,
       bld_fab_plant: false,
-      bld_research_lab: true,
+      bld_research_lab: false,
       bld_r_and_d: false,
       bld_solar_array: false,
       bld_launch_pad: false,

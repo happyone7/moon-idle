@@ -224,7 +224,7 @@ function startNewGame(slot) {
     tab_launch: true,  tab_mission: false,
     bld_housing: true, bld_ops_center: true, bld_supply_depot: false, bld_mine: false,
     bld_extractor: false, bld_refinery: false, bld_cryo_plant: false,
-    bld_elec_lab: false, bld_fab_plant: false, bld_research_lab: true,
+    bld_elec_lab: false, bld_fab_plant: false, bld_research_lab: false,
     bld_r_and_d: false, bld_solar_array: false, bld_launch_pad: false,
   };
   prodMult = {}; globalMult = 1; partCostMult = 1;
