@@ -403,8 +403,9 @@ function _lcRocketArtHtml() {
     return '#b06800';                     // 미획득 — 주황 (윤곽 명확하게 보임)
   };
 
-  const partsDone  = PARTS.filter(pt => p[pt.id]).length;
-  const partsPct   = Math.round((partsDone / PARTS.length) * 100);
+  const reqParts   = _getRequiredParts();
+  const partsDone  = reqParts.filter(pt => p[pt.id]).length;
+  const partsPct   = Math.round((partsDone / reqParts.length) * 100);
 
   let asmPct = 0;
   if (readyJob) {
@@ -515,10 +516,11 @@ function renderLaunchTab() {
 
   // 프리-플라이트 체크리스트 + 완성도 표시
   const p2 = gs.parts || {};
-  const pdone = PARTS.filter(pt => p2[pt.id]).length;
+  const reqParts2 = _getRequiredParts();
+  const pdone = reqParts2.filter(pt => p2[pt.id]).length;
   const items = [
     { done: hasProdSetup,               label: `생산 가동`,  short: '생산가동'  },
-    { done: pdone === PARTS.length,     label: `부품 조달 (${pdone}/${PARTS.length})`, short: '부품조달' },
+    { done: pdone === reqParts2.length,  label: `부품 조달 (${pdone}/${reqParts2.length})`, short: '부품조달' },
     { done: !!hasReady,                 label: `조립 완료`,  short: '조립완료'  },
     { done: (gs.buildings.launch_pad || 0) >= 1, label: `발사대 건설`, short: '발사대' },
     { done: hasFuel,                    label: `연료 주입`,  short: '연료주입'  },
@@ -560,11 +562,12 @@ function renderLaunchTab() {
   // 조립/연료 상태 패널
   const statusPanel = document.getElementById('lc-status-panel');
   if (statusPanel) {
-    const p2        = gs.parts || {};
+    const p3        = gs.parts || {};
     const jobs2     = (gs.assembly && gs.assembly.jobs) || [];
     const now2      = Date.now();
-    const partsDone = PARTS.filter(pt => p2[pt.id]).length;
-    const partsPct  = Math.round((partsDone / PARTS.length) * 100);
+    const reqParts3 = _getRequiredParts();
+    const partsDone = reqParts3.filter(pt => p3[pt.id]).length;
+    const partsPct  = Math.round((partsDone / reqParts3.length) * 100);
     let asmPct = 0;
     const readyJob2  = jobs2.find(j => j && j.ready);
     const inProgJob2 = jobs2.find(j => j && !j.ready && j.endAt);
@@ -581,7 +584,7 @@ function renderLaunchTab() {
     const partsClr   = partsPct === 100 ? '' : 'amber';
     const asmClr     = asmPct  === 100 ? '' : 'amber';
 
-    let spHtml = `<div class="lc-sp-row"><span class="lc-sp-label">부품 조달</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${partsClr}" style="width:${partsPct}%"></div></div><span class="lc-sp-pct ${partsClr}">${partsDone}/${PARTS.length}</span></div>`;
+    let spHtml = `<div class="lc-sp-row"><span class="lc-sp-label">부품 조달</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${partsClr}" style="width:${partsPct}%"></div></div><span class="lc-sp-pct ${partsClr}">${partsDone}/${reqParts3.length}</span></div>`;
     if (asmPct > 0 || readyJob2) {
       spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">조립 진행</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${asmClr}" style="width:${asmPct}%"></div></div><span class="lc-sp-pct ${asmClr}">${Math.round(asmPct)}%</span></div>`;
     }

@@ -16,10 +16,10 @@ const MS_UPGRADES = [
     id:   'ms_worker_1',
     name: '인원 확충',
     icon: '&#128100;',
-    desc: '인원 상한 영구 +2',
+    desc: '시민 +2 (유휴 인원 즉시 추가)',
     cost: 2,
     max:  5,
-    apply() { gs.workers += 2; },
+    apply() { gs.citizens = (gs.citizens || 0) + 2; },
   },
   {
     id:   'ms_research_1',
@@ -103,7 +103,8 @@ function confirmLaunch() {
   const savedLaunches   = gs.launches;
   const savedHistory    = gs.history;
   const savedUnlocks    = gs.unlocks;
-  const savedWorkers    = gs.workers;     // 문스톤으로 늘린 인원은 유지
+  const savedWorkers    = gs.workers;     // 레거시 호환
+  const savedTotalPop   = typeof getTotalWorkers === 'function' ? getTotalWorkers() : (gs.citizens || 1);
   const savedMilestones = gs.milestones || {}; // BUG-P08: 마일스톤 보존 (프레스티지 후 재지급 방지)
   const savedAchievements = gs.achievements || {}; // P4-2: 업적 보존
   const savedPrestigeStars = gs.prestigeStars || {}; // P4-3: 프레스티지 스타 보존
@@ -115,7 +116,7 @@ function confirmLaunch() {
   gs.assignments = {};
   gs._prodHubVisited = false;
   gs.parts = { engine:0, fueltank:0, control:0, hull:0, payload:0 };
-  gs.assembly = { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
+  gs.assembly = { selectedQuality:'proto', selectedClass:'vega', jobs:[] };
   gs.upgrades = {};
   gs.bldLevels = {};
   gs.bldSlotLevels = {};
@@ -130,6 +131,8 @@ function confirmLaunch() {
   gs.history     = savedHistory;
   gs.unlocks     = savedUnlocks;
   gs.workers     = savedWorkers;
+  gs.citizens    = savedTotalPop;   // 프레스티지 후 전체 인원이 유휴 시민으로 복귀
+  gs._citizenModelV2 = true;
   gs.milestones  = savedMilestones; // BUG-P08
   gs.achievements = savedAchievements; // P4-2
   gs.prestigeStars = savedPrestigeStars; // P4-3
@@ -363,7 +366,8 @@ function _checkAchievementCondition(condKey) {
     case 'rocket_class_small_unlocked':
       return typeof isPhaseComplete === 'function' && isPhaseComplete('phase_2');
     case 'bom_all_parts_ready':
-      return typeof PARTS !== 'undefined' && PARTS.every(p => gs.parts && gs.parts[p.id]);
+      return typeof PARTS !== 'undefined' && typeof _getRequiredParts === 'function'
+        && _getRequiredParts().every(p => gs.parts && gs.parts[p.id]);
     case 'launches_gte_1': return (gs.launches || 0) >= 1;
     case 'launch_success_gte_5': return successCount >= 5;
     case 'max_altitude_gte_100': return maxAlt >= 100;
@@ -382,7 +386,7 @@ function _checkAchievementCondition(condKey) {
   }
 }
 
-/** Check all achievements and award new ones */
+/** Check all achievements — mark as earned but do NOT give reward (manual claim) */
 function checkAchievements() {
   if (typeof ACHIEVEMENTS === 'undefined') return;
   if (!gs.achievements) gs.achievements = {};
@@ -390,20 +394,34 @@ function checkAchievements() {
   ACHIEVEMENTS.forEach(ach => {
     if (gs.achievements[ach.id]) return; // Already earned
     if (_checkAchievementCondition(ach.condition)) {
-      gs.achievements[ach.id] = { ts: Date.now() };
-      // Award reward
-      if (ach.reward) {
-        if (ach.reward.type === 'rp') {
-          gs.res.research = (gs.res.research || 0) + ach.reward.amount;
-          notify(`업적 달성: ${ach.name} — RP +${ach.reward.amount}`, 'green');
-        } else if (ach.reward.type === 'moonstone') {
-          gs.moonstone = (gs.moonstone || 0) + ach.reward.amount;
-          notify(`업적 달성: ${ach.name} — 문스톤 +${ach.reward.amount}`, 'amber');
-        }
-      }
+      gs.achievements[ach.id] = { ts: Date.now(), claimed: false };
+      notify(`업적 달성: ${ach.name} — 미션 탭에서 보상을 수령하세요!`, 'amber');
       playSfx('triangle', 660, 0.14, 0.05, 900);
     }
   });
+}
+
+/** Manually claim an achievement reward */
+function claimAchievementReward(achId) {
+  if (!gs.achievements || !gs.achievements[achId]) return;
+  if (gs.achievements[achId].claimed) return; // Already claimed
+
+  const ach = ACHIEVEMENTS.find(a => a.id === achId);
+  if (!ach || !ach.reward) return;
+
+  gs.achievements[achId].claimed = true;
+
+  if (ach.reward.type === 'rp') {
+    gs.res.research = (gs.res.research || 0) + ach.reward.amount;
+    notify(`보상 수령: ${ach.name} — RP +${ach.reward.amount}`, 'green');
+  } else if (ach.reward.type === 'moonstone') {
+    gs.moonstone = (gs.moonstone || 0) + ach.reward.amount;
+    notify(`보상 수령: ${ach.name} — 문스톤 +${ach.reward.amount}`, 'amber');
+  }
+
+  playSfx('triangle', 520, 0.12, 0.04, 780);
+  saveGame();
+  renderAll();
 }
 
 function renderAchievementList() {
@@ -435,19 +453,35 @@ function renderAchievementList() {
     html += '<div class="ach-grid">';
 
     achs.forEach(ach => {
-      const done = gs.achievements[ach.id];
+      const entry = gs.achievements[ach.id];
+      const done = !!entry;
+      const claimed = entry && entry.claimed;
       const rewardStr = ach.reward
         ? (ach.reward.type === 'rp' ? `RP +${ach.reward.amount}` : `MS +${ach.reward.amount}`)
         : '';
 
-      html += `<div class="ach-card${done ? ' earned' : ' locked'}">
+      let cardClass = 'ach-card';
+      if (done && claimed) cardClass += ' earned';
+      else if (done && !claimed) cardClass += ' claimable';
+      else cardClass += ' locked';
+
+      let statusHtml;
+      if (done && claimed) {
+        statusHtml = '<div class="ach-status">&#10003;</div>';
+      } else if (done && !claimed) {
+        statusHtml = `<button class="ach-claim-btn" onclick="claimAchievementReward('${ach.id}')">수령</button>`;
+      } else {
+        statusHtml = '<div class="ach-status">&#9679;</div>';
+      }
+
+      html += `<div class="${cardClass}">
         <div class="ach-icon">${ach.icon}</div>
         <div class="ach-info">
           <div class="ach-name">${ach.name}</div>
           <div class="ach-desc">${ach.desc}</div>
           <div class="ach-reward">${rewardStr}</div>
         </div>
-        <div class="ach-status">${done ? '&#10003;' : '&#9679;'}</div>
+        ${statusHtml}
       </div>`;
     });
 

@@ -14,10 +14,12 @@ let gs = {
   parts: { hull:0, engine:0, propellant:0, pump_chamber:0 }, // 각 부품의 완성된 공정 횟수
   mfgActive: {},         // { partId: {startAt, endAt} } — 진행 중인 제작 공정
   fuelInjection: 0,      // 연료 주입 % (0-100)
-  assembly: { selectedQuality:'proto', selectedClass:'nano', jobs:[] },
+  fuelInjecting: false,  // 연료 주입 진행 중 여부
+  assembly: { selectedQuality:'proto', selectedClass:'vega', jobs:[] },
   fuelLoaded: false,     // 연료 수동 주입 여부 (발사 전 주입 필요)
   upgrades: {},
   researchProgress: {},  // { upgradeId: { rpSpent: number, timeSpent: number } } — 진행 중인 연구
+  researchPaused: {},    // { upgradeId: { rpSpent: number } } — 일시정지된 연구 (진행도 보존)
   researchQueue: [],     // 예약된 연구 목록 (최대 3개, FIFO)
   maxResearchSlots: 1,   // 활성 연구 슬롯 (항상 1)
   opsRoles: { sales: 0, accounting: 0, consulting: 0 },
@@ -118,10 +120,10 @@ function getQuality(qid) { return QUALITIES.find(q => q.id === qid) || QUALITIES
 function getAssemblySlots() { return 1 + gs.buildings.launch_pad + slotBonus + getAddonSlotBonus(); }
 
 function ensureAssemblyState() {
-  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
+  if (!gs.assembly) gs.assembly = { selectedQuality:'proto', selectedClass:'vega', jobs:[] };
   if (!Array.isArray(gs.assembly.jobs)) gs.assembly.jobs = [];
   if (!gs.assembly.selectedQuality) gs.assembly.selectedQuality = 'proto';
-  if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
+  if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'vega';
   const slots = getAssemblySlots();
   while (gs.assembly.jobs.length < slots) gs.assembly.jobs.push(null);
   if (gs.assembly.jobs.length > slots) gs.assembly.jobs = gs.assembly.jobs.slice(0, slots);
@@ -133,14 +135,15 @@ function getBldLevel(bid) {
 }
 
 function getBldProdMult(bid) {
-  return 1 + getBldLevel(bid) * 0.5;  // Lv0=1× Lv1=1.5× Lv2=2× ...
+  return 1 + getBldLevel(bid) * BALANCE.BLD_PROD_UPG.multPerLevel;
 }
 
 function getBldUpgradeCost(bid) {
   const lv = getBldLevel(bid);
+  const B = BALANCE.BLD_PROD_UPG;
   return {
-    money: Math.floor(5000 * Math.pow(2.0, lv)),
-    iron:  Math.floor(80 * Math.pow(1.6, lv)),
+    money: Math.floor(B.baseMoney * Math.pow(B.moneyExp, lv)),
+    iron:  Math.floor(B.baseIron * Math.pow(B.ironExp, lv)),
   };
 }
 
@@ -161,13 +164,13 @@ function upgBuilding(bid) {
   renderAll();
 }
 
-function getMoonstoneMult() { return Math.pow(1.07, gs.moonstone || 0); }
+function getMoonstoneMult() { return Math.pow(BALANCE.MOONSTONE.multPerStone, gs.moonstone || 0); }
 
 function getSolarBonus() {
-  let perPanel = 0.15;
+  let perPanel = BALANCE.SOLAR.baseBonusPerPanel;
   if (gs.bldUpgrades) {
-    if (gs.bldUpgrades.sol_hieff)   perPanel += 0.05;
-    if (gs.bldUpgrades.sol_tracker) perPanel += 0.05;
+    if (gs.bldUpgrades.sol_hieff)   perPanel += BALANCE.SOLAR.hieffExtra;
+    if (gs.bldUpgrades.sol_tracker) perPanel += BALANCE.SOLAR.trackerExtra;
   }
   return 1 + gs.buildings.solar_array * perPanel;
 }
@@ -273,21 +276,7 @@ function spend(cost) {
   });
 }
 
-const BUILDING_EXPONENTS = {
-  housing:       1.12,
-  ops_center:    1.18,
-  supply_depot:  1.18,
-  mine:          1.13,
-  extractor:     1.15,
-  refinery:      1.15,
-  cryo_plant:    1.15,
-  elec_lab:      1.12,
-  fab_plant:     1.15,
-  research_lab:  1.12,
-  r_and_d:       1.15,
-  solar_array:   1.22,
-  launch_pad:    1.30,
-};
+const BUILDING_EXPONENTS = BALANCE.BLD_EXPONENTS;
 
 function getBuildingCost(bld) {
   const cost = {};
@@ -306,56 +295,46 @@ function getBldPurchaseCost(bldId) {
   return getBuildingCost(bld);
 }
 
-// 직원 고용 비용: 500 × 2.0^(workers-1) — 전체 인원 기반 (레거시)
+// 직원 고용 비용: base × exp^(workers-1) — 전체 인원 기반 (레거시)
 function getWorkerHireCost() {
-  return Math.floor(500 * Math.pow(2.0, (gs.workers || 1) - 1));
+  return Math.floor(BALANCE.WORKER_HIRE.baseCost * Math.pow(BALANCE.WORKER_HIRE.exp, (gs.workers || 1) - 1));
 }
 
 // 건물별 직원 고용 비용: buildingBase × 3.0^(해당건물 배치 인원)
 // 건물 단계별로 기본 비용이 달라짐 (후반 건물일수록 인력 비용 증가)
-const BLD_WORKER_BASE = {
-  ops_center:   150,
-  research_lab: 300,   // ops_center × 2배
-  supply_depot: 450,
-  mine:         600,
-  extractor:    900,
-  refinery:     1200,
-  cryo_plant:   1500,
-  elec_lab:     1800,
-  fab_plant:    2500,
-  r_and_d:      4000,
-};
+const BLD_WORKER_BASE = BALANCE.BLD_WORKER_BASE;
 function getBldWorkerCost(bldId) {
   const assigned = (gs.assignments && gs.assignments[bldId]) || 0;
   const base = BLD_WORKER_BASE[bldId] || 150;
-  return Math.floor(base * Math.pow(3.0, assigned));
+  return Math.floor(base * Math.pow(BALANCE.BLD_WORKER_EXP, assigned));
 }
 
 // 직원 전문화: 해당 건물 배치 인원 1명을 전문가로 전환 (P8-5)
+// 전문가는 배치 직원에서 전환 → assignments 감소, citizens 변화 없음
 function promoteToSpecialist(bldId, specId) {
   const assigned = (gs.assignments && gs.assignments[bldId]) || 0;
   if (assigned < 1) return false;
   gs.assignments[bldId] = assigned - 1;
-  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
   if (!gs.specialists) gs.specialists = {};
   if (!gs.specialists[bldId]) gs.specialists[bldId] = {};
   gs.specialists[bldId][specId] = (gs.specialists[bldId][specId] || 0) + 1;
   return true;
 }
 
-// 시민 분양 비용: 10명까지 300×1.3^n (완만), 이후 pivot×1.8^(n-10) (기하급수)
+// 시민 분양 비용: threshold명까지 완만, 이후 기하급수
 function getCitizenCost() {
-  const n = gs.citizens || 0;
-  if (n < 10) return Math.floor(300 * Math.pow(1.3, n));
-  const pivot = Math.floor(300 * Math.pow(1.3, 10)); // ~4135
-  return Math.floor(pivot * Math.pow(1.8, n - 10));
+  const C = BALANCE.CITIZEN;
+  const n = gs.citizenRecruits || gs.citizens || 0;
+  if (n < C.earlyThreshold) return Math.floor(C.baseCost * Math.pow(C.earlyExp, n));
+  const pivot = Math.floor(C.baseCost * Math.pow(C.earlyExp, C.earlyThreshold));
+  return Math.floor(pivot * Math.pow(C.lateExp, n - C.earlyThreshold));
 }
 
-// 운영센터 코인 클릭 — 클릭 1회당 현재 수입×2 (최소 $25) 즉시 획득
+// 운영센터 코인 클릭 — 클릭 1회당 현재 수입×N (최소 $M) 즉시 획득
 function clickOpsCoin() {
   if ((gs.buildings.ops_center || 0) < 1) return;
   const prod = typeof getProduction === 'function' ? getProduction() : { money: 0 };
-  const inc  = Math.max(25, Math.floor((prod.money || 0) * 2));
+  const inc  = Math.max(BALANCE.OPS_CLICK.minReward, Math.floor((prod.money || 0) * BALANCE.OPS_CLICK.prodMult));
   gs.res.money = (gs.res.money || 0) + inc;
   notify(`◈ +$${fmt(inc)} 클릭 수익`, 'amber');
   if (typeof renderAll === 'function') renderAll();
@@ -367,6 +346,7 @@ function allocateCitizen() {
   if ((gs.res.money || 0) < cost) return false;
   gs.res.money = Math.max(0, (gs.res.money || 0) - cost);
   gs.citizens = (gs.citizens || 0) + 1;
+  gs.citizenRecruits = (gs.citizenRecruits || 0) + 1;
   return true;
 }
 
@@ -392,9 +372,9 @@ function getProduction() {
   });
   // Add RP bonus from tech hub addon
   prod.research += getAddonRpBonus();
-  // 주거시설 상가 업그레이드: +50/s (P8-4)
+  // 주거시설 상가 업그레이드 (P8-4)
   if (gs.bldUpgrades && gs.bldUpgrades.housing_market) {
-    prod.money += 50;
+    prod.money += BALANCE.HOUSING.marketIncomePerSec;
   }
   // ── 전문가 효과 반영 (P8-5) ──────────────────────────────────
   if (gs.specialists) {
@@ -414,15 +394,19 @@ function getProduction() {
   return prod;
 }
 
-// 여유 인원 수 (시민 총수 기반 — 인원 상한 없음)
+// 여유 인원 수 — gs.citizens은 유휴 시민만 나타냄
 function getAvailableWorkers() {
-  const total = gs.citizens || 0;
-  const assigned = Object.values(gs.assignments || {}).reduce((a, b) => a + b, 0);
-  return total - assigned;
+  return gs.citizens || 0;
 }
 
+// 전체 인구 = 유휴 시민 + 배치 직원 + 전문가
 function getTotalWorkers() {
-  return gs.citizens || 0;
+  const idle = gs.citizens || 0;
+  const assigned = Object.values(gs.assignments || {}).reduce((a, b) => a + b, 0);
+  const specTotal = !gs.specialists ? 0
+    : Object.values(gs.specialists).reduce((sum, bldSpecs) =>
+        sum + Object.values(bldSpecs).reduce((a, b) => a + b, 0), 0);
+  return idle + assigned + specTotal;
 }
 
 function getTotalAssigned() {
@@ -431,25 +415,27 @@ function getTotalAssigned() {
 
 function getRocketScience(qualityId) {
   const q = getQuality(qualityId);
-  const isp = 315 + q.ispBonus + gs.buildings.elec_lab * 1.2 + (gs.upgrades.fusion ? 22 : 0);
-  const dryMass = 28 * q.dryMassMult * (gs.upgrades.lightweight ? 0.9 : 1);
-  const propMass = 76 + gs.buildings.refinery * 0.1 + gs.buildings.cryo_plant * 0.2;
-  const thrust = 1450 + gs.buildings.mine * 0.8 + (gs.upgrades.fusion ? 120 : 0);
+  const R = BALANCE.ROCKET;
+  const isp = R.baseIsp + q.ispBonus + gs.buildings.elec_lab * R.elecLabIspPerBld + (gs.upgrades.fusion ? R.fusionIspBonus : 0);
+  const dryMass = R.baseDryMass * q.dryMassMult * (gs.upgrades.lightweight ? R.lightweightMassMult : 1);
+  const propMass = R.basePropMass + gs.buildings.refinery * R.refineryPropPerBld + gs.buildings.cryo_plant * R.cryoPropPerBld;
+  const thrust = R.baseThrust + gs.buildings.mine * R.minePerBld + (gs.upgrades.fusion ? R.fusionThrustBonus : 0);
   const m0 = dryMass + propMass;
-  const deltaV = isp * 9.81 * Math.log(m0 / dryMass) / 1000;
-  const twr = thrust / (m0 * 9.81);
+  const deltaV = isp * R.gravity * Math.log(m0 / dryMass) / 1000;
+  const twr = thrust / (m0 * R.gravity);
   const reliability = clamp(
-    70 + gs.buildings.research_lab * 1.9 + gs.buildings.elec_lab * 0.8 + reliabilityBonus + q.relBonus + getAddonRelBonus(),
-    0, 99.5
+    R.baseReliability + gs.buildings.research_lab * R.researchLabRelPerBld + gs.buildings.elec_lab * R.elecLabRelPerBld + reliabilityBonus + q.relBonus + getAddonRelBonus(),
+    0, R.maxReliability
   );
-  const altitude = clamp(deltaV * 22, 0, 400);
+  const altitude = clamp(deltaV * R.altitudeMult, 0, 400);
   return { deltaV, twr, reliability, altitude };
 }
 
 function getMoonstoneReward(qualityId) {
   const sci = getRocketScience(qualityId);
   const q = getQuality(qualityId);
-  const base = Math.max(1, Math.floor((sci.altitude / 20) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / 4));
+  const M = BALANCE.MOONSTONE;
+  const base = Math.max(1, Math.floor((sci.altitude / M.rewardDivisor) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / M.launchDivisor));
   const mult = typeof getMilestoneMsBonus === 'function' ? getMilestoneMsBonus() : 1;
   return Math.floor(base * mult);
 }
@@ -457,7 +443,9 @@ function getMoonstoneReward(qualityId) {
 function getCostStr(cost) {
   return Object.entries(cost).map(([r, v]) => {
     const res = RESOURCES.find(x => x.id === r);
-    return `${res ? res.symbol : r}${fmt(v)}`;
+    if (!res) return `${r}${fmt(v)}`;
+    const ic = res.iconColor || res.color || 'var(--green)';
+    return `<span style="color:${ic}">${res.icon}</span>${fmt(v)}`;
   }).join(' ');
 }
 
@@ -467,7 +455,7 @@ function getAssemblyCost(qualityId) {
   PARTS.forEach(p => {
     const c = getPartCost(p);
     Object.entries(c).forEach(([r, v]) => {
-      total[r] = (total[r] || 0) + Math.floor(v * q.costMult * 0.32);
+      total[r] = (total[r] || 0) + Math.floor(v * q.costMult * BALANCE.ASSEMBLY.costFraction);
     });
   });
   // MK2+ 추가 구리 비용
@@ -481,6 +469,18 @@ function getAssemblyCost(qualityId) {
 // ============================================================
 //  MANUFACTURING (공정 기반 부품 제작)
 // ============================================================
+
+/** 현재 품질에 필요한 부품만 반환 (minQuality 기반 필터링) */
+function _getRequiredParts() {
+  const selQ = (gs.assembly && gs.assembly.selectedQuality) || 'proto';
+  const qOrder = QUALITIES.map(q => q.id);
+  const curIdx = qOrder.indexOf(selQ);
+  return PARTS.filter(pt => {
+    if (!pt.minQuality) return true;
+    const minIdx = qOrder.indexOf(pt.minQuality);
+    return curIdx >= minIdx;
+  });
+}
 
 /** 공정 완료도 기반 로켓 전체 완성도 (0-100) */
 function getRocketCompletion() {
@@ -542,20 +542,63 @@ function updateMfgJobs(now) {
   if (changed) renderAll();
 }
 
-/** 연료 주입 +10% (연료 자원 소모) */
-function injectFuel() {
-  if ((gs.fuelInjection || 0) >= 100) { notify('연료 탱크가 가득 찼습니다', 'amber'); return; }
-  const fuelCost = { fuel: 200 }; // 10%당 연료 200
-  if (!canAfford(fuelCost)) { notify('연료 부족', 'red'); return; }
-  spend(fuelCost);
-  gs.fuelInjection = Math.min(100, (gs.fuelInjection || 0) + 10);
-  if (gs.fuelInjection >= 100) {
-    notify('✓ 연료 주입 완료 (100%)', 'green');
-    playSfx('sine', 660, 0.09, 0.02, 880);
+/** 연료 주입 시작/중단 토글 */
+function toggleFuelInjection() {
+  const F = BALANCE.FUEL_INJECT;
+  if ((gs.fuelInjection || 0) >= F.maxPct) { notify('연료 탱크가 이미 가득 찼습니다', 'amber'); return; }
+  gs.fuelInjecting = !gs.fuelInjecting;
+  if (gs.fuelInjecting) {
+    // 시작 전 연료 최소 확인
+    if ((gs.res.fuel || 0) < 1) {
+      gs.fuelInjecting = false;
+      notify('연료 부족 — LOX를 생산하세요', 'red');
+      return;
+    }
+    notify('연료 주입 시작', 'cyan');
+    playSfx('sine', 440, 0.06, 0.02, 550);
   } else {
-    notify(`연료 주입 ${gs.fuelInjection}%`);
+    notify('연료 주입 중단', 'yellow');
+    playSfx('sine', 330, 0.04, 0.02, 220);
   }
   renderAll();
+}
+
+/** tick에서 호출 — 연료 주입 진행 (dt: 경과 시간, 초 단위) */
+function tickFuelInjection(dt) {
+  if (!gs.fuelInjecting) return;
+  const F = BALANCE.FUEL_INJECT;
+  if ((gs.fuelInjection || 0) >= F.maxPct) {
+    gs.fuelInjecting = false;
+    return;
+  }
+  // 초당 연료 소모 계산
+  const fuelNeeded = F.fuelPerSec * dt;
+  const fuelAvail  = gs.res.fuel || 0;
+  if (fuelAvail < 0.01) {
+    // 연료 고갈 시 자동 중단
+    gs.fuelInjecting = false;
+    notify('연료 부족 — 주입 자동 중단', 'red');
+    playSfx('square', 200, 0.08, 0.04, 140);
+    return;
+  }
+  // 연료가 부족하면 비례 진행
+  let advance;
+  if (fuelAvail >= fuelNeeded) {
+    advance = F.pctPerSec * dt;
+    gs.res.fuel = Math.max(0, fuelAvail - fuelNeeded);
+  } else {
+    const ratio = fuelAvail / fuelNeeded;
+    advance = F.pctPerSec * dt * ratio;
+    gs.res.fuel = 0;
+  }
+  gs.fuelInjection = Math.min(F.maxPct, (gs.fuelInjection || 0) + advance);
+  // 100% 도달 시 완료
+  if (gs.fuelInjection >= F.maxPct) {
+    gs.fuelInjection = F.maxPct;
+    gs.fuelInjecting = false;
+    notify('✓ 연료 주입 완료 (100%)', 'green');
+    playSfx('sine', 660, 0.09, 0.02, 880);
+  }
 }
 
 // ============================================================
@@ -581,7 +624,7 @@ function ensureAudio() {
 }
 
 // SFX 전체 볼륨 배율 — BGM(0.2) 대비 SFX가 너무 작아서 보정
-const SFX_GLOBAL_VOL = 5.0;
+const SFX_GLOBAL_VOL = BALANCE.SFX_GLOBAL_VOL;
 
 function playSfx(type='sine', freq=440, dur=0.08, vol=0.05, targetFreq=null) {
   if (!gs.settings.sound) return;
@@ -699,9 +742,10 @@ function loadGame(slot) {
         }
       });
     }
-    // mfgActive / fuelInjection 복원
+    // mfgActive / fuelInjection / fuelInjecting 복원
     gs.mfgActive = (saved.mfgActive && typeof saved.mfgActive === 'object') ? saved.mfgActive : {};
     gs.fuelInjection = saved.fuelInjection || 0;
+    gs.fuelInjecting = !!saved.fuelInjecting;
 
     // Worker system
     gs.workers = saved.workers || 1;
@@ -712,7 +756,11 @@ function loadGame(slot) {
     gs.moonstone = saved.moonstone || 0;
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
+    // drill(알루미늄 가공) 삭제 마이그레이션 — 기존 세이브 호환
+    delete gs.upgrades['drill'];
+    if (gs.researchProgress) delete gs.researchProgress['drill'];
     gs.researchProgress = saved.researchProgress || {};
+    gs.researchPaused = saved.researchPaused || {};
     gs.researchQueue = Array.isArray(saved.researchQueue) ? saved.researchQueue : [];
     // researchProgress 마이그레이션: timeSpent 없으면 추론
     if (gs.researchProgress) {
@@ -733,8 +781,20 @@ function loadGame(slot) {
     if (!gs.opsRoles) gs.opsRoles = { sales: 0, accounting: 0, consulting: 0 };
     // 시민 수 마이그레이션 (P8-4)
     gs.citizens = saved.citizens !== undefined ? saved.citizens : 0;
+    // 누적 분양 횟수 마이그레이션 — 없으면 현재 시민 수로 초기화
+    gs.citizenRecruits = saved.citizenRecruits !== undefined ? saved.citizenRecruits : (gs.citizens || 0);
     // 전문가 마이그레이션 (P8-5)
     gs.specialists = saved.specialists || {};
+    // 시민/직원 분리 마이그레이션 — 기존 세이브에서 citizens은 총 인원이었음
+    // 새 모델: citizens = 유휴 시민만. 기존 세이브는 _citizenModelV2 플래그 없음
+    if (!saved._citizenModelV2) {
+      const assignedSum = Object.values(gs.assignments || {}).reduce((a, b) => a + b, 0);
+      const specSum = !gs.specialists ? 0
+        : Object.values(gs.specialists).reduce((sum, bldSpecs) =>
+            sum + Object.values(bldSpecs).reduce((a, b) => a + b, 0), 0);
+      gs.citizens = Math.max(0, (gs.citizens || 0) - assignedSum - specSum);
+      gs._citizenModelV2 = true;
+    }
     // 기존 ops_center 배치 인원을 역할로 분배 (마이그레이션)
     if (gs.assignments && gs.assignments.ops_center &&
         gs.opsRoles.sales === 0 && gs.opsRoles.accounting === 0 && gs.opsRoles.consulting === 0) {
@@ -742,8 +802,10 @@ function loadGame(slot) {
       gs.opsRoles.sales = total; // 기존 배치는 전부 영업팀으로 이관
     }
 
-    gs.assembly = saved.assembly || { selectedQuality:'proto', selectedClass:'nano', jobs:[] };
-    if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
+    gs.assembly = saved.assembly || { selectedQuality:'proto', selectedClass:'vega', jobs:[] };
+    if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'vega';
+    // 구 nano→vega 마이그레이션
+    if (gs.assembly.selectedClass === 'nano') gs.assembly.selectedClass = 'vega';
     gs.settings = saved.settings || { sound: true, lang: 'en' };
     if (gs.settings.lang === undefined) gs.settings.lang = 'en';
     gs.lastTick = saved.lastTick || Date.now();
@@ -758,7 +820,17 @@ function loadGame(slot) {
     gs.msUpgrades = saved.msUpgrades || {};
     gs.autoEnabled = saved.autoEnabled || {};
     gs.milestones  = saved.milestones  || {};
+    // 마일스톤 마이그레이션: 기존 true → 'claimed' (이미 보상 적용된 상태)
+    Object.keys(gs.milestones).forEach(mid => {
+      if (gs.milestones[mid] === true) gs.milestones[mid] = 'claimed';
+    });
     gs.achievements = saved.achievements || {};         // P4-2
+    // 업적 마이그레이션: claimed 필드 없는 기존 업적은 이미 보상 지급된 것으로 처리
+    Object.keys(gs.achievements).forEach(aid => {
+      if (gs.achievements[aid] && gs.achievements[aid].claimed === undefined) {
+        gs.achievements[aid].claimed = true;
+      }
+    });
     gs.prestigeStars = saved.prestigeStars || {};       // P4-3
     gs.prestigeCount = saved.prestigeCount || 0;        // P4-3
 
@@ -850,7 +922,7 @@ function loadGame(slot) {
 function calcOffline() {
   const now = Date.now();
   const rawElapsed = (now - gs.lastTick) / 1000;
-  const elapsed = Math.min(rawElapsed, 8 * 3600);
+  const elapsed = Math.min(rawElapsed, BALANCE.OFFLINE.maxSeconds);
   if (elapsed < 5) { gs.lastTick = now; return; }
 
   const prod = getProduction();
@@ -906,8 +978,8 @@ function calcOffline() {
     }
   });
 
-  // 오프라인 보고서 표시 (1분 이상 오프라인 시)
-  if (elapsed >= 60) {
+  // 오프라인 보고서 표시
+  if (elapsed >= BALANCE.OFFLINE.reportThreshold) {
     setTimeout(() => _showOfflineReport(report), 500);
   } else {
     const secs = Math.floor(elapsed % 60);
@@ -1005,15 +1077,19 @@ function startResearch(uid) {
   if (upg.req && !gs.upgrades[upg.req]) { notify('선행 연구 필요', 'red'); return; }
 
   const activeIds = Object.keys(gs.researchProgress || {});
+  const hasPaused = gs.researchPaused && gs.researchPaused[uid];
   if (activeIds.length === 0) {
-    // 즉시 시작 — 비RP 자원 즉시 차감
-    const nonRpCost = {};
-    Object.entries(upg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
-    if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) { notify('자원 부족', 'red'); return; }
-    if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
+    // 즉시 시작 — 일시정지 재개 시 비RP 자원 재차감 없음
+    if (!hasPaused) {
+      const nonRpCost = {};
+      Object.entries(upg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
+      if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) { notify('자원 부족', 'red'); return; }
+      if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
+    }
     if (!gs.researchProgress) gs.researchProgress = {};
-    gs.researchProgress[uid] = { rpSpent: 0 };
-    notify(`${upg.icon} ${upg.name} 연구 시작`);
+    gs.researchProgress[uid] = hasPaused ? gs.researchPaused[uid] : { rpSpent: 0 };
+    if (hasPaused) delete gs.researchPaused[uid];
+    notify(`${upg.icon} ${upg.name} ${hasPaused ? '연구 재개' : '연구 시작'}`);
   } else {
     // 예약 큐에 추가 (최대 3개)
     if (gs.researchQueue.length >= 3) { notify('예약 슬롯이 가득 찼습니다 (최대 3개)', 'amber'); return; }
@@ -1022,6 +1098,35 @@ function startResearch(uid) {
   }
   playSfx('sine', 520, 0.06, 0.02);
   renderAll();
+}
+
+/** 예약 큐에서 다음 연구 자동 시작 (취소/완료 시 공용) */
+function _startNextQueued() {
+  if (!gs.researchQueue) gs.researchQueue = [];
+  while (gs.researchQueue.length > 0) {
+    const nextUid = gs.researchQueue.shift();
+    const nextUpg = UPGRADES.find(u => u.id === nextUid);
+    if (!nextUpg || gs.upgrades[nextUid]) continue;
+    if (nextUpg.req && !gs.upgrades[nextUpg.req]) {
+      notify(`${nextUpg.icon} ${nextUpg.name} 선행 연구 미완료 — 예약 취소`, 'red');
+      continue;
+    }
+    const hasPaused = gs.researchPaused && gs.researchPaused[nextUid];
+    if (!hasPaused) {
+      const nonRpCost = {};
+      Object.entries(nextUpg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
+      if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) {
+        notify(`${nextUpg.icon} ${nextUpg.name} 자원 부족 — 예약 취소`, 'red');
+        continue;
+      }
+      if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
+    }
+    if (!gs.researchProgress) gs.researchProgress = {};
+    gs.researchProgress[nextUid] = hasPaused ? gs.researchPaused[nextUid] : { rpSpent: 0 };
+    if (hasPaused) delete gs.researchPaused[nextUid];
+    notify(`${nextUpg.icon} ${nextUpg.name} ${hasPaused ? '예약 → 연구 재개' : '예약 → 연구 시작'}`, 'green');
+    break;
+  }
 }
 
 /** 연구 완료 처리 (내부 호출) — 완료 후 예약 큐에서 다음 연구 자동 시작 */
@@ -1038,28 +1143,7 @@ function _completeResearch(uid) {
   playSfx('triangle', 440, 0.09, 0.025, 660);
   setTimeout(() => playSfx('triangle', 660, 0.08, 0.022, 880), 130);
   setTimeout(() => playSfx('triangle', 880, 0.07, 0.02, 1100), 260);
-  // 예약 큐에서 다음 연구 자동 시작
-  if (!gs.researchQueue) gs.researchQueue = [];
-  while (gs.researchQueue.length > 0) {
-    const nextUid = gs.researchQueue.shift();
-    const nextUpg = UPGRADES.find(u => u.id === nextUid);
-    if (!nextUpg || gs.upgrades[nextUid]) continue; // 이미 완료됐으면 skip
-    if (nextUpg.req && !gs.upgrades[nextUpg.req]) {
-      notify(`${nextUpg.icon} ${nextUpg.name} 선행 연구 미완료 — 예약 취소`, 'red');
-      continue;
-    }
-    const nonRpCost = {};
-    Object.entries(nextUpg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
-    if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) {
-      notify(`${nextUpg.icon} ${nextUpg.name} 자원 부족 — 예약 취소`, 'red');
-      continue;
-    }
-    if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
-    if (!gs.researchProgress) gs.researchProgress = {};
-    gs.researchProgress[nextUid] = { rpSpent: 0 };
-    notify(`${nextUpg.icon} ${nextUpg.name} 예약 → 연구 시작`, 'green');
-    break; // 1개만 시작
-  }
+  _startNextQueued();
 }
 
 /** tick마다 호출 — 시간 기반 연구 진행 (dt: 경과 시간, 초 단위) */
@@ -1182,11 +1266,11 @@ const RES_CAP_COOLDOWN = 10000; // 10초 쿨다운
 
 function tick() {
   const now = Date.now();
-  const dt = Math.min((now - gs.lastTick) / 1000, 1);
+  const dt = Math.min((now - gs.lastTick) / 1000, BALANCE.TICK.maxDt);
   gs.lastTick = now;
-  if (dt < 0.001) return;  // 너무 짧은 tick 방지 (calcOffline 직후)
+  if (dt < BALANCE.TICK.minDt) return;
   const prod = getProduction();
-  const RES_MAX = { money:1e12, iron:5e7, copper:2e7, fuel:2e7, electronics:1e7, research:50000 };
+  const RES_MAX = BALANCE.RES_MAX;
   RESOURCES.forEach(r => { gs.res[r.id] = Math.max(0, (gs.res[r.id] || 0) + prod[r.id] * dt); });
   // 자원 한도 도달 경고음 (생산 중인 자원이 한도에 근접/도달 시)
   if (now - _resCap_lastSfx > RES_CAP_COOLDOWN) {
@@ -1202,6 +1286,7 @@ function tick() {
     }
   }
   tickResearch(dt);  // 시간 기반 연구 진행
+  tickFuelInjection(dt); // 연료 주입 진행
   updateMfgJobs(now); // 제작 공정 진행
   updateAssemblyJobs(now);
   if (typeof checkAutoUnlocks === 'function') checkAutoUnlocks();

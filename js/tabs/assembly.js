@@ -1,6 +1,6 @@
 // ============================================================
 //  ASSEMBLY TAB — Sprint 3 (P3-1~P3-4)
-//  3-column layout, rocket class system, BOM, 7-stage progress
+//  3-column layout: LEFT(parts+slots) CENTER(rocket+BOM) RIGHT(class+specs+quality)
 // ============================================================
 
 // ── 조립 스테이지 ASCII 아트 (mockups/ascii-art/assembly/) ──
@@ -107,8 +107,8 @@ const STAGE_ASCII_ART = {
 };
 
 
-// ── 선택된 로켓 클래스 (기본: nano) ──
-if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
+// ── 선택된 로켓 클래스 (기본: vega) ──
+if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'vega';
 
 function selectRocketClass(classId) {
   const rc = ROCKET_CLASSES.find(c => c.id === classId);
@@ -156,6 +156,8 @@ function abortAssembly() {
 function craftPart(pid) { craftPartCycle(pid); }
 
 function selectQuality(qid) {
+  const q = QUALITIES.find(x => x.id === qid);
+  if (q && q.locked) { notify('이 품질등급은 아직 잠겨 있습니다', 'red'); return; }
   gs.assembly.selectedQuality = qid;
   playSfx('triangle', 400, 0.04, 0.02, 500);
   renderAssemblyTab();
@@ -174,7 +176,7 @@ function startAssembly(slotIdx) {
   const now = Date.now();
   gs.assembly.jobs[slotIdx] = {
     qualityId: q.id,
-    rocketClass: gs.assembly.selectedClass || 'nano',
+    rocketClass: gs.assembly.selectedClass || 'vega',
     startAt: now,
     endAt: now + q.timeSec * 1000
       * (typeof getAddonTimeMult === 'function' ? getAddonTimeMult() : 1)
@@ -293,23 +295,46 @@ function _renderMk1Parts() {
 </div>`;
   });
 
-  // 연료 주입 섹션
+  // 연료 주입 섹션 (진행도 기반)
   const fuelPct = gs.fuelInjection || 0;
   const fuelBarFill  = Math.round((fuelPct / 100) * 20);
   const fuelBarEmpty = 20 - fuelBarFill;
   const fuelBarHtml  = `<span style="color:var(--amber)">${'█'.repeat(fuelBarFill)}</span><span style="color:var(--green-dim)">${'░'.repeat(fuelBarEmpty)}</span>`;
-  const fuelAfford   = canAfford({fuel:200});
-  html += `<div class="mfg-fuel-section">
+  const fuelDone     = fuelPct >= 100;
+  const injecting    = !!gs.fuelInjecting;
+  const hasFuelRes   = (gs.res.fuel || 0) >= 1;
+  const F_INJ        = BALANCE.FUEL_INJECT;
+  // 남은 시간 계산
+  const fuelRemainPct = Math.max(0, F_INJ.maxPct - fuelPct);
+  const fuelEtaSec    = injecting && F_INJ.pctPerSec > 0 ? Math.ceil(fuelRemainPct / F_INJ.pctPerSec) : 0;
+  const fuelEtaStr    = fuelEtaSec > 0 ? fmtTime(fuelEtaSec) : '';
+
+  let fuelBtnLabel, fuelBtnClass, fuelBtnDisabled;
+  if (fuelDone) {
+    fuelBtnLabel = '주입 완료';
+    fuelBtnClass = 'btn btn-sm btn-amber';
+    fuelBtnDisabled = true;
+  } else if (injecting) {
+    fuelBtnLabel = '⏸ 주입 중단';
+    fuelBtnClass = 'btn btn-sm btn-active-inject';
+    fuelBtnDisabled = false;
+  } else {
+    fuelBtnLabel = '▶ 주입 시작';
+    fuelBtnClass = 'btn btn-sm' + (hasFuelRes ? '' : ' btn-amber');
+    fuelBtnDisabled = !hasFuelRes;
+  }
+
+  html += `<div class="mfg-fuel-section${injecting ? ' mfg-fuel-active' : ''}">
   <div class="mfg-part-header">
-    <span style="color:${fuelPct >= 100 ? 'var(--amber)' : 'var(--green-mid)'}">⛽ 연료 주입</span>
-    <span style="font-size:10px;color:${fuelPct >= 100 ? 'var(--amber)' : 'var(--green-dim)'};">${fuelPct}/100%</span>
+    <span style="color:${fuelDone ? 'var(--amber)' : injecting ? 'var(--cyan)' : 'var(--green-mid)'}">⛽ 연료 주입${injecting ? ' [진행 중]' : ''}</span>
+    <span style="font-size:10px;color:${fuelDone ? 'var(--amber)' : 'var(--green-dim)'};">${fuelPct.toFixed(1)}/100%</span>
   </div>
-  <div class="mfg-bar-row">${fuelBarHtml}</div>
+  <div class="mfg-bar-row">${fuelBarHtml}${fuelEtaStr ? ` <span style="font-size:9px;margin-left:4px;color:var(--cyan)">${fuelEtaStr}</span>` : ''}</div>
   <div class="mfg-part-footer">
-    ${fuelPct < 100
-      ? `<span style="font-size:9px;color:var(--green-dim)">+10%당: LOX200</span>`
-      : `<span style="font-size:9px;color:var(--amber)">연료 탱크 가득</span>`}
-    <button class="btn btn-sm${fuelAfford && fuelPct < 100 ? '' : ' btn-amber'}" onclick="injectFuel()" ${(fuelAfford && fuelPct < 100) ? '' : 'disabled'} style="font-size:10px;padding:2px 8px">+10% 주입</button>
+    ${fuelDone
+      ? `<span style="font-size:9px;color:var(--amber)">연료 탱크 가득</span>`
+      : `<span style="font-size:9px;color:var(--green-dim)">소모: LOX ${F_INJ.fuelPerSec}/초 · +${F_INJ.pctPerSec}%/초</span>`}
+    <button class="${fuelBtnClass}" onclick="toggleFuelInjection()" ${fuelBtnDisabled ? 'disabled' : ''} style="font-size:10px;padding:2px 8px">${fuelBtnLabel}</button>
   </div>
 </div>`;
 
@@ -324,6 +349,15 @@ function _renderMk1Parts() {
   </div>
 </div>`;
 
+  // 조립 완료 시 발사 탭 이동 버튼
+  if (totalPct >= 100) {
+    html += `<div class="mfg-launch-go-wrap">
+  <button class="btn btn-full btn-launch-go" onclick="switchMainTab('launch')">
+    &#128640; 발사하러 가기
+  </button>
+</div>`;
+  }
+
   return html;
 }
 
@@ -332,14 +366,14 @@ function _renderMk1Parts() {
 // ============================================================
 function renderAssemblyTab() {
   ensureAssemblyState();
-  if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'nano';
+  if (!gs.assembly.selectedClass) gs.assembly.selectedClass = 'vega';
   const pd = gs.parts;
   const selClass = gs.assembly.selectedClass;
   const rc = (typeof ROCKET_CLASSES !== 'undefined')
     ? ROCKET_CLASSES.find(c => c.id === selClass) || ROCKET_CLASSES[0]
     : null;
 
-  // ── LEFT COLUMN ──
+  // ── RIGHT COLUMN (class/specs/quality) ──
 
   // 1. Rocket class selection grid
   const classGrid = document.getElementById('asm-class-grid');
@@ -364,8 +398,9 @@ function renderAssemblyTab() {
   if (specsEl && rc) {
     specsEl.innerHTML = `
       <div style="font-size:13px;letter-spacing:2px;color:var(--green);text-shadow:var(--glow-strong);margin-bottom:4px;">
-        ${rc.icon} ${rc.name} CLASS
+        ${rc.icon} ${rc.nameEn || rc.name}
       </div>
+      <div style="font-size:10px;color:var(--green-dim);margin-bottom:2px;">${rc.name}</div>
       <div style="font-size:10px;color:var(--green-mid);margin-bottom:6px;">${rc.desc}</div>
       <hr class="asm-specs-divider">
       <div class="asm-specs-row"><span>총 중량</span><span class="val">${rc.totalMassKg.toLocaleString()} kg</span></div>
@@ -381,7 +416,10 @@ function renderAssemblyTab() {
   let qualHtml = '';
   QUALITIES.forEach(q => {
     const active = gs.assembly.selectedQuality === q.id;
-    qualHtml += `<button class="btn q-btn${active ? ' selected' : ''}" onclick="selectQuality('${q.id}')">${q.icon} ${q.name}</button>`;
+    const locked = q.locked;
+    qualHtml += `<button class="btn q-btn${active ? ' selected' : ''}${locked ? ' locked' : ''}" onclick="selectQuality('${q.id}')" ${locked ? 'disabled' : ''}>
+      ${q.icon} ${q.name}${locked ? ' <span class="lock-icon">[LOCKED]</span>' : ''}
+    </button>`;
   });
   let qualSel = document.getElementById('quality-selector');
   if (qualSel) qualSel.innerHTML = qualHtml;
@@ -481,8 +519,9 @@ function renderAssemblyTab() {
   qualHtml = '';
   QUALITIES.forEach(q => {
     const active = gs.assembly.selectedQuality === q.id;
-    const subLabel = `${fmtTime(q.timeSec)} · x${q.costMult} 비용`;
-    qualHtml += `<button class="btn q-btn${active ? ' selected' : ''}" data-qid="${q.id}" onclick="selectQuality('${q.id}')">
+    const locked = q.locked;
+    const subLabel = locked ? '[LOCKED]' : `${fmtTime(q.timeSec)} · x${q.costMult} 비용`;
+    qualHtml += `<button class="btn q-btn${active ? ' selected' : ''}${locked ? ' locked' : ''}" data-qid="${q.id}" onclick="selectQuality('${q.id}')" ${locked ? 'disabled' : ''}>
       <span class="q-btn-label q-lbl-${q.id}">${q.icon} ${q.name}</span>
       <span class="q-btn-sub">${subLabel}</span>
     </button>`;
@@ -490,7 +529,7 @@ function renderAssemblyTab() {
   qualSel = document.getElementById('quality-selector');
   if (qualSel) qualSel.innerHTML = qualHtml;
 
-  // ── RIGHT COLUMN ──
+  // ── LEFT COLUMN (parts + assembly slots) ──
 
   // 9. Assembly slots
   let slotsHtml = '';
@@ -589,7 +628,7 @@ function renderAssemblyStageProgress() {
   // 현재 기체 이름
   const q = getQuality(gs.assembly.selectedQuality);
   const rc = (typeof ROCKET_CLASSES !== 'undefined')
-    ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'nano'))
+    ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'vega'))
     : null;
   const vehicleName = rc ? `${rc.name} — ${q.name}` : q.name;
 
