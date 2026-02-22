@@ -7,7 +7,7 @@ function renderRocketTab() {
   if (!innerEl) return;
 
   const parts       = gs.parts || {};
-  const builtParts  = PARTS.filter(p => (parts[p.id] || 0) > 0).length;
+  const builtParts  = PARTS.filter(p => (parts[p.id] || 0) >= p.cycles).length;
   const totalParts  = PARTS.length;
   const researchDone  = Object.keys(gs.upgrades || {}).filter(k => gs.upgrades[k]).length;
   const researchTotal = UPGRADES.length;
@@ -123,7 +123,7 @@ function renderRocketTab() {
     <div class="rc-stat-row"><span class="rc-sl">총 발사</span><span class="rc-sv">${launchCount}회</span></div>
     <div class="rc-stat-row"><span class="rc-sl">연구 완료</span><span class="rc-sv">${researchDone}종</span></div>
     <div class="rc-stat-row"><span class="rc-sl">건물 수</span><span class="rc-sv">${bldTotal}동</span></div>
-    <div class="rc-stat-row"><span class="rc-sl">배치 인원</span><span class="rc-sv">${getTotalAssigned()}/${gs.workers || 1}명</span></div>
+    <div class="rc-stat-row"><span class="rc-sl">전체 인원</span><span class="rc-sv">${getTotalWorkers()}명 (직원 ${getTotalAssigned()})</span></div>
   </div>
 
 </div>`;

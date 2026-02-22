@@ -42,7 +42,7 @@ function buyAutoUpgrade(id) {
 
   // 즉시 효과 — ms_quick_workers / ms_early_boost
   if (id === 'ms_quick_workers') {
-    gs.workers = (gs.workers || 1) + 1;
+    gs.citizens = (gs.citizens || 0) + 1;
     if (typeof syncWorkerDots === 'function') syncWorkerDots();
   }
   if (id === 'ms_early_boost') {
@@ -87,7 +87,6 @@ function runAutomation() {
       const { b, cost } = affordable[0];
       spend(cost);
       gs.buildings[b.id] = (gs.buildings[b.id] || 0) + 1;
-      gs.workers = (gs.workers || 1) + 1;
       if (typeof syncWorkerDots === 'function') syncWorkerDots();
       notify(`[AUTO] ${b.icon} ${b.name} 자동 건설`, 'amber');
       if (typeof _triggerBuildAnim === 'function') _triggerBuildAnim(b.id);
@@ -107,7 +106,6 @@ function runAutomation() {
         spend(nextUpg.cost);
         if (!gs.bldUpgrades) gs.bldUpgrades = {};
         gs.bldUpgrades[nextUpg.id] = true;
-        if (nextUpg.wkr) gs.workers = (gs.workers || 1) + nextUpg.wkr;
         notify(`[AUTO] 주거 시설 업그레이드: ${nextUpg.name}`, 'amber');
       }
     }
@@ -132,11 +130,12 @@ function runAutomation() {
           if (extra > 0) {
             if (!gs.assignments) gs.assignments = {};
             gs.assignments[b.id] = current + extra;
+            gs.citizens = Math.max(0, (gs.citizens || 0) - extra);
             distributed += extra;
           }
         });
         // 남은 인원은 첫 번째 여유 있는 생산 건물에 배치
-        const leftover = avail - distributed;
+        const leftover = getAvailableWorkers();
         if (leftover > 0) {
           const firstBld = builtBlds.find(b => {
             const cnt = gs.buildings[b.id] || 0;
@@ -150,6 +149,7 @@ function runAutomation() {
             if (canAdd > 0) {
               if (!gs.assignments) gs.assignments = {};
               gs.assignments[firstBld.id] = curAssign + canAdd;
+              gs.citizens = Math.max(0, (gs.citizens || 0) - canAdd);
             }
           }
         }
@@ -217,21 +217,17 @@ function runAutomation() {
   };
   Object.entries(AUTO_PART_MAP).forEach(([autoId, partId]) => {
     if (!isAutoOn(autoId)) return;
-    if (gs.parts && gs.parts[partId]) return; // 이미 있음
     const part = PARTS.find(p => p.id === partId);
     if (!part) return;
-    const cost = getPartCost(part);
-    if (!canAfford(cost)) return;
-    spend(cost);
-    if (!gs.parts) gs.parts = {};
-    gs.parts[partId] = 1;
-    notify(`[AUTO] ${part.icon} ${part.name} 자동 제작`, 'amber');
+    if ((gs.parts[partId] || 0) >= part.cycles) return; // 공정 완료
+    if (gs.mfgActive && gs.mfgActive[partId]) return;   // 이미 공정 진행 중
+    craftPartCycle(partId);
   });
 
   // auto_assemble: 빈 슬롯 + 모든 파트 준비 시 자동 조립 시작
   if (isAutoOn('auto_assemble')) {
     ensureAssemblyState();
-    const allPartsReady = PARTS.every(p => gs.parts && gs.parts[p.id]);
+    const allPartsReady = _getRequiredParts().every(p => (gs.parts[p.id] || 0) >= p.cycles);
     if (allPartsReady) {
       const slots = getAssemblySlots();
       for (let i = 0; i < slots; i++) {

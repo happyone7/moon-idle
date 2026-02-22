@@ -367,7 +367,7 @@ function _checkAchievementCondition(condKey) {
       return typeof isPhaseComplete === 'function' && isPhaseComplete('phase_2');
     case 'bom_all_parts_ready':
       return typeof PARTS !== 'undefined' && typeof _getRequiredParts === 'function'
-        && _getRequiredParts().every(p => gs.parts && gs.parts[p.id]);
+        && _getRequiredParts().every(p => (gs.parts[p.id] || 0) >= p.cycles);
     case 'launches_gte_1': return (gs.launches || 0) >= 1;
     case 'launch_success_gte_5': return successCount >= 5;
     case 'max_altitude_gte_100': return maxAlt >= 100;

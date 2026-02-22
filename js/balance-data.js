@@ -423,7 +423,7 @@ const MILESTONES = [
     icon: '[◆5]',
     desc: '5종 로켓 부품 전부 제작',
     reward: '조립 시간 -10% 영구',
-    check: gs => typeof PARTS !== 'undefined' && PARTS.every(p => gs.parts && gs.parts[p.id]),
+    check: gs => typeof PARTS !== 'undefined' && PARTS.every(p => (gs.parts[p.id] || 0) >= p.cycles),
   },
   {
     id:   'orbit_200',

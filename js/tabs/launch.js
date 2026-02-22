@@ -395,16 +395,18 @@ function _lcRocketArtHtml() {
   let inProgressJob = null;
   jobs.forEach(j => { if (j && !j.ready && j.endAt && !inProgressJob) inProgressJob = j; });
 
-  // 4단계 색상: 완성=밝은녹색, 조립중=노란색, 파트보유=주황색, 미획득=어두운주황
+  // 4단계 색상: 완성=밝은녹색, 조립중=노란색, 공정완료=주황색, 진행중=어두운주황, 미획득=더어두운주황
   const col = (key) => {
     if (readyJob)      return '#00e676';  // 완성 — 밝은 녹색
     if (inProgressJob) return '#ffd700';  // 조립 진행 중 — 노란색
-    if (p[key])        return '#ff9000';  // 파트 보유(미조립) — 주황색
-    return '#b06800';                     // 미획득 — 주황 (윤곽 명확하게 보임)
+    const pt = PARTS.find(x => x.id === key);
+    if (pt && (p[key] || 0) >= pt.cycles) return '#ff9000';  // 공정 완료 — 주황색
+    if (p[key])        return '#b06800';  // 진행 중(미완료) — 어두운 주황
+    return '#663300';                     // 미획득 — 가장 어두운 주황
   };
 
   const reqParts   = _getRequiredParts();
-  const partsDone  = reqParts.filter(pt => p[pt.id]).length;
+  const partsDone  = reqParts.filter(pt => (p[pt.id] || 0) >= pt.cycles).length;
   const partsPct   = Math.round((partsDone / reqParts.length) * 100);
 
   let asmPct = 0;
@@ -508,16 +510,16 @@ function renderLaunchTab() {
 
   // 프리론치 단계 바 — PROD(0)→ASSY(1)→FUEL(2)→T-MINUS(3)
   const hasProdSetup = Object.keys(gs.buildings).some(k => k !== 'housing' && (gs.buildings[k] || 0) >= 1);
-  const anyPart      = PARTS.some(pt => (gs.parts[pt.id] || 0) > 0);
+  const allPartsDone = _getRequiredParts().every(pt => (gs.parts[pt.id] || 0) >= pt.cycles);
   if (allGo)             _setLcStage(3); // T-MINUS active (0-2 done)
-  else if (anyPart)      _setLcStage(2); // FUEL active — 부품 하나라도 있으면 ASSY 완료
+  else if (allPartsDone) _setLcStage(2); // FUEL active — 모든 부품 공정 완료
   else if (hasProdSetup) _setLcStage(1); // ASSY active (0 done)
   else                   _setLcStage(0); // PROD active
 
   // 프리-플라이트 체크리스트 + 완성도 표시
   const p2 = gs.parts || {};
   const reqParts2 = _getRequiredParts();
-  const pdone = reqParts2.filter(pt => p2[pt.id]).length;
+  const pdone = reqParts2.filter(pt => (p2[pt.id] || 0) >= pt.cycles).length;
   const items = [
     { done: hasProdSetup,               label: `생산 가동`,  short: '생산가동'  },
     { done: pdone === reqParts2.length,  label: `부품 조달 (${pdone}/${reqParts2.length})`, short: '부품조달' },
@@ -566,7 +568,7 @@ function renderLaunchTab() {
     const jobs2     = (gs.assembly && gs.assembly.jobs) || [];
     const now2      = Date.now();
     const reqParts3 = _getRequiredParts();
-    const partsDone = reqParts3.filter(pt => p3[pt.id]).length;
+    const partsDone = reqParts3.filter(pt => (p3[pt.id] || 0) >= pt.cycles).length;
     const partsPct  = Math.round((partsDone / reqParts3.length) * 100);
     let asmPct = 0;
     const readyJob2  = jobs2.find(j => j && j.ready);

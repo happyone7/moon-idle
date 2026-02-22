@@ -4,20 +4,22 @@ function withdrawAllWorkers() {
   if (!gs.assignments) return;
   const was = getTotalAssigned();
   if (was === 0) { notify('배치된 인원이 없습니다', 'amber'); return; }
+  gs.citizens = (gs.citizens || 0) + was;
   Object.keys(gs.assignments).forEach(k => { gs.assignments[k] = 0; });
-  notify(`// 전체 인원 철수 완료 (${was}명 회수)`, 'amber');
+  notify(`// 전체 직원 철수 → 시민 복귀 (${was}명)`, 'amber');
   playSfx('triangle', 440, 0.12, 0.03, 220);
   renderAll();
 }
 
 function quickAssign(bid) {
   const avail = getAvailableWorkers();
-  if (avail <= 0) { notify('여유 인원 없음', 'amber'); return; }
+  if (avail <= 0) { notify('여유 시민 없음', 'amber'); return; }
   const slotCap = (gs.buildings[bid] || 0) + ((gs.bldSlotLevels && gs.bldSlotLevels[bid]) || 0);
   const assigned = (gs.assignments && gs.assignments[bid]) || 0;
   if (assigned >= slotCap) { notify(`슬롯 수용 한도 초과 (${slotCap})`, 'amber'); return; }
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bid] = assigned + 1;
+  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
   playSfx('triangle', 300, 0.04, 0.02, 400);
   renderAll();
 }
@@ -27,6 +29,7 @@ function quickUnassign(bid) {
   if (assigned <= 0) return;
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bid] = assigned - 1;
+  gs.citizens = (gs.citizens || 0) + 1;
   playSfx('triangle', 400, 0.04, 0.02, 300);
   renderAll();
 }
@@ -45,15 +48,11 @@ function buyBuilding(bid) {
     if (typeof applyUnlocks === 'function') applyUnlocks([]);
     notify('[RSH] 연구소 건설 가능 — 연구소가 해금됐습니다', 'green');
   }
-  // 모든 건물 구매마다 워커 상한 +1
-  gs.workers = (gs.workers || 1) + 1;
   if (typeof syncWorkerDots === 'function') syncWorkerDots();
-  // P5-11: housing 구매 시 유휴 인원 안내
-  const idleAfterBuy = getAvailableWorkers();
   if (bid === 'housing') {
-    notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]}) — 배치 가능 인원 증가 — 유휴 인원: ${idleAfterBuy}명`);
+    notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]}) — 시민 분양 가능`);
   } else {
-    notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]}) — 인원 +1`);
+    notify(`${bld.icon} ${bld.name} 건설 완료 (×${gs.buildings[bid]})`);
   }
   playSfx('triangle', 360, 0.08, 0.03, 520);
   renderAll();
@@ -90,7 +89,7 @@ function renderMissionGoal() {
   if (!el) return;
 
   const parts     = gs.parts || {};
-  const builtParts = Object.values(parts).reduce((a, v) => a + (v > 0 ? 1 : 0), 0);
+  const builtParts = PARTS.filter(p => (parts[p.id] || 0) >= p.cycles).length;
   const totalParts = PARTS.length;
   const hasMine    = gs.unlocks && gs.unlocks['bld_mine'];
   const hasAssembly= gs.unlocks && gs.unlocks['tab_assembly'];
@@ -153,7 +152,7 @@ function renderProductionTab() {
     const withdrawBtn = assignedW > 0
       ? `&nbsp;<button class="blr-withdraw-btn" onclick="withdrawAllWorkers()">[ 전체 철수 ]</button>`
       : '';
-    statusEl.innerHTML = `인원: ${assignedW}/${totalW} &nbsp; 수입: +${fmtDec(totalIncome, 1)}/s${withdrawBtn}`;
+    statusEl.innerHTML = `전체 ${totalW}명 (시민 ${gs.citizens || 0} / 직원 ${assignedW}) &nbsp; 수입: +${fmtDec(totalIncome, 1)}/s${withdrawBtn}`;
   }
 
   // 튜토리얼 힌트: ops_center 미건설 시 안내
