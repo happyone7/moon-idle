@@ -173,6 +173,7 @@ grep -oP 'class="[^"]+' index.html | cut -d'"' -f2 | cut -d' ' -f1 | grep -oP '^
 - `title-` — 타이틀 화면 관련
 - `nav-` — 내비게이션 탭
 - `bld-` — 건물 리스트/카드
+- `btn-` — 버튼 변형 스타일 (`btn-amber` 등)
 - `wb-` — 월드 건물 (배경 렌더링, JS에서 동적 적용)
 - `r-panel-` — 우측 패널 (JS에서 동적 적용)
 - `rl-` — 리소스 왼쪽 패널 (JS에서 동적 적용)
@@ -183,6 +184,7 @@ grep -oP 'class="[^"]+' index.html | cut -d'"' -f2 | cut -d' ' -f1 | grep -oP '^
 - `asm-` — 조립 탭 레이아웃 컴포넌트
 - `tb-` — 상단 토픽바 (era badge, subtitle 등)
 - `lo-` — 발사 완료 화면 (launch outcome: `lo-title`, `lo-rocket`)
+- `luna-` — 루나 마스코트/버블 UI 오버레이 (`luna-bubble`, `luna-face`, `luna-eyes-row` 등)
 - `msn-` — 미션 탭 서브탭 버튼
 - `panel-` — 연구/미션 탭 공용 패널 컨테이너
 - `quality-` — 로켓 품질 선택기
@@ -368,5 +370,7 @@ body { font-family: var(--font); }
 6. **단일 사용 유틸리티 클래스** — `hidden`, `active`, `locked` 등 상태 클래스는 접두사 없어도 됨
 7. **ComfyUI 템플릿 플레이스홀더** — `__TAGS__` 등 플레이스홀더는 검증 제외
 8. **개발 중 목업** — 파일명에 `_draft`, `_wip` 포함 시 엄격한 검증 면제
-9. **아이콘 특수 케이스** — 숫자 포함 아이콘 (`[P1]`, `[S2]`, `[E4]` 등) 정상
+9. **아이콘 특수 케이스** — 숫자 포함 아이콘 (`[P1]`, `[S2]`, `[E4]` 등) 정상. 단일 문자 아이콘 (`[H]`, `[M]`, `[N]`, `[S]` 등 리소스 단축 아이콘)도 정상
 10. **일부 클래스 접두사 없음** — 전역 레이아웃 클래스(`body`, `html`, `*`)는 접두사 불필요
+11. **per-element 테마 색상 (하드코딩)** — `.wk-*` 워커 아이콘 색상, `.wb-state-*` 건물 상태 색상, `.luna-*` 마스코트 UI 색상 등 CSS 토큰으로 추상화하기 어려운 개별 요소의 테마 색상은 허용 (의도적 설계)
+12. **컨셉 아트/타이틀 목업 파일** — `concept_v*.html`, `title_screen_*.html` 등 스탠드얼론 컨셉 아트 파일은 독립적인 스타일시트를 가지므로 CSS 변수 미사용 및 대체 폰트 허용

@@ -58,8 +58,9 @@ grep -n "let gs = {" js/game-state.js
   - `res`, `buildings`, `parts`, `assembly`, `upgrades`, `milestones`, `unlocks`, `settings`, `saveVersion`
   - `workers`, `assignments` (인원 시스템)
   - `launches`, `moonstone`, `history` (발사 기록)
-  - `researchProgress`, `selectedTech` (시간 기반 연구 시스템, Sprint 8)
-  - `opsRoles`, `citizens`, `specialists` (역할/시민/전문화 시스템, Sprint 8)
+  - `researchProgress`, `selectedTech`, `researchQueue` (연구 시스템)
+  - `opsRoles`, `citizens`, `specialists` (역할/시민/전문화 시스템)
+  - `mfgActive`, `fuelInjection` (공정 기반 제작 + 연료 주입, Sprint 8)
 
 **FAIL 시 조치:**
 - 누락된 속성을 `gs` 초기값에 추가
@@ -102,42 +103,60 @@ grep -n "const BUILDINGS = \[" js/game-data.js
 { id:'mine', name:'철광석 채굴기', icon:'[MIN]', produces:'iron', baseRate:20, baseCost:{money:2000}, wbClass:'wb-mine' }
 ```
 
-### Step 2b: 파츠 정의 일관성
+### Step 2b: 파츠 정의 일관성 (공정 기반 시스템, Sprint 8+)
 
 ```bash
-grep -n "const PARTS = \[" js/game-data.js
+grep -n "id:" js/game-data.js | grep -A 0 "hull\|engine\|propellant\|pump_chamber"
 ```
 
-**PASS 기준:**
-- 정확히 5개 파츠: `engine`, `fueltank`, `control`, `hull`, `payload`
-- 각 파츠는 `id`, `name`, `icon`, `cost` 속성 보유
-- `cost` 객체는 `metal`, `fuel`, `electronics` 중 1개 이상 포함
+**PASS 기준 (공정 기반 제작 시스템):**
+- MK1 파츠 3종: `hull` (동체), `engine` (엔진), `propellant` (추진체)
+- MK2+ 전용 파츠 1종: `pump_chamber` (펌프/연소실, `minQuality:'standard'`)
+- 각 파츠는 `id`, `name`, `icon`, `cycles`, `cycleTime`, `cost` 속성 보유
+- `cost` (cycleCost) 객체는 `iron`, `copper`, `fuel` 중 1개 이상 포함
 
-### Step 2c: 업그레이드 unlocks 일관성
+**이전 파츠 구조 (`engine`, `fueltank`, `control`, `hull`, `payload`) 는 완전 교체됨 — 잔존 시 FAIL**
+
+```bash
+grep -n "fueltank\|payload\|control" js/game-data.js
+```
+**PASS 기준:** 위 명령어 결과에서 PARTS 배열 내 항목으로 등장하지 않아야 함 (AUTOMATION_UPGRADES의 `auto_parts_*` 레거시 참조는 예외)
+
+### Step 2c: 업그레이드 시스템 일관성
+
+#### Step 2c-1: RESEARCH_BRANCHES unlocks 키 확인
 
 ```bash
 grep -n "unlocks:" js/game-data.js | head -20
 ```
 
-**검사:** 업그레이드의 `unlocks` 배열에 나열된 키가 `gs.unlocks`에 정의되어 있는지 확인합니다.
-
-**방법:**
-1. `js/game-data.js`에서 모든 `unlocks: [...]` 배열 추출
-2. `js/game-state.js`의 `gs.unlocks` 객체와 비교
-3. `unlocks` 배열의 모든 키가 `gs.unlocks`에 존재해야 함
+**검사:** `RESEARCH_BRANCHES` 항목의 `unlocks` 배열 키가 `gs.unlocks`에 정의되어 있는지 확인합니다.
 
 **PASS 기준:** 모든 unlocks 키가 `gs.unlocks`에 정의됨
 
+#### Step 2c-2: BUILDING_UPGRADES 구조 확인 (Sprint 8+)
+
+```bash
+grep -n "const BUILDING_UPGRADES" js/game-data.js
+```
+
+**PASS 기준:** `BUILDING_UPGRADES`는 건물 ID를 키로 하는 **객체** (배열 아님)
+- 각 업그레이드 항목은 `id`, `name`, `cost`, `desc` 속성 보유
+- `repeatable:true` 항목은 `costScale` 속성도 보유
+- `premium:true` 항목은 선행 조건 `req:` 속성 보유
+- `mult:` 값이 있는 경우 1.05~3.0 범위 권장
+
+```bash
+grep -n "mult:" js/game-data.js | grep -v "auto_\|moonstone" | head -20
+```
+
 **FAIL 예시:**
 ```javascript
-// game-data.js
-{ id:'basic_prod', unlocks:['bld_mine', 'bld_quarry'] } // 'bld_quarry'는 gs.unlocks에 없음
+// FAIL — mult 값이 과도함
+{ id:'ops_super', mult:10.0 }
 
-// game-state.js
-unlocks: {
-  bld_mine: false,
-  // bld_quarry 정의 누락
-}
+// FAIL — BUILDING_UPGRADES가 배열인 경우 (예전 구조)
+const BUILDING_UPGRADES = [ ... ]
 ```
 
 ---
@@ -189,30 +208,37 @@ if (activeTab === 'factory') renderFactoryTab(); // 'factory' 탭은 gs.unlocks.
 3. 고급 건물(solar_array, launch_pad)이 가장 비싸야 함
 
 **PASS 기준:**
-- `housing` (150) < `ops_center` (800) < `mine` (2000) < ... < `launch_pad` (100000)
-- 건물 비용이 대략 1.5~2.5배씩 증가
+- `housing` ($200) < `ops_center` ($300) < `mine` ($800) < `extractor` ($6,000) < ... < `launch_pad` ($120,000)
+- 건물 비용이 대략 2~5배씩 증가 (초기 저렴 → 후반 급격히 증가)
 
 **위반 예시:**
 ```javascript
 // FAIL — mine이 ops_center보다 저렴함 (밸런싱 문제)
-{ id:'ops_center', baseCost:{metal:800} },
-{ id:'mine', baseCost:{money:500} }, // 너무 저렴
+{ id:'ops_center', baseCost:{money:800} },
+{ id:'mine', baseCost:{money:300} }, // 너무 저렴
 ```
 
 ### Step 4b: 업그레이드 배수 검증
 
 ```bash
-grep -n "mult:" js/game-data.js | head -20
+grep -n "mult:" js/game-data.js | head -30
 ```
 
-**PASS 기준:**
-- 건물 업그레이드의 `mult` 값은 1.2~2.0 범위
-- 3단계 업그레이드 체인이 있는 경우 누적 배수가 3~5배
+**PASS 기준 (2가지 업그레이드 유형 구분):**
+
+| 유형 | 속성 | mult 범위 | 설계 의도 |
+|------|------|-----------|-----------|
+| repeatable | `repeatable:true, costScale:X` | 1.05~1.10 | 누적 복리 설계 (여러 번 구매할수록 효과 누적) |
+| premium (★) | `premium:true, req:'...'` | 2.0~3.0 | 마일스톤 단일 대형 부스트 |
+| addon 일회성 | (repeatable/premium 없음) | 1.3~1.8 | 애드온 건물 전용 단계별 업그레이드 |
 
 **위반 예시:**
 ```javascript
-// FAIL — mult 값이 너무 큼 (밸런싱 문제)
-{ id:'mine_super', mult:10.0 } // 10배는 과도함
+// FAIL — mult 값이 과도함 (어떤 유형에도 해당 없음)
+{ id:'mine_super', mult:10.0 }
+
+// FAIL — repeatable인데 mult가 너무 큼 (nuance 소실)
+{ id:'ops_sales', repeatable:true, mult:2.0 }
 ```
 
 ---
@@ -234,13 +260,21 @@ comm -23 /tmp/building_ids.txt /tmp/gs_keys.txt
 **FAIL 시 조치:**
 - 누락된 건물 ID를 `gs.buildings` 초기값에 추가 (값: 0)
 
-### Step 5a: 파츠 일관성
+### Step 5a: 파츠 일관성 (공정 기반 시스템)
 
 ```bash
 grep -n "parts:" js/game-state.js
 ```
 
-**PASS 기준:** `gs.parts` 초기값이 `PARTS` 배열의 모든 `id`를 포함 (값: 0)
+**PASS 기준:** `gs.parts` 초기값이 다음 4개 키를 포함해야 합니다 (값: 0):
+- `hull`, `engine`, `propellant`, `pump_chamber`
+
+**이전 파츠 키 (`fueltank`, `control`, `payload`) 잔존 시 FAIL** — 마이그레이션 누락 의미
+
+```bash
+grep -n "fueltank\|payload\|control" js/game-state.js
+```
+**PASS 기준:** `gs.parts` 초기값에서 이 키들이 없어야 함 (조립 완료 이력 등 다른 컨텍스트에는 허용)
 
 ### Step 5b: gs.res 리소스 키 확인
 
@@ -315,7 +349,7 @@ grep -l "tabs/research" js/tabs/*.js
 
 ### 2. 게임 데이터 정합성 검증
 - ✅ PASS — 건물 정의 13개 (필수 속성 포함)
-- ✅ PASS — 파츠 정의 5개 (engine, fueltank, control, hull, payload)
+- ✅ PASS — 파츠 정의 4개 (hull, engine, propellant, pump_chamber)
 - ⚠️ WARN — 업그레이드 'basic_prod'의 unlocks 키 'bld_quarry'가 gs.unlocks에 없음
 
 ### 3. 탭 시스템 검증
@@ -324,7 +358,7 @@ grep -l "tabs/research" js/tabs/*.js
 
 ### 4. 경제 밸런싱 검증
 - ✅ PASS — 건물비용 점진적 증가 (150 → 100000)
-- ✅ PASS — 업그레이드 배수 범위 (1.2~2.0)
+- ✅ PASS — 업그레이드 배수 범위 (repeatable: 1.05~1.10, premium: 2.0~3.0)
 
 ### 5. 파일 간 참조 일관성
 - ✅ PASS — 모든 건물 ID가 gs.buildings에 정의됨

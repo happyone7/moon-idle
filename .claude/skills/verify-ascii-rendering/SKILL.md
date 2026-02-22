@@ -153,7 +153,8 @@ console.table(results);
 | `wb-research` (research_lab) | 14자 | 14 | 0 | 14 |
 | `wb-research` (r_and_d) | 14자 | 14 | 0 | 14 |
 | `wb-solar` (3패널) | 15자 | 15 | 1 | 14 |
-| `wb-addon` (inv_bank, tech_hub) | 10자 | 10 | 1 | 8 |
+| `wb-addon` (inv_bank, tech_hub) | 9자 | 9 | 1 | 8 |
+| `wb-addon` (launch_ctrl, vif, placeholder) | 8자 | 8 | 1 | 7 |
 | `_scaffoldAscii` (비건물 — 공사 중) | 9자 | 9 | 2 | 7 |
 | `wb-launchpad` (launch_pad 기본) | 15자 | 15 | 0 | 15 |
 | `wb-launchpad` (gantry 변형) | 15자 | 15 | 0 | 15 |
@@ -506,3 +507,5 @@ ls mockups/ascii-art/buildings/*.txt
 8. **CSS 애니메이션 및 색상** — `.world-bld` CSS에서 `color`, `text-shadow`, `animation` 속성은 검증 범위 밖 (폰트만 확인)
 9. **동적 높이 조정** — `_bldHeightTier(cnt)` 함수로 건물 개수에 따라 높이가 달라지는 것은 정상 동작
 10. **박스 내부 가로 구분선** — `╠═════╣` 같은 중간 구분선 사용은 정상 (시각적 구조 표현)
+11. **태양광 패널 지지대 폴** — `│` (U+2502, 단일선 세로) 문자가 태양광 패널 폴 그래픽 (`'  │     │     │'`)에 사용되는 것은 의도적 설계 (박스 드로잉 문자 규칙 예외)
+12. **애드온 건물 커넥터 `─`** — `─` (U+2500, 단일선 가로) 문자가 애드온 건물 상단 첫 줄 (`'─╔═════╗'`)에 부모 건물과의 연결 표시용으로 사용되는 것은 의도적 설계 (박스 드로잉 문자 규칙 예외)
