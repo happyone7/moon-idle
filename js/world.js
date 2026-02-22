@@ -940,7 +940,7 @@ function openBldOv(bld, el, keepPosition = false) {
 
   // 건물 미건설 시에만 건설 버튼 표시 (추가 건설 기능 제거)
   const footHtml = cnt === 0
-    ? `<div class="bov-foot"><button class="bov-buy-btn${buyAfford?'':' dis'}" onclick="buyBuilding('${bld.id}')" ${buyAfford?'':'disabled'}>[ 건설 시작 ] <span class="bov-buy-cost">${getCostStr(buyCost)}</span></button></div>`
+    ? `<div class="bov-foot"><button class="bov-buy-btn${buyAfford?'':' dis'}" onclick="buyBuilding('${bld.id}')" ${buyAfford?'':'disabled'}>[ 건설 시작 ] <span class="bov-buy-cost${buyAfford?'':' red'}">${getCostStr(buyCost)}</span></button></div>`
     : '';
 
   ovEl.innerHTML = `
@@ -1390,7 +1390,7 @@ function openGhostOv(bld, el) {
 </div>
 <div class="bov-foot">
   <button class="bov-buy-btn${affordable?'':' dis'}" onclick="buyBuilding('${bld.id}')" ${affordable?'':'disabled'}>
-    [ 건설 시작 ] <span class="bov-buy-cost">${costStr}</span>
+    [ 건설 시작 ] <span class="bov-buy-cost${affordable?'':' red'}">${costStr}</span>
   </button>
 </div>`;
 
@@ -1485,6 +1485,23 @@ function closeBldOv() {
 // ─── WORKER DOTS ─────────────────────────────────────────────
 let _workerDots = [];
 let _wkrIconTick = 0;
+
+// 열린 오버레이의 건설 버튼 비용 텍스트를 실시간 갱신 (renderAll 500ms 루프에서 호출)
+function refreshBovBuyButton() {
+  if (!_bldOvBld) return;
+  const ovEl = document.getElementById('bld-ov');
+  if (!ovEl) return;
+  const cnt = gs.buildings[_bldOvBld.id] || 0;
+  if (cnt > 0) return; // 이미 건설됨 — 버튼 없음
+  const buyCost  = getBuildingCost(_bldOvBld);
+  const canBuy   = canAfford(buyCost);
+  const btn      = ovEl.querySelector('.bov-buy-btn');
+  const costSpan = ovEl.querySelector('.bov-buy-cost');
+  if (!btn || !costSpan) return;
+  btn.disabled = !canBuy;
+  btn.classList.toggle('dis', !canBuy);
+  costSpan.classList.toggle('red', !canBuy);
+}
 
 function syncWorkerDots() {
   const layer = document.getElementById('workers-layer');

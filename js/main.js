@@ -134,6 +134,7 @@ function renderAll() {
   if (activeTab === 'mission')    renderMissionTab();
   if (activeTab === 'automation') renderAutomationTab();
   updateWorldBuildings();
+  if (typeof refreshBovBuyButton === 'function') refreshBovBuyButton();
   if (typeof renderMilestonePanel === 'function') renderMilestonePanel();
   if (typeof updateTopBarEra === 'function') updateTopBarEra(); // P4-6
   // BGM 페이즈 갱신 (unlock 상태 변화 반영)
