@@ -1132,6 +1132,40 @@ body.tab-research #pane-research {
   color: var(--green-dim);
   padding: 8px 0;
 }
+.rsh-queue-section-label {
+  font-size: 9px;
+  color: var(--green-mid);
+  letter-spacing: 0.05em;
+  padding: 3px 0 2px;
+  border-bottom: 1px solid var(--green-dim);
+  margin-bottom: 4px;
+}
+.rsh-queue-active { border-color: var(--green) !important; }
+.rsh-queue-reserved {
+  border-color: var(--amber, #e8a020) !important;
+  background: rgba(30,20,0,0.4) !important;
+}
+.rsh-queue-slot-empty {
+  font-size: 9px;
+  color: var(--green-dim);
+  padding: 3px 6px;
+  border: 1px dashed var(--green-dim);
+  border-radius: 2px;
+  margin-bottom: 3px;
+  opacity: 0.5;
+}
+.rsh-btn-cancel {
+  background: rgba(80,10,10,0.5) !important;
+  border-color: var(--red, #f66) !important;
+  color: var(--red, #f66) !important;
+}
+.rsh-btn-cancel:hover { background: rgba(150,20,20,0.6) !important; }
+.rsh-btn-queue {
+  background: rgba(40,30,0,0.5) !important;
+  border-color: var(--amber, #e8a020) !important;
+  color: var(--amber, #e8a020) !important;
+}
+.rsh-btn-queue:hover { background: rgba(80,50,0,0.6) !important; }
 
 /* ─── 기술 상세 패널 (우측) ────────────────────────────── */
 .rsh-detail-panel {

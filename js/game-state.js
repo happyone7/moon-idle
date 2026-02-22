@@ -16,7 +16,8 @@ let gs = {
   fuelLoaded: false,     // 연료 수동 주입 여부 (발사 전 주입 필요)
   upgrades: {},
   researchProgress: {},  // { upgradeId: { rpSpent: number, timeSpent: number } } — 진행 중인 연구
-  maxResearchSlots: 1,   // 연구 슬롯 초기 1개
+  researchQueue: [],     // 예약된 연구 목록 (최대 3개, FIFO)
+  maxResearchSlots: 1,   // 활성 연구 슬롯 (항상 1)
   opsRoles: { sales: 0, accounting: 0, consulting: 0 },
   citizens: 0,         // 분양된 시민 수 (P8-4)
   specialists: {},     // { bldId: { specId: count } } — 전문화된 직원
@@ -53,6 +54,7 @@ let gs = {
     bld_r_and_d: false,
     bld_solar_array: false,
     bld_launch_pad: false,
+    addon_ops_center: false, // 운영 확장 프로그램 연구 후 해금
   },
 };
 let prodMult = {};
@@ -606,6 +608,7 @@ function loadGame(slot) {
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
     gs.researchProgress = saved.researchProgress || {};
+    gs.researchQueue = Array.isArray(saved.researchQueue) ? saved.researchQueue : [];
     // researchProgress 마이그레이션: timeSpent 없으면 추론
     if (gs.researchProgress) {
       Object.entries(gs.researchProgress).forEach(([uid, prog]) => {
@@ -676,6 +679,7 @@ function loadGame(slot) {
       bld_r_and_d: false,
       bld_solar_array: false,
       bld_launch_pad: false,
+      addon_ops_center: false,
     };
     gs.unlocks = Object.assign({}, defaultUnlocks, saved.unlocks || {});
 
@@ -885,26 +889,37 @@ function _showOfflineReport(report) {
 // ============================================================
 //  RESEARCH PROGRESS — 점진적 RP 소모 시스템
 // ============================================================
-/** 연구 시작 — 비RP 자원 즉시 차감, RP는 tick마다 점진 소모 */
+/** 연구 시작 — 활성 슬롯 없으면 즉시 시작, 있으면 예약 큐(최대 3개)에 추가 */
 function startResearch(uid) {
-  gs.selectedTech = uid;  // 마지막 선택 기술 기록
+  gs.selectedTech = uid;
   const upg = UPGRADES.find(u => u.id === uid);
   if (!upg || gs.upgrades[uid]) return;
   if (gs.researchProgress && gs.researchProgress[uid]) return; // 이미 진행 중
+  if (!gs.researchQueue) gs.researchQueue = [];
+  if (gs.researchQueue.includes(uid)) return;                   // 이미 예약됨
   if (upg.req && !gs.upgrades[upg.req]) { notify('선행 연구 필요', 'red'); return; }
-  // 비RP 자원 비용 확인 + 즉시 차감
-  const nonRpCost = {};
-  Object.entries(upg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
-  if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) { notify('자원 부족', 'red'); return; }
-  if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
-  if (!gs.researchProgress) gs.researchProgress = {};
-  gs.researchProgress[uid] = { rpSpent: 0 };
-  notify(`${upg.icon} ${upg.name} 연구 시작`);
+
+  const activeIds = Object.keys(gs.researchProgress || {});
+  if (activeIds.length === 0) {
+    // 즉시 시작 — 비RP 자원 즉시 차감
+    const nonRpCost = {};
+    Object.entries(upg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
+    if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) { notify('자원 부족', 'red'); return; }
+    if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
+    if (!gs.researchProgress) gs.researchProgress = {};
+    gs.researchProgress[uid] = { rpSpent: 0 };
+    notify(`${upg.icon} ${upg.name} 연구 시작`);
+  } else {
+    // 예약 큐에 추가 (최대 3개)
+    if (gs.researchQueue.length >= 3) { notify('예약 슬롯이 가득 찼습니다 (최대 3개)', 'amber'); return; }
+    gs.researchQueue.push(uid);
+    notify(`${upg.icon} ${upg.name} 예약 등록 (${gs.researchQueue.length}/3)`, 'amber');
+  }
   playSfx('sine', 520, 0.06, 0.02);
   renderAll();
 }
 
-/** 연구 완료 처리 (내부 호출) */
+/** 연구 완료 처리 (내부 호출) — 완료 후 예약 큐에서 다음 연구 자동 시작 */
 function _completeResearch(uid) {
   const upg = UPGRADES.find(u => u.id === uid);
   if (!upg) return;
@@ -918,6 +933,28 @@ function _completeResearch(uid) {
   playSfx('triangle', 440, 0.09, 0.025, 660);
   setTimeout(() => playSfx('triangle', 660, 0.08, 0.022, 880), 130);
   setTimeout(() => playSfx('triangle', 880, 0.07, 0.02, 1100), 260);
+  // 예약 큐에서 다음 연구 자동 시작
+  if (!gs.researchQueue) gs.researchQueue = [];
+  while (gs.researchQueue.length > 0) {
+    const nextUid = gs.researchQueue.shift();
+    const nextUpg = UPGRADES.find(u => u.id === nextUid);
+    if (!nextUpg || gs.upgrades[nextUid]) continue; // 이미 완료됐으면 skip
+    if (nextUpg.req && !gs.upgrades[nextUpg.req]) {
+      notify(`${nextUpg.icon} ${nextUpg.name} 선행 연구 미완료 — 예약 취소`, 'red');
+      continue;
+    }
+    const nonRpCost = {};
+    Object.entries(nextUpg.cost).forEach(([r, v]) => { if (r !== 'research') nonRpCost[r] = v; });
+    if (Object.keys(nonRpCost).length > 0 && !canAfford(nonRpCost)) {
+      notify(`${nextUpg.icon} ${nextUpg.name} 자원 부족 — 예약 취소`, 'red');
+      continue;
+    }
+    if (Object.keys(nonRpCost).length > 0) spend(nonRpCost);
+    if (!gs.researchProgress) gs.researchProgress = {};
+    gs.researchProgress[nextUid] = { rpSpent: 0 };
+    notify(`${nextUpg.icon} ${nextUpg.name} 예약 → 연구 시작`, 'green');
+    break; // 1개만 시작
+  }
 }
 
 /** tick마다 호출 — 시간 기반 연구 진행 (dt: 경과 시간, 초 단위) */

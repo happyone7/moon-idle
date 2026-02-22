@@ -854,7 +854,14 @@ function openBldOv(bld, el, keepPosition = false) {
 
   // ── Add-on A/B choice section ────────────────────────────
   const addonDef = typeof BUILDING_ADDONS !== 'undefined' && BUILDING_ADDONS[bld.id];
-  if (addonDef && cnt >= 1) {
+  const addonUnlocked = !addonDef || !addonDef.unlockKey || !!(gs.unlocks && gs.unlocks[addonDef.unlockKey]);
+  if (addonDef && cnt >= 1 && !addonUnlocked) {
+    // 연구 잠금 안내
+    actions.push({ type: 'sep', label: '◈ 애드온 — 잠금 상태' });
+    actions.push({ label: '🔒 연구 필요: 운영 확장 프로그램', info: '', affordable: false, disabled: true,
+      desc: '경제 연구 브랜치에서\n[운영 확장 프로그램] 연구 후 해금됩니다' });
+  }
+  if (addonDef && cnt >= 1 && addonUnlocked) {
     const addonChoice = gs.addons && gs.addons[bld.id];
     if (!addonChoice) {
       // 선택 전: A/B 선택지 표시 (선택 후 변경 불가 경고 포함)

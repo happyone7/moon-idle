@@ -163,13 +163,23 @@ function selectTech(uid) {
   renderResearchTab();
 }
 
-// ─── 연구 취소 함수 ─────────────────────────────────────
+// ─── 연구 취소 함수 (활성 + 예약 큐 모두 처리) ──────────
 function cancelResearch(uid) {
-  if (!gs.researchProgress || !gs.researchProgress[uid]) return;
-  delete gs.researchProgress[uid];
-  if (gs.selectedTech === uid) gs.selectedTech = null;
-  notify('연구 취소됨', 'red');
-  renderAll();
+  // 활성 연구 취소
+  if (gs.researchProgress && gs.researchProgress[uid]) {
+    delete gs.researchProgress[uid];
+    if (gs.selectedTech === uid) gs.selectedTech = null;
+    notify('연구 취소됨', 'red');
+    renderAll();
+    return;
+  }
+  // 예약 큐 취소
+  if (gs.researchQueue && gs.researchQueue.includes(uid)) {
+    gs.researchQueue = gs.researchQueue.filter(q => q !== uid);
+    notify('예약 취소됨', 'red');
+    renderAll();
+    return;
+  }
 }
 
 // ============================================================
@@ -183,20 +193,22 @@ function renderResearchTab() {
   const rpRate = prod.research || 0;
   const researchedCount = Object.keys(gs.upgrades).filter(k => gs.upgrades[k]).length;
   const activeIds = gs.researchProgress ? Object.keys(gs.researchProgress) : [];
-  const maxSlots = gs.maxResearchSlots || 2;
+  const researchQueue = Array.isArray(gs.researchQueue) ? gs.researchQueue : [];
   const selectedUid = gs.selectedTech || null;
 
-  // ── 좌측: 연구 큐 ────────────────────────────────────────
-  let queueHtml = `<div class="rsh-queue-header">// 연구 현황 [${activeIds.length}/${maxSlots} 슬롯]</div>`;
+  // ── 좌측: 연구 현황 (활성 1슬롯 + 예약 큐 3슬롯) ─────────
+  let queueHtml = `<div class="rsh-queue-header">// 연구 현황</div>`;
 
+  // 활성 슬롯
+  queueHtml += `<div class="rsh-queue-section-label">■ 활성 [${activeIds.length}/1]</div>`;
   if (activeIds.length === 0) {
-    queueHtml += `<div class="rsh-queue-empty">진행 중인 연구 없음<br>기술 트리에서 연구를 선택하세요</div>`;
+    queueHtml += `<div class="rsh-queue-empty">대기 중 — 연구 없음</div>`;
   } else {
     activeIds.forEach(uid => {
       const upg = UPGRADES.find(u => u.id === uid);
       if (!upg) return;
       const prog = gs.researchProgress[uid];
-      const techTime = upg.time || 60;
+      const techTime = (upg.time || 60) * (typeof researchTimeMult !== 'undefined' ? researchTimeMult : 1);
       const timeSpent = prog.timeSpent || 0;
       const pct = Math.min(100, Math.floor((timeSpent / techTime) * 100));
 
@@ -225,7 +237,7 @@ function renderResearchTab() {
 
       const amberBar = branchLabel === '열보호' ? ' amber-fill' : '';
 
-      queueHtml += `<div class="rsh-queue-item">
+      queueHtml += `<div class="rsh-queue-item rsh-queue-active">
   <div class="rsh-queue-item-hd">${upg.icon} ${upg.name}</div>
   <div class="rsh-queue-item-branch">${branchLabel} 브랜치</div>
   ${asciiHtml}
@@ -234,6 +246,27 @@ function renderResearchTab() {
   <span class="rsh-queue-cancel" onclick="cancelResearch('${uid}')">■ 취소</span>
 </div>`;
     });
+  }
+
+  // 예약 큐 슬롯
+  queueHtml += `<div class="rsh-queue-section-label" style="margin-top:8px">▷ 예약 큐 [${researchQueue.length}/3]</div>`;
+  if (researchQueue.length === 0) {
+    queueHtml += `<div class="rsh-queue-empty" style="font-size:9px;padding:4px 0">예약된 연구 없음</div>`;
+  } else {
+    researchQueue.forEach((uid, idx) => {
+      const upg = UPGRADES.find(u => u.id === uid);
+      if (!upg) return;
+      const timeMin = Math.ceil((upg.time || 60) / 60);
+      queueHtml += `<div class="rsh-queue-item rsh-queue-reserved">
+  <div class="rsh-queue-item-hd"><span style="color:var(--amber);margin-right:4px">${idx + 1}.</span>${upg.icon} ${upg.name}</div>
+  <div class="rsh-queue-item-branch" style="color:var(--green-dim)">~${timeMin}분 · 대기 중</div>
+  <span class="rsh-queue-cancel" onclick="cancelResearch('${uid}')">■ 취소</span>
+</div>`;
+    });
+    // 빈 슬롯 표시
+    for (let i = researchQueue.length; i < 3; i++) {
+      queueHtml += `<div class="rsh-queue-slot-empty">[ 빈 슬롯 ${i + 1} ]</div>`;
+    }
   }
 
   // RP 생산 현황
@@ -339,8 +372,8 @@ function renderResearchTab() {
     if (upg) {
       const purchased  = !!gs.upgrades[selectedUid];
       const inProgress = !!(gs.researchProgress && gs.researchProgress[selectedUid]);
+      const inQueue    = researchQueue.includes(selectedUid);
       const reqMet     = !upg.req || !!gs.upgrades[upg.req];
-      const canStart   = !purchased && !inProgress && reqMet && activeIds.length < maxSlots;
 
       // 비용 표시
       const costParts = Object.entries(upg.cost).map(([r, v]) => {
@@ -356,8 +389,9 @@ function renderResearchTab() {
       const timeStr = timeMin > 0 ? `${timeMin}분 ${timeSec > 0 ? timeSec + '초' : ''}` : `${timeSec}초`;
 
       // 선행 기술
+      const reqUpgName = upg.req ? (UPGRADES.find(u => u.id === upg.req) || {}).name || upg.req : null;
       const reqHtml = upg.req
-        ? `<div class="rsh-detail-value">${upg.req} ${gs.upgrades[upg.req] ? '✓' : '✗ 미완료'}</div>`
+        ? `<div class="rsh-detail-value">${reqUpgName} ${gs.upgrades[upg.req] ? '✓' : '✗ 미완료'}</div>`
         : `<div class="rsh-detail-value">없음</div>`;
 
       // 버튼 상태
@@ -365,13 +399,20 @@ function renderResearchTab() {
       if (purchased) {
         btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">✓ 연구 완료</div>`;
       } else if (inProgress) {
-        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">▶ 연구 진행 중</div>`;
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">▶ 연구 진행 중</div>
+<div class="rsh-detail-btn rsh-btn-cancel" onclick="cancelResearch('${selectedUid}')">■ 연구 취소</div>`;
+      } else if (inQueue) {
+        const qPos = researchQueue.indexOf(selectedUid) + 1;
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">📋 예약 중 (${qPos}번째)</div>
+<div class="rsh-detail-btn rsh-btn-cancel" onclick="cancelResearch('${selectedUid}')">■ 예약 취소</div>`;
       } else if (!reqMet) {
         btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">🔒 선행 기술 필요</div>`;
-      } else if (activeIds.length >= maxSlots) {
-        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">슬롯 가득 찼음</div>`;
-      } else {
+      } else if (activeIds.length === 0) {
         btnHtml = `<div class="rsh-detail-btn" onclick="startResearch('${selectedUid}');renderAll()">▶ 연구 시작</div>`;
+      } else if (researchQueue.length < 3) {
+        btnHtml = `<div class="rsh-detail-btn rsh-btn-queue" onclick="startResearch('${selectedUid}');renderAll()">📋 예약 추가 (${researchQueue.length + 1}/3)</div>`;
+      } else {
+        btnHtml = `<div class="rsh-detail-btn" disabled style="opacity:0.4;cursor:default">예약 슬롯 가득 (3/3)</div>`;
       }
 
       detailHtml = `<div class="rsh-detail-panel">
