@@ -155,8 +155,19 @@ function renderProductionTab() {
   const tutEl = document.getElementById('prod-tutorial');
   if (tutEl) tutEl.innerHTML = '';
 
-  // 건물 리스트: 버튼 없이 상태만 표시 (건설은 월드 호버 팝업에서)
-  let html = '';
+  // 시민 현황 요약
+  const totalCitizens = gs.citizens || 0;
+  const researchStaff = (gs.assignments && gs.assignments['research_lab']) || 0;
+  const opsStaff      = (gs.assignments && gs.assignments['ops_center'])   || 0;
+  let html = `<div class="blr-stats">
+    <span class="blr-stat-item">시민 <span class="blr-stat-val">${totalCitizens}명</span></span>
+    <span class="blr-stat-sep">|</span>
+    <span class="blr-stat-item">연구소 <span class="blr-stat-val">${researchStaff}명</span></span>
+    <span class="blr-stat-sep">|</span>
+    <span class="blr-stat-item">운영센터 <span class="blr-stat-val">${opsStaff}명</span></span>
+  </div>`;
+
+  // 건물 리스트: 상태만 표시 (배치는 건물 호버 팝업에서)
   BUILDINGS.forEach(b => {
     if (!gs.unlocks['bld_' + b.id]) return;
     const cnt = gs.buildings[b.id] || 0;
@@ -171,23 +182,12 @@ function renderProductionTab() {
     } else {
       if (b.id === 'solar_array')  rateStr = `<span style="color:var(--green-mid)">+${cnt * 10}%</span>`;
       else if (b.id === 'launch_pad') rateStr = `<span style="color:var(--green-mid)">슬롯 ${cnt}</span>`;
-      else if (b.id === 'housing')    rateStr = `<span style="color:var(--green-mid)">인원 +${cnt}</span>`;
+      else if (b.id === 'housing')    rateStr = `<span style="color:var(--green-mid)">×${cnt}</span>`;
     }
-    const slotCap = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[b.id]) || 0);
-    const canPlus = b.produces !== 'bonus' && cnt > 0 && getAvailableWorkers() > 0 && assigned < slotCap;
-    const canMinus = b.produces !== 'bonus' && assigned > 0;
-    const wkrCell = (b.produces !== 'bonus' && cnt > 0)
-      ? `<span class="blr-wkr">
-          <button class="blr-wbtn${canMinus ? '' : ' dis'}" onclick="quickUnassign('${b.id}')" ${canMinus ? '' : 'disabled'}>-</button>
-          <span class="blr-wassign">${assigned}</span>
-          <button class="blr-wbtn${canPlus ? '' : ' dis'}" onclick="quickAssign('${b.id}')" ${canPlus ? '' : 'disabled'}>+</button>
-        </span>`
-      : `<span class="blr-wkr-empty"></span>`;
     html += `<div class="bld-list-row" data-bld="${b.id}">
       <span class="blr-icon">${b.icon}</span>
       <span class="blr-name">${b.name}</span>
       <span class="blr-cnt">×${cnt}</span>
-      ${wkrCell}
       <span class="blr-rate">${rateStr}</span>
     </div>`;
   });
