@@ -1226,8 +1226,37 @@ function tick() {
 
 
 // ============================================================
+//  CJK 시각적 폭 헬퍼 (한글 등 전각 문자 2칸 처리)
+// ============================================================
+function _visualLen(str) {
+  let len = 0;
+  for (const ch of str) {
+    const code = ch.codePointAt(0);
+    // CJK: 한글(0xAC00-0xD7A3), 가나(0x3040-0x30FF), CJK통합(0x4E00-0x9FFF)
+    len += (code >= 0xAC00 && code <= 0xD7A3) ||
+           (code >= 0x4E00 && code <= 0x9FFF) ||
+           (code >= 0x3040 && code <= 0x30FF) ? 2 : 1;
+  }
+  return len;
+}
+
+function _padEndVisual(str, width) {
+  const vLen = _visualLen(str);
+  return str + ' '.repeat(Math.max(0, width - vLen));
+}
+
+// ============================================================
 //  공유 로켓 ASCII 아트 (조립동 + 발사통제 공용)
 //  opts.allGreen — true이면 발사 준비 상태로 전체 밝은 녹색
+//
+//  너비 설계 (모든 줄 col 11 중심 정렬):
+//    코 tip:       col 11         (inner 0)
+//    코 taper:     col 10-12 ~ col 7-15 (inner 1→7, 단계 +2)
+//    코 이름:      col 4-18       (inner 13, 점프)
+//    코 바닥:      col 3-19       (inner 15)
+//    몸체:         col 3-19       (inner 15) — 코 바닥과 일치
+//    내부 박스:    col 6-16       (inner 9) — 통일
+//    배기구:       col 2-20 → col 1-21 (inner 17→19)
 // ============================================================
 function getRocketArtHtml(opts) {
   opts = opts || {};
@@ -1248,42 +1277,45 @@ function getRocketArtHtml(opts) {
   const engClass  = cls('r-engine',   _partDone('engine'));
   const exhClass  = cls('r-exhaust',  _partDone('engine') && (gs.fuelInjection || 0) >= 100);
 
-  // 로켓 클래스 이름
+  // 로켓 클래스 이름 (CJK 시각적 패딩 적용)
   const selClass = (gs.assembly && gs.assembly.selectedClass) || 'vega';
   const rc = (typeof ROCKET_CLASSES !== 'undefined')
     ? ROCKET_CLASSES.find(c => c.id === selClass) || ROCKET_CLASSES[0]
     : null;
   const className = rc ? rc.name : 'NANO';
   const thrustLabel = rc ? String(rc.thrustKN) + ' kN' : '18 kN';
-  // 추력 4자리 이상이면 패딩 조정
-  const thrustPad = (rc && rc.thrustKN >= 100) ? '' : ' ';
+
+  // 코 이름줄: inner 13 = " " + padVisual(11) + " "
+  const namePadded = ' ' + _padEndVisual(className, 11) + ' ';
+  // 추력줄: inner box 9 = " " + padEnd(7) + " "
+  const thrustInner = ' ' + thrustLabel.padEnd(7) + ' ';
 
   return `<span class="${noseClass}">           *
           /|\\
          / | \\
         /  |  \\
        /   |   \\
-      / ${className.padEnd(8)} \\
-     /______________\\</span>
+    /${namePadded}\\
+   /_______________\\</span>
 <span class="${payClass}">   |  [PAYLOAD]    |
-   |   _________   |
+   |  ___________  |
    |  |  NAV    |  |
    |  |  SYS    |  |
    |  |_________|  |</span>
 <span class="${aviClass}">   |               |
    |  [AVIONICS]   |
-   |  _________    |
-   | | O  O  O |   |
-   | |  GYRO   |   |
-   | |_________|   |</span>
+   |  ___________  |
+   |  | O  O  O |  |
+   |  |  GYRO   |  |
+   |  |_________|  |</span>
 <span class="${engClass}">   |               |
    | [PROPULSION]  |
-   |  _________    |
-   | |         |   |
-   | | ${thrustLabel} ${thrustPad}|   |
-   | |_________|   |
+   |  ___________  |
+   |  |         |  |
+   |  |${thrustInner}|  |
+   |  |_________|  |
    |_______________|</span>
-<span class="${exhClass}">  / [LOX]  [RP-1]  \\
+<span class="${exhClass}">  / [LOX]   [RP-1]  \\
  /___________________\\
        |   |   |
       /|   |   |\\

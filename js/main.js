@@ -357,9 +357,8 @@ function enterGame() {
         document.removeEventListener('click', _startBgmOnce);
         document.removeEventListener('keydown', _startBgmOnce);
         console.log('[BGM] 사용자 인터랙션 감지, BGM.start() 호출');
-        setTimeout(() => {
-          try { BGM.start(); } catch(e) { console.warn('[BGM] start() 예외:', e); }
-        }, 100);
+        // setTimeout 없이 즉시 호출 — 사용자 제스처 콜스택 유지 (자동재생 정책)
+        try { BGM.start(); } catch(e) { console.warn('[BGM] start() 예외:', e); }
       };
       document.addEventListener('click', _startBgmOnce);
       document.addEventListener('keydown', _startBgmOnce);

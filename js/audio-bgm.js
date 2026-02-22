@@ -27,6 +27,7 @@ const BGM = {
   _duckVolume: false,    // 발사 탭 덕킹 플래그
   _eventPlaying: false,  // 이벤트 BGM 재생 중
   _eventAudio: null,     // 이벤트 HTMLAudioElement
+  _retrying: false,      // 로드 실패 재시도 중 플래그 (무한루프 방지)
 
   // ─── 페이즈별 플레이리스트 ────────────────────────────────
   PLAYLISTS: {
@@ -161,30 +162,16 @@ const BGM = {
     this._eventPlaying = true;
     const evAudio = new Audio(src);
     evAudio.volume = this.volume;
+    evAudio.preload = 'auto';
     this._eventAudio = evAudio;
 
-    let evStarted = false;
-
-    const doEventPlay = () => {
-      if (evStarted) return;
-      evStarted = true;
-      evAudio.play().catch(err => {
-        console.warn('[BGM] 이벤트 play() 실패:', err.message, src);
-        this._eventPlaying = false;
-        this._eventAudio = null;
-        if (this.playing) this._startTrack();
-      });
-    };
-
-    evAudio.addEventListener('canplaythrough', doEventPlay, { once: true });
-
-    // canplaythrough 타임아웃
-    setTimeout(() => {
-      if (!evStarted) {
-        console.warn('[BGM] 이벤트 canplaythrough 타임아웃, 강제 재생 시도:', src);
-        doEventPlay();
-      }
-    }, 5000);
+    // 즉시 play() 호출 (이미 메인 BGM이 재생 중이므로 자동재생 정책 통과)
+    evAudio.play().catch(err => {
+      console.warn('[BGM] 이벤트 play() 실패:', err.message, src);
+      this._eventPlaying = false;
+      this._eventAudio = null;
+      if (this.playing) this._startTrack();
+    });
 
     evAudio.addEventListener('ended', () => {
       this._eventPlaying = false;
@@ -196,13 +183,10 @@ const BGM = {
 
     evAudio.addEventListener('error', (e) => {
       console.warn('[BGM] 이벤트 로드 실패:', src, e);
-      evStarted = true;
       this._eventPlaying = false;
       this._eventAudio = null;
       if (this.playing) this._startTrack();
     });
-
-    evAudio.load();
   },
 
   /** 이벤트 BGM 중단 후 페이즈 트랙으로 복귀 */
@@ -237,6 +221,10 @@ const BGM = {
   },
 
   // ─── 내부: 트랙 로드 + 크로스페이드 재생 ─────────────────
+  // 핵심 변경: play()를 canplaythrough 대기 없이 즉시 호출.
+  // 브라우저 자동재생 정책은 사용자 제스처 콜스택 내에서만 play()를 허용하므로,
+  // canplaythrough 비동기 콜백을 기다리면 제스처 컨텍스트가 만료되어 재생 실패.
+  // 즉시 play()를 호출하면 브라우저가 내부적으로 버퍼링 후 재생을 시작한다.
   _startTrack() {
     if (!this.playing) return;
 
@@ -251,42 +239,31 @@ const BGM = {
     const prev = this._current;
     const audio = new Audio(src);
     audio.volume = 0;
+    audio.preload = 'auto';
+    this._current = audio;
 
-    let started = false;
-
-    const doPlay = () => {
-      if (started || !this.playing) return;
-      started = true;
-      this._current = audio;
-      audio.play().then(() => {
-        console.log('[BGM] 재생 시작:', src);
-      }).catch(err => {
-        console.warn('[BGM] play() 실패:', err.message, src);
-        // play 실패 시 다음 트랙 시도
-        if (!this.playing) return;
-        const pl = this.PLAYLISTS[this._phase] || this.PLAYLISTS.early;
+    // 즉시 play() 호출 — 사용자 제스처 컨텍스트 유지
+    audio.play().then(() => {
+      console.log('[BGM] 재생 시작:', src);
+    }).catch(err => {
+      console.warn('[BGM] play() 실패:', err.message, src);
+      // play 실패 시 다음 트랙 시도 (단, 같은 트랙 무한반복 방지)
+      if (!this.playing) return;
+      const pl = this.PLAYLISTS[this._phase] || this.PLAYLISTS.early;
+      if (pl.length > 1) {
         this._playlistIdx = (this._playlistIdx + 1) % pl.length;
-        setTimeout(() => this._startTrack(), 500);
-        return;
-      });
-      // 새 트랙 페이드인
-      this._fadeTo(audio, this._vol(), 2.0);
-      // 이전 트랙 페이드아웃
-      if (prev && !prev.paused && !prev.ended) {
-        this._fadeOut(prev, 2.0);
       }
-      this._updateUI();
-    };
+      // 재시도는 다음 사용자 인터랙션에서 수행 (무한 루프 방지)
+      this._current = null;
+    });
 
-    audio.addEventListener('canplaythrough', doPlay, { once: true });
-
-    // canplaythrough 타임아웃 — 5초 내 이벤트 미수신 시 강제 재생 시도
-    setTimeout(() => {
-      if (!started && this.playing) {
-        console.warn('[BGM] canplaythrough 타임아웃, 강제 재생 시도:', src);
-        doPlay();
-      }
-    }, 5000);
+    // 새 트랙 페이드인
+    this._fadeTo(audio, this._vol(), 2.0);
+    // 이전 트랙 페이드아웃
+    if (prev && !prev.paused && !prev.ended) {
+      this._fadeOut(prev, 2.0);
+    }
+    this._updateUI();
 
     audio.addEventListener('ended', () => {
       if (!this.playing || this._eventPlaying) return;
@@ -304,14 +281,20 @@ const BGM = {
 
     audio.addEventListener('error', (e) => {
       console.warn('[BGM] 로드 실패:', src, e);
-      started = true; // 에러 시 doPlay 중복 방지
       if (!this.playing) return;
       const pl = this.PLAYLISTS[this._phase] || this.PLAYLISTS.early;
-      this._playlistIdx = (this._playlistIdx + 1) % pl.length;
-      setTimeout(() => this._startTrack(), 500);
+      if (pl.length > 1) {
+        this._playlistIdx = (this._playlistIdx + 1) % pl.length;
+      }
+      // 로드 실패 시 재시도 (단, 무한 루프 방지를 위해 1회만)
+      if (!this._retrying) {
+        this._retrying = true;
+        setTimeout(() => {
+          this._retrying = false;
+          if (this.playing) this._startTrack();
+        }, 3000);
+      }
     });
-
-    audio.load();
   },
 
   // ─── 내부: 볼륨 페이드 유틸 ──────────────────────────────
