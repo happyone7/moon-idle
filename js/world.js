@@ -776,7 +776,7 @@ function openBldOv(bld, el, keepPosition = false) {
         info: `$${fmt(citizenCost)}`,
         disabled: false,
         affordable: citizenAfford,
-        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명 (여유 인원: ${avail}/${gs.workers || 1})\n분양 비용: $${fmt(citizenCost)}\n// 시민은 여유 인원으로 배치됩니다`,
+        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명\n분양 비용: $${fmt(citizenCost)}`,
         type: 'alloc_citizen',
       });
     } else {
@@ -796,7 +796,7 @@ function openBldOv(bld, el, keepPosition = false) {
         hasIdleWorker: hasIdleWorker,
         desc: hasIdleWorker
           ? `${bld.name}에 직원 배치 (현재 ${assigned}명)\n비용: $${fmt(hireCost)}`
-          : `여유 시민 없음 (${avail}/${gs.workers || 1})\n주거시설 업그레이드로 인원 상한을 늘리세요`,
+          : `여유 시민 없음 — 주거시설에서 시민을 분양하세요`,
         type: 'hire_bld_worker',
         bldId: bld.id,
       });
@@ -936,7 +936,7 @@ function openBldOv(bld, el, keepPosition = false) {
     rateStr = assigned > 0 ? `${bld.produces} +${fmtDec(rate,2)}/s` : '인원 미배치';
   } else if (bld.id === 'solar_array') { rateStr = `전체 생산 +${((getSolarBonus()-1)*100).toFixed(0)}%`; }
   else if (bld.id === 'launch_pad')    { rateStr = `발사 슬롯 +${cnt}`; }
-  else if (bld.id === 'housing')       { rateStr = `인원 상한 ${gs.workers}명`; }
+  else if (bld.id === 'housing')       { rateStr = `시민 ${gs.citizens || 0}명`; }
 
   // 건물 미건설 시에만 건설 버튼 표시 (추가 건설 기능 제거)
   const footHtml = cnt === 0
@@ -1050,7 +1050,7 @@ function buyBldUpgrade(upgId, bldId) {
   spend(scaledCost);
   gs.bldUpgrades[upgId] = currLevel + 1;
   // Side-effects (레벨마다 누적 적용)
-  if (upg.wkr) { gs.workers = (gs.workers || 1) + upg.wkr; syncWorkerDots(); }
+  if (upg.wkr) { gs.citizens = (gs.citizens || 0) + upg.wkr; syncWorkerDots(); }
   if (upg.rel) reliabilityBonus += upg.rel;
   const newLevel = currLevel + 1;
   const levelStr = upg.repeatable ? ` Lv.${newLevel}` : '';
@@ -1246,8 +1246,8 @@ function hireWorker() {
     return; // 팝업 유지
   }
   gs.res.money -= cost;
-  gs.workers = (gs.workers || 1) + 1;
-  notify(`직원 고용 완료 — 현재 ${gs.workers}명`, 'green');
+  gs.citizens = (gs.citizens || 0) + 1;
+  notify(`직원 고용 완료 — 현재 ${gs.citizens}명`, 'green');
   playSfx('triangle', 400, 0.1, 0.05, 600);
   // 팝업 내용만 갱신 (닫지 않음)
   _refreshBldOvHousingPanel();
@@ -1489,7 +1489,7 @@ let _wkrIconTick = 0;
 function syncWorkerDots() {
   const layer = document.getElementById('workers-layer');
   if (!layer) return;
-  const total = gs.workers || 1;
+  const total = gs.citizens || 0;
 
   while (_workerDots.length > total) {
     const d = _workerDots.pop();

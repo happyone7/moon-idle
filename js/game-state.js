@@ -317,7 +317,7 @@ function promoteToSpecialist(bldId, specId) {
   const assigned = (gs.assignments && gs.assignments[bldId]) || 0;
   if (assigned < 1) return false;
   gs.assignments[bldId] = assigned - 1;
-  gs.workers = Math.max(0, (gs.workers || 0) - 1);
+  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
   if (!gs.specialists) gs.specialists = {};
   if (!gs.specialists[bldId]) gs.specialists[bldId] = {};
   gs.specialists[bldId][specId] = (gs.specialists[bldId][specId] || 0) + 1;
@@ -382,15 +382,15 @@ function getProduction() {
   return prod;
 }
 
-// 여유 인원 수
+// 여유 인원 수 (시민 총수 기반 — 인원 상한 없음)
 function getAvailableWorkers() {
-  const total = gs.workers || 1;
+  const total = gs.citizens || 0;
   const assigned = Object.values(gs.assignments || {}).reduce((a, b) => a + b, 0);
   return total - assigned;
 }
 
 function getTotalWorkers() {
-  return gs.workers || 1;
+  return gs.citizens || 0;
 }
 
 function getTotalAssigned() {
