@@ -144,17 +144,44 @@ function _runLaunchAnimation(q, sci, earned, success = true) {
   const animWrap = document.getElementById('launch-anim-wrap');
   if (!animWrap) return;
 
+  const _rcAnim = (typeof ROCKET_CLASSES !== 'undefined')
+    ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'vega')) || ROCKET_CLASSES[0]
+    : null;
+  const _rcName = _rcAnim ? _rcAnim.name : 'NANO';
+  const _rcThrust = _rcAnim ? String(_rcAnim.thrustKN) + ' kN' : '18 kN';
+  const _rcTPad = (_rcAnim && _rcAnim.thrustKN >= 100) ? '' : ' ';
   animWrap.innerHTML = `
 <div id="launch-rocket-cnt" style="text-align:center;position:relative;">
-<pre class="launch-rocket-ascii" id="launch-rocket-pre">    *
-   /|\\
-  / | \\
- /  |  \\
-|ENGINE |
-|_______|</pre>
-<pre class="exhaust-anim" id="exhaust-art" style="display:none;">  |||
- |||||
-  |||</pre>
+<pre class="launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6)">           *
+          /|\\
+         / | \\
+        /  |  \\
+       /   |   \\
+      / ${_rcName.padEnd(8)} \\
+     /______________\\
+   |  [PAYLOAD]    |
+   |   _________   |
+   |  |  NAV    |  |
+   |  |  SYS    |  |
+   |  |_________|  |
+   |               |
+   |  [AVIONICS]   |
+   |  _________    |
+   | | O  O  O |   |
+   | |  GYRO   |   |
+   | |_________|   |
+   |               |
+   | [PROPULSION]  |
+   |  _________    |
+   | |         |   |
+   | | ${_rcThrust} ${_rcTPad}|   |
+   | |_________|   |
+   |_______________|
+  / [LOX]  [RP-1]  \\
+ /___________________\\</pre>
+<pre class="exhaust-anim" id="exhaust-art" style="display:none;color:#00e676">       |   |   |
+      /|   |   |\\
+     /_|___|___|_\\</pre>
 </div>`;
 
   setTimeout(() => {
@@ -350,13 +377,37 @@ function _showLaunchOverlay(q, sci, earned, success = true) {
   const loTitle = document.getElementById('lo-title');
   if (loTitle) loTitle.textContent = success ? '// 달 착륙 성공' : '// 발사 실패';
   const loRocket = document.getElementById('lo-rocket-art');
-  if (loRocket) loRocket.textContent =
-`    *
-   /|\\
-  / | \\
- /  |  \\
-|ENGINE |
-|_______|`;
+  if (loRocket) {
+    const _rcOv = (typeof ROCKET_CLASSES !== 'undefined')
+      ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'vega')) || ROCKET_CLASSES[0]
+      : null;
+    const _rvN = _rcOv ? _rcOv.name : 'NANO';
+    loRocket.textContent =
+`           *
+          /|\\
+         / | \\
+        /  |  \\
+       /   |   \\
+      / ${_rvN.padEnd(8)} \\
+     /______________\\
+   |  [PAYLOAD]    |
+   |   _________   |
+   |  |  NAV    |  |
+   |  |  SYS    |  |
+   |  |_________|  |
+   |               |
+   |  [AVIONICS]   |
+   |  _________    |
+   | | O  O  O |   |
+   | |  GYRO   |   |
+   | |_________|   |
+   |_______________|
+  / [LOX]  [RP-1]  \\
+ /___________________\\
+       |   |   |
+      /|   |   |\\
+     /_|___|___|_\\`;
+  }
   const loStats = document.getElementById('lo-stats');
   if (loStats) loStats.innerHTML =
     `기체: ${q.name}  |  Δv: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${success ? Math.floor(sci.altitude) : '---'} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
@@ -385,58 +436,11 @@ function launchReady() {
 }
 
 // ============================================================
-//  ROCKET ASCII ART — per-part color
+//  ROCKET ASCII ART — 공유 함수 사용 (조립동과 동일한 아트)
 // ============================================================
 function _lcRocketArtHtml() {
-  const p    = gs.parts || {};
-
-  // 발사 가능 여부: 부품+연료 100%
   const canLaunch = (typeof getRocketCompletion === 'function' && getRocketCompletion() >= 100);
-
-  // 3단계 색상: 발사준비=밝은녹색, 공정완료=주황색, 진행중=어두운주황, 미획득=더어두운주황
-  const col = (key) => {
-    if (canLaunch) return '#00e676';  // 발사 준비 — 밝은 녹색
-    const pt = PARTS.find(x => x.id === key);
-    if (pt && (p[key] || 0) >= pt.cycles) return '#ff9000';  // 공정 완료 — 주황색
-    if (p[key])        return '#b06800';  // 진행 중(미완료) — 어두운 주황
-    return '#663300';                     // 미획득 — 가장 어두운 주황
-  };
-
-  const reqParts   = _getRequiredParts();
-  const partsDone  = reqParts.filter(pt => (p[pt.id] || 0) >= pt.cycles).length;
-  const partsPct   = Math.round((partsDone / reqParts.length) * 100);
-
-  const payC = col('payload'), ctlC = col('control'), hulC = col('hull');
-  const ftkC = col('fueltank'), engC = col('engine');
-  const sp   = (c, t) => `<span style="color:${c}">${t}</span>`;
-
-  const lines = [
-    sp('var(--green-dim)', '         *          '),
-    sp(payC,               '        /|\\         '),
-    sp(payC,               '       / | \\        '),
-    sp(payC,               '      /  |  \\       '),
-    sp(payC,               '     / PYLD  \\      '),
-    sp(payC,               '    |---------|      '),
-    sp(payC,               '    | PAYLOAD |      '),
-    sp(hulC,               '    |=========|      '),
-    sp(ctlC,               canLaunch ? '    | [READY] |      ' : '    | CONTROL |      '),
-    sp(hulC,               '    |=========|      '),
-    sp(hulC,               '    |  HULL   |      '),
-    sp(hulC,               '    |         |      '),
-    sp(hulC,               '    |  HULL   |      '),
-    sp(hulC,               '    |=========|      '),
-    sp(ftkC,               '    |   LOX   |      '),
-    sp(ftkC,               '    |   RP1   |      '),
-    sp(ftkC,               '    |=========|      '),
-    sp(engC,               '   /| ENGINE  |\\     '),
-    sp(engC,               '  / |_________|\\     '),
-    sp('var(--green-dim)', ' *     |  |  |   *  '),
-    sp(engC,               '       | ||  |       '),
-    sp(engC,               '      |||||||         '),
-    sp('var(--green-dim)', '     [== PAD ==]      '),
-  ];
-
-  return `<div style="font-family:'Courier New',Consolas,monospace;font-size:15px;line-height:1.3;white-space:pre;text-align:left;display:inline-block;">${lines.join('\n')}</div>`;
+  return getRocketArtHtml({ allGreen: canLaunch });
 }
 
 // ============================================================

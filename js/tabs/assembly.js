@@ -421,48 +421,9 @@ function renderAssemblyTab() {
 
   // ── CENTER COLUMN ──
 
-  // 6. Rocket ASCII art
-  const _partDone = id => { const p = PARTS.find(x=>x.id===id); return p && (gs.parts[id]||0) >= p.cycles; };
-  const noseClass   = 'r-nose'    + (_partDone('hull')       ? ' done' : '');
-  const payClass    = 'r-payload' + (_partDone('propellant') ? ' done' : '');
-  const aviClass    = 'r-avionics'+ (_partDone('propellant') ? ' done' : '');
-  const engClass    = 'r-engine'  + (_partDone('engine')     ? ' done' : '');
-  const exhClass    = 'r-exhaust' + ((_partDone('engine') && (gs.fuelInjection||0)>=100) ? ' done' : '');
-
-  const className = rc ? rc.name : 'NANO';
-  const rocketInner = `<span class="${noseClass}">           *
-          /|\\
-         / | \\
-        /  |  \\
-       /   |   \\
-      / ${className.padEnd(8)} \\
-     /______________\\</span>
-<span class="${payClass}">   |  [PAYLOAD]    |
-   |   _________   |
-   |  |  NAV    |  |
-   |  |  SYS    |  |
-   |  |_________|  |</span>
-<span class="${aviClass}">   |               |
-   |  [AVIONICS]   |
-   |  _________    |
-   | | O  O  O |   |
-   | |  GYRO   |   |
-   | |_________|   |</span>
-<span class="${engClass}">   |               |
-   | [PROPULSION]  |
-   |  _________    |
-   | |         |   |
-   | | ${rc ? String(rc.thrustKN) + ' kN' : '18 kN'} ${rc && rc.thrustKN >= 100 ? '' : ' '}|   |
-   | |_________|   |
-   |_______________|</span>
-<span class="${exhClass}">  / [LOX]  [RP-1]  \\
- /___________________\\
-       |   |   |
-      /|   |   |\\
-     /_|___|___|_\\</span>`;
-
+  // 6. Rocket ASCII art — 공유 함수 사용
   const artDisplay = document.getElementById('rocket-art-display');
-  if (artDisplay) artDisplay.innerHTML = rocketInner;
+  if (artDisplay) artDisplay.innerHTML = getRocketArtHtml();
 
   // 7. Assembly stage progress (P3-4)
   renderAssemblyStageProgress();

@@ -1447,6 +1447,10 @@ body.tab-research #pane-research {
 .rocket-art-wrap { text-align: center; padding: 10px; border-bottom: 1px solid var(--green-dim); background: var(--bg); min-height: 220px; display: flex; align-items: center; justify-content: center; }
 #rocket-art-display { font-size: 12px; white-space: pre; line-height: 1.3; color: var(--green-dim); }
 #rocket-art-display .done { color: var(--green); text-shadow: var(--glow); }
+/* 로켓 아트 섹션별 색상 클래스 */
+.r-nose, .r-payload, .r-avionics, .r-engine, .r-exhaust { color: var(--green-dim); transition: color 0.3s; }
+.r-nose.done, .r-payload.done, .r-avionics.done, .r-engine.done, .r-exhaust.done { color: var(--green); text-shadow: var(--glow); }
+.r-nose.go, .r-payload.go, .r-avionics.go, .r-engine.go, .r-exhaust.go { color: #00e676; text-shadow: 0 0 8px rgba(0,230,118,0.6); }
 
 /* Parts list — done vs pending clarity */
 .parts-list-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #0e2a18; padding: 7px 0; font-size: 13px; gap: 8px; }

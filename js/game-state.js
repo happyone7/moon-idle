@@ -1224,3 +1224,69 @@ function tick() {
   if (typeof checkAchievements === 'function') checkAchievements(); // P4-2
 }
 
+
+// ============================================================
+//  공유 로켓 ASCII 아트 (조립동 + 발사통제 공용)
+//  opts.allGreen — true이면 발사 준비 상태로 전체 밝은 녹색
+// ============================================================
+function getRocketArtHtml(opts) {
+  opts = opts || {};
+  const _partDone = id => {
+    const p = (typeof PARTS !== 'undefined') ? PARTS.find(x => x.id === id) : null;
+    return p && (gs.parts[id] || 0) >= p.cycles;
+  };
+
+  // CSS 클래스 결정: allGreen → 'go' / 완료 → 'done' / 미완 → (기본 dim)
+  const cls = (base, doneCheck) => {
+    if (opts.allGreen) return base + ' go';
+    return base + (doneCheck ? ' done' : '');
+  };
+
+  const noseClass = cls('r-nose',     _partDone('hull'));
+  const payClass  = cls('r-payload',  _partDone('propellant'));
+  const aviClass  = cls('r-avionics', _partDone('propellant'));
+  const engClass  = cls('r-engine',   _partDone('engine'));
+  const exhClass  = cls('r-exhaust',  _partDone('engine') && (gs.fuelInjection || 0) >= 100);
+
+  // 로켓 클래스 이름
+  const selClass = (gs.assembly && gs.assembly.selectedClass) || 'vega';
+  const rc = (typeof ROCKET_CLASSES !== 'undefined')
+    ? ROCKET_CLASSES.find(c => c.id === selClass) || ROCKET_CLASSES[0]
+    : null;
+  const className = rc ? rc.name : 'NANO';
+  const thrustLabel = rc ? String(rc.thrustKN) + ' kN' : '18 kN';
+  // 추력 4자리 이상이면 패딩 조정
+  const thrustPad = (rc && rc.thrustKN >= 100) ? '' : ' ';
+
+  return `<span class="${noseClass}">           *
+          /|\\
+         / | \\
+        /  |  \\
+       /   |   \\
+      / ${className.padEnd(8)} \\
+     /______________\\</span>
+<span class="${payClass}">   |  [PAYLOAD]    |
+   |   _________   |
+   |  |  NAV    |  |
+   |  |  SYS    |  |
+   |  |_________|  |</span>
+<span class="${aviClass}">   |               |
+   |  [AVIONICS]   |
+   |  _________    |
+   | | O  O  O |   |
+   | |  GYRO   |   |
+   | |_________|   |</span>
+<span class="${engClass}">   |               |
+   | [PROPULSION]  |
+   |  _________    |
+   | |         |   |
+   | | ${thrustLabel} ${thrustPad}|   |
+   | |_________|   |
+   |_______________|</span>
+<span class="${exhClass}">  / [LOX]  [RP-1]  \\
+ /___________________\\
+       |   |   |
+      /|   |   |\\
+     /_|___|___|_\\</span>`;
+}
+
