@@ -127,7 +127,7 @@ function renderResources() {
 // ============================================================
 function renderAll() {
   renderResources();
-  if (activeTab === 'production') { renderProductionTab(); if (typeof renderMissionGoal === 'function') renderMissionGoal(); }
+  if (activeTab === 'production') { renderProductionTab(); }
   if (activeTab === 'research')   renderResearchTab();
   if (activeTab === 'assembly')   renderAssemblyTab();
   if (activeTab === 'launch')     renderLaunchTab();
