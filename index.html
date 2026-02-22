@@ -1479,6 +1479,22 @@ body.tab-research #pane-research {
   margin-bottom: 6px;
   background: rgba(30,18,0,0.4);
   font-size: 11px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.mfg-fuel-active {
+  border-color: var(--cyan);
+  background: rgba(0,30,40,0.5);
+  box-shadow: 0 0 6px rgba(0,229,255,0.2);
+}
+.btn-active-inject {
+  background: rgba(0,100,120,0.6) !important;
+  border-color: var(--cyan) !important;
+  color: var(--cyan) !important;
+  animation: inject-pulse 1.2s ease-in-out infinite;
+}
+@keyframes inject-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(0,229,255,0.3); }
+  50%      { box-shadow: 0 0 10px rgba(0,229,255,0.6); }
 }
 .mfg-completion-bar {
   border: 1px solid var(--green-mid);

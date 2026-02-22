@@ -32,8 +32,8 @@ function renderResources() {
   const rlInner = document.getElementById('rl-inner');
   if (!rlInner) return;
 
-  const RES_MAX  = { money:1e12, iron:5e7, copper:2e7, fuel:2e7, electronics:1e7, research:50000 };
-  const LOW_THRESH = { iron:500, copper:200, fuel:200, electronics:100 };
+  const RES_MAX  = BALANCE.RES_MAX;
+  const LOW_THRESH = BALANCE.RES_LOW_THRESH;
 
   // ── 자금 섹션 ──────────────────────────────────────────────
   const moneyVal  = gs.res.money || 0;
@@ -43,7 +43,7 @@ function renderResources() {
 
   let html = `
     <div class="rl-fund-sect">
-      <div class="rl-fund-title">기금 <span class="rl-en">(FUND)</span></div>
+      <div class="rl-fund-title">$ 기금 <span class="rl-en">(FUND)</span></div>
       <div class="rl-fund-main">
         <span class="rl-fund-val">$ ${fmtComma(moneyVal)}</span>
         <span class="rl-fund-rate">${moneyRateStr}</span>
@@ -63,10 +63,12 @@ function renderResources() {
     const resDef  = typeof RESOURCES !== 'undefined' ? RESOURCES.find(r => r.id === id) : null;
     const sym     = resDef ? resDef.symbol : '';
     const symCol  = resDef ? resDef.color  : 'var(--green)';
+    const icon    = resDef ? resDef.icon   : '';
+    const iconCol = resDef ? (resDef.iconColor || resDef.color) : 'var(--green)';
     return `
       <div class="rl-v7item">
         <div class="rl-v7hd">
-          <span class="rl-v7name">${kor} <span class="rl-en">(${eng})</span> <span class="rl-res-sym" style="color:${symCol}">${sym}</span></span>
+          <span class="rl-v7name"><span style="color:${iconCol}">${icon}</span> ${kor} <span class="rl-en">(${eng})</span> <span class="rl-res-sym" style="color:${symCol}">${sym}</span></span>
           <span class="rl-v7rate">${rateStr}</span>
         </div>
         <div class="rl-v7val">${fmtComma(Math.floor(val))}</div>
@@ -81,6 +83,9 @@ function renderResources() {
   html += `<div class="rl-sect-hd">&#9632; 원자재</div>`;
   html += resItem('iron',        '철',        'Iron');
   html += resItem('copper',      '구리',     'Copper');
+
+  // ■ 가공품
+  html += `<div class="rl-sect-hd">&#9632; 가공품</div>`;
   html += resItem('electronics', '전자부품', 'Electronics');
 
   // ■ 추진재
@@ -91,18 +96,21 @@ function renderResources() {
   html += `<div class="rl-sect-hd">&#9632; 연구</div>`;
   html += resItem('research', '연구 포인트', 'Research');
 
-  // 인원
-  const avail     = getAvailableWorkers();
-  const totalW    = typeof getTotalWorkers === 'function' ? getTotalWorkers() : (gs.citizens || 0);
-  const assignedW = totalW - avail;
+  // 인원 — 시민(유휴) / 직원(배치) / 전체
+  const idleCitizens = gs.citizens || 0;
+  const totalPop     = typeof getTotalWorkers === 'function' ? getTotalWorkers() : idleCitizens;
+  const assignedW    = typeof getTotalAssigned === 'function' ? getTotalAssigned() : 0;
   html += `
     <div class="rl-v7workers">
       <div class="rl-v7hd">
-        <span class="rl-v7name">&#128100; 인원 <span class="rl-en">(Workers)</span></span>
+        <span class="rl-v7name">&#128101; 전체 인원</span>
         <span class="rl-v7right">
-          <span class="rl-v7val" style="color:var(--white)">${assignedW}/${totalW}</span>
-          <span class="rl-v7rate">여유 ${avail}</span>
+          <span class="rl-v7val" style="color:var(--white)">${totalPop}명</span>
         </span>
+      </div>
+      <div style="font-size:10px;padding:2px 0 0 4px;color:var(--green-dim)">
+        시민 <span style="color:var(--green-mid)">${idleCitizens}</span> &nbsp;
+        직원 <span style="color:var(--amber)">${assignedW}</span>
       </div>
     </div>`;
 
@@ -198,10 +206,12 @@ function startTitleSequence() {
 
 function startNewGame(slot) {
   currentSaveSlot = slot || 1;
-  gs.res = { money:2000, iron:0, copper:0, fuel:0, electronics:0, research:0 };
+  gs.res = { money:BALANCE.START.money, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
-  gs.workers = 1;  // 주거시설 1동 = 인원 1명
-  gs.citizens = 1; // 게임 시작 시 주거시설 1동에 입주한 시민 1명
+  gs.workers = BALANCE.START.workers;
+  gs.citizens = BALANCE.START.citizens;
+  gs.citizenRecruits = 0;  // 누적 분양 횟수 (분양 비용 산정용)
+  gs._citizenModelV2 = true;  // 시민/직원 분리 모델
   gs.assignments = {};
   gs.specialists = {};
   gs.opsRoles = { sales: 0, accounting: 0, consulting: 0 };
@@ -214,10 +224,12 @@ function startNewGame(slot) {
   gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
   gs.mfgActive = {};
   gs.fuelInjection = 0;
+  gs.fuelInjecting = false;
   gs.assembly = { selectedQuality:'proto', jobs:[] };
   gs.fuelLoaded = false;
   gs.upgrades = {};
   gs.researchProgress = {};
+  gs.researchPaused = {};
   gs.researchQueue = [];
   gs.maxResearchSlots = 1;
   gs.msUpgrades = {};
@@ -343,8 +355,15 @@ function enterGame() {
     const rl = document.getElementById('res-left');
     if (rl) rl.classList.add('visible');
     if (typeof initWorldDrag === 'function') initWorldDrag();
+    // BGM: 브라우저 자동재생 정책으로 인해 첫 사용자 인터랙션에서 시작
     if (typeof BGM !== 'undefined' && gs.settings.sound) {
-      setTimeout(() => BGM.start(), 1200);
+      const _startBgmOnce = () => {
+        document.removeEventListener('click', _startBgmOnce);
+        document.removeEventListener('keydown', _startBgmOnce);
+        setTimeout(() => BGM.start(), 100);
+      };
+      document.addEventListener('click', _startBgmOnce);
+      document.addEventListener('keydown', _startBgmOnce);
     }
     calcOffline();
     if (typeof applyI18n === 'function') applyI18n();
