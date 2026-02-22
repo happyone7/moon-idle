@@ -87,6 +87,7 @@ const BGM = {
 
   /** BGM 시작. trackIdx는 하위호환용 — 실제로는 페이즈 자동 감지. */
   start(trackIdx) {
+    console.log('[BGM] start() 호출, 현재 phase=%s, playing=%s', this._phase, this.playing);
     this.playing = true;
     this._refreshIfNeeded();
     this._updateUI();
@@ -148,7 +149,9 @@ const BGM = {
     // 이미 같은 이벤트 재생 중이면 스킵
     if (this._eventPlaying) return;
 
-    const src = tracks[Math.floor(Math.random() * tracks.length)];
+    const rawSrc = tracks[Math.floor(Math.random() * tracks.length)];
+    const src = this._encodeSrc(rawSrc);
+    console.log('[BGM] playEvent id=%s src=%s', eventId, src);
 
     // 현재 페이즈 트랙 페이드아웃
     if (this._current && !this._current.paused) {
@@ -160,9 +163,28 @@ const BGM = {
     evAudio.volume = this.volume;
     this._eventAudio = evAudio;
 
-    evAudio.addEventListener('canplaythrough', () => {
-      evAudio.play().catch(() => {});
-    }, { once: true });
+    let evStarted = false;
+
+    const doEventPlay = () => {
+      if (evStarted) return;
+      evStarted = true;
+      evAudio.play().catch(err => {
+        console.warn('[BGM] 이벤트 play() 실패:', err.message, src);
+        this._eventPlaying = false;
+        this._eventAudio = null;
+        if (this.playing) this._startTrack();
+      });
+    };
+
+    evAudio.addEventListener('canplaythrough', doEventPlay, { once: true });
+
+    // canplaythrough 타임아웃
+    setTimeout(() => {
+      if (!evStarted) {
+        console.warn('[BGM] 이벤트 canplaythrough 타임아웃, 강제 재생 시도:', src);
+        doEventPlay();
+      }
+    }, 5000);
 
     evAudio.addEventListener('ended', () => {
       this._eventPlaying = false;
@@ -172,7 +194,9 @@ const BGM = {
       }
     });
 
-    evAudio.addEventListener('error', () => {
+    evAudio.addEventListener('error', (e) => {
+      console.warn('[BGM] 이벤트 로드 실패:', src, e);
+      evStarted = true;
       this._eventPlaying = false;
       this._eventAudio = null;
       if (this.playing) this._startTrack();
@@ -206,6 +230,12 @@ const BGM = {
     }
   },
 
+  // ─── 내부: 경로 인코딩 (공백 등 특수문자 처리) ─────────
+  _encodeSrc(src) {
+    // 경로의 각 세그먼트를 개별 인코딩 (슬래시는 유지)
+    return src.split('/').map(seg => encodeURIComponent(seg)).join('/');
+  },
+
   // ─── 내부: 트랙 로드 + 크로스페이드 재생 ─────────────────
   _startTrack() {
     if (!this.playing) return;
@@ -214,16 +244,31 @@ const BGM = {
     if (!this._phase) this._phase = this._getPhase();
 
     const playlist = this.PLAYLISTS[this._phase] || this.PLAYLISTS.early;
-    const src = playlist[this._playlistIdx % playlist.length];
+    const rawSrc = playlist[this._playlistIdx % playlist.length];
+    const src = this._encodeSrc(rawSrc);
+    console.log('[BGM] _startTrack phase=%s idx=%d src=%s', this._phase, this._playlistIdx, src);
 
     const prev = this._current;
     const audio = new Audio(src);
     audio.volume = 0;
 
-    audio.addEventListener('canplaythrough', () => {
-      if (!this.playing) return;
+    let started = false;
+
+    const doPlay = () => {
+      if (started || !this.playing) return;
+      started = true;
       this._current = audio;
-      audio.play().catch(() => {});
+      audio.play().then(() => {
+        console.log('[BGM] 재생 시작:', src);
+      }).catch(err => {
+        console.warn('[BGM] play() 실패:', err.message, src);
+        // play 실패 시 다음 트랙 시도
+        if (!this.playing) return;
+        const pl = this.PLAYLISTS[this._phase] || this.PLAYLISTS.early;
+        this._playlistIdx = (this._playlistIdx + 1) % pl.length;
+        setTimeout(() => this._startTrack(), 500);
+        return;
+      });
       // 새 트랙 페이드인
       this._fadeTo(audio, this._vol(), 2.0);
       // 이전 트랙 페이드아웃
@@ -231,7 +276,17 @@ const BGM = {
         this._fadeOut(prev, 2.0);
       }
       this._updateUI();
-    }, { once: true });
+    };
+
+    audio.addEventListener('canplaythrough', doPlay, { once: true });
+
+    // canplaythrough 타임아웃 — 5초 내 이벤트 미수신 시 강제 재생 시도
+    setTimeout(() => {
+      if (!started && this.playing) {
+        console.warn('[BGM] canplaythrough 타임아웃, 강제 재생 시도:', src);
+        doPlay();
+      }
+    }, 5000);
 
     audio.addEventListener('ended', () => {
       if (!this.playing || this._eventPlaying) return;
@@ -247,8 +302,9 @@ const BGM = {
       this._startTrack();
     });
 
-    audio.addEventListener('error', () => {
-      console.warn('[BGM] 로드 실패:', src);
+    audio.addEventListener('error', (e) => {
+      console.warn('[BGM] 로드 실패:', src, e);
+      started = true; // 에러 시 doPlay 중복 방지
       if (!this.playing) return;
       const pl = this.PLAYLISTS[this._phase] || this.PLAYLISTS.early;
       this._playlistIdx = (this._playlistIdx + 1) % pl.length;

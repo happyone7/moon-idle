@@ -360,7 +360,10 @@ function enterGame() {
       const _startBgmOnce = () => {
         document.removeEventListener('click', _startBgmOnce);
         document.removeEventListener('keydown', _startBgmOnce);
-        setTimeout(() => BGM.start(), 100);
+        console.log('[BGM] 사용자 인터랙션 감지, BGM.start() 호출');
+        setTimeout(() => {
+          try { BGM.start(); } catch(e) { console.warn('[BGM] start() 예외:', e); }
+        }, 100);
       };
       document.addEventListener('click', _startBgmOnce);
       document.addEventListener('keydown', _startBgmOnce);
