@@ -96,21 +96,15 @@ function renderResources() {
   html += `<div class="rl-sect-hd">&#9632; 연구</div>`;
   html += resItem('research', '연구 포인트', 'Research');
 
-  // 인원 — 시민(유휴) / 직원(배치) / 전체
-  const idleCitizens = gs.citizens || 0;
-  const totalPop     = typeof getTotalWorkers === 'function' ? getTotalWorkers() : idleCitizens;
+  // 인원 — 배치 직원
   const assignedW    = typeof getTotalAssigned === 'function' ? getTotalAssigned() : 0;
   html += `
     <div class="rl-v7workers">
       <div class="rl-v7hd">
-        <span class="rl-v7name">&#128101; 전체 인원</span>
+        <span class="rl-v7name">&#128101; 배치 직원</span>
         <span class="rl-v7right">
-          <span class="rl-v7val" style="color:var(--white)">${totalPop}명</span>
+          <span class="rl-v7val" style="color:var(--amber)">${assignedW}명</span>
         </span>
-      </div>
-      <div style="font-size:10px;padding:2px 0 0 4px;color:var(--green-dim)">
-        시민 <span style="color:var(--green-mid)">${idleCitizens}</span> &nbsp;
-        직원 <span style="color:var(--amber)">${assignedW}</span>
       </div>
     </div>`;
 
@@ -210,7 +204,7 @@ function startNewGame(slot) {
   gs.res = { money:BALANCE.START.money, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.workers = BALANCE.START.workers;
-  gs.citizens = BALANCE.START.citizens;
+  gs.citizens = 0;
   gs.citizenRecruits = 0;  // 누적 분양 횟수 (분양 비용 산정용)
   gs._citizenModelV2 = true;  // 시민/직원 분리 모델
   gs.assignments = {};

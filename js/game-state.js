@@ -329,7 +329,6 @@ function getBldWorkerCost(bldId) {
 function promoteToSpecialist(bldId, specId) {
   const assigned = (gs.assignments && gs.assignments[bldId]) || 0;
   if (assigned < 1) return false;
-  gs.assignments[bldId] = assigned - 1;
   if (!gs.specialists) gs.specialists = {};
   if (!gs.specialists[bldId]) gs.specialists[bldId] = {};
   gs.specialists[bldId][specId] = (gs.specialists[bldId][specId] || 0) + 1;

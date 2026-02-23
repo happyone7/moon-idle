@@ -840,43 +840,21 @@ function openBldOv(bld, el, keepPosition = false) {
   // ── 직원 고용 / 시민 관리 섹션 (항상 맨 위) ───────────────
   const isHousingBld = bld.id === 'housing';
   const isProductionBld = bld.produces !== 'bonus' || bld.id === 'ops_center';
-  if (cnt >= 1 && (isProductionBld || isHousingBld)) {
-    if (isHousingBld) {
-      // 주거 시설: 시민 분양
-      const citizenCost = typeof getCitizenCost === 'function' ? getCitizenCost() : 500;
-      const citizenAfford = (gs.res.money || 0) >= citizenCost;
-      const citizenIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS['housing']) || '';
-      actions.push({ type: 'sep', label: '// 시민 관리' });
-      actions.push({
-        label: `${citizenIcon} 시민 분양`,
-        info: `$${fmt(citizenCost)}`,
-        disabled: false,
-        affordable: citizenAfford,
-        desc: `주거 시설에 시민 1명 입주\n현재 시민: ${gs.citizens || 0}명\n분양 비용: $${fmt(citizenCost)}`,
-        type: 'alloc_citizen',
-      });
-    } else {
-      // 생산 건물: 여유 시민을 배치 (시민 총수 증가 없음)
-      const hireCost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bld.id) : getWorkerHireCost();
-      const hireAfford = (gs.res.money || 0) >= hireCost;
-      const hasIdleWorker = avail > 0;
-      const wkIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS[bld.id]) || '';
-      actions.push({ type: 'sep', label: '// 직원 고용' });
-      actions.push({
-        label: hasIdleWorker
-          ? `${wkIcon} 직원 고용`
-          : `${wkIcon} [시민 부족]`,
-        info: hasIdleWorker ? `$${fmt(hireCost)}` : `여유 없음`,
-        disabled: !hasIdleWorker,
-        affordable: hireAfford,
-        hasIdleWorker: hasIdleWorker,
-        desc: hasIdleWorker
-          ? `${bld.name}에 직원 배치 (현재 ${assigned}명)\n비용: $${fmt(hireCost)}`
-          : `여유 시민 없음 — 주거시설에서 시민을 분양하세요`,
-        type: 'hire_bld_worker',
-        bldId: bld.id,
-      });
-    }
+  if (cnt >= 1 && isProductionBld) {
+    // 생산 건물: 직접 직원 고용
+    const hireCost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bld.id) : getWorkerHireCost();
+    const hireAfford = (gs.res.money || 0) >= hireCost;
+    const wkIcon = (typeof BLD_STAFF_ICONS !== 'undefined' && BLD_STAFF_ICONS[bld.id]) || '';
+    actions.push({ type: 'sep', label: '// 직원 고용' });
+    actions.push({
+      label: `${wkIcon} 직원 고용`,
+      info: `$${fmt(hireCost)}`,
+      disabled: false,
+      affordable: hireAfford,
+      desc: `${bld.name}에 직원 배치 (현재 ${assigned}명)\n비용: $${fmt(hireCost)}`,
+      type: 'hire_bld_worker',
+      bldId: bld.id,
+    });
   }
 
   // ── 건물 업그레이드 ────────────────────────────────────────
@@ -984,7 +962,7 @@ function openBldOv(bld, el, keepPosition = false) {
     const isWorker = act.type === 'assign' || act.type === 'unassign';
     let btnTxt;
     if (act.type === 'hire_bld_worker') {
-      btnTxt = act.hasIdleWorker ? '[고용]' : '[시민 부족]';
+      btnTxt = '[고용]';
     } else if (act.type === 'alloc_citizen') {
       btnTxt = '[분양]';
     } else if (act.done) {
@@ -1295,10 +1273,8 @@ function assignWorker(bldId) {
   const assigned = gs.assignments[bldId] || 0;
   const slotCap  = cnt + ((gs.bldSlotLevels && gs.bldSlotLevels[bldId]) || 0);
   if (cnt === 0)                    { notify('건물이 없습니다', 'red'); return; }
-  if (getAvailableWorkers() <= 0)   { notify('여유 시민 없음', 'red'); return; }
   if (assigned >= slotCap)          { notify('슬롯 수용 한도 초과 — 슬롯 업그레이드 필요', 'amber'); return; }
   gs.assignments[bldId] = assigned + 1;
-  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
   notify(`${bld.icon} ${bld.name} — 직원 배치 (${gs.assignments[bldId]}명)`);
   playSfx('triangle', 300, 0.04, 0.02, 400);
   const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
@@ -1361,11 +1337,6 @@ function _refreshBldOvHousingPanel() {
 function hireBldWorker(bldId) {
   const cost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bldId) : (getWorkerHireCost ? getWorkerHireCost() : 100);
   if (!gs || !gs.res) return;
-  // 여유 시민 확인 — 유휴 시민을 직원으로 배치
-  if (getAvailableWorkers() <= 0) {
-    notify('여유 시민 없음 — 주거시설에서 시민을 분양하세요', 'red');
-    return;
-  }
   if ((gs.res.money || 0) < cost) {
     notify('자금 부족 — 직원 고용 불가', 'red');
     return;
@@ -1373,7 +1344,6 @@ function hireBldWorker(bldId) {
   gs.res.money -= cost;
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bldId] = (gs.assignments[bldId] || 0) + 1;
-  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
   const assigned = gs.assignments[bldId];
   notify(`직원 배치 완료 — ${bldId} ×${assigned}명`, 'green');
   playSfx('triangle', 400, 0.12, 0.07, 600);

@@ -291,23 +291,7 @@ function renderResearchTab() {
   // ── 중앙: 기술 브랜치 컬럼 ───────────────────────────────
   let branchesHtml = '';
   RESEARCH_BRANCHES.forEach(branch => {
-    // ── 잠긴 미래 연구 열 ────────────────────────────────
-    if (branch.locked) {
-      let lockedCards = '';
-      (branch.lockedItems || []).forEach((item, idx) => {
-        if (idx > 0) lockedCards += `<div class="rsh-branch-arrow" style="color:var(--green-dim)">│</div>`;
-        lockedCards += `<div class="rsh-bcard-locked rsh-future-card">
-  <div class="rsh-bc-hd"><span class="rsh-bc-id">???</span> ${item.name}</div>
-  <div class="rsh-bc-desc rsh-future-desc">${item.desc}</div>
-  <div class="rsh-bc-status">🔒 잠김</div>
-</div>`;
-      });
-      branchesHtml += `<div class="rsh-branch-col rsh-branch-future" data-branch="${branch.id}">
-  <div class="rsh-branch-hd">${branch.id} · ${branch.label}</div>
-  ${lockedCards}
-</div>`;
-      return;
-    }
+    if (branch.locked) return;  // locked 브랜치 전체 스킵
 
     let cardsHtml = '';
 

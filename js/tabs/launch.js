@@ -1047,16 +1047,25 @@ function renderLaunchTab() {
     }
   }
 
-  // 안내 — 완성도 100% 미만일 때 조립동 이동 안내
+  // 안내 — 완성도 100% 미만일 때 조립동/생산허브 이동 안내
   const lcGuideEl = document.getElementById('lc-assembly-guide');
   if (lcGuideEl) {
     if (!canLaunch && readinessPct < 100) {
       lcGuideEl.style.display = '';
-      lcGuideEl.innerHTML =
-        `<div style="font-size:11px;color:var(--cyan);margin-bottom:6px;">` +
-        `&#9654; 조립동에서 부품 제작과 연료 주입을 완료하세요.</div>` +
-        `<button class="btn btn-sm" onclick="switchMainTab('assembly')" style="font-size:11px;padding:4px 12px;">` +
-        `&#9881; 조립동으로 이동</button>`;
+      const hasAssembly = gs.unlocks && gs.unlocks['tab_assembly'];
+      if (hasAssembly) {
+        lcGuideEl.innerHTML =
+          `<div style="font-size:11px;color:var(--cyan);margin-bottom:6px;">` +
+          `&#9654; 조립동에서 부품 제작과 연료 주입을 완료하세요.</div>` +
+          `<button class="btn btn-sm" onclick="switchMainTab('assembly')" style="font-size:11px;padding:4px 12px;">` +
+          `&#9881; 조립동으로 이동</button>`;
+      } else {
+        lcGuideEl.innerHTML =
+          `<div style="font-size:11px;color:var(--cyan);margin-bottom:6px;">` +
+          `&#9654; 먼저 생산 시설을 구축하고 자원을 확보하세요.</div>` +
+          `<button class="btn btn-sm" onclick="switchMainTab('production')" style="font-size:11px;padding:4px 12px;">` +
+          `&#9658; 생산허브로 이동</button>`;
+      }
     } else {
       lcGuideEl.style.display = 'none';
       lcGuideEl.innerHTML = '';

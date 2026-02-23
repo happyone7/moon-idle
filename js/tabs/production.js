@@ -4,22 +4,21 @@ function withdrawAllWorkers() {
   if (!gs.assignments) return;
   const was = getTotalAssigned();
   if (was === 0) { notify('배치된 인원이 없습니다', 'amber'); return; }
-  gs.citizens = (gs.citizens || 0) + was;
   Object.keys(gs.assignments).forEach(k => { gs.assignments[k] = 0; });
-  notify(`// 전체 직원 철수 → 시민 복귀 (${was}명)`, 'amber');
+  notify(`// 전체 직원 철수 (${was}명)`, 'amber');
   playSfx('triangle', 440, 0.12, 0.03, 220);
   renderAll();
 }
 
 function quickAssign(bid) {
-  const avail = getAvailableWorkers();
-  if (avail <= 0) { notify('여유 시민 없음', 'amber'); return; }
+  const cost = typeof getBldWorkerCost === 'function' ? getBldWorkerCost(bid) : 0;
+  if (cost > 0 && (gs.res.money || 0) < cost) { notify('자금 부족', 'amber'); return; }
   const slotCap = (gs.buildings[bid] || 0) + ((gs.bldSlotLevels && gs.bldSlotLevels[bid]) || 0);
   const assigned = (gs.assignments && gs.assignments[bid]) || 0;
   if (assigned >= slotCap) { notify(`슬롯 수용 한도 초과 (${slotCap})`, 'amber'); return; }
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bid] = assigned + 1;
-  gs.citizens = Math.max(0, (gs.citizens || 0) - 1);
+  if (cost > 0) gs.res.money = Math.max(0, (gs.res.money || 0) - cost);
   playSfx('triangle', 300, 0.04, 0.02, 400);
   renderAll();
 }
@@ -152,7 +151,7 @@ function renderProductionTab() {
     const withdrawBtn = assignedW > 0
       ? `&nbsp;<button class="blr-withdraw-btn" onclick="withdrawAllWorkers()">[ 전체 철수 ]</button>`
       : '';
-    statusEl.innerHTML = `전체 ${totalW}명 (시민 ${gs.citizens || 0} / 직원 ${assignedW}) &nbsp; 수입: +${fmtDec(totalIncome, 1)}/s${withdrawBtn}`;
+    statusEl.innerHTML = `직원 ${assignedW}명 &nbsp; 수입: +${fmtDec(totalIncome, 1)}/s${withdrawBtn}`;
   }
 
   // 튜토리얼 힌트: ops_center 미건설 시 안내
@@ -160,16 +159,13 @@ function renderProductionTab() {
   const tutEl = document.getElementById('prod-tutorial');
   if (tutEl) tutEl.innerHTML = '';
 
-  // 시민 현황 요약
-  const totalCitizens = gs.citizens || 0;
+  // 직원 현황 요약
   const researchStaff = (gs.assignments && gs.assignments['research_lab']) || 0;
   const opsStaff      = (gs.assignments && gs.assignments['ops_center'])   || 0;
   let html = `<div class="blr-stats">
-    <span class="blr-stat-item">시민 <span class="blr-stat-val">${totalCitizens}명</span></span>
+    <span class="blr-stat-item">연구소 직원 <span class="blr-stat-val">${researchStaff}명</span></span>
     <span class="blr-stat-sep">|</span>
-    <span class="blr-stat-item">연구소 <span class="blr-stat-val">${researchStaff}명</span></span>
-    <span class="blr-stat-sep">|</span>
-    <span class="blr-stat-item">운영센터 <span class="blr-stat-val">${opsStaff}명</span></span>
+    <span class="blr-stat-item">운영센터 직원 <span class="blr-stat-val">${opsStaff}명</span></span>
   </div>`;
 
   // 건물 리스트: 상태만 표시 (배치는 건물 호버 팝업에서)

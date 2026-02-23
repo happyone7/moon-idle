@@ -40,18 +40,18 @@ const BALANCE = {
 
   // ── 건물별 직원 고용 기본 비용 ────────────────────────────────
   BLD_WORKER_BASE: {
-    ops_center:   150,
-    research_lab: 300,
-    supply_depot: 450,
-    mine:         600,
-    extractor:    900,
-    refinery:     1200,
-    cryo_plant:   1500,
-    elec_lab:     1800,
-    fab_plant:    2500,
-    r_and_d:      4000,
+    ops_center:   135,
+    research_lab: 270,
+    supply_depot: 405,
+    mine:         540,
+    extractor:    810,
+    refinery:     1080,
+    cryo_plant:   1350,
+    elec_lab:     1620,
+    fab_plant:    2250,
+    r_and_d:      3600,
   },
-  BLD_WORKER_EXP: 3.0,         // 고용 비용 지수 (base × 3^assigned)
+  BLD_WORKER_EXP: 2.4,         // 고용 비용 지수 (base × 2.4^assigned)
 
   // ── 시민 분양 ─────────────────────────────────────────────────
   CITIZEN: {
@@ -267,7 +267,7 @@ const PARTS = [
   // ── MK1 (모든 품질 공통) ──────────────────────────────────
   { id:'hull',         name:'동체',        icon:'[HUL]', cycles:50, cycleTime:3,   cost:{iron:200}                                },
   { id:'engine',       name:'엔진',        icon:'[ENG]', cycles:5,  cycleTime:10,  cost:{iron:100, copper:250, electronics:30}   },
-  { id:'propellant',   name:'탱크',        icon:'[TNK]', cycles:2,  cycleTime:60,  cost:{iron:200, copper:150}       },
+  { id:'propellant',   name:'탱크',        icon:'[TNK]', cycles:2,  cycleTime:15,  cost:{iron:200, copper:150}       },
   // ── MK2+ 전용 (standard 이상) ───────────────────────────
   { id:'pump_chamber', name:'펌프/연소실', icon:'[PMP]', cycles:8,  cycleTime:30,  cost:{iron:500, copper:300}, minQuality:'standard' },
 ];
