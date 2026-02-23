@@ -71,6 +71,35 @@ const STAGE_SUCCESS_EVENT = {
 // 단계별 진행률 (%)
 const STAGE_PCT = { 4: 5, 5: 18, 6: 35, 7: 50, 8: 65, 9: 78, 10: 90, 11: 100 };
 
+// 클래스별 성취 메시지 (성공 오버레이 / 결과 패널용)
+const CLASS_ACHIEVEMENTS = {
+  vega: {
+    title:  '// KÁRMÁN LINE REACHED',
+    flavor: '인류의 위대한 첫걸음\n카르만 라인 — 우주의 문턱을 돌파했습니다',
+    next:   '다음 목표: 지구 궤도 진입 (Hermes 클래스)',
+  },
+  hermes: {
+    title:  '// EARTH ORBIT ACHIEVED',
+    flavor: '중력의 사슬을 끊어냈습니다\n인류가 처음으로 지구 궤도에 올랐습니다',
+    next:   '다음 목표: 달 전이 궤도 점화 (Atlas 클래스)',
+  },
+  atlas: {
+    title:  '// TLI — LUNAR TRANSFER',
+    flavor: '달을 향한 대장정이 시작됩니다\n전이 궤도 점화 성공 — 달까지 3일',
+    next:   '다음 목표: 달 궤도 포획 (Selene 클래스)',
+  },
+  selene: {
+    title:  '// LUNAR ORBIT INSERTION',
+    flavor: '달의 품에 안겼습니다\n달 궤도 포획 성공 — 착륙 준비 완료',
+    next:   '다음 목표: 달 착륙 성공 (Artemis 클래스)',
+  },
+  artemis: {
+    title:  '// TOUCHDOWN — MOON LANDING',
+    flavor: '"THE EAGLE HAS LANDED"\n인류가 달에 첫 발을 내딛었습니다',
+    next:   '다음 목표: 달 기지 건설 (Coming Soon)',
+  },
+};
+
 // 단계별 실패 ASCII 폭발 프레임 (실패 위치에 따라 다른 아트)
 const FAIL_FRAMES_BY_ZONE = {
   // LIFTOFF/MAX-Q 실패: 지상 근처 폭발
@@ -206,6 +235,78 @@ function _buildParallaxBg(wrapEl, totalMs) {
   return { stop: () => { stopped = true; } };
 }
 
+// ============================================================
+//  PRE-LAUNCH IGNITION SEQUENCE (T-3 → T=0)
+//  발사 전 엔진 스타트업 연출: 하단 UI 숨기고 점화 애니메이션
+// ============================================================
+function _runPreLaunchIgnition(onComplete) {
+  // 1. 하단 UI 즉시 숨기기 (체크리스트, 상태, 완성도, 커밋박스, 스테이지바)
+  ['lc-checklist', 'lc-status-panel', 'lc-readiness', 'lc-commit-box', 'lc-stagebar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // 2. 로켓 아트 아래에 배기구 + 지상 삽입
+  const preLaunch = document.getElementById('lc-pre-launch');
+  if (!preLaunch) { onComplete(); return; }
+
+  const extras = document.createElement('div');
+  extras.id = 'ign-extras';
+  extras.style.cssText = 'display:flex;flex-direction:column;align-items:center;overflow:hidden;';
+  extras.innerHTML =
+    '<pre id="ign-exhaust" style="font-family:\'Courier New\',Consolas,monospace;' +
+    'font-size:13px;line-height:1.3;white-space:pre;color:var(--amber);' +
+    'text-shadow:0 0 8px var(--amber);margin:0;text-align:center;' +
+    'animation:exhaust-flicker 0.15s step-start infinite;min-height:18px;' +
+    '"></pre>' +
+    '<pre style="font-family:\'Courier New\',Consolas,monospace;font-size:11px;' +
+    'line-height:1.2;white-space:pre;color:#1a4a1a;margin:0;width:100%;text-align:center;">' +
+    '─────────────────────────────────\n' +
+    '▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓</pre>';
+  preLaunch.appendChild(extras);
+
+  const statusEl  = document.getElementById('lc-status-text');
+  const timerEl   = document.getElementById('lc-t-timer');
+  const exhaustEl = document.getElementById('ign-exhaust');
+  const rocketPre = document.getElementById('lc-rocket-pre');
+
+  // 점화 시퀀스 (0 → 3초)
+  const STEPS = [
+    { ms:    0, timer: 'T - 3', status: '// ENGINE START', exhaust: '  ◦  ',                        shake: false },
+    { ms: 1000, timer: 'T - 2', status: '// THROTTLE UP',  exhaust: ' *|* \n  ◦  ',                shake: false },
+    { ms: 2000, timer: 'T - 1', status: '// FULL THRUST',  exhaust: '*!|!*\n *|* \n  ◦  ',         shake: true  },
+    { ms: 3000, timer: 'T - 0', status: '// LIFTOFF',      exhaust: '*!|!*\n*!|!*\n *|* \n  ◦  ',  shake: true  },
+  ];
+
+  STEPS.forEach((step, i) => {
+    setTimeout(() => {
+      if (statusEl)  statusEl.textContent  = step.status;
+      if (timerEl)   timerEl.textContent   = step.timer;
+      if (exhaustEl) exhaustEl.textContent = step.exhaust;
+      if (step.shake && rocketPre) {
+        rocketPre.style.animation  = i === 3 ? 'shake-md 0.05s infinite' : 'shake-sm 0.05s infinite';
+        rocketPre.style.color      = 'var(--amber)';
+        rocketPre.style.textShadow = i === 3 ? '0 0 18px var(--amber)' : '0 0 10px var(--amber)';
+      }
+      if (typeof playSfx === 'function') {
+        playSfx('sine', 160 + i * 55, 0.03 + i * 0.02, 0.05, 210 + i * 55);
+      }
+    }, step.ms);
+  });
+
+  // T=0 이후 0.4초 후 메인 발사 애니메이션 전환
+  setTimeout(() => {
+    const extEl = document.getElementById('ign-extras');
+    if (extEl) extEl.remove();
+    if (rocketPre) {
+      rocketPre.style.animation  = '';
+      rocketPre.style.color      = '';
+      rocketPre.style.textShadow = '';
+    }
+    onComplete();
+  }, 3400);
+}
+
 function executeLaunch() {
   if (launchInProgress) return;
   // 발사 가능 조건: 부품+연료 100%
@@ -262,8 +363,11 @@ function executeLaunch() {
   pendingLaunchEp = earned;  // D6: EP 적립 (프레스티지 시 SS로 전환)
   pendingLaunchData = { q, sci, earned, success: rollSuccess, firstFailStage };
 
+  launchInProgress = true; // 점화 시작 즉시 잠금 (중복 발사 방지)
   switchMainTab('launch');
-  _runLaunchAnimation(q, sci, earned, rollSuccess, stageRolls, firstFailStage);
+  _runPreLaunchIgnition(() => {
+    _runLaunchAnimation(q, sci, earned, rollSuccess, stageRolls, firstFailStage);
+  });
 }
 
 // ============================================================
@@ -629,7 +733,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
       const lrTitle = document.getElementById('lr-title');
       if (lrTitle) {
         lrTitle.textContent = success
-          ? '// 달 착륙 성공'
+          ? (CLASS_ACHIEVEMENTS[classId] || CLASS_ACHIEVEMENTS.artemis).title
           : `// 발사 실패 — ${failStageName}`;
       }
       const lrStats = document.getElementById('lr-stats');
@@ -643,8 +747,10 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
       const lrMs = document.getElementById('lr-ms');
       if (lrMs) {
         if (success) {
-          lrMs.textContent = `EP 보상: +${earned} 탐험 포인트`;
-          lrMs.style.color = 'var(--amber)';
+          const achLr = CLASS_ACHIEVEMENTS[classId] || CLASS_ACHIEVEMENTS.artemis;
+          lrMs.innerHTML = `<span style="color:var(--green);">${achLr.flavor.split('\n')[0]}</span>` +
+            (earned > 0 ? `<br><span style="color:var(--amber);">EP +${earned}</span>` : '');
+          lrMs.style.color = '';
         } else {
           lrMs.textContent = `${failStageName}에서 실패 — ${failDesc}`;
           lrMs.style.color = 'var(--red)';
@@ -669,60 +775,64 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
 }
 
 function _showLaunchOverlay(q, sci, earned, success, firstFailStage) {
-  const failStageName = firstFailStage >= 0 ? STAGE_NAMES[firstFailStage] : '';
-  const failDesc = firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : '';
+  const failStageName  = firstFailStage >= 0 ? STAGE_NAMES[firstFailStage]    : '';
+  const failDesc       = firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : '';
+  const overlayClassId = gs.assembly ? (gs.assembly.selectedClass || 'vega') : 'vega';
+  const ach            = CLASS_ACHIEVEMENTS[overlayClassId] || CLASS_ACHIEVEMENTS.artemis;
 
+  // ── 타이틀 ──
   const loTitle = document.getElementById('lo-title');
   if (loTitle) {
-    loTitle.textContent = success
-      ? '// 달 착륙 성공'
-      : `// 발사 실패 — ${failStageName}`;
+    loTitle.textContent = success ? ach.title : `// 발사 실패 — ${failStageName}`;
   }
+
+  // ── 로켓 아트 (성공: 정지 아트 / 실패: 폭발 마지막 프레임) ──
   const loRocket = document.getElementById('lo-rocket-art');
   if (loRocket) {
-    const overlayClassId = gs.assembly.selectedClass || 'vega';
     if (success) {
-      loRocket.style.color = '';
-      loRocket.style.textShadow = '';
-      // D5: 클래스별 정지 아트 사용
+      loRocket.style.color = 'var(--green)';
+      loRocket.style.textShadow = '0 0 8px rgba(0,230,118,0.6)';
       if (typeof ROCKET_ASCII !== 'undefined' && ROCKET_ASCII[overlayClassId]) {
         loRocket.textContent = ROCKET_ASCII[overlayClassId].static.join('\n');
-        loRocket.style.color = 'var(--green)';
-        loRocket.style.textShadow = '0 0 8px rgba(0,230,118,0.6)';
-      } else {
-        loRocket.innerHTML = (typeof getRocketArtHtml === 'function')
-          ? getRocketArtHtml({ allGreen: true }) : '';
+      } else if (typeof getRocketArtHtml === 'function') {
+        loRocket.innerHTML = getRocketArtHtml({ allGreen: true });
       }
     } else {
-      // 실패 오버레이: 실패 존 ASCII 아트
-      const zone = _getFailZone(firstFailStage);
+      const zone   = _getFailZone(firstFailStage);
       const frames = FAIL_FRAMES_BY_ZONE[zone];
-      loRocket.style.color = 'var(--red)';
+      loRocket.style.color      = 'var(--red)';
       loRocket.style.textShadow = '0 0 10px rgba(255,23,68,0.6)';
-      loRocket.textContent = frames[frames.length - 1]; // 마지막 프레임
+      loRocket.textContent      = frames[frames.length - 1];
     }
   }
+
+  // ── 미션 스탯 ──
   const loStats = document.getElementById('lo-stats');
   if (loStats) {
     let statsHtml = `기체: ${q.name}  |  \u0394v: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${success ? Math.floor(sci.altitude) : '---'} km<br>TWR: ${sci.twr.toFixed(2)}  |  성공률: ${sci.overallRate.toFixed(1)}%`;
-    if (!success) {
-      statsHtml += `<br><span style="color:var(--red)">실패: ${failStageName} — ${failDesc}</span>`;
-    }
+    if (!success) statsHtml += `<br><span style="color:var(--red)">실패: ${failStageName} — ${failDesc}</span>`;
     loStats.innerHTML = statsHtml;
   }
+
+  // ── 성취 메시지 ──
   const loMs = document.getElementById('lo-ms');
   if (loMs) {
     if (success) {
-      loMs.textContent = '\u2713 달 착륙 성공 \u2014 EP +' + earned;
-      loMs.style.color = 'var(--green)';
+      loMs.innerHTML =
+        `<div style="font-size:18px;color:var(--green);line-height:1.8;text-shadow:0 0 12px rgba(0,230,118,0.7);">${ach.flavor.replace(/\n/g, '<br>')}</div>` +
+        `<div style="font-size:12px;color:var(--green-dim);margin-top:8px;letter-spacing:1px;">${ach.next}</div>` +
+        (earned > 0 ? `<div style="font-size:16px;color:var(--amber);margin-top:10px;letter-spacing:3px;">&#10003; EP +${earned}</div>` : '');
+      loMs.style.color = '';
       playSfx('sine', 1200, 0.10, 0.03, 1600);
     } else {
       loMs.textContent = '\u2717 ' + failStageName + '에서 실패 \u2014 ' + failDesc;
       loMs.style.color = 'var(--red)';
+      loMs.style.fontSize = '';
       playSfx('sawtooth', 220, 0.20, 0.06, 80);
       setTimeout(() => playSfx('sawtooth', 160, 0.22, 0.05, 60), 200);
     }
   }
+
   const overlay = document.getElementById('launch-overlay');
   if (overlay) overlay.classList.add('show');
 }
@@ -753,6 +863,12 @@ function renderLaunchTab() {
   if (!launchInProgress) {
     if (preLaunch) preLaunch.style.display = '';
     if (animZone)  animZone.classList.remove('active');
+
+    // 발사/점화 중 숨겼던 UI 복원
+    ['lc-commit-box', 'lc-stagebar', 'lc-checklist', 'lc-status-panel', 'lc-readiness'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = '';
+    });
 
     // 게이지 리셋
     const speedEl  = document.getElementById('lc-speed-val');
