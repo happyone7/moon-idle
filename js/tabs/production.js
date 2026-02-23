@@ -28,7 +28,6 @@ function quickUnassign(bid) {
   if (assigned <= 0) return;
   if (!gs.assignments) gs.assignments = {};
   gs.assignments[bid] = assigned - 1;
-  gs.citizens = (gs.citizens || 0) + 1;
   playSfx('triangle', 400, 0.04, 0.02, 300);
   renderAll();
 }

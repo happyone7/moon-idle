@@ -563,7 +563,7 @@ function executePrestige() {
   gs.res = { money: BALANCE.START.money, iron:0, copper:0, fuel:0, electronics:0, research:0 };
   gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
   gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
-  gs.citizens = BALANCE.START.citizens;
+  gs.citizens = 0;
   gs.citizenRecruits = 0;
   gs.workers = BALANCE.START.workers;
   gs.assignments = {};

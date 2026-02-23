@@ -1295,8 +1295,7 @@ function unassignWorker(bldId) {
   const bld = BUILDINGS.find(b => b.id === bldId);
   gs.assignments[bldId] = Math.max(0, gs.assignments[bldId] - 1);
   if (gs.assignments[bldId] === 0) delete gs.assignments[bldId];
-  gs.citizens = (gs.citizens || 0) + 1;
-  if (bld) notify(`${bld.icon} ${bld.name} — 직원 철수 → 시민 복귀`);
+  if (bld) notify(`${bld.icon} ${bld.name} — 직원 철수`);
   playSfx('triangle', 400, 0.04, 0.02, 300);
   if (bld) {
     const pre = document.querySelector('.world-bld[data-bid="' + bldId + '"]');
