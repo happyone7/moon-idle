@@ -1754,12 +1754,18 @@ body.tab-research #pane-research {
 /* anim zone */
 #lc-anim-zone  { width: 100%; display: none; flex-direction: column; align-items: center; }
 #lc-anim-zone.active { display: flex; }
-.launch-anim-wrap { text-align: center; padding: 14px; min-height: 160px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); width: 100%; box-sizing: border-box; }
+.launch-anim-wrap { text-align: center; padding: 0; height: 280px; position: relative; overflow: hidden; border: var(--border); background: var(--bg); width: 100%; box-sizing: border-box; }
 .launch-rocket-ascii { font-family: 'Courier New', Consolas, monospace; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; color: var(--green); display: inline-block; }
-.launch-rocket-ascii.launching { animation: rocket-launch 3s ease-in forwards; }
+/* 로켓 고정 진동 (위로 날아가지 않고 hover) */
+.launch-rocket-ascii.launching { animation: launch-hover 0.10s ease-in-out infinite alternate !important; }
 .launch-rocket-ascii.exploding { animation: rocket-explode 0.3s ease-out both; }
+@keyframes launch-hover { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
+/* 오버레이 .lo-rocket 전용 (유지) */
 @keyframes rocket-launch { 0% { transform: translateY(0); } 100% { transform: translateY(-400px); } }
 @keyframes rocket-explode { 0% { transform: scale(1); opacity: 1; } 40% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+/* 패럴랙스 배경 */
+#launch-parallax { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; z-index: 1; pointer-events: none; }
+.lp-strip { position: absolute; top: 0; left: 0; width: 100%; font-family: 'Courier New', Consolas, monospace; font-size: 12px; line-height: 1.5; white-space: pre; pointer-events: none; padding: 0 6px; box-sizing: border-box; opacity: 0.45; will-change: transform; }
 /* D5: shake 클래스별 진동 키프레임 */
 @keyframes shake-sm  { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-1px,1px); } 50% { transform: translate(1px,-1px); } 75% { transform: translate(-1px,-1px); } }
 @keyframes shake-md  { 0%,100% { transform: translate(0,0); } 25% { transform: translate(-2px,2px); } 50% { transform: translate(2px,-2px); } 75% { transform: translate(-2px,-1px); } }

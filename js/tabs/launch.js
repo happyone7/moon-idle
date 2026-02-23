@@ -106,6 +106,106 @@ function _getFailZone(stageIdx) {
   return 'lunar';
 }
 
+// ============================================================
+//  PARALLAX BACKGROUND — 카메라 고정, 배경 지상→우주 스크롤
+// ============================================================
+function _buildParallaxBg(wrapEl, totalMs) {
+  // 배경 내용 블록 (위 = 우주, 아래 = 지상)
+  const L = [
+    // ① 별/우주 (맨 위, 마지막에 보임)
+    '  *   .   *   .   *   .   *   .   *   .  ',
+    ' .   *   .   *   .   *   .   *   .   *   ',
+    '  *   .   *   .   *   .   *   .   *   .  ',
+    ' .   *   .   .   *   .   *   .   .   *   ',
+  ];
+  const U = [
+    // ② 고층 대기 (점)
+    '  ·   ·   ·   ·   ·   ·   ·   ·   ·   · ',
+    ' ·   ·   ·   ·   ·   ·   ·   ·   ·   ·  ',
+    '  ·   ·   ·   ·   ·   ·   ·   ·   ·   · ',
+  ];
+  const C = [
+    // ③ 구름
+    '  ~~~  ~~   ~~~  ~~   ~~~  ~~   ~~~  ~~  ',
+    ' ~~   ~~~  ~~   ~~~  ~~   ~~~  ~~   ~~~  ',
+    '  ~~~  ~~   ~~~  ~~   ~~~  ~~   ~~~  ~~  ',
+    ' ~~   ~~~  ~~   ~~~  ~~   ~~~  ~~   ~~~  ',
+  ];
+  const A = [
+    // ④ 저층 대기
+    '  · * · * · * · * · * · * · * · * · * ·  ',
+    ' * · * · * · * · * · * · * · * · * · * ·  ',
+    '  · * · * · * · * · * · * · * · * · * ·  ',
+  ];
+  const G = [
+    // ⑤ 지상/발사대 (맨 아래, 처음에 보임)
+    '  [T]  |   [T]  |   [T]  |   [T]  |  [T]',
+    ' ─────────────────────────────────────────',
+    ' ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓',
+    ' █████████████████████████████████████████',
+  ];
+
+  const rep = (lines, n) => Array.from({ length: n }, () => lines.join('\n')).join('\n');
+
+  // 색상 구간별 분리 (3개 레이어: 속도 다름)
+  const layerDefs = [
+    // near: 지상·구름 — 빠름
+    { content: rep(G, 3) + '\n\n' + rep(A, 4) + '\n\n' + rep(C, 3), color: '#1f4a1f', speed: 1.0 },
+    // mid: 구름·대기 — 보통
+    { content: rep(C, 3) + '\n\n' + rep(A, 3) + '\n\n' + rep(U, 4), color: '#1a3a3a', speed: 0.75 },
+    // far: 별 — 느림
+    { content: rep(U, 4) + '\n\n' + rep(L, 8),                       color: '#0f2a1a', speed: 0.5  },
+  ];
+
+  const bg = document.createElement('div');
+  bg.id = 'launch-parallax';
+
+  const strips = layerDefs.map(def => {
+    const pre = document.createElement('pre');
+    pre.className = 'lp-strip';
+    pre.textContent = def.content;
+    pre.style.color = def.color;
+    bg.appendChild(pre);
+    return { pre, speed: def.speed };
+  });
+
+  // 로켓 컨테이너 앞에 삽입 (z-index로 배경이 뒤로)
+  const rocketCnt = wrapEl.querySelector('#launch-rocket-cnt');
+  if (rocketCnt) wrapEl.insertBefore(bg, rocketCnt);
+  else           wrapEl.prepend(bg);
+
+  const startTime = Date.now();
+  let stopped = false;
+
+  function tick() {
+    if (stopped) return;
+    const elapsed  = Date.now() - startTime;
+    const progress = Math.min(1, elapsed / totalMs);
+    const wrapH    = wrapEl.offsetHeight || 280;
+
+    strips.forEach(({ pre, speed }) => {
+      const stripH = pre.scrollHeight || 1000;
+      const maxY   = Math.max(0, stripH - wrapH);
+      // 시작: maxY (지상 아래), 끝: 0 (우주 위) — 위로 스크롤
+      pre.style.transform = `translateY(${maxY * (1 - progress * speed)}px)`;
+    });
+
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+
+  // DOM 반영 후 초기 위치 세팅 → 다음 rAF에서 애니 시작
+  requestAnimationFrame(() => {
+    const wrapH = wrapEl.offsetHeight || 280;
+    strips.forEach(({ pre }) => {
+      const stripH = pre.scrollHeight || 1000;
+      pre.style.transform = `translateY(${Math.max(0, stripH - wrapH)}px)`;
+    });
+    requestAnimationFrame(tick);
+  });
+
+  return { stop: () => { stopped = true; } };
+}
+
 function executeLaunch() {
   if (launchInProgress) return;
   // 발사 가능 조건: 부품+연료 100%
@@ -261,8 +361,9 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   } else if (typeof getRocketArtHtml === 'function') {
     launchArt = getRocketArtHtml({ allGreen: true });
   }
+  // 로켓은 절대 중앙 고정 (패럴랙스 배경이 스크롤하며 상승감 연출)
   animWrap.innerHTML = `
-<div id="launch-rocket-cnt" style="text-align:center;position:relative;">
+<div id="launch-rocket-cnt" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;text-align:center;">
 <pre class="rocket-art-core launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6)">${launchArt}</pre>
 </div>`;
 
@@ -295,6 +396,13 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
     : 99999;
   // 성공 시 총 애니메이션 시간
   const totalAnimMs = success ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration) : (failTimeMs + 2000);
+
+  // ── 패럴랙스 배경 (지상→우주 스크롤) ──
+  const parallax = _buildParallaxBg(animWrap, totalAnimMs);
+  // 실패 시 실패 시점에서 배경 정지
+  if (firstFailStage >= 0) {
+    setTimeout(() => parallax.stop(), failTimeMs);
+  }
 
   let gaugeFailTriggered = false;
   const gaugeInterval = setInterval(() => {
