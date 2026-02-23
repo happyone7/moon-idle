@@ -98,7 +98,10 @@
     (typeof PARTS !== 'undefined' ? PARTS : []).forEach(p => {
       gs.parts[p.id] = (gs.parts[p.id] || 0) + p.cycles;
     });
-    _notify('[QA] 로켓 부품 준비 완료');
+    gs.fuelInjection  = 100;
+    gs.fuelInjecting  = false;
+    gs.fuelLoaded     = true;
+    _notify('[QA] 로켓 부품 + 연료 100% 준비 완료');
   }
 
   function qaAddResearch() {
