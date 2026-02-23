@@ -28,6 +28,7 @@ description: MoonIdle ASCII 건물 렌더링 일관성 검증. 폰트 정의, �
 | File | Purpose |
 |------|---------|
 | `js/world.js` | ASCII 건물 아트 정의 (`_bldAscii()` 함수, 300+ 라인) |
+| `js/tabs/launch.js` | 발사 탭 — `FAIL_FRAMES_BY_ZONE` 객체에 ASCII 폭발/실패 프레임 포함 |
 | `index.html` | `.world-bld` CSS 정의 (font-family, 색상, 애니메이션) |
 | `Docs/ASCII_Building_Guide.md` | ASCII 건물 구현 가이드 (폰트/정렬 규칙 문서화) |
 | `mockups/ascii-art/buildings/*.txt` | ASCII 아트 목업 파일 (mine, research_lab, solar_array 등) |
@@ -144,8 +145,8 @@ console.table(results);
 | `wb-housing` (township) | 9자 | 9 | 0 | 9 |
 | `wb-housing` (dorm/welfare 기본) | 13자 | 13 | 0 | 13 |
 | `wb-housing` (dorm/welfare tier≥2) | 13자 | 13 | 0 | 13 |
-| `wb-ops` (ops_center 기본) | 12자 | 12 | 0 | 12 |
-| `wb-ops` (premium/24h/sales 변형) | 12자 | 12 | 0 | 12 |
+| `wb-ops` (ops_center 기본) | 18자 | 18 | 0 | 18 |
+| `wb-ops` (premium/24h/sales 변형) | 18자 | 18 | 0 | 18 |
 | `wb-supply` (supply_depot) | 12자 | 12 | 0 | 12 |
 | `wb-mine` (기본/robot/deep) | 15자 | 15 | 0 | 15 |
 | `wb-refinery` | 10자 | 10 | 0 | 10 |
@@ -195,6 +196,71 @@ return (
   '████████████'       // 12자 (선행 공백 0 + 블록 12)
 );
 ```
+
+### Step 2c: 건물 내 라인 간 폭 일관성 검증
+
+박스 프레임 라인(`╔═╗`) 기준으로 **콘텐츠 라인(`║...║`)과 구분선(`╠═╣`, `╚═╝`)의 폭이 일치**하는지 검증합니다.
+
+> **검증 범위:** 박스 드로잉 문자(`╔║╠╚`)로 시작하는 라인만 비교합니다.
+> 장식 라인(안테나, 로켓 본체, 태양광 폴, 기반부 등)은 의도적으로 폭이 다르므로 **검증 제외**합니다.
+
+다음 Node.js 스크립트를 실행합니다:
+
+```bash
+node -e "
+const fs = require('fs');
+const code = fs.readFileSync('js/world.js', 'utf8');
+const artPattern = /return\s*\(\s*\n((?:\s*'[^']*'[\s+]*\n?)+)\s*\)/g;
+const boxChars = '╔║╠╚';
+let match, fails = [];
+while ((match = artPattern.exec(code)) !== null) {
+  const block = match[1];
+  const lineNum = code.slice(0, match.index).split('\n').length;
+  const artLines = [];
+  block.replace(/'([^']*)'/g, (_, c) => { artLines.push(c.replace(/\\\\n\$/, '')); });
+  // 박스 라인만 필터 (╔║╠╚ 로 시작하거나 공백+╔║╠╚ 로 시작)
+  const boxLines = [];
+  artLines.forEach((l, i) => {
+    const trimmed = l.trimStart();
+    if (trimmed.length > 0 && boxChars.includes(trimmed[0])) {
+      boxLines.push({ idx: i, width: [...l].length, content: l.slice(0,25) });
+    }
+  });
+  if (boxLines.length < 2) continue;
+  const refWidth = boxLines[0].width;
+  boxLines.forEach(bl => {
+    if (bl.width !== refWidth) {
+      fails.push({ srcLine: lineNum + bl.idx, width: bl.width, expected: refWidth, content: bl.content });
+    }
+  });
+}
+if (fails.length === 0) console.log('✅ PASS — 모든 건물의 박스 라인 폭 일관성 확인');
+else { console.log('❌ FAIL — 박스 라인 폭 불일치 발견:'); console.table(fails); }
+"
+```
+
+**PASS 기준:**
+
+같은 건물 아트 블록 내에서 **박스 드로잉 문자로 시작하는 모든 라인**(`╔═╗`, `║...║`, `╠═╣`, `╚═╝`)의 문자 수가 동일해야 함.
+
+**FAIL 예시:**
+
+```
+│ srcLine │ width │ expected │         content          │
+│   244   │  15   │    14    │ '║ $ TRADING $ ║'        │  ← 콘텐츠가 박스보다 1자 넓음
+```
+
+**FAIL 시 조치:**
+
+해당 라인의 내용물 공백을 조정하여 박스 프레임 폭과 일치시킵니다.
+
+**근거:**
+
+기존 Step 2b는 **기반부(████) 폭만** 기준표와 비교합니다. 그러나 콘텐츠 라인(`║...║`)이 박스 프레임보다 넓거나 좁은 경우에도 렌더링이 깨지므로, 박스 라인 간 폭 일관성을 추가로 검증합니다.
+
+**예외 (검증 제외):**
+- 기반부(`████`) — Step 2b에서 별도 검증
+- 장식 라인 — 안테나(`│`), 로켓 본체(`/▲╲`), 태양광 폴, 연결선(`─`) 등은 의도적으로 폭이 다름
 
 ---
 
@@ -446,6 +512,57 @@ ls mockups/ascii-art/buildings/*.txt
 
 ---
 
+## Step 7: 발사 실패 ASCII 프레임 구조 검증
+
+**파일:** `js/tabs/launch.js`
+
+**검사:** `FAIL_FRAMES_BY_ZONE` 객체가 4개 존(zone)을 가지며, 각 존이 3개의 ASCII 프레임 배열을 포함하는지 확인합니다.
+
+```bash
+node -e "
+const code = require('fs').readFileSync('js/tabs/launch.js', 'utf8');
+const m = code.match(/const FAIL_FRAMES_BY_ZONE = \{/);
+if (!m) { console.log('❌ FAIL_FRAMES_BY_ZONE 없음'); process.exit(); }
+const ZONES = ['ground','high_atm','space','lunar'];
+const expected = 3;
+ZONES.forEach(z => {
+  const re = new RegExp('  ' + z + ': \\[(\\s*[^\\[\\]]*(?:\\[[^\\]]*\\])*[^\\[\\]]*)*\\]', 's');
+  const found = code.match(new RegExp(z + ':\\s*\\['));
+  const frames = found ? (code.slice(found.index).match(/'/g) || []).slice(0, expected * 2).length / 2 : 0;
+  console.log(z + ': ' + (found ? '✅ 존재' : '❌ 없음'));
+});
+"
+```
+
+더 신뢰성 있는 확인 — `FAIL_FRAMES_BY_ZONE` 블록을 직접 읽어서 확인합니다:
+
+```bash
+grep -n "ground:\|high_atm:\|space:\|lunar:" js/tabs/launch.js
+```
+
+**PASS 기준:**
+- `ground`, `high_atm`, `space`, `lunar` 4개 존 모두 존재
+- 각 존은 3개 문자열(프레임) 배열로 구성
+
+**각 존 용도:**
+
+| 존 | 대응 스테이지 | 실패 상황 |
+|----|--------------|-----------|
+| `ground` | 4~5 (LIFTOFF, MAX-Q) | 지상 근처 폭발 |
+| `high_atm` | 6~7 (MECO, STG SEP) | 고고도 분리 실패 |
+| `space` | 8~9 (ORBIT, TLI) | 우주 공간 엔진 고장 |
+| `lunar` | 10~11 (LOI, LANDING) | 달 표면 충돌 |
+
+**FAIL 시 조치:**
+- 누락된 존 추가 (프로그래밍팀장 담당)
+- 폭발 아트가 `FAIL_FRAMES_BY_ZONE` 외부에 하드코딩된 경우 이 객체로 이동
+
+**예외:**
+- 프레임 내부의 특수문자(`░▒▓█`, 공백) 표현은 건물 아트 규칙과 무관 — 폭발 시각 효과이므로 다양한 문자 허용
+- `_getFailZone(stageIdx)` 함수가 `FAIL_FRAMES_BY_ZONE`의 키와 동일한 존 이름 반환하면 정상
+
+---
+
 # Output Format
 
 검증 결과를 다음 형식으로 보고합니다:
@@ -480,6 +597,10 @@ ls mockups/ascii-art/buildings/*.txt
 - ✅ PASS — 6개 건물 목업 파일 존재
 - ⚠️ INFO — mine.txt와 코드 tier=0 아트 시각적 유사성 확인됨
 
+### 7. 발사 실패 ASCII 프레임
+- ✅ PASS — FAIL_FRAMES_BY_ZONE 4개 존 모두 존재 (ground, high_atm, space, lunar)
+- ✅ PASS — 각 존 3개 프레임 배열 확인
+
 ---
 
 **종합:** 2개 실패, 1개 경고 — 수정 필요
@@ -509,3 +630,5 @@ ls mockups/ascii-art/buildings/*.txt
 10. **박스 내부 가로 구분선** — `╠═════╣` 같은 중간 구분선 사용은 정상 (시각적 구조 표현)
 11. **태양광 패널 지지대 폴** — `│` (U+2502, 단일선 세로) 문자가 태양광 패널 폴 그래픽 (`'  │     │     │'`)에 사용되는 것은 의도적 설계 (박스 드로잉 문자 규칙 예외)
 12. **애드온 건물 커넥터 `─`** — `─` (U+2500, 단일선 가로) 문자가 애드온 건물 상단 첫 줄 (`'─╔═════╗'`)에 부모 건물과의 연결 표시용으로 사용되는 것은 의도적 설계 (박스 드로잉 문자 규칙 예외)
+13. **광산(mine) 2단 박스 구조** — mine의 상부 컨베이어/안테나 박스(`╔════════╗`, 10자)와 하부 ROBOT 박스(`╔════╩═══╩════╗`, 15자)가 폭이 다른 것은 의도적 설계. Step 2c에서 false positive로 보고되지만 무시
+14. **태양광(solar) 패널 스트럿** — `╠╣▓` 패턴이 포함된 태양광 패널 스트럿 라인은 박스 프레임이 아닌 장식 요소. Step 2c에서 `╠` 문자 때문에 박스 라인으로 감지되지만 무시

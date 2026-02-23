@@ -180,7 +180,7 @@ function renderProductionTab() {
     let rateStr = '';
     if (b.produces !== 'bonus') {
       const msBonus = typeof getMilestoneProdBonus === 'function' ? getMilestoneProdBonus() : 1;
-      const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * (typeof getBldProdMult === 'function' ? getBldProdMult(b.id) : 1) * (typeof getBldUpgradeMult === 'function' ? getBldUpgradeMult(b.id) : 1) * (typeof getAddonMult === 'function' ? getAddonMult(b.id) : 1) * msBonus;
+      const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getSpaceScoreMult() * getSolarBonus() * (typeof getBldProdMult === 'function' ? getBldProdMult(b.id) : 1) * (typeof getBldUpgradeMult === 'function' ? getBldUpgradeMult(b.id) : 1) * (typeof getAddonMult === 'function' ? getAddonMult(b.id) : 1) * msBonus;
       rateStr = cnt > 0
         ? (assigned > 0 ? `<span style="color:var(--green)">+${fmtDec(rate, 2)}/s</span>` : `<span style="color:var(--amber)">대기</span>`)
         : `<span style="color:#1a3a1a">미건설</span>`;

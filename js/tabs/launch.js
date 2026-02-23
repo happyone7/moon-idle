@@ -113,23 +113,23 @@ function executeLaunch() {
   if (!canLaunch) { notify('로켓 완성도 100% 필요', 'red'); return; }
 
   const q = getQuality(gs.assembly.selectedQuality || 'proto');
-  const sci = getRocketScience(q.id);
+  const classId = gs.assembly.selectedClass || 'vega';
+  const rv = generateRollVariance(q.id);
+  const sci = getRocketScience(q.id, classId, rv);
 
-  // ── 단계별 성공 확률 계산 ──
-  // 전체 reliability를 8단계에 분배: perStageProb = reliability^(1/8)
+  // ── D5: 단계별 성공 확률 계산 (4대 스펙 기반) ──
   // 첫 발사(gs.launches === 0)는 전 단계 자동 성공
   const isFirstLaunch = gs.launches === 0;
-  const perStageProb = isFirstLaunch ? 100 : Math.pow(sci.reliability / 100, 1 / 8) * 100;
-
   const stageRolls = [];
   let firstFailStage = -1;
   for (let i = 4; i <= 11; i++) {
-    const success = Math.random() * 100 < perStageProb;
-    stageRolls.push({ stage: i, success });
+    const rate = isFirstLaunch ? 100 : sci.stageRates[i];
+    const success = Math.random() * 100 < rate;
+    stageRolls.push({ stage: i, success, rate });
     if (!success && firstFailStage === -1) firstFailStage = i;
   }
   const rollSuccess = firstFailStage === -1; // 전 단계 통과 시 성공
-  const earned = rollSuccess ? getMoonstoneReward(q.id) : 0;
+  const earned = rollSuccess ? getExplorationReward(q.id) : 0;
 
   // 발사 후 항상 부품+연료 전체 초기화 (성공/실패 무관)
   gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
@@ -146,17 +146,20 @@ function executeLaunch() {
     no: gs.launches,
     quality: q.name,
     qualityId: q.id,
-    rocketClass: gs.assembly.selectedClass || 'vega',
+    rocketClass: classId,
     deltaV: sci.deltaV.toFixed(2),
     altitude: rollSuccess ? Math.floor(sci.altitude) : 0,
     reliability: sci.reliability.toFixed(1),
+    overallRate: sci.overallRate.toFixed(1),
+    specs: sci.specs,
+    stageRates: sci.stageRates,
     success: rollSuccess,
     earned: earned,
     failStage: firstFailStage,
     failDesc: firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : null,
     date: `D+${gs.launches * 2}`,
   });
-  pendingLaunchMs = earned;
+  pendingLaunchEp = earned;  // D6: EP 적립 (프레스티지 시 SS로 전환)
   pendingLaunchData = { q, sci, earned, success: rollSuccess, firstFailStage };
 
   switchMainTab('launch');
@@ -250,44 +253,17 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   const animWrap = document.getElementById('launch-anim-wrap');
   if (!animWrap) return;
 
-  const _rcAnim = (typeof ROCKET_CLASSES !== 'undefined')
-    ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'vega')) || ROCKET_CLASSES[0]
-    : null;
-  const _rcName = _rcAnim ? _rcAnim.name : 'NANO';
-  const _rcThrust = _rcAnim ? String(_rcAnim.thrustKN) + ' kN' : '18 kN';
-  const _rcTPad = (_rcAnim && _rcAnim.thrustKN >= 100) ? '' : ' ';
+  // D5: 클래스별 ROCKET_ASCII 발사 아트 사용
+  const classId = gs.assembly.selectedClass || 'vega';
+  let launchArt = '';
+  if (typeof ROCKET_ASCII !== 'undefined' && ROCKET_ASCII[classId]) {
+    launchArt = ROCKET_ASCII[classId].launching.join('\n');
+  } else if (typeof getRocketArtHtml === 'function') {
+    launchArt = getRocketArtHtml({ allGreen: true });
+  }
   animWrap.innerHTML = `
 <div id="launch-rocket-cnt" style="text-align:center;position:relative;">
-<pre class="launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6)">           *
-          /|\\
-         / | \\
-        /  |  \\
-       /   |   \\
-      / ${_rcName.padEnd(8)} \\
-     /______________\\
-   |  [PAYLOAD]    |
-   |   _________   |
-   |  |  NAV    |  |
-   |  |  SYS    |  |
-   |  |_________|  |
-   |               |
-   |  [AVIONICS]   |
-   |  _________    |
-   | | O  O  O |   |
-   | |  GYRO   |   |
-   | |_________|   |
-   |               |
-   | [PROPULSION]  |
-   |  _________    |
-   | |         |   |
-   | | ${_rcThrust} ${_rcTPad}|   |
-   | |_________|   |
-   |_______________|
-  / [LOX]  [RP-1]  \\
- /___________________\\</pre>
-<pre class="exhaust-anim" id="exhaust-art" style="display:none;color:#00e676">       |   |   |
-      /|   |   |\\
-     /_|___|___|_\\</pre>
+<pre class="rocket-art-core launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6)">${launchArt}</pre>
 </div>`;
 
   setTimeout(() => {
@@ -476,22 +452,44 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
       }, resultDelay + 1200);
 
-      // 실패 로켓 폭발 프레임
+      // D5: 클래스별 실패 프레임 스케일링
       const zone = _getFailZone(stageIdx);
-      const failFrames = FAIL_FRAMES_BY_ZONE[zone];
-      failFrames.forEach((frame, fi) => {
+      const classIdFail = gs.assembly.selectedClass || 'vega';
+      const failData = (typeof getScaledFailFrames === 'function')
+        ? getScaledFailFrames(classIdFail, zone)
+        : { frames: FAIL_FRAMES_BY_ZONE[zone], frameDuration: 700, shakeClass: 'shake-sm' };
+
+      // D5: 경고 프레임 (anomaly 시점) — 진동 + 앰버 경고
+      setTimeout(() => {
+        const rocketEl = document.getElementById('launch-rocket-pre');
+        if (rocketEl) {
+          rocketEl.classList.remove('launching', 'success-glow');
+          rocketEl.classList.add(failData.shakeClass, 'warning-glow');
+        }
+      }, resultDelay);
+
+      failData.frames.forEach((frame, fi) => {
         setTimeout(() => {
           const rocketEl = document.getElementById('launch-rocket-pre');
           if (rocketEl) {
-            rocketEl.classList.remove('launching');
-            rocketEl.classList.add('exploding');
+            rocketEl.classList.remove('launching', 'warning-glow', failData.shakeClass);
+            rocketEl.classList.add('exploding', 'fail-glow');
             rocketEl.style.color = 'var(--red)';
             rocketEl.style.textShadow = '0 0 12px rgba(255,23,68,0.8)';
             rocketEl.textContent = frame;
           }
           const exhaustEl = document.getElementById('exhaust-art');
           if (exhaustEl) exhaustEl.style.display = 'none';
-        }, resultDelay + 600 + fi * 700);
+          // D5: 대형 로켓(hermes+) 첫 폭발 프레임에서 화면 레드 플래시
+          if (fi === 0) {
+            const animZoneEl = document.getElementById('lc-anim-zone');
+            if (animZoneEl && ['hermes','atlas','selene','artemis'].includes(classIdFail)) {
+              animZoneEl.classList.remove('flash-red');
+              void animZoneEl.offsetWidth; // reflow 강제
+              animZoneEl.classList.add('flash-red');
+            }
+          }
+        }, resultDelay + 600 + fi * failData.frameDuration);
       });
     }
   });
@@ -499,8 +497,14 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   // ── 결과 패널 표시 ──
   // 성공: 마지막 단계 완료 후
   // 실패: 실패 단계의 애니메이션 완료 후
+  // D5: 클래스별 frameDuration 기반 실패 애니메이션 종료 시점 계산
+  const failClassId = gs.assembly.selectedClass || 'vega';
+  const failFd = (typeof FAIL_SCALE !== 'undefined' && FAIL_SCALE[failClassId])
+    ? FAIL_SCALE[failClassId].frameDuration : 700;
+  const failFrameCount = firstFailStage >= 0
+    ? (FAIL_FRAMES_BY_ZONE[_getFailZone(firstFailStage)] || []).length : 0;
   const failAnimEndMs = firstFailStage >= 0
-    ? STAGE_TIMING[firstFailStage].delay + Math.round(STAGE_TIMING[firstFailStage].duration * 0.6) + 2800
+    ? STAGE_TIMING[firstFailStage].delay + Math.round(STAGE_TIMING[firstFailStage].duration * 0.6) + 600 + failFrameCount * failFd + 400
     : 0;
   const resultPanelDelay = success
     ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration + 200)
@@ -526,12 +530,12 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         `<span class="launch-result-stat-lbl">\u0394v</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>` +
         `<span class="launch-result-stat-lbl">TWR</span><span class="launch-result-stat-val">${sci.twr.toFixed(2)}</span>` +
         `<span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${success ? Math.floor(sci.altitude) : '---'} km</span>` +
-        `<span class="launch-result-stat-lbl">신뢰도</span><span class="launch-result-stat-val">${sci.reliability.toFixed(1)}%</span>` +
+        `<span class="launch-result-stat-lbl">성공률</span><span class="launch-result-stat-val">${sci.overallRate.toFixed(1)}%</span>` +
         (success ? '' : `<span class="launch-result-stat-lbl">실패 단계</span><span class="launch-result-stat-val" style="color:var(--red)">${failStageName} — ${failDesc}</span>`);
       const lrMs = document.getElementById('lr-ms');
       if (lrMs) {
         if (success) {
-          lrMs.textContent = `문스톤 보상: +${earned}개`;
+          lrMs.textContent = `EP 보상: +${earned} 탐험 포인트`;
           lrMs.style.color = 'var(--amber)';
         } else {
           lrMs.textContent = `${failStageName}에서 실패 — ${failDesc}`;
@@ -568,38 +572,19 @@ function _showLaunchOverlay(q, sci, earned, success, firstFailStage) {
   }
   const loRocket = document.getElementById('lo-rocket-art');
   if (loRocket) {
+    const overlayClassId = gs.assembly.selectedClass || 'vega';
     if (success) {
-      const _rcOv = (typeof ROCKET_CLASSES !== 'undefined')
-        ? ROCKET_CLASSES.find(c => c.id === (gs.assembly.selectedClass || 'vega')) || ROCKET_CLASSES[0]
-        : null;
-      const _rvN = _rcOv ? _rcOv.name : 'NANO';
       loRocket.style.color = '';
       loRocket.style.textShadow = '';
-      loRocket.textContent =
-`           *
-          /|\\
-         / | \\
-        /  |  \\
-       /   |   \\
-      / ${_rvN.padEnd(8)} \\
-     /______________\\
-   |  [PAYLOAD]    |
-   |   _________   |
-   |  |  NAV    |  |
-   |  |  SYS    |  |
-   |  |_________|  |
-   |               |
-   |  [AVIONICS]   |
-   |  _________    |
-   | | O  O  O |   |
-   | |  GYRO   |   |
-   | |_________|   |
-   |_______________|
-  / [LOX]  [RP-1]  \\
- /___________________\\
-       |   |   |
-      /|   |   |\\
-     /_|___|___|_\\`;
+      // D5: 클래스별 정지 아트 사용
+      if (typeof ROCKET_ASCII !== 'undefined' && ROCKET_ASCII[overlayClassId]) {
+        loRocket.textContent = ROCKET_ASCII[overlayClassId].static.join('\n');
+        loRocket.style.color = 'var(--green)';
+        loRocket.style.textShadow = '0 0 8px rgba(0,230,118,0.6)';
+      } else {
+        loRocket.innerHTML = (typeof getRocketArtHtml === 'function')
+          ? getRocketArtHtml({ allGreen: true }) : '';
+      }
     } else {
       // 실패 오버레이: 실패 존 ASCII 아트
       const zone = _getFailZone(firstFailStage);
@@ -611,7 +596,7 @@ function _showLaunchOverlay(q, sci, earned, success, firstFailStage) {
   }
   const loStats = document.getElementById('lo-stats');
   if (loStats) {
-    let statsHtml = `기체: ${q.name}  |  \u0394v: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${success ? Math.floor(sci.altitude) : '---'} km<br>TWR: ${sci.twr.toFixed(2)}  |  신뢰도: ${sci.reliability.toFixed(1)}%`;
+    let statsHtml = `기체: ${q.name}  |  \u0394v: ${sci.deltaV.toFixed(2)} km/s  |  고도: ${success ? Math.floor(sci.altitude) : '---'} km<br>TWR: ${sci.twr.toFixed(2)}  |  성공률: ${sci.overallRate.toFixed(1)}%`;
     if (!success) {
       statsHtml += `<br><span style="color:var(--red)">실패: ${failStageName} — ${failDesc}</span>`;
     }
@@ -620,7 +605,7 @@ function _showLaunchOverlay(q, sci, earned, success, firstFailStage) {
   const loMs = document.getElementById('lo-ms');
   if (loMs) {
     if (success) {
-      loMs.textContent = '\u2713 달 착륙 성공 \u2014 문스톤 +' + earned + '개';
+      loMs.textContent = '\u2713 달 착륙 성공 \u2014 EP +' + earned;
       loMs.style.color = 'var(--green)';
       playSfx('sine', 1200, 0.10, 0.03, 1600);
     } else {
@@ -684,8 +669,8 @@ function renderLaunchTab() {
   let q = null, sci = null, earned = 0;
   if (canLaunch) {
     q      = getQuality(gs.assembly.selectedQuality || 'proto');
-    sci    = getRocketScience(q.id);
-    earned = getMoonstoneReward(q.id);
+    sci    = getRocketScience(q.id, gs.assembly.selectedClass || 'vega');
+    earned = getExplorationReward(q.id);
   }
 
   // 미션 번호
@@ -788,22 +773,22 @@ function renderLaunchTab() {
   const missionParams = document.getElementById('lc-mission-params');
   if (missionParams) {
     if (canLaunch) {
-      const rc = sci.reliability > 80 ? 'green' : sci.reliability > 60 ? 'amber' : 'red';
+      const oc = sci.overallRate > 80 ? 'green' : sci.overallRate > 50 ? 'amber' : 'red';
       missionParams.innerHTML =
         `<div class="lc-mp-block"><div class="lc-mp-val green">${sci.deltaV.toFixed(1)}</div><div class="lc-mp-label">Δv (km/s)</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val">${sci.twr.toFixed(2)}</div><div class="lc-mp-label">TWR</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val ${rc}">${sci.reliability.toFixed(0)}%</div><div class="lc-mp-label">신뢰도</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val amber">+${earned}</div><div class="lc-mp-label">문스톤</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val ${oc}">${sci.overallRate.toFixed(0)}%</div><div class="lc-mp-label">성공률</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val amber">+${earned}</div><div class="lc-mp-label">EP 보상</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val">${Math.floor(sci.altitude)}</div><div class="lc-mp-label">목표고도 km</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--green-dim)">&#9670;${gs.moonstone||0}</div><div class="lc-mp-label">문스톤 보유</div></div>`;
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--cyan)">EP ${gs.explorationPoints||0}</div><div class="lc-mp-label">탐험 포인트</div></div>`;
     } else {
       missionParams.innerHTML =
         `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">Δv (km/s)</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">TWR</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">신뢰도</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">문스톤</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">성공률</div></div>` +
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">EP 보상</div></div>` +
         `<div class="lc-mp-block"><div class="lc-mp-val" style="color:#334433">--</div><div class="lc-mp-label">목표고도</div></div>` +
-        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--green-dim)">&#9670;${gs.moonstone||0}</div><div class="lc-mp-label">문스톤 보유</div></div>`;
+        `<div class="lc-mp-block"><div class="lc-mp-val" style="color:var(--cyan)">EP ${gs.explorationPoints||0}</div><div class="lc-mp-label">탐험 포인트</div></div>`;
     }
   }
 
@@ -811,16 +796,16 @@ function renderLaunchTab() {
   const commitStats = document.getElementById('lc-commit-stats');
   if (commitStats) {
     if (canLaunch) {
-      const rc = sci.reliability > 80 ? 'green' : sci.reliability > 60 ? 'amber' : 'red';
+      const oc2 = sci.overallRate > 80 ? 'green' : sci.overallRate > 50 ? 'amber' : 'red';
       commitStats.innerHTML =
-        `<div class="lc-cs"><span class="lc-cs-val ${rc}">${sci.reliability.toFixed(0)}%</span><span class="lc-cs-label">${t('lc_success_pct')}</span></div>` +
+        `<div class="lc-cs"><span class="lc-cs-val ${oc2}">${sci.overallRate.toFixed(0)}%</span><span class="lc-cs-label">${t('lc_success_pct')}</span></div>` +
         `<div class="lc-cs"><span class="lc-cs-val green">${Math.floor(sci.altitude)}<span style="font-size:11px">km</span></span><span class="lc-cs-label">${t('lc_target_alt')}</span></div>` +
-        `<div class="lc-cs"><span class="lc-cs-val amber">+${earned}</span><span class="lc-cs-label">${t('lc_moonstone')}</span></div>`;
+        `<div class="lc-cs"><span class="lc-cs-val amber">+${earned}</span><span class="lc-cs-label">${t('lc_space_score')}</span></div>`;
     } else {
       commitStats.innerHTML =
         `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_success_pct')}</span></div>` +
         `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_target_alt')}</span></div>` +
-        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_moonstone')}</span></div>`;
+        `<div class="lc-cs"><span class="lc-cs-val" style="color:var(--green-dim)">--</span><span class="lc-cs-label">${t('lc_space_score')}</span></div>`;
     }
   }
 

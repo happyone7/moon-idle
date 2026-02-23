@@ -81,7 +81,7 @@ function renderRocketTab() {
   const techPct   = researchTotal > 0 ? (researchDone / researchTotal * 100) : 0;
   const partPct   = totalParts   > 0 ? (builtParts   / totalParts   * 100) : 0;
   const launchPct = Math.min(100, launchCount / 12 * 100);
-  const msBonus   = gs.moonstone > 0 ? `+${gs.moonstone * 5}%` : '없음';
+  const msBonus   = gs.spaceScore > 0 ? `+${gs.spaceScore * 5}%` : '없음';
   const bldTotal  = Object.values(gs.buildings || {}).reduce((a, b) => a + b, 0);
 
   innerEl.innerHTML = `<div class="rc-layout">
@@ -118,7 +118,8 @@ function renderRocketTab() {
 
   <div class="rc-stats-col">
     <div class="rc-stat-hd">// 현황</div>
-    <div class="rc-stat-row"><span class="rc-sl">문스톤</span><span class="rc-sv" style="color:var(--amber)">${gs.moonstone > 0 ? '◆ ' + gs.moonstone : '—'}</span></div>
+    <div class="rc-stat-row"><span class="rc-sl">탐험 포인트</span><span class="rc-sv" style="color:var(--cyan)">EP ${gs.explorationPoints || 0}</span></div>
+    <div class="rc-stat-row"><span class="rc-sl">탐사 점수</span><span class="rc-sv" style="color:var(--amber)">${gs.spaceScore > 0 ? '★ ' + gs.spaceScore : '—'}</span></div>
     <div class="rc-stat-row"><span class="rc-sl">생산 보너스</span><span class="rc-sv" style="color:var(--amber)">${msBonus}</span></div>
     <div class="rc-stat-row"><span class="rc-sl">총 발사</span><span class="rc-sv">${launchCount}회</span></div>
     <div class="rc-stat-row"><span class="rc-sl">연구 완료</span><span class="rc-sv">${researchDone}종</span></div>

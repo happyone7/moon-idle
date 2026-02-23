@@ -28,12 +28,26 @@ let gs = {
   selectedTech: null,
   msUpgrades: {},
   autoEnabled: {},
+  autoConfig: {
+    worker:   { enabled:false, ratios:{}, minIdleWorkers:0, autoRedistribute:false },
+    build:    { enabled:false, buildings:{}, maxSpendRatio:50, priority:[], autoUpgrade:false, maxUpgradeLevel:5 },
+    parts:    { enabled:false, targets:{}, reserves:{}, priority:[], continuousCraft:true },
+    assembly: { enabled:false, defaultClass:'vega', defaultQuality:'proto', rules:[], minSuccessRate:0, autoFuelAfter:true },
+    fuel:     { enabled:false, autoStart:true, targetPercent:100, minFuelReserve:0 },
+    launch:   { enabled:false, minOverallRate:50, minStageRate:0, minExpectedEP:0, cooldownSec:0, retryOnFail:true },
+    research: { enabled:false, priorityList:[], reserves:{}, autoQueue:false },
+    prestige: { enabled:false, minEPGain:100, minSSMultiplier:2.0, minTimeSec:300, minLaunches:10 },
+  },
   milestones: {},
   achievements: {},       // P4-2: earned achievement IDs
   prestigeStars: {},      // P4-3: purchased star tree node IDs
   prestigeCount: 0,       // P4-3: total prestige count
   launches: 0,
-  moonstone: 0,
+  successfulLaunches: 0,
+  moonstone: 0,       // 달 착륙 전용 (후반부 콘텐츠)
+  spaceScore: 0,      // 우주 탐사 점수 — 프레스티지 영구 화폐
+  explorationPoints: 0, // D6: 현재 세션 EP (프레스티지 시 리셋)
+  totalSpaceScore: 0,   // D6: 누적 SS 기록 (리셋 안 됨)
   history: [],
   lastTick: Date.now(),
   settings: { sound: true, lang: 'en' },
@@ -72,7 +86,7 @@ let audioCtx = null;
 let activeTab  = 'launch';
 let resLeftTab = 'all';
 let launchInProgress = false;
-let pendingLaunchMs = 0;
+let pendingLaunchEp = 0;  // D6: 발사 보상 → EP 적립 (프레스티지 시 SS로 전환)
 let pendingLaunchData = null;
 let selectedTechId = null;
 let recentResearches = [];
@@ -164,7 +178,8 @@ function upgBuilding(bid) {
   renderAll();
 }
 
-function getMoonstoneMult() { return Math.pow(BALANCE.MOONSTONE.multPerStone, gs.moonstone || 0); }
+// D6: 선형 스케일링 — SS가 직관적 가치를 가지도록
+function getSpaceScoreMult() { return 1 + (gs.spaceScore || 0) * BALANCE.PRESTIGE.ssMultiplier; }
 
 function getSolarBonus() {
   let perPanel = BALANCE.SOLAR.baseBonusPerPanel;
@@ -264,14 +279,14 @@ function getAddonPartCostMult() {
 
 function canAfford(cost) {
   return Object.entries(cost).every(([r, v]) => {
-    if (r === 'moonstone') return (gs.moonstone || 0) >= v;
+    if (r === 'spaceScore') return (gs.spaceScore || 0) >= v;
     return (gs.res[r] || 0) >= v;
   });
 }
 
 function spend(cost) {
   Object.entries(cost).forEach(([r, v]) => {
-    if (r === 'moonstone') { gs.moonstone = Math.max(0, (gs.moonstone || 0) - v); return; }
+    if (r === 'spaceScore') { gs.spaceScore = Math.max(0, (gs.spaceScore || 0) - v); return; }
     gs.res[r] = Math.max(0, (gs.res[r] || 0) - v);
   });
 }
@@ -367,7 +382,7 @@ function getProduction() {
     const assigned = (gs.assignments && gs.assignments[b.id]) || 0;
     if (assigned === 0) return;
     const msBonus = typeof getMilestoneProdBonus === 'function' ? getMilestoneProdBonus() : 1;
-    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id) * msBonus;
+    const rate = b.baseRate * assigned * (prodMult[b.produces] || 1) * globalMult * getSpaceScoreMult() * getSolarBonus() * getBldProdMult(b.id) * getBldUpgradeMult(b.id) * getAddonMult(b.id) * msBonus;
     prod[b.produces] += rate;
   });
   // Add RP bonus from tech hub addon
@@ -413,8 +428,72 @@ function getTotalAssigned() {
   return Object.values(gs.assignments || {}).reduce((a, b) => a + b, 0);
 }
 
-function getRocketScience(qualityId) {
+// ============================================================
+//  D5: 4대 스펙 시스템 — 발사 단계별 성공률
+// ============================================================
+
+/** 정규분포 근사 (Box-Muller 변환) */
+function gaussianRandom(mean, sigma) {
+  const u1 = Math.random();
+  const u2 = Math.random();
+  const z  = Math.sqrt(-2 * Math.log(u1 || 1e-10)) * Math.cos(2 * Math.PI * u2);
+  return mean + sigma * z;
+}
+
+/** 제작 시 스펙 편차 생성 — 4개 스펙 각각 독립 */
+function generateRollVariance(qualityId) {
+  const rv = BALANCE.ROLL_VARIANCE[qualityId] || BALANCE.ROLL_VARIANCE.proto;
+  return {
+    structural: clamp(Math.round(gaussianRandom(0, rv.sigma)), -rv.max, rv.max),
+    propulsion: clamp(Math.round(gaussianRandom(0, rv.sigma)), -rv.max, rv.max),
+    avionics:   clamp(Math.round(gaussianRandom(0, rv.sigma)), -rv.max, rv.max),
+    thermal:    clamp(Math.round(gaussianRandom(0, rv.sigma)), -rv.max, rv.max),
+  };
+}
+
+/** 4대 스펙 계산 (0~100) */
+function computeSpecs(qualityId, classId, rollVariance) {
+  const qb = BALANCE.SPEC_QUALITY_BONUS[qualityId] || BALANCE.SPEC_QUALITY_BONUS.proto;
+  const cb = BALANCE.SPEC_CLASS_BONUS[classId] || BALANCE.SPEC_CLASS_BONUS.vega;
+  const rv = rollVariance || { structural:0, propulsion:0, avionics:0, thermal:0 };
+
+  // 연구 보정 합산
+  let rs = 0, rp = 0, ra = 0, rt = 0;
+  const srb = BALANCE.SPEC_RESEARCH_BONUS;
+  Object.keys(gs.upgrades || {}).forEach(uid => {
+    if (!gs.upgrades[uid]) return;
+    const b = srb[uid];
+    if (!b) return;
+    rs += b.s; rp += b.p; ra += b.a; rt += b.t;
+  });
+
+  return {
+    structural: clamp(50 + qb.s + cb.s + rs + rv.structural, 0, 100),
+    propulsion: clamp(50 + qb.p + cb.p + rp + rv.propulsion, 0, 100),
+    avionics:   clamp(50 + qb.a + cb.a + ra + rv.avionics,   0, 100),
+    thermal:    clamp(50 + qb.t + cb.t + rt + rv.thermal,     0, 100),
+  };
+}
+
+/** sigmoid 함수 */
+function _sigmoid(score) {
+  const L = BALANCE.LAUNCH_STAGES;
+  return 1 / (1 + Math.exp(-L.sigmoid_k * (score - L.sigmoid_mid)));
+}
+
+/** 단계별 성공률 (%) 계산 */
+function getStageSuccessRate(stageIdx, specs) {
+  const L = BALANCE.LAUNCH_STAGES;
+  const w = L.stageWeights[stageIdx];
+  if (!w) return 99.5;
+  const score = specs.structural * w[0] + specs.propulsion * w[1]
+              + specs.avionics * w[2] + specs.thermal * w[3];
+  return L.baseFloor + (L.baseCeiling - L.baseFloor) * _sigmoid(score);
+}
+
+function getRocketScience(qualityId, classId, rollVariance) {
   const q = getQuality(qualityId);
+  const cid = classId || gs.assembly.selectedClass || 'vega';
   const R = BALANCE.ROCKET;
   const isp = R.baseIsp + q.ispBonus + gs.buildings.elec_lab * R.elecLabIspPerBld + (gs.upgrades.fusion ? R.fusionIspBonus : 0);
   const dryMass = R.baseDryMass * q.dryMassMult * (gs.upgrades.lightweight ? R.lightweightMassMult : 1);
@@ -428,16 +507,121 @@ function getRocketScience(qualityId) {
     0, R.maxReliability
   );
   const altitude = clamp(deltaV * R.altitudeMult, 0, 400);
-  return { deltaV, twr, reliability, altitude };
+
+  // D5: 4대 스펙 계산
+  const rv = rollVariance || { structural:0, propulsion:0, avionics:0, thermal:0 };
+  const specs = computeSpecs(qualityId, cid, rv);
+  const stageRates = {};
+  let overallRate = 1;
+  for (let i = 4; i <= 11; i++) {
+    stageRates[i] = getStageSuccessRate(i, specs);
+    overallRate *= stageRates[i] / 100;
+  }
+  overallRate *= 100;
+
+  return { deltaV, twr, reliability, altitude, specs, rollVariance: rv, stageRates, overallRate };
 }
 
-function getMoonstoneReward(qualityId) {
+function getExplorationReward(qualityId) {
   const sci = getRocketScience(qualityId);
   const q = getQuality(qualityId);
-  const M = BALANCE.MOONSTONE;
+  const M = BALANCE.SPACE_SCORE;
   const base = Math.max(1, Math.floor((sci.altitude / M.rewardDivisor) * q.rewardMult) + fusionBonus + Math.floor(gs.launches / M.launchDivisor));
-  const mult = typeof getMilestoneMsBonus === 'function' ? getMilestoneMsBonus() : 1;
+  const mult = typeof getMilestoneSsBonus === 'function' ? getMilestoneSsBonus() : 1;
   return Math.floor(base * mult);
+}
+
+// ============================================================
+//  D6: 프레스티지 시스템
+// ============================================================
+
+/** 프레스티지 배수 — 횟수에 따른 보너스 + 마일스톤 */
+function getPrestigeMultiplier() {
+  const P = BALANCE.PRESTIGE;
+  let mult = P.baseConversion;
+  mult += Math.log2((gs.prestigeCount || 0) + 1) * P.prestigeCountBonus;
+  mult *= (typeof getMilestoneSsBonus === 'function') ? getMilestoneSsBonus() : 1;
+  return mult;
+}
+
+/** 예상 SS 획득량 (프레스티지 실행 시) */
+function getPrestigeSSGain() {
+  return Math.floor((gs.explorationPoints || 0) * getPrestigeMultiplier());
+}
+
+/** 프레스티지 실행 — EP→SS 변환 + 게임 리셋 */
+function executePrestige() {
+  const ep = gs.explorationPoints || 0;
+  if (ep < 1) return false;
+  if ((gs.launches || 0) < 1) return false;
+
+  const ssGain = getPrestigeSSGain();
+  gs.spaceScore = (gs.spaceScore || 0) + ssGain;
+  gs.totalSpaceScore = (gs.totalSpaceScore || 0) + ssGain;
+  gs.prestigeCount = (gs.prestigeCount || 0) + 1;
+
+  // 리셋 대상
+  gs.res = { money: BALANCE.START.money, iron:0, copper:0, fuel:0, electronics:0, research:0 };
+  gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
+  gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
+  gs.citizens = BALANCE.START.citizens;
+  gs.citizenRecruits = 0;
+  gs.workers = BALANCE.START.workers;
+  gs.assignments = {};
+  gs.specialists = {};
+  gs.opsRoles = { sales:0, accounting:0, consulting:0 };
+  gs.addons = {};
+  gs.addonUpgrades = {};
+  gs.bldLevels = {};
+  gs.bldSlotLevels = {};
+  gs.bldUpgrades = {};
+  gs.mfgActive = {};
+  gs.fuelInjection = 0;
+  gs.fuelInjecting = false;
+  gs.fuelLoaded = false;
+  gs.assembly = { selectedQuality:'proto', selectedClass:'vega', jobs:[] };
+  gs.launches = 0;
+  gs.successfulLaunches = 0;
+  gs.explorationPoints = 0;
+
+  // 유지 항목: spaceScore, totalSpaceScore, prestigeCount,
+  //   upgrades, autoConfig, milestones, achievements, prestigeStars, history, settings
+
+  // 연구 효과 재적용 (prodMult 등 전역 변수 리셋)
+  prodMult = {}; globalMult = 1; partCostMult = 1;
+  researchTimeMult = 1; fusionBonus = 0; reliabilityBonus = 0; slotBonus = 0;
+  Object.keys(gs.upgrades).forEach(uid => {
+    if (!gs.upgrades[uid]) return;
+    const upg = UPGRADES.find(u => u.id === uid);
+    if (upg) upg.effect();
+  });
+
+  // 잠금 해제 상태 재계산
+  const defaultUnlocks = {
+    tab_production:true, tab_research:false, tab_assembly:false,
+    tab_launch:true, tab_mission:false, tab_automation:false,
+    bld_housing:true, bld_ops_center:true, bld_supply_depot:false, bld_mine:true,
+    bld_extractor:false, bld_refinery:false, bld_cryo_plant:false,
+    bld_elec_lab:false, bld_fab_plant:false, bld_research_lab:false,
+    bld_r_and_d:false, bld_solar_array:false, bld_launch_pad:false,
+    addon_ops_center:false,
+  };
+  gs.unlocks = Object.assign({}, defaultUnlocks);
+  // 연구로 해금된 항목 복원
+  Object.keys(gs.upgrades).forEach(uid => {
+    if (!gs.upgrades[uid]) return;
+    const upg = UPGRADES.find(u => u.id === uid);
+    if (upg && upg.unlocks) applyUnlocks(upg.unlocks);
+  });
+
+  gs.lastTick = Date.now();
+  gs._citizenModelV2 = true;
+  gs._prodHubVisited = true;
+
+  saveGame();
+  if (typeof renderAll === 'function') renderAll();
+  notify(`★ 프레스티지 #${gs.prestigeCount} — +${ssGain} SS 획득!`, 'gold');
+  return true;
 }
 
 function getCostStr(cost) {
@@ -686,7 +870,7 @@ function getSaveSlots() {
         slots.push({
           slot: i, empty: false,
           launches: d.launches || 0,
-          moonstone: d.moonstone || 0,
+          spaceScore: d.spaceScore || d.moonstone || 0,
           buildings: bldTotal,
           lastTick: d.lastTick || 0,
         });
@@ -755,6 +939,7 @@ function loadGame(slot) {
     // Scalars
     gs.launches = saved.launches || 0;
     gs.moonstone = saved.moonstone || 0;
+    gs.spaceScore = saved.spaceScore || saved.moonstone || 0;  // 마이그레이션: 기존 moonstone → spaceScore
     gs.history = saved.history || [];
     gs.upgrades = saved.upgrades || {};
     // drill(알루미늄 가공) 삭제 마이그레이션 — 기존 세이브 호환
@@ -820,6 +1005,23 @@ function loadGame(slot) {
     gs.addonUpgrades = saved.addonUpgrades || {};
     gs.msUpgrades = saved.msUpgrades || {};
     gs.autoEnabled = saved.autoEnabled || {};
+
+    // D6: 기존 Branch O 연구 ID → 신규 ID 마이그레이션
+    const legacyResearchMap = {
+      'auto_worker_assign':    'auto_worker',
+      'auto_assemble_restart': 'auto_assembly',
+      'auto_parts_craft':      'auto_parts',
+      'auto_build_manage':     'auto_build',
+      'auto_launch_seq':       'auto_launch',
+    };
+    if (gs.upgrades) {
+      Object.entries(legacyResearchMap).forEach(([oldId, newId]) => {
+        if (gs.upgrades[oldId] && !gs.upgrades[newId]) {
+          gs.upgrades[newId] = gs.upgrades[oldId];
+          delete gs.upgrades[oldId];
+        }
+      });
+    }
     gs.milestones  = saved.milestones  || {};
     // 마일스톤 마이그레이션: 기존 true → 'claimed' (이미 보상 적용된 상태)
     Object.keys(gs.milestones).forEach(mid => {
@@ -834,6 +1036,31 @@ function loadGame(slot) {
     });
     gs.prestigeStars = saved.prestigeStars || {};       // P4-3
     gs.prestigeCount = saved.prestigeCount || 0;        // P4-3
+
+    // D6: EP/SS 마이그레이션
+    gs.explorationPoints = saved.explorationPoints || 0;
+    gs.totalSpaceScore = saved.totalSpaceScore || 0;
+    gs.successfulLaunches = saved.successfulLaunches || 0;
+
+    // D6: autoConfig 마이그레이션
+    const defaultAutoConfig = {
+      worker:   { enabled:false, ratios:{}, minIdleWorkers:0, autoRedistribute:false },
+      build:    { enabled:false, buildings:{}, maxSpendRatio:50, priority:[], autoUpgrade:false, maxUpgradeLevel:5 },
+      parts:    { enabled:false, targets:{}, reserves:{}, priority:[], continuousCraft:true },
+      assembly: { enabled:false, defaultClass:'vega', defaultQuality:'proto', rules:[], minSuccessRate:0, autoFuelAfter:true },
+      fuel:     { enabled:false, autoStart:true, targetPercent:100, minFuelReserve:0 },
+      launch:   { enabled:false, minOverallRate:50, minStageRate:0, minExpectedEP:0, cooldownSec:0, retryOnFail:true },
+      research: { enabled:false, priorityList:[], reserves:{}, autoQueue:false },
+      prestige: { enabled:false, minEPGain:100, minSSMultiplier:2.0, minTimeSec:300, minLaunches:10 },
+    };
+    if (saved.autoConfig) {
+      gs.autoConfig = {};
+      Object.keys(defaultAutoConfig).forEach(k => {
+        gs.autoConfig[k] = Object.assign({}, defaultAutoConfig[k], saved.autoConfig[k] || {});
+      });
+    } else {
+      gs.autoConfig = defaultAutoConfig;
+    }
 
     // Merge unlocks — keep defaults for any missing keys
     const defaultUnlocks = {
@@ -1260,34 +1487,37 @@ function _padEndVisual(str, width) {
 // ============================================================
 function getRocketArtHtml(opts) {
   opts = opts || {};
+  const selClass = (gs.assembly && gs.assembly.selectedClass) || 'vega';
+
+  // D5: ROCKET_ASCII에 클래스별 아트가 있으면 사용
+  if (typeof ROCKET_ASCII !== 'undefined' && ROCKET_ASCII[selClass]) {
+    const artData = ROCKET_ASCII[selClass];
+    const lines = opts.launching ? artData.launching : artData.static;
+    const color = opts.allGreen ? 'color:var(--green);text-shadow:0 0 8px rgba(0,230,118,0.6)' : '';
+    return `<span style="${color}">${lines.join('\n')}</span>`;
+  }
+
+  // 폴백: 레거시 단일 아트
   const _partDone = id => {
     const p = (typeof PARTS !== 'undefined') ? PARTS.find(x => x.id === id) : null;
     return p && (gs.parts[id] || 0) >= p.cycles;
   };
-
-  // CSS 클래스 결정: allGreen → 'go' / 완료 → 'done' / 미완 → (기본 dim)
   const cls = (base, doneCheck) => {
     if (opts.allGreen) return base + ' go';
     return base + (doneCheck ? ' done' : '');
   };
-
   const noseClass = cls('r-nose',     _partDone('hull'));
   const payClass  = cls('r-payload',  _partDone('propellant'));
   const aviClass  = cls('r-avionics', _partDone('propellant'));
   const engClass  = cls('r-engine',   _partDone('engine'));
   const exhClass  = cls('r-exhaust',  _partDone('engine') && (gs.fuelInjection || 0) >= 100);
 
-  // 로켓 클래스 이름 (CJK 시각적 패딩 적용)
-  const selClass = (gs.assembly && gs.assembly.selectedClass) || 'vega';
   const rc = (typeof ROCKET_CLASSES !== 'undefined')
     ? ROCKET_CLASSES.find(c => c.id === selClass) || ROCKET_CLASSES[0]
     : null;
-  const className = rc ? rc.name : 'NANO';
+  const className = rc ? rc.name : 'VEGA';
   const thrustLabel = rc ? String(rc.thrustKN) + ' kN' : '18 kN';
-
-  // 코 이름줄: inner 13 = " " + padVisual(11) + " "
   const namePadded = ' ' + _padEndVisual(className, 11) + ' ';
-  // 추력줄: inner box 9 = " " + padEnd(7) + " "
   const thrustInner = ' ' + thrustLabel.padEnd(7) + ' ';
 
   return `<span class="${noseClass}">           *

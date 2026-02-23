@@ -116,12 +116,17 @@ function renderResources() {
 
   rlInner.innerHTML = html;
 
-  // 문스톤
+  // D6: EP (탐험 포인트) + SS (탐사 점수) 표시
   const rlMs = document.getElementById('rl-ms-box');
   if (rlMs) {
-    rlMs.innerHTML = gs.moonstone > 0
-      ? `<div class="rl-ms-row"><div class="rl-ms-label">&#9670; MOONSTONE</div><div class="rl-ms-val">${gs.moonstone}</div></div>`
-      : '';
+    let msHtml = '';
+    const ep = gs.explorationPoints || 0;
+    const ss = gs.spaceScore || 0;
+    if (ep > 0 || ss > 0) {
+      if (ep > 0) msHtml += `<div class="rl-ms-row"><div class="rl-ms-label" style="color:var(--cyan)">EP 탐험 포인트</div><div class="rl-ms-val" style="color:var(--cyan)">${ep}</div></div>`;
+      if (ss > 0) msHtml += `<div class="rl-ms-row"><div class="rl-ms-label">★ 탐사 점수</div><div class="rl-ms-val">${ss}</div></div>`;
+    }
+    rlMs.innerHTML = msHtml;
   }
 
   // 사운드 버튼
@@ -229,11 +234,26 @@ function startNewGame(slot) {
   gs.researchQueue = [];
   gs.maxResearchSlots = 1;
   gs.msUpgrades = {};
+  gs.autoEnabled = {};
+  gs.autoConfig = {
+    worker:   { enabled:false, ratios:{}, minIdleWorkers:0, autoRedistribute:false },
+    build:    { enabled:false, buildings:{}, maxSpendRatio:50, priority:[], autoUpgrade:false, maxUpgradeLevel:5 },
+    parts:    { enabled:false, targets:{}, reserves:{}, priority:[], continuousCraft:true },
+    assembly: { enabled:false, defaultClass:'vega', defaultQuality:'proto', rules:[], minSuccessRate:0, autoFuelAfter:true },
+    fuel:     { enabled:false, autoStart:true, targetPercent:100, minFuelReserve:0 },
+    launch:   { enabled:false, minOverallRate:50, minStageRate:0, minExpectedEP:0, cooldownSec:0, retryOnFail:true },
+    research: { enabled:false, priorityList:[], reserves:{}, autoQueue:false },
+    prestige: { enabled:false, minEPGain:100, minSSMultiplier:2.0, minTimeSec:300, minLaunches:10 },
+  };
   gs.achievements = {};       // P4-2
   gs.prestigeStars = {};      // P4-3
   gs.prestigeCount = 0;       // P4-3
   gs.launches = 0;
+  gs.successfulLaunches = 0;
   gs.moonstone = 0;
+  gs.spaceScore = 0;
+  gs.explorationPoints = 0;
+  gs.totalSpaceScore = 0;
   gs.history = [];
   gs.lastTick = Date.now();
   gs.settings = { sound: true, lang: 'en' };
@@ -296,14 +316,14 @@ function _renderSlotModal(modal, mode) {
       if (mode === 'new') {
         slotsHtml += `<div class="ssm-slot ssm-occupied" onclick="confirmNewInSlot(${s.slot})">
           <div class="ssm-slot-num">SLOT ${s.slot}</div>
-          <div class="ssm-slot-info">발사 ${s.launches}회 &nbsp;|&nbsp; ◆ ${s.moonstone} &nbsp;|&nbsp; 시설 ${s.buildings}개</div>
+          <div class="ssm-slot-info">발사 ${s.launches}회 &nbsp;|&nbsp; ★ ${s.spaceScore || 0} &nbsp;|&nbsp; 시설 ${s.buildings}개</div>
           <div class="ssm-slot-date">${date}</div>
           <div class="ssm-slot-action ssm-warn">[ 덮어쓰기 — 클릭 확인 ]</div>
         </div>`;
       } else {
         slotsHtml += `<div class="ssm-slot ssm-occupied" onclick="doLoadSlot(${s.slot})">
           <div class="ssm-slot-num">SLOT ${s.slot}</div>
-          <div class="ssm-slot-info">발사 ${s.launches}회 &nbsp;|&nbsp; ◆ ${s.moonstone} &nbsp;|&nbsp; 시설 ${s.buildings}개</div>
+          <div class="ssm-slot-info">발사 ${s.launches}회 &nbsp;|&nbsp; ★ ${s.spaceScore || 0} &nbsp;|&nbsp; 시설 ${s.buildings}개</div>
           <div class="ssm-slot-date">${date}</div>
           <div class="ssm-slot-action">[ 불러오기 ]</div>
         </div>`;
@@ -390,6 +410,9 @@ function toggleSound() {
 //  INIT
 // ============================================================
 function init() {
+  // SFX Manager 프리로드
+  if (typeof SFX !== 'undefined') SFX.preload();
+
   // Bind title screen buttons
   const newGameBtn = document.getElementById('new-game-btn');
   if (newGameBtn) newGameBtn.addEventListener('click', () => openSaveSlotModal('new'));
@@ -436,8 +459,8 @@ function init() {
     if (saveStrip) {
       if (occupied.length > 0) {
         const totalLaunches = occupied.reduce((a, s) => a + s.launches, 0);
-        const totalMs = occupied.reduce((a, s) => a + s.moonstone, 0);
-        saveStrip.innerHTML = `저장 슬롯 ${occupied.length}개 &nbsp;|&nbsp; 발사: <span>${totalLaunches}회</span> &nbsp; 문스톤: <span>${totalMs}</span>`;
+        const totalSs = occupied.reduce((a, s) => a + (s.spaceScore || 0), 0);
+        saveStrip.innerHTML = `저장 슬롯 ${occupied.length}개 &nbsp;|&nbsp; 발사: <span>${totalLaunches}회</span> &nbsp; ★탐사: <span>${totalSs}</span>`;
       } else {
         saveStrip.textContent = '// 저장 데이터 없음';
       }

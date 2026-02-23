@@ -67,9 +67,9 @@ const BALANCE = {
     prodMult: 2,                // 현재 수입 × N
   },
 
-  // ── 문스톤 ────────────────────────────────────────────────────
-  MOONSTONE: {
-    multPerStone: 1.07,         // 문스톤 1개당 생산 배율
+  // ── 우주 탐사 점수 ────────────────────────────────────────────
+  SPACE_SCORE: {
+    multPerStone: 1.07,         // 탐사 점수 1점당 생산 배율
     rewardDivisor: 20,          // altitude / N
     launchDivisor: 4,           // launches / N
   },
@@ -157,6 +157,108 @@ const BALANCE = {
     fuel: 200,
     electronics: 100,
   },
+
+  // ── 발사 단계별 성공률 시스템 (D5) ──────────────────────────
+  LAUNCH_STAGES: {
+    sigmoid_k: 0.08,
+    sigmoid_mid: 50,
+    baseFloor: 60,       // 최저 성공률 (%)
+    baseCeiling: 99.5,   // 최고 성공률 (%) = maxReliability
+    // 단계별 스펙 가중치 [structural, propulsion, avionics, thermal]
+    stageWeights: {
+      4:  [0.15, 0.50, 0.20, 0.15],  // LIFTOFF
+      5:  [0.55, 0.10, 0.15, 0.20],  // MAX-Q
+      6:  [0.10, 0.40, 0.20, 0.30],  // MECO
+      7:  [0.30, 0.15, 0.40, 0.15],  // STG SEP
+      8:  [0.10, 0.20, 0.35, 0.35],  // ORBIT
+      9:  [0.10, 0.45, 0.25, 0.20],  // TLI
+      10: [0.10, 0.20, 0.40, 0.30],  // LOI
+      11: [0.15, 0.15, 0.45, 0.25],  // LANDING
+    },
+  },
+
+  // ── 품질별 스펙 보정 (D5 8.2) ──────────────────────────────
+  SPEC_QUALITY_BONUS: {
+    //                s    p    a    t
+    proto:         { s:0,  p:0,  a:0,  t:0  },
+    standard:      { s:3,  p:4,  a:5,  t:3  },
+    advanced:      { s:6,  p:8,  a:10, t:6  },
+    elite:         { s:10, p:12, a:15, t:10 },
+  },
+
+  // ── 클래스별 스펙 보정 (D5 8.3) ─────────────────────────────
+  SPEC_CLASS_BONUS: {
+    //                s    p    a    t
+    vega:          { s:0,  p:0,  a:0,  t:0  },
+    argo:          { s:3,  p:5,  a:2,  t:2  },
+    hermes:        { s:5,  p:8,  a:6,  t:4  },
+    atlas:         { s:4,  p:10, a:8,  t:7  },
+    selene:        { s:2,  p:12, a:10, t:10 },
+    artemis:       { s:0,  p:15, a:12, t:12 },
+  },
+
+  // ── 연구별 스펙 보정 (D5 8.4) ──────────────────────────────
+  SPEC_RESEARCH_BONUS: {
+    // Branch S (구조)
+    alloy:              { s:8,  p:0,  a:0,  t:0 },
+    precision_mfg:      { s:6,  p:0,  a:0,  t:0 },
+    // Branch P (추진)
+    fuel_chem:          { s:0,  p:5,  a:0,  t:0 },
+    catalyst:           { s:0,  p:8,  a:0,  t:0 },
+    lightweight:        { s:0,  p:6,  a:0,  t:0 },
+    fusion:             { s:0,  p:10, a:0,  t:0 },
+    cryo_storage:       { s:0,  p:3,  a:0,  t:0 },
+    // Branch A (항전)
+    electronics_basics: { s:0,  p:0,  a:5,  t:0 },
+    microchip:          { s:0,  p:0,  a:8,  t:0 },
+    reliability:        { s:0,  p:0,  a:10, t:0 },
+    telemetry:          { s:0,  p:0,  a:6,  t:0 },
+    automation:         { s:0,  p:0,  a:5,  t:0 },
+    // Branch T (열보호)
+    hire_worker_1:      { s:0,  p:0,  a:0,  t:5 },
+    launch_ctrl:        { s:0,  p:0,  a:0,  t:8 },
+    mission_sys:        { s:0,  p:0,  a:0,  t:8 },
+    multipad:           { s:0,  p:0,  a:0,  t:6 },
+    heat_recov:         { s:0,  p:0,  a:0,  t:8 },
+    // Branch M (제조)
+    rocket_eng:         { s:2,  p:2,  a:0,  t:0 },
+  },
+
+  // ── 제작 품질별 편차 (D5 8.5) ──────────────────────────────
+  ROLL_VARIANCE: {
+    proto:    { sigma: 4.0, max: 8 },
+    standard: { sigma: 2.5, max: 5 },
+    advanced: { sigma: 1.5, max: 3 },
+    elite:    { sigma: 1.0, max: 2 },
+  },
+
+  // ── 프레스티지 시스템 (D6 8.2) ──────────────────────────────
+  PRESTIGE: {
+    baseConversion: 1.0,      // EP→SS 기본 변환율
+    prestigeCountBonus: 0.1,  // 프레스티지 횟수당 log2 보너스 계수
+    ssMultiplier: 0.05,       // SS당 생산 배수 증가 (SS 20 = ×2.0)
+    keepResearch: true,
+    keepAutomation: true,
+    keepMilestones: true,
+    resetResources: true,
+    resetBuildings: true,
+    resetParts: true,
+    resetLaunches: true,
+    resetEP: true,
+    resetWorkers: true,
+  },
+
+  // ── 자동화 모듈 (D6 8.1) ───────────────────────────────────
+  AUTO_MODULES: {
+    worker:   { researchId: 'auto_worker',   tier: 1 },
+    build:    { researchId: 'auto_build',    tier: 2 },
+    parts:    { researchId: 'auto_parts',    tier: 3 },
+    assembly: { researchId: 'auto_assembly', tier: 4 },
+    fuel:     { researchId: 'auto_fuel',     tier: 5 },
+    launch:   { researchId: 'auto_launch',   tier: 6 },
+    research: { researchId: 'auto_research', tier: 7 },
+    prestige: { researchId: 'auto_prestige', tier: 8 },
+  },
 };
 
 // 공정 기반 부품 제작 — cycles×cycleTime 동안 cycleCost 소모 반복
@@ -193,7 +295,7 @@ const UPGRADES = [
   { id:'fuel_chem',    name:'고압 연소실 I',   icon:'P01', cost:{research:80},                       req:'rocket_eng',  time:  30, desc:'연료 정제 시설 해금',             effect:()=>{},                                                      unlocks:['bld_refinery'] },
   { id:'catalyst',     name:'터보펌프 기초',   icon:'P02', cost:{research:1500,fuel:500},            req:'fuel_chem',   time: 480, desc:'연료 생산 +30%',                 effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.3; },               unlocks:['bld_cryo_plant'] },
   { id:'lightweight',  name:'재생 냉각 노즐',  icon:'P03', cost:{research:6000,iron:3000},           req:'catalyst',    time:1500, desc:'건조질량 -10%, 재활용 +8%',     effect:()=>{ /* handled in getRocketScience */ } },
-  { id:'fusion',       name:'핀치 연소',       icon:'P04', cost:{research:15000,electronics:3000},  req:'lightweight', time:3600, desc:'Isp +22, 추력 +120kN, 문스톤 +1', effect:()=>{ fusionBonus++; } },
+  { id:'fusion',       name:'핀치 연소',       icon:'P04', cost:{research:15000,electronics:3000},  req:'lightweight', time:3600, desc:'Isp +22, 추력 +120kN, 탐사 점수 +1', effect:()=>{ fusionBonus++; } },
   { id:'cryo_storage',   name:'극저온 저장 기술', icon:'P05', cost:{research:3000,fuel:1000},        req:'catalyst',    time: 720, desc:'연료 생산 +20%',        effect:()=>{ prodMult.fuel=(prodMult.fuel||1)*1.20; },                           unlocks:[] },
   // ── Branch A (항전 · AVIONICS) ───────────────────────────────
   { id:'electronics_basics', name:'자이로 안정화',   icon:'A01', cost:{research:100},                    req:'fuel_chem',           time:  30, desc:'전자 시설 해금',       effect:()=>{},                                                                       unlocks:['bld_elec_lab','bld_supply_depot'] },
@@ -207,12 +309,15 @@ const UPGRADES = [
   { id:'mission_sys',   name:'능동 냉각',         icon:'T03', cost:{research:10000},                 req:'launch_ctrl',   time:2400, desc:'미션 현황 탭 해금',   effect:()=>{},                                 unlocks:['tab_mission'] },
   { id:'multipad',      name:'열차폐 타일',       icon:'T04', cost:{research:20000,iron:5000},       req:'mission_sys',   time:3600, desc:'조립 슬롯 +1',       effect:()=>{ slotBonus++; } },
   { id:'heat_recov',     name:'열 재생 코팅',     icon:'T05', cost:{research:35000,electronics:5000},req:'multipad',    time:5400, desc:'전체 생산 +10%',        effect:()=>{ globalMult*=1.10; },                                                unlocks:[] },
-  // ── Branch O (자동화 · AUTOMATION) ───────────────────────────
-  { id:'auto_worker_assign',    name:'인원 자동 배치',   icon:'O01', cost:{research:2000,electronics:800,moonstone:2},    req:'hire_worker_1',        time:1800,  desc:'인원 자동 배치 해금',         effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_worker']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_worker']=true; }, unlocks:[] },
-  { id:'auto_assemble_restart', name:'자동 조립 재시작', icon:'O02', cost:{research:5000,electronics:1500,moonstone:3},   req:'auto_worker_assign',   time:2400,  desc:'조립 자동 재시작 해금',       effect:()=>{ if(!gs.autoEnabled) gs.autoEnabled={}; gs.autoEnabled['auto_assemble']=true; if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_assemble']=true; }, unlocks:[] },
-  { id:'auto_parts_craft',      name:'자동 부품 제작',   icon:'O03', cost:{research:12000,electronics:2500,moonstone:6},  req:'auto_assemble_restart',time:4800,  desc:'자원 충족 시 5종 파트 전부 자동 제작', effect:()=>{ if(!gs.msUpgrades) gs.msUpgrades={}; ['auto_parts_engine','auto_parts_fueltank','auto_parts_control','auto_parts_hull','auto_parts_payload'].forEach(k => { gs.msUpgrades[k]=true; }); }, unlocks:[] },
-  { id:'auto_build_manage',     name:'건설 자동 관리',   icon:'O04', cost:{research:30000,electronics:6000,moonstone:12}, req:'auto_parts_craft',     time:9600,  desc:'자금·자원 충족 시 건물 자동 건설 및 인원 자동 배치 패키지', effect:()=>{ if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_build']=true; gs.msUpgrades['auto_worker']=true; gs.msUpgrades['auto_housing_upg']=true; }, unlocks:[] },
-  { id:'auto_launch_seq',       name:'완전 자동 발사',   icon:'O05', cost:{research:80000,electronics:15000,moonstone:25},req:'auto_build_manage',    time:21600, desc:'조립 완료 즉시 발사 자동 실행 — 최고 단계 자동화', effect:()=>{ if(!gs.msUpgrades) gs.msUpgrades={}; gs.msUpgrades['auto_launch']=true; gs.msUpgrades['auto_assemble']=true; gs.msUpgrades['auto_addon']=true; }, unlocks:[] },
+  // ── Branch O (자동화 · AUTOMATION) — D6 개편 8개 ──────────────
+  { id:'auto_worker',   name:'인원 배치 자동화',   icon:'O01', cost:{research:1500,electronics:500},                      req:'hire_worker_1',  time:1200,  desc:'인원 자동 배치 시스템 해금. Automation 탭에서 건물별 인원 비율을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
+  { id:'auto_build',    name:'건설 관리 자동화',   icon:'O02', cost:{research:3000,electronics:1000,money:800},            req:'auto_worker',    time:1800,  desc:'건설 자동 관리 시스템 해금. 건물 우선순위, 최대 수량, 예산 비율을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
+  { id:'auto_parts',    name:'부품 제작 자동화',   icon:'O03', cost:{research:6000,electronics:2000,iron:1000},            req:'auto_build',     time:3000,  desc:'부품 자동 제작 시스템 해금. 부품별 목표 수량, 우선순위, 자원 유보량을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
+  { id:'auto_assembly', name:'로켓 조립 자동화',   icon:'O04', cost:{research:12000,electronics:3000,copper:1500},         req:'auto_parts',     time:4800,  desc:'로켓 조립 자동화 해금. 클래스/품질 선택, 조건부 규칙, 최소 성공률 기준을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
+  { id:'auto_fuel',     name:'연료 주입 자동화',   icon:'O05', cost:{research:18000,electronics:4000,fuel:2000},           req:'auto_assembly',  time:6000,  desc:'연료 자동 주입 시스템 해금. 목표 주입량과 연료 유보량을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
+  { id:'auto_launch',   name:'발사 통제 자동화',   icon:'O06', cost:{research:30000,electronics:8000},                     req:'auto_fuel',      time:9600,  desc:'발사 자동 통제 시스템 해금. 최소 성공률, EP 기대치, 발사 간격을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
+  { id:'auto_research', name:'연구 큐 자동화',     icon:'O07', cost:{research:50000,electronics:12000},                    req:'auto_launch',    time:14400, desc:'연구 자동 큐잉 시스템 해금. 연구 우선순위 리스트와 자원 유보량을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
+  { id:'auto_prestige', name:'프레스티지 자동화',   icon:'O08', cost:{research:100000,electronics:25000,spaceScore:50},     req:'auto_research',  time:21600, desc:'프레스티지 자동 실행 해금. 최소 EP, SS 배수, 경과 시간, 발사 횟수 조건을 설정할 수 있다.', effect:()=>{}, unlocks:[] },
     // ── Branch E (경제 · ECONOMY) ──────────────────────────────────────
   { id:'ops_addon_unlock', name:'운영 확장 프로그램', icon:'E01', cost:{research:50},               req:null,               time:  30, desc:'운영센터 부속 건물 설치 해금',      effect:()=>{},                                                                  unlocks:['addon_ops_center'] },
   { id:'workforce_opt',    name:'인력 운용 최적화',   icon:'E02', cost:{research:400},              req:'ops_addon_unlock', time: 240, desc:'자금 생산 +15%',                   effect:()=>{ prodMult.money=(prodMult.money||1)*1.15; },                        unlocks:[] },
@@ -220,7 +325,7 @@ const UPGRADES = [
   { id:'corp_invest',      name:'기업 투자 전략',     icon:'E04', cost:{research:3000,money:5000},  req:'market_analysis',  time: 900, desc:'전체 생산 +10%',                   effect:()=>{ globalMult*=1.10; },                                               unlocks:[] },
   { id:'housing_welfare',  name:'복지 정책 확립',     icon:'E05', cost:{research:6000,money:15000}, req:'corp_invest',      time:1500, desc:'전체 생산 +10% + 시민 +2명',      effect:()=>{ globalMult*=1.10; gs.citizens=(gs.citizens||0)+2; },               unlocks:[] },
   // ── Branch X (전문화 · SPECIALIZATION) ───────────────────────
-  { id:'spec_sales_pro',  name:'영업 전문화 교육',   icon:'X01', cost:{research:5000,money:50000},                              req:'auto_worker_assign', time: 300,  desc:'운영센터 영업 전문가 전직 해금',     effect:()=>{}, unlocks:[] },
+  { id:'spec_sales_pro',  name:'영업 전문화 교육',   icon:'X01', cost:{research:5000,money:50000},                              req:'auto_worker', time: 300,  desc:'운영센터 영업 전문가 전직 해금',     effect:()=>{}, unlocks:[] },
   { id:'spec_sysadmin',   name:'시스템 관리 교육',   icon:'X02', cost:{research:8000,electronics:2000,money:80000},              req:'spec_sales_pro',   time: 450,  desc:'운영센터 시스템 관리자 전직 해금',   effect:()=>{}, unlocks:[] },
   { id:'spec_experiment', name:'실험 전문화 교육',   icon:'X03', cost:{research:12000,iron:5000,copper:3000,electronics:1000},    req:'microchip',        time: 600,  desc:'연구소 실험 전문가 전직 해금',       effect:()=>{}, unlocks:[] },
   { id:'spec_analyst',    name:'데이터 분석 교육',   icon:'X04', cost:{research:15000,electronics:5000,fuel:3000,money:100000},   req:'spec_experiment',  time: 600,  desc:'연구소 데이터 분석가 전직 해금',     effect:()=>{}, unlocks:[] },
@@ -234,7 +339,7 @@ const RESEARCH_BRANCHES = [
   { id:'P', label:'추진',      nodes:['fuel_chem','catalyst','cryo_storage','lightweight','fusion'] },
   { id:'A', label:'항전',      nodes:['electronics_basics','microchip','reliability','automation','telemetry'] },
   { id:'T', label:'열보호',    nodes:['hire_worker_1','launch_ctrl','mission_sys','multipad','heat_recov'] },
-  { id:'O', label:'자동화',    nodes:['auto_worker_assign','auto_assemble_restart','auto_parts_craft','auto_build_manage','auto_launch_seq'] },
+  { id:'O', label:'자동화',    nodes:['auto_worker','auto_build','auto_parts','auto_assembly','auto_fuel','auto_launch','auto_research','auto_prestige'] },
   { id:'X', label:'전문화',    nodes:['spec_sales_pro','spec_sysadmin','spec_experiment','spec_analyst'] },
   { id:'F', label:'미래 연구', nodes:[], locked:true, lockedItems:[
     { name:'???', desc:'생물학적 개선 — 달 탐사 인원의 생존력 강화' },
@@ -381,28 +486,28 @@ const BUILDING_ADDONS = {
 };
 
 // ============================================================
-//  AUTOMATION UPGRADES — 프레스티지(moonstone)로 구매하는 자동화 연구
+//  AUTOMATION UPGRADES — 탐사 점수(spaceScore)로 구매하는 자동화 연구
 //  별도 자동화 탭에서 관리. gs.msUpgrades에 저장.
 // ============================================================
 const AUTOMATION_UPGRADES = [
-  // ── 문스톤 초기 업그레이드 (TIER 0) ──────────────────────
-  { id:'ms_quick_workers', name:'긴급 인력 지원',   icon:'[HRE]', cost:{moonstone:1}, req:null, tier:0, desc:'인원 상한 +1 영구 추가. 프레스티지 후에도 유지.' },
-  { id:'ms_early_boost',   name:'초기 생산 자금',   icon:'[EFD]', cost:{moonstone:2}, req:null, tier:0, desc:'전체 생산 속도 +8% 영구 적용. 프레스티지 후에도 유지.' },
+  // ── 탐사 점수 초기 업그레이드 (TIER 0) ──────────────────────
+  { id:'ms_quick_workers', name:'긴급 인력 지원',   icon:'[HRE]', cost:{spaceScore:1}, req:null, tier:0, desc:'인원 상한 +1 영구 추가. 프레스티지 후에도 유지.' },
+  { id:'ms_early_boost',   name:'초기 생산 자금',   icon:'[EFD]', cost:{spaceScore:2}, req:null, tier:0, desc:'전체 생산 속도 +8% 영구 적용. 프레스티지 후에도 유지.' },
   // ── 건물/생산 자동화 (TIER 0) ─────────────────────────────
-  { id:'auto_build',          name:'건물 자동 건설',             icon:'[AB1]', cost:{moonstone:5},  req:null,               tier:0, desc:'자금/자원 조건이 충족되면 잠금 해제된 건물을 자동으로 1개씩 건설. 가장 저렴한 건물부터 우선 건설.' },
-  { id:'auto_housing_upg',    name:'주거 시설 자동 업그레이드',   icon:'[AB2]', cost:{moonstone:5},  req:null,               tier:0, desc:'여유 인원이 0명일 때 자동으로 주거 시설 업그레이드를 구매.' },
-  { id:'auto_worker',         name:'인원 자동 배치',              icon:'[AB3]', cost:{moonstone:8},  req:'auto_build',       tier:0, desc:'새 건물 건설 또는 인원 증가 시 여유 인원을 현재 배치 비율에 맞춰 자동으로 배치.' },
-  { id:'auto_addon',          name:'애드온 자동 설치',            icon:'[AB4]', cost:{moonstone:10}, req:'auto_worker',      tier:1, desc:'건물 건설 후 첫 번째 애드온 옵션을 자동으로 설치.' },
-  { id:'auto_addon_upg',      name:'애드온 업그레이드 자동화',    icon:'[AB5]', cost:{moonstone:12}, req:'auto_addon',       tier:1, desc:'자원 충족 시 설치된 애드온의 업그레이드를 자동으로 구매.' },
+  { id:'auto_build',          name:'건물 자동 건설',             icon:'[AB1]', cost:{spaceScore:5},  req:null,               tier:0, desc:'자금/자원 조건이 충족되면 잠금 해제된 건물을 자동으로 1개씩 건설. 가장 저렴한 건물부터 우선 건설.' },
+  { id:'auto_housing_upg',    name:'주거 시설 자동 업그레이드',   icon:'[AB2]', cost:{spaceScore:5},  req:null,               tier:0, desc:'여유 인원이 0명일 때 자동으로 주거 시설 업그레이드를 구매.' },
+  { id:'auto_worker',         name:'인원 자동 배치',              icon:'[AB3]', cost:{spaceScore:8},  req:'auto_build',       tier:0, desc:'새 건물 건설 또는 인원 증가 시 여유 인원을 현재 배치 비율에 맞춰 자동으로 배치.' },
+  { id:'auto_addon',          name:'애드온 자동 설치',            icon:'[AB4]', cost:{spaceScore:10}, req:'auto_worker',      tier:1, desc:'건물 건설 후 첫 번째 애드온 옵션을 자동으로 설치.' },
+  { id:'auto_addon_upg',      name:'애드온 업그레이드 자동화',    icon:'[AB5]', cost:{spaceScore:12}, req:'auto_addon',       tier:1, desc:'자원 충족 시 설치된 애드온의 업그레이드를 자동으로 구매.' },
   // ── 조립재료 자동화 (TIER 0-1) ───────────────────────────
-  { id:'auto_parts_engine',   name:'엔진 파트 자동 제작',         icon:'[PA1]', cost:{moonstone:6},  req:null,               tier:0, desc:'자원 충족 시 엔진 파트를 자동으로 제작. 파트가 이미 있으면 건너뜀.' },
-  { id:'auto_parts_fueltank', name:'연료탱크 자동 제작',          icon:'[PA2]', cost:{moonstone:6},  req:null,               tier:0, desc:'자원 충족 시 연료탱크를 자동으로 제작.' },
-  { id:'auto_parts_control',  name:'제어시스템 자동 제작',        icon:'[PA3]', cost:{moonstone:6},  req:null,               tier:0, desc:'자원 충족 시 제어시스템을 자동으로 제작.' },
-  { id:'auto_parts_hull',     name:'선체 자동 제작',              icon:'[PA4]', cost:{moonstone:6},  req:null,               tier:0, desc:'자원 충족 시 선체를 자동으로 제작.' },
-  { id:'auto_parts_payload',  name:'탑재체 자동 제작',            icon:'[PA5]', cost:{moonstone:6},  req:null,               tier:0, desc:'자원 충족 시 탑재체를 자동으로 제작.' },
+  { id:'auto_parts_engine',   name:'엔진 파트 자동 제작',         icon:'[PA1]', cost:{spaceScore:6},  req:null,               tier:0, desc:'자원 충족 시 엔진 파트를 자동으로 제작. 파트가 이미 있으면 건너뜀.' },
+  { id:'auto_parts_fueltank', name:'연료탱크 자동 제작',          icon:'[PA2]', cost:{spaceScore:6},  req:null,               tier:0, desc:'자원 충족 시 연료탱크를 자동으로 제작.' },
+  { id:'auto_parts_control',  name:'제어시스템 자동 제작',        icon:'[PA3]', cost:{spaceScore:6},  req:null,               tier:0, desc:'자원 충족 시 제어시스템을 자동으로 제작.' },
+  { id:'auto_parts_hull',     name:'선체 자동 제작',              icon:'[PA4]', cost:{spaceScore:6},  req:null,               tier:0, desc:'자원 충족 시 선체를 자동으로 제작.' },
+  { id:'auto_parts_payload',  name:'탑재체 자동 제작',            icon:'[PA5]', cost:{spaceScore:6},  req:null,               tier:0, desc:'자원 충족 시 탑재체를 자동으로 제작.' },
   // ── 조립/발사 자동화 (TIER 1-2) ──────────────────────────
-  { id:'auto_assemble',       name:'조립 자동 재시작',            icon:'[AS1]', cost:{moonstone:15}, req:'auto_parts_hull',  tier:1, desc:'빈 슬롯이 있고 모든 파트가 준비된 경우 즉시 조립을 자동으로 시작.' },
-  { id:'auto_launch',         name:'발사 자동 실행',              icon:'[AS2]', cost:{moonstone:20}, req:'auto_assemble',    tier:2, desc:'조립 완료 즉시 자동으로 발사를 실행. 발사 오버레이 없이 바로 처리.' },
+  { id:'auto_assemble',       name:'조립 자동 재시작',            icon:'[AS1]', cost:{spaceScore:15}, req:'auto_parts_hull',  tier:1, desc:'빈 슬롯이 있고 모든 파트가 준비된 경우 즉시 조립을 자동으로 시작.' },
+  { id:'auto_launch',         name:'발사 자동 실행',              icon:'[AS2]', cost:{spaceScore:20}, req:'auto_assemble',    tier:2, desc:'조립 완료 즉시 자동으로 발사를 실행. 발사 오버레이 없이 바로 처리.' },
 ];
 
 // ============================================================
@@ -430,7 +535,7 @@ const MILESTONES = [
     name: '궤도 돌입 (고도 120km)',
     icon: '[ORB]',
     desc: '발사 고도 120km 이상 달성',
-    reward: '문스톤 +5 즉시 지급',
+    reward: '탐사 점수 +5 즉시 지급',
     check: gs => Array.isArray(gs.history) && gs.history.some(h => (h.altitude || 0) >= 120),
   },
   {
@@ -454,7 +559,7 @@ const MILESTONES = [
     name: 'ELITE 클래스 발사',
     icon: '[★]',
     desc: 'ELITE-MK4 품질로 첫 발사',
-    reward: '문스톤 획득량 +20% 영구',
+    reward: '탐사 점수 획득량 +20% 영구',
     check: gs => Array.isArray(gs.history) && gs.history.some(h => h.qualityId === 'elite'),
   },
 ];
@@ -730,7 +835,7 @@ const ASSEMBLY_STAGES = [
 //  ACHIEVEMENTS — 업적 시스템 (D3-4)
 //  category: production | research | assembly | launch | mission
 //  condition: 프로그래밍팀장이 체크 로직 구현 시 참조할 키
-//  reward: { type:'rp'|'moonstone', amount:N }
+//  reward: { type:'rp'|'spaceScore', amount:N }
 // ============================================================
 const ACHIEVEMENTS = [
   // ── 생산 (Production) ──────────────────────────────────────
@@ -768,7 +873,7 @@ const ACHIEVEMENTS = [
     category: 'production',
     desc: '전체 자원 누적 생산량 합계 100,000 이상.',
     condition: 'all_resource_total_gte_100000',
-    reward: { type:'moonstone', amount:3 },
+    reward: { type:'spaceScore', amount:3 },
   },
   {
     id: 'ach_all_bldg_upgraded',
@@ -777,7 +882,7 @@ const ACHIEVEMENTS = [
     category: 'production',
     desc: '모든 건물 종류의 업그레이드를 1단계 이상 구매.',
     condition: 'all_buildings_upgraded',
-    reward: { type:'moonstone', amount:5 },
+    reward: { type:'spaceScore', amount:5 },
   },
 
   // ── 연구 (Research) ────────────────────────────────────────
@@ -806,7 +911,7 @@ const ACHIEVEMENTS = [
     category: 'research',
     desc: '연구를 총 10개 이상 완료하라.',
     condition: 'research_count_gte_10',
-    reward: { type:'moonstone', amount:3 },
+    reward: { type:'spaceScore', amount:3 },
   },
   {
     id: 'ach_all_branch_tier2',
@@ -815,7 +920,7 @@ const ACHIEVEMENTS = [
     category: 'research',
     desc: '모든 연구 브랜치에서 Tier 2 이상 달성.',
     condition: 'all_branches_tier2',
-    reward: { type:'moonstone', amount:5 },
+    reward: { type:'spaceScore', amount:5 },
   },
   {
     id: 'ach_rp_10k',
@@ -824,7 +929,7 @@ const ACHIEVEMENTS = [
     category: 'research',
     desc: '연구 포인트(RP)를 누적 10,000 이상 획득.',
     condition: 'rp_total_gte_10000',
-    reward: { type:'moonstone', amount:2 },
+    reward: { type:'spaceScore', amount:2 },
   },
 
   // ── 조립 (Assembly) ────────────────────────────────────────
@@ -853,7 +958,7 @@ const ACHIEVEMENTS = [
     category: 'assembly',
     desc: 'SMALL 클래스 로켓을 해금하라.',
     condition: 'rocket_class_small_unlocked',
-    reward: { type:'moonstone', amount:3 },
+    reward: { type:'spaceScore', amount:3 },
   },
   {
     id: 'ach_bom_complete',
@@ -862,7 +967,7 @@ const ACHIEVEMENTS = [
     category: 'assembly',
     desc: '로켓 1대 분량의 BOM 부품을 모두 확보하라.',
     condition: 'bom_all_parts_ready',
-    reward: { type:'moonstone', amount:5 },
+    reward: { type:'spaceScore', amount:5 },
   },
 
   // ── 발사 (Launch) ──────────────────────────────────────────
@@ -882,7 +987,7 @@ const ACHIEVEMENTS = [
     category: 'launch',
     desc: '발사 성공을 5회 이상 달성하라.',
     condition: 'launch_success_gte_5',
-    reward: { type:'moonstone', amount:3 },
+    reward: { type:'spaceScore', amount:3 },
   },
   {
     id: 'ach_100km',
@@ -891,7 +996,7 @@ const ACHIEVEMENTS = [
     category: 'launch',
     desc: '발사 고도 100km 이상을 달성하라.',
     condition: 'max_altitude_gte_100',
-    reward: { type:'moonstone', amount:5 },
+    reward: { type:'spaceScore', amount:5 },
   },
   {
     id: 'ach_retry_after_fail',
@@ -911,7 +1016,7 @@ const ACHIEVEMENTS = [
     category: 'mission',
     desc: 'Phase 1의 모든 목표를 달성하라.',
     condition: 'phase_1_complete',
-    reward: { type:'moonstone', amount:10 },
+    reward: { type:'spaceScore', amount:10 },
   },
   {
     id: 'ach_phase2_clear',
@@ -920,16 +1025,16 @@ const ACHIEVEMENTS = [
     category: 'mission',
     desc: 'Phase 2의 모든 목표를 달성하라.',
     condition: 'phase_2_complete',
-    reward: { type:'moonstone', amount:20 },
+    reward: { type:'spaceScore', amount:20 },
   },
 ];
 
 // ============================================================
 //  PRESTIGE STAR TREE — 프레스티지 스타 트리 (D4-1)
-//  문스톤으로 구매하는 영구 강화 노드. 트리 구조로 선행 조건 존재.
+//  탐사 점수로 구매하는 영구 강화 노드. 트리 구조로 선행 조건 존재.
 //  tier 0: 비용 1~3, tier 1: 비용 5~8, tier 2: 비용 12~20
 //  effect: { type: 'prodSpeed'|'researchSpeed'|'assemblyTime'|
-//            'startingMoney'|'moonstoneGain'|'partCost'|
+//            'startingMoney'|'spaceScoreGain'|'partCost'|
 //            'launchReliability'|'globalProd', value: number }
 // ============================================================
 const PRESTIGE_STAR_TREE = [
@@ -939,7 +1044,7 @@ const PRESTIGE_STAR_TREE = [
     name: '생산 가속',
     icon: '★',
     tier: 0,
-    cost: { moonstone: 2 },
+    cost: { spaceScore: 2 },
     effect: { type: 'prodSpeed', value: 0.20 },
     requires: [],
     desc: '전체 생산 속도 +20%. 모든 건물의 자원 산출량이 증가한다.',
@@ -949,7 +1054,7 @@ const PRESTIGE_STAR_TREE = [
     name: '연구 촉진',
     icon: '★',
     tier: 0,
-    cost: { moonstone: 2 },
+    cost: { spaceScore: 2 },
     effect: { type: 'researchSpeed', value: 0.15 },
     requires: [],
     desc: '연구 포인트(RP) 획득 속도 +15%. 기술 해금이 빨라진다.',
@@ -959,7 +1064,7 @@ const PRESTIGE_STAR_TREE = [
     name: '시드 머니',
     icon: '★',
     tier: 0,
-    cost: { moonstone: 1 },
+    cost: { spaceScore: 1 },
     effect: { type: 'startingMoney', value: 5000 },
     requires: [],
     desc: '프레스티지 후 시작 자금 $5,000 추가 지급. 초반 성장을 가속한다.',
@@ -969,7 +1074,7 @@ const PRESTIGE_STAR_TREE = [
     name: '부품 할인',
     icon: '★',
     tier: 0,
-    cost: { moonstone: 3 },
+    cost: { spaceScore: 3 },
     effect: { type: 'partCost', value: -0.10 },
     requires: [],
     desc: '로켓 부품 제작 비용 -10%. 부품 확보가 수월해진다.',
@@ -981,7 +1086,7 @@ const PRESTIGE_STAR_TREE = [
     name: '조립 단축',
     icon: '★',
     tier: 1,
-    cost: { moonstone: 5 },
+    cost: { spaceScore: 5 },
     effect: { type: 'assemblyTime', value: -0.15 },
     requires: ['star_prod_boost'],
     desc: '조립 소요 시간 -15%. 로켓 완성이 빨라진다.',
@@ -991,7 +1096,7 @@ const PRESTIGE_STAR_TREE = [
     name: '심층 연구',
     icon: '★',
     tier: 1,
-    cost: { moonstone: 6 },
+    cost: { spaceScore: 6 },
     effect: { type: 'researchSpeed', value: 0.25 },
     requires: ['star_research_accel'],
     desc: '연구 속도 추가 +25%. 고급 기술 해금 시간을 크게 단축.',
@@ -1001,7 +1106,7 @@ const PRESTIGE_STAR_TREE = [
     name: '발사 안전 강화',
     icon: '★',
     tier: 1,
-    cost: { moonstone: 5 },
+    cost: { spaceScore: 5 },
     effect: { type: 'launchReliability', value: 0.12 },
     requires: ['star_part_discount'],
     desc: '발사 신뢰도 +12%. 발사 실패 확률이 줄어든다.',
@@ -1011,7 +1116,7 @@ const PRESTIGE_STAR_TREE = [
     name: '벤처 캐피탈',
     icon: '★',
     tier: 1,
-    cost: { moonstone: 8 },
+    cost: { spaceScore: 8 },
     effect: { type: 'startingMoney', value: 20000 },
     requires: ['star_seed_fund'],
     desc: '프레스티지 후 시작 자금 $20,000 추가 지급. 건물 즉시 건설 가능.',
@@ -1023,31 +1128,31 @@ const PRESTIGE_STAR_TREE = [
     name: '대량 생산 체제',
     icon: '★',
     tier: 2,
-    cost: { moonstone: 15 },
+    cost: { spaceScore: 15 },
     effect: { type: 'globalProd', value: 0.50 },
     requires: ['star_assembly_rush', 'star_deep_research'],
     desc: '전체 생산 ×1.5 배율. 자원, 연구, 조립 모두에 적용.',
   },
   {
-    id: 'star_moonstone_magnet',
-    name: '문스톤 자석',
+    id: 'star_score_magnet',
+    name: '탐사 점수 자석',
     icon: '★',
     tier: 2,
-    cost: { moonstone: 12 },
-    effect: { type: 'moonstoneGain', value: 0.25 },
+    cost: { spaceScore: 12 },
+    effect: { type: 'spaceScoreGain', value: 0.25 },
     requires: ['star_launch_safe'],
-    desc: '프레스티지 시 문스톤 획득량 +25%. 스타 트리 확장이 빨라진다.',
+    desc: '프레스티지 시 탐사 점수 획득량 +25%. 스타 트리 확장이 빨라진다.',
   },
   {
     id: 'star_apollo_legacy',
     name: '아폴로의 유산',
     icon: '★',
     tier: 2,
-    cost: { moonstone: 20 },
+    cost: { spaceScore: 20 },
     effect: { type: 'globalProd', value: 0.30 },
-    requires: ['star_mass_production', 'star_moonstone_magnet'],
-    desc: '전체 생산 추가 +30% 및 문스톤 +10% 복합 보너스. 최종 강화 노드.',
-    bonusEffect: { type: 'moonstoneGain', value: 0.10 },
+    requires: ['star_mass_production', 'star_score_magnet'],
+    desc: '전체 생산 추가 +30% 및 탐사 점수 +10% 복합 보너스. 최종 강화 노드.',
+    bonusEffect: { type: 'spaceScoreGain', value: 0.10 },
   },
 ];
 
@@ -1055,7 +1160,7 @@ const PRESTIGE_STAR_TREE = [
 //  PRESTIGE CONFIG — 프레스티지 리셋/유지 목록 (D4-2)
 //  resets: 프레스티지 시 초기화되는 항목
 //  keeps: 프레스티지 시 유지되는 항목
-//  moonstoneFormula: 문스톤 획득 공식 설명
+//  spaceScoreFormula: 탐사 점수 획득 공식 설명
 // ============================================================
 const PRESTIGE_CONFIG = {
   resets: [
@@ -1075,20 +1180,20 @@ const PRESTIGE_CONFIG = {
   ],
 
   keeps: [
-    { id: 'moonstone',          name: '문스톤',                 desc: '누적 문스톤은 영구 보존된다.' },
+    { id: 'spaceScore',         name: '탐사 점수',              desc: '누적 탐사 점수는 영구 보존된다.' },
     { id: 'prestige_stars',     name: '프레스티지 스타',         desc: '스타 트리에서 구매한 노드는 영구 유지.' },
     { id: 'achievements',       name: '업적',                   desc: '달성한 업적은 프레스티지 후에도 유지된다.' },
     { id: 'milestones',         name: '마일스톤',               desc: '달성한 마일스톤 및 보상은 영구 유지.' },
     { id: 'prestige_count',     name: '프레스티지 횟수',         desc: '누적 프레스티지 횟수가 기록된다.' },
     { id: 'launch_history',     name: '발사 기록',              desc: '누적 발사 히스토리는 보존된다.' },
-    { id: 'automation_upgrades',name: '자동화 업그레이드',       desc: '문스톤으로 구매한 자동화 연구는 유지.' },
+    { id: 'automation_upgrades',name: '자동화 업그레이드',       desc: '탐사 점수로 구매한 자동화 연구는 유지.' },
     { id: 'advanced_research',  name: '고급 연구 (tier 2+)',    desc: '로켓 공학 기초, 발사 제어 등 고급 연구는 유지된다.' },
     { id: 'rocket_classes',     name: '해금된 로켓 클래스',      desc: '해금된 로켓 클래스(SMALL 이상)는 유지.' },
     { id: 'phase_progress',     name: '페이즈 진행도',           desc: '도달한 페이즈 단계는 영구 유지된다.' },
   ],
 
-  moonstoneFormula: {
-    desc: '프레스티지 시 획득하는 문스톤 수량 공식',
+  spaceScoreFormula: {
+    desc: '프레스티지 시 획득하는 탐사 점수 공식',
     formula: 'floor( sqrt(총_발사_고도_합 / 100) + (성공_발사_횟수 * 0.5) + (최고_고도 / 200) )',
     variables: [
       { name: '총_발사_고도_합',  desc: '이번 사이클에서 발사한 모든 로켓의 도달 고도 합계 (km)' },
@@ -1096,7 +1201,7 @@ const PRESTIGE_CONFIG = {
       { name: '최고_고도',      desc: '이번 사이클에서 달성한 최고 고도 (km)' },
     ],
     bonuses: [
-      '스타 트리 "문스톤 자석" 노드: +25%',
+      '스타 트리 "탐사 점수 자석" 노드: +25%',
       '스타 트리 "아폴로의 유산" 노드: +10%',
       '업적 "ELITE 클래스 발사": +20%',
     ],

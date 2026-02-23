@@ -8,6 +8,7 @@ const RESOURCES = [
   { id:'fuel',        name:'연료',     symbol:'LOX',icon:'◆',  color:'var(--green)',     iconColor:'#00ccdd' },
   { id:'electronics', name:'전자부품', symbol:'PCB',icon:'⚡', color:'var(--green)',     iconColor:'#ffcc00' },
   { id:'research',    name:'연구',     symbol:'RP', icon:'◇',  color:'var(--green-mid)', iconColor:'#aa88ff' },
+  { id:'spaceScore',  name:'탐사 점수', symbol:'★',  icon:'★',  color:'var(--amber)',     iconColor:'var(--amber)' },
 ];
 
 const OPS_ROLES = [

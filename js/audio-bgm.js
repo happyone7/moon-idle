@@ -64,7 +64,7 @@ const BGM = {
   // ─── 페이즈 감지 ─────────────────────────────────────────
   _getPhase() {
     if (typeof gs === 'undefined' || !gs || !gs.unlocks) return 'early';
-    if ((gs.moonstone || 0) > 0)          return 'post_moon';
+    if ((gs.spaceScore || 0) > 0)          return 'post_moon';
     if (gs.unlocks.tab_automation)        return 'late';
     // mid: 첫 로켓 부품 제작 시
     const hasPart = gs.parts && Object.values(gs.parts).some(v => v > 0);

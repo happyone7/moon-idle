@@ -391,10 +391,10 @@ function renderAssemblyTab() {
   // 5. Science box
   const q = getQuality(gs.assembly.selectedQuality);
   const sci = getRocketScience(q.id);
-  const reward = getMoonstoneReward(q.id);
+  const reward = getExplorationReward(q.id);
   const asmCost = getAssemblyCost(q.id);
   const asmCostStr = getCostStr(asmCost);
-  // P5-13: 조립 비용 분해 표시 + 문스톤 예상치 공식 시각화
+  // P5-13: 조립 비용 분해 표시 + 탐사 점수 예상치 공식 시각화
   const partCostSum = PARTS.reduce((sum, p) => {
     const c = getPartCost(p);
     return sum + Object.values(c).reduce((a, v) => a + v, 0);
@@ -402,11 +402,11 @@ function renderAssemblyTab() {
   const addonPCMult = typeof getAddonPartCostMult === 'function' ? getAddonPartCostMult() : 1;
   const costBreakdown = `부품합계 × costMult(${q.costMult}) × 0.32 × addonMult(${addonPCMult.toFixed(2)})`;
 
-  // 문스톤 공식: floor((altitude/20) * rewardMult) + fusionBonus + floor(launches/4)
-  const msBase = Math.floor((sci.altitude / 20) * q.rewardMult);
-  const msLaunchBonus = Math.floor(gs.launches / 4);
-  const msMilestoneM = typeof getMilestoneMsBonus === 'function' ? getMilestoneMsBonus() : 1;
-  const msFormula = `floor(${Math.floor(sci.altitude)}/20 × ${q.rewardMult}) + ${fusionBonus} + floor(${gs.launches}/4) = ${msBase + fusionBonus + msLaunchBonus} × ${msMilestoneM.toFixed(1)}`;
+  // 탐사 점수 공식: floor((altitude/20) * rewardMult) + fusionBonus + floor(launches/4)
+  const ssBase = Math.floor((sci.altitude / 20) * q.rewardMult);
+  const ssLaunchBonus = Math.floor(gs.launches / 4);
+  const ssMilestoneM = typeof getMilestoneSsBonus === 'function' ? getMilestoneSsBonus() : 1;
+  const ssFormula = `floor(${Math.floor(sci.altitude)}/20 × ${q.rewardMult}) + ${fusionBonus} + floor(${gs.launches}/4) = ${ssBase + fusionBonus + ssLaunchBonus} × ${ssMilestoneM.toFixed(1)}`;
 
   const sciBox = document.getElementById('science-box');
   if (sciBox) sciBox.innerHTML = `
@@ -415,8 +415,8 @@ function renderAssemblyTab() {
     <div>신뢰도: <span class="val">${sci.reliability.toFixed(1)}%</span>  고도: <span class="val">${Math.floor(sci.altitude)} km</span></div>
     <div>조립: <span class="val">${fmtTime(q.timeSec)}</span>  비용: <span class="ms-val">${asmCostStr}</span></div>
     <div style="font-size:9px;color:var(--green-dim);margin-top:2px;">비용산출: ${costBreakdown}</div>
-    <div>문스톤: <span class="ms-val">+${reward}</span></div>
-    <div style="font-size:9px;color:var(--green-dim);">산출: ${msFormula}</div>
+    <div>★ 탐사 점수: <span class="ms-val">+${reward}</span></div>
+    <div style="font-size:9px;color:var(--green-dim);">산출: ${ssFormula}</div>
   `;
 
   // ── CENTER COLUMN ──
@@ -454,7 +454,7 @@ function renderAssemblyTab() {
   // 9. 발사 준비 상태 (조립 슬롯 제거됨 — 부품+연료 100% = 즉시 발사 가능)
   const rktCompletion = typeof getRocketCompletion === 'function' ? getRocketCompletion() : 0;
   const canLaunchNow = rktCompletion >= 100;
-  const ms = getMoonstoneReward(gs.assembly.selectedQuality || 'proto');
+  const ssReward = getExplorationReward(gs.assembly.selectedQuality || 'proto');
   let slotsHtml = '';
   if (canLaunchNow) {
     slotsHtml = `<div class="slot-card slot-ready">
@@ -463,7 +463,7 @@ function renderAssemblyTab() {
         <span class="slot-state ready">GO!</span>
       </div>
       <div style="font-size:12px;color:var(--green);margin-bottom:4px;">선택: ${q.name}</div>
-      <div style="font-size:12px;color:var(--green);margin-bottom:8px;text-shadow:var(--glow);">예상 문스톤: +${ms}개</div>
+      <div style="font-size:12px;color:var(--green);margin-bottom:8px;text-shadow:var(--glow);">예상 탐사 점수: ★+${ssReward}</div>
       <button class="btn btn-full btn-sm btn-amber" onclick="switchMainTab('launch')">[ &#128640; 발사하러 가기 ]</button>
     </div>`;
   } else {

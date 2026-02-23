@@ -1015,7 +1015,7 @@ function openBldOv(bld, el, keepPosition = false) {
   // Production rate line
   let rateStr = '';
   if (bld.produces !== 'bonus') {
-    const rate = bld.baseRate * assigned * (prodMult[bld.produces]||1) * globalMult * getMoonstoneMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id) * getAddonMult(bld.id);
+    const rate = bld.baseRate * assigned * (prodMult[bld.produces]||1) * globalMult * getSpaceScoreMult() * getSolarBonus() * getBldProdMult(bld.id) * getBldUpgradeMult(bld.id) * getAddonMult(bld.id);
     rateStr = assigned > 0 ? `${bld.produces} +${fmtDec(rate,2)}/s` : '인원 미배치';
   } else if (bld.id === 'solar_array') { rateStr = `전체 생산 +${((getSolarBonus()-1)*100).toFixed(0)}%`; }
   else if (bld.id === 'launch_pad')    { rateStr = `발사 슬롯 +${cnt}`; }

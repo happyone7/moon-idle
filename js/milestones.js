@@ -1,22 +1,23 @@
 // ============================================================
 //  MILESTONE SYSTEM
 //  영구 보상을 부여하는 달성 조건 시스템
+//  상태: 미달성(없음) → 'unlocked'(달성·미수령) → 'claimed'(보상 수령)
 // ============================================================
 
 // ─── 마일스톤 효과 배율 헬퍼 ─────────────────────────────────
 function getMilestoneProdBonus() {
   if (!gs || !gs.milestones) return 1;
-  return gs.milestones.ten_launches ? 1.1 : 1;
+  return gs.milestones.ten_launches === 'claimed' ? 1.1 : 1;
 }
 
-function getMilestoneMsBonus() {
+function getMilestoneSsBonus() {
   if (!gs || !gs.milestones) return 1;
-  return gs.milestones.elite_launch ? 1.2 : 1;
+  return gs.milestones.elite_launch === 'claimed' ? 1.2 : 1;
 }
 
 function getMilestoneAssemblyMult() {
   if (!gs || !gs.milestones) return 1;
-  return gs.milestones.all_parts ? 0.9 : 1;
+  return gs.milestones.all_parts === 'claimed' ? 0.9 : 1;
 }
 
 // ─── 마일스톤 달성 보상 적용 ─────────────────────────────────
@@ -31,21 +32,21 @@ function _applyMilestoneReward(m) {
       setTimeout(() => notify('  ↳ 보상: 조립 시간 -10% 영구 적용', 'amber'), 80);
       break;
     case 'orbit_200':
-      gs.moonstone = (gs.moonstone || 0) + 5;
-      setTimeout(() => notify('  ↳ 보상: 문스톤 +5 즉시 지급', 'amber'), 80);
+      gs.spaceScore = (gs.spaceScore || 0) + 5;
+      setTimeout(() => notify('  ↳ 보상: 탐사 점수 +5 즉시 지급', 'amber'), 80);
       break;
     case 'ten_launches':
       // getMilestoneProdBonus() 로 전체 생산 +10% 자동 적용
       setTimeout(() => notify('  ↳ 보상: 전체 생산 +10% 영구 적용', 'amber'), 80);
       break;
     case 'all_buildings':
-      gs.workers = (gs.workers || 1) + 2;
+      gs.citizens = (gs.citizens || 0) + 2;
       if (typeof syncWorkerDots === 'function') syncWorkerDots();
-      setTimeout(() => notify('  ↳ 보상: 인원 상한 +2 영구 추가', 'amber'), 80);
+      setTimeout(() => notify('  ↳ 보상: 시민 +2 영구 추가', 'amber'), 80);
       break;
     case 'elite_launch':
-      // getMilestoneMsBonus() 로 문스톤 획득량 +20% 자동 적용
-      setTimeout(() => notify('  ↳ 보상: 문스톤 획득량 +20% 영구 적용', 'amber'), 80);
+      // getMilestoneSsBonus() 로 탐사 점수 획득량 +20% 자동 적용
+      setTimeout(() => notify('  ↳ 보상: 탐사 점수 획득량 +20% 영구 적용', 'amber'), 80);
       break;
   }
 }
@@ -58,13 +59,12 @@ function checkMilestones() {
 
   let changed = false;
   MILESTONES.forEach(m => {
-    if (gs.milestones[m.id]) return;
+    if (gs.milestones[m.id]) return; // 'unlocked' 또는 'claimed' → skip
     if (!m.check(gs)) return;
 
-    gs.milestones[m.id] = true;
+    gs.milestones[m.id] = 'unlocked'; // 달성했지만 미수령
     changed = true;
-    _applyMilestoneReward(m);
-    notify(`// 마일스톤 달성: ${m.icon} ${m.name}`, 'amber');
+    notify(`// 마일스톤 달성: ${m.icon} ${m.name} — 미션 탭에서 보상 수령`, 'amber');
     if (typeof playSfx === 'function') {
       playSfx('square', 880, 0.12, 0.08, 1400);
       setTimeout(() => playSfx('triangle', 1200, 0.08, 0.04), 200);
@@ -77,23 +77,52 @@ function checkMilestones() {
   }
 }
 
+// ─── 마일스톤 보상 수령 ─────────────────────────────────────
+function claimMilestone(milestoneId) {
+  if (!gs || !gs.milestones) return;
+  if (gs.milestones[milestoneId] !== 'unlocked') return;
+  const m = MILESTONES.find(x => x.id === milestoneId);
+  if (!m) return;
+
+  gs.milestones[milestoneId] = 'claimed';
+  _applyMilestoneReward(m);
+  notify(`✓ ${m.icon} ${m.name} 보상 수령 완료!`, 'green');
+  playSfx('triangle', 520, 0.12, 0.04, 780);
+  saveGame();
+  renderAll();
+}
+
 // ─── 마일스톤 패널 렌더링 ─────────────────────────────────────
 function renderMilestonePanel() {
   const el = document.getElementById('milestone-panel');
   if (!el || typeof MILESTONES === 'undefined') return;
 
   const total = MILESTONES.length;
-  const done  = MILESTONES.filter(m => gs.milestones && gs.milestones[m.id]).length;
+  const claimed = MILESTONES.filter(m => gs.milestones && gs.milestones[m.id] === 'claimed').length;
+  const unlocked = MILESTONES.filter(m => gs.milestones && gs.milestones[m.id] === 'unlocked').length;
 
-  let html = `<div class="ml-hd">// MILESTONES &nbsp;<span class="ml-count">${done}/${total}</span></div>`;
+  let html = `<div class="ml-hd">// MILESTONES &nbsp;<span class="ml-count">${claimed}/${total}</span>${unlocked > 0 ? ` <span style="color:var(--amber);">(${unlocked}개 수령 가능)</span>` : ''}</div>`;
   MILESTONES.forEach(m => {
-    const isDone = !!(gs.milestones && gs.milestones[m.id]);
-    html += `<div class="ml-row${isDone ? ' ml-done' : ''}">
-      <span class="ml-chk">${isDone ? '✓' : '○'}</span>
+    const state = (gs.milestones && gs.milestones[m.id]) || null;
+    const isClaimed = state === 'claimed';
+    const isUnlocked = state === 'unlocked';
+    const rowClass = isClaimed ? ' ml-done' : isUnlocked ? ' ml-unlocked' : '';
+
+    let rewardHtml;
+    if (isClaimed) {
+      rewardHtml = `<span class="ml-reward ml-reward-done">수령 완료</span>`;
+    } else if (isUnlocked) {
+      rewardHtml = `<button class="btn btn-sm ml-claim-btn" onclick="claimMilestone('${m.id}')">[ 보상 수령 ]</button>`;
+    } else {
+      rewardHtml = `<span class="ml-reward">${m.reward}</span>`;
+    }
+
+    html += `<div class="ml-row${rowClass}">
+      <span class="ml-chk">${isClaimed ? '✓' : isUnlocked ? '◈' : '○'}</span>
       <span class="ml-body">
         <span class="ml-name">${m.icon} ${m.name}</span>
         <span class="ml-desc">${m.desc}</span>
-        <span class="ml-reward${isDone ? ' ml-reward-done' : ''}">${isDone ? '달성' : m.reward}</span>
+        ${rewardHtml}
       </span>
     </div>`;
   });

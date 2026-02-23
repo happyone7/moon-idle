@@ -146,8 +146,15 @@ const TECH_VIZ = {
   fusion:             { lines: ['▓▓▓▓▓▓▓▓▓▓▓ ← 플라즈마', '▓▓▓▓▓▓▓▓▓▓ ← 자기 봉입', '▓▓▓▓▓▓▓▓▓ ← 중성자'], stat: '+22 ISP / +120kN' },
   reliability:        { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 배선 품질', '▓▓▓▓▓▓▓▓▓ ← 이중화', '▓▓▓▓▓▓▓▓▓▓ ← 테스트 커버'], stat: '+15% RELIABILITY' },
   multipad:           { lines: ['▓▓▓▓▓▓▓▓▓ ← 발사대 추가', '▓▓▓▓▓▓▓▓▓▓ ← 가트리 시스템', '▓▓▓▓▓▓▓▓ ← 연결부'], stat: '+1 ASSEMBLY SLOT' },
-  auto_worker_assign: { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 배치 알고리즘', '▓▓▓▓▓▓▓▓▓ ← 인원 최적화', '▓▓▓▓▓▓▓▓ ← 스케줄링'], stat: 'AUTO WORKER' },
-  auto_assemble_restart: { lines: ['▓▓▓▓▓▓▓▓▓ ← 공정 자동화', '▓▓▓▓▓▓▓▓▓▓ ← 조립 시퀀서', '▓▓▓▓▓▓▓▓ ← 재시작 로직'], stat: 'AUTO ASSEMBLE' },
+  // D6: Branch O 8개 자동화 연구
+  auto_worker:   { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 배치 알고리즘', '▓▓▓▓▓▓▓▓▓ ← 인원 최적화', '▓▓▓▓▓▓▓▓ ← 스케줄링'], stat: 'AUTO WORKER' },
+  auto_build:    { lines: ['▓▓▓▓▓▓▓▓▓ ← 건설 관리 AI', '▓▓▓▓▓▓▓▓▓▓ ← 우선순위 엔진', '▓▓▓▓▓▓▓▓ ← 예산 최적화'], stat: 'AUTO BUILD' },
+  auto_parts:    { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 공정 자동화', '▓▓▓▓▓▓▓▓▓ ← 부품 스케줄러', '▓▓▓▓▓▓▓▓ ← 자원 유보'], stat: 'AUTO PARTS' },
+  auto_assembly: { lines: ['▓▓▓▓▓▓▓▓▓ ← 조립 시퀀서', '▓▓▓▓▓▓▓▓▓▓ ← 품질 선택 AI', '▓▓▓▓▓▓▓▓ ← 조건부 규칙'], stat: 'AUTO ASSEMBLY' },
+  auto_fuel:     { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 주입 밸브 제어', '▓▓▓▓▓▓▓▓▓ ← 압력 모니터', '▓▓▓▓▓▓▓▓ ← 유보량 관리'], stat: 'AUTO FUEL' },
+  auto_launch:   { lines: ['▓▓▓▓▓▓▓▓▓ ← 발사 판정 AI', '▓▓▓▓▓▓▓▓▓▓ ← 성공률 분석', '▓▓▓▓▓▓▓▓ ← 쿨다운 관리'], stat: 'AUTO LAUNCH' },
+  auto_research: { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 연구 큐 관리', '▓▓▓▓▓▓▓▓▓ ← 우선순위 엔진', '▓▓▓▓▓▓▓▓ ← 자원 예약'], stat: 'AUTO RESEARCH' },
+  auto_prestige: { lines: ['▓▓▓▓▓▓▓▓▓ ← 프레스티지 판정', '▓▓▓▓▓▓▓▓▓▓ ← EP/SS 분석', '▓▓▓▓▓▓▓▓ ← 자동 리셋'], stat: 'AUTO PRESTIGE' },
 };
 
 // Legacy compat stubs
@@ -165,11 +172,15 @@ function selectTech(uid) {
 
 // ─── 연구 취소 함수 (활성 + 예약 큐 모두 처리) ──────────
 function cancelResearch(uid) {
-  // 활성 연구 취소
+  // 활성 연구 취소 — 진행도 보존
   if (gs.researchProgress && gs.researchProgress[uid]) {
+    if (!gs.researchPaused) gs.researchPaused = {};
+    gs.researchPaused[uid] = gs.researchProgress[uid]; // 진행도 저장
     delete gs.researchProgress[uid];
     if (gs.selectedTech === uid) gs.selectedTech = null;
-    notify('연구 취소됨', 'red');
+    notify('연구 일시정지 (진행도 보존)', 'amber');
+    // 예약 큐에서 다음 연구 자동 시작
+    _startNextQueued();
     renderAll();
     return;
   }
@@ -450,4 +461,40 @@ function renderResearchTab() {
   </div>
   <div class="rsh-col-right">${detailHtml}</div>
 </div>`;
+
+  // ── 드래그 스크롤 바인딩 ────────────────────────────────
+  requestAnimationFrame(() => initResearchDrag());
+}
+
+// ─── 연구 탭 드래그 스크롤 ──────────────────────────────────
+function initResearchDrag() {
+  const row = document.querySelector('.rsh-branches-row');
+  if (!row) return;
+  if (row._dragInit) return;  // 중복 바인딩 방지
+  row._dragInit = true;
+
+  let drag = false, dragX = 0, dragSL = 0;
+
+  row.addEventListener('mousedown', e => {
+    // 버튼/링크 클릭은 무시
+    if (e.target.closest('button, a, .rsh-node')) return;
+    drag = true;
+    dragX = e.pageX;
+    dragSL = row.scrollLeft;
+    row.style.cursor = 'grabbing';
+    row.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!drag) return;
+    drag = false;
+    row.style.cursor = '';
+    row.style.userSelect = '';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!drag) return;
+    e.preventDefault();
+    row.scrollLeft = dragSL - (e.pageX - dragX) * 1.3;
+  });
 }

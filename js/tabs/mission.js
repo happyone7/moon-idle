@@ -1,6 +1,6 @@
 
 // ============================================================
-//  MOONSTONE UPGRADES (P2-7: 문스톤 소비 다양화)
+//  SPACE SCORE UPGRADES (P2-7: 탐사 점수 소비 다양화)
 // ============================================================
 const MS_UPGRADES = [
   {
@@ -74,14 +74,14 @@ function applyMsUpgradesFromState() {
   }
 }
 
-/** 문스톤 업그레이드 구매 */
+/** 탐사 점수 업그레이드 구매 */
 function buyMsUpgrade(id) {
   const u = MS_UPGRADES.find(x => x.id === id);
   if (!u) return;
   const current = (gs.msUpgrades && gs.msUpgrades[id]) || 0;
   if (current >= u.max) { notify('최대 구매 완료', 'red'); return; }
-  if (gs.moonstone < u.cost) { notify('문스톤 부족', 'red'); return; }
-  gs.moonstone -= u.cost;
+  if (gs.spaceScore < u.cost) { notify('탐사 점수 부족', 'red'); return; }
+  gs.spaceScore -= u.cost;
   if (!gs.msUpgrades) gs.msUpgrades = {};
   gs.msUpgrades[id] = current + 1;
   u.apply();
@@ -96,82 +96,30 @@ function buyMsUpgrade(id) {
 //  PRESTIGE: CONFIRM LAUNCH
 // ============================================================
 function confirmLaunch() {
-  gs.moonstone += pendingLaunchMs;
-  pendingLaunchMs = 0;  // closeLaunchOverlay 이중 지급 방지
-  const savedMs         = gs.msUpgrades || {};
-  const savedMoonstone  = gs.moonstone;
-  const savedLaunches   = gs.launches;
-  const savedHistory    = gs.history;
-  const savedUnlocks    = gs.unlocks;
-  const savedWorkers    = gs.workers;     // 레거시 호환
-  const savedTotalPop   = typeof getTotalWorkers === 'function' ? getTotalWorkers() : (gs.citizens || 1);
-  const savedMilestones = gs.milestones || {}; // BUG-P08: 마일스톤 보존 (프레스티지 후 재지급 방지)
-  const savedAchievements = gs.achievements || {}; // P4-2: 업적 보존
-  const savedPrestigeStars = gs.prestigeStars || {}; // P4-3: 프레스티지 스타 보존
-  const savedPrestigeCount = (gs.prestigeCount || 0) + 1; // P4-3: 프레스티지 횟수
+  // D6: 미지급 EP가 있으면 먼저 적립
+  if (pendingLaunchEp > 0) {
+    gs.explorationPoints = (gs.explorationPoints || 0) + pendingLaunchEp;
+    pendingLaunchEp = 0;
+  }
+  closeLaunchOverlay();
 
-  // Prestige reset — keep moonstone, msUpgrades, launches, history, unlocks, workers
-  gs.res = { money:5000, iron:0, copper:0, fuel:0, electronics:0, research:0 };
-  gs.buildings = { housing:1, ops_center:0, supply_depot:0, mine:0, extractor:0, refinery:0, cryo_plant:0, elec_lab:0, fab_plant:0, research_lab:0, r_and_d:0, solar_array:0, launch_pad:0 };
-  gs.assignments = {};
-  gs._prodHubVisited = false;
-  gs.parts = { hull:0, engine:0, propellant:0, pump_chamber:0 };
-  gs.fuelInjection = 0;
-  gs.fuelLoaded = false;
-  gs.fuelInjecting = false;
-  gs.mfgActive = {};
-  gs.assembly = { selectedQuality:'proto', selectedClass:'vega', jobs:[] };
-  gs.upgrades = {};
-  gs.bldLevels = {};
-  gs.bldSlotLevels = {};
-  gs.bldUpgrades = {};
-  gs.addons = {};
-  gs.addonUpgrades = {};
-
-  // Restore persistent fields
-  gs.moonstone   = savedMoonstone;
-  gs.msUpgrades  = savedMs;
-  gs.launches    = savedLaunches;
-  gs.history     = savedHistory;
-  gs.unlocks     = savedUnlocks;
-  gs.workers     = savedWorkers;
-  gs.citizens    = savedTotalPop;   // 프레스티지 후 전체 인원이 유휴 시민으로 복귀
-  gs._citizenModelV2 = true;
-  gs.milestones  = savedMilestones; // BUG-P08
-  gs.achievements = savedAchievements; // P4-2
-  gs.prestigeStars = savedPrestigeStars; // P4-3
-  gs.prestigeCount = savedPrestigeCount; // P4-3
-
-  // Apply starting money from star tree
-  const startingMoneyBonus = _getStarEffectTotal('startingMoney');
-  if (startingMoneyBonus > 0) {
-    gs.res.money += startingMoneyBonus;
+  // D6: executePrestige()에 위임 (EP→SS 변환 + 게임 리셋)
+  const success = executePrestige();
+  if (!success) {
+    notify('프레스티지 불가 — EP 또는 발사 기록 필요', 'red');
+    return;
   }
 
-  // Reset multipliers then re-apply from saved MS upgrades
-  prodMult = {};
-  globalMult = 1;
-  partCostMult = 1;
-  fusionBonus = 0;
-  reliabilityBonus = 0;
-  slotBonus = 0;
-  applyMsUpgradesFromState();
-
-  closeLaunchOverlay();
-  notify(`문스톤 ${gs.moonstone}개 보유 — 생산 +${gs.moonstone * 5}%`, '');
   playSfx('triangle', 500, 0.12, 0.04, 760);
-  // 프레스티지 BGM 이벤트 (bgm_08_prestige_void)
   if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('prestige');
-  switchMainTab('production'); // DESIGN-007: 프레스티지 후 생산 탭으로 이동
-  saveGame();
-  renderAll();
+  switchMainTab('production');
 }
 
 function closeLaunchOverlay() {
-  // 문스톤 실제 지급 (pendingLaunchMs에 저장된 값)
-  if (pendingLaunchMs > 0) {
-    gs.moonstone += pendingLaunchMs;
-    pendingLaunchMs = 0;
+  // D6: 발사 보상 → EP 적립 (SS가 아닌 EP로 지급)
+  if (pendingLaunchEp > 0) {
+    gs.explorationPoints = (gs.explorationPoints || 0) + pendingLaunchEp;
+    pendingLaunchEp = 0;
   }
   const overlay = document.getElementById('launch-overlay');
   if (overlay) overlay.classList.remove('show');
@@ -418,9 +366,9 @@ function claimAchievementReward(achId) {
   if (ach.reward.type === 'rp') {
     gs.res.research = (gs.res.research || 0) + ach.reward.amount;
     notify(`보상 수령: ${ach.name} — RP +${ach.reward.amount}`, 'green');
-  } else if (ach.reward.type === 'moonstone') {
-    gs.moonstone = (gs.moonstone || 0) + ach.reward.amount;
-    notify(`보상 수령: ${ach.name} — 문스톤 +${ach.reward.amount}`, 'amber');
+  } else if (ach.reward.type === 'spaceScore') {
+    gs.spaceScore = (gs.spaceScore || 0) + ach.reward.amount;
+    notify(`보상 수령: ${ach.name} — 탐사 점수 +${ach.reward.amount}`, 'amber');
   }
 
   playSfx('triangle', 520, 0.12, 0.04, 780);
@@ -519,8 +467,8 @@ function _applyStarEffect(effect) {
     case 'startingMoney':
       // Applied at prestige reset, not here
       break;
-    case 'moonstoneGain':
-      // Applied at moonstone calculation
+    case 'spaceScoreGain':
+      // Applied at spaceScore calculation
       break;
     case 'partCost':
       partCostMult *= (1 + effect.value); // value is negative like -0.10
@@ -546,9 +494,9 @@ function _getStarEffectTotal(type) {
   return total;
 }
 
-/** Get moonstone gain multiplier from star tree */
-function getStarMoonstoneGainMult() {
-  return 1 + _getStarEffectTotal('moonstoneGain');
+/** Get space score gain multiplier from star tree */
+function getStarSpaceScoreGainMult() {
+  return 1 + _getStarEffectTotal('spaceScoreGain');
 }
 
 /** Buy a prestige star node */
@@ -567,10 +515,10 @@ function buyPrestigeStar(nodeId) {
   }
 
   // Check cost
-  const costMs = node.cost.moonstone || 0;
-  if (gs.moonstone < costMs) { notify('문스톤 부족', 'red'); return; }
+  const costSs = node.cost.spaceScore || 0;
+  if (gs.spaceScore < costSs) { notify('탐사 점수 부족', 'red'); return; }
 
-  gs.moonstone -= costMs;
+  gs.spaceScore -= costSs;
   gs.prestigeStars[nodeId] = true;
 
   // Apply effect immediately
@@ -583,8 +531,8 @@ function buyPrestigeStar(nodeId) {
   renderAll();
 }
 
-/** Calculate prestige moonstone gain using the formula from PRESTIGE_CONFIG */
-function calculatePrestigeMoonstoneGain() {
+/** Calculate prestige space score gain using the formula from PRESTIGE_CONFIG */
+function calculatePrestigeSpaceScoreGain() {
   if (!gs.history || gs.history.length === 0) return 0;
 
   const totalAltSum = gs.history.reduce((s, h) => s + (Number(h.altitude) || 0), 0);
@@ -592,7 +540,7 @@ function calculatePrestigeMoonstoneGain() {
   const maxAlt = Math.max(...gs.history.map(h => Number(h.altitude) || 0));
 
   const base = Math.floor(Math.sqrt(totalAltSum / 100) + (successCount * 0.5) + (maxAlt / 200));
-  const starMult = getStarMoonstoneGainMult();
+  const starMult = getStarSpaceScoreGainMult();
   const gain = Math.max(1, Math.floor(base * starMult));
 
   // First prestige bonus
@@ -611,7 +559,7 @@ function renderPrestigeStarTree() {
 
   let html = `<div class="pst-header">
     <div class="pst-title">// PRESTIGE STAR TREE</div>
-    <div class="pst-summary">해금: ${unlockedCount}/${totalNodes} | 문스톤: ${gs.moonstone} | 프레스티지: ${gs.prestigeCount || 0}회</div>
+    <div class="pst-summary">해금: ${unlockedCount}/${totalNodes} | <span style="color:var(--cyan)">EP ${gs.explorationPoints || 0}</span> | ★SS ${gs.spaceScore || 0} | 프레스티지: ${gs.prestigeCount || 0}회</div>
   </div>`;
 
   // Group by tier
@@ -629,7 +577,7 @@ function renderPrestigeStarTree() {
       const owned = gs.prestigeStars[node.id];
       const reqMet = !node.requires || node.requires.length === 0 ||
         node.requires.every(reqId => gs.prestigeStars[reqId]);
-      const canBuy = !owned && reqMet && gs.moonstone >= (node.cost.moonstone || 0);
+      const canBuy = !owned && reqMet && gs.spaceScore >= (node.cost.spaceScore || 0);
 
       let cardClass = 'pst-card';
       if (owned) cardClass += ' owned';
@@ -641,7 +589,7 @@ function renderPrestigeStarTree() {
         <div class="pst-node-name">${node.name}</div>
         <div class="pst-node-desc">${node.desc}</div>
         <div class="pst-node-footer">
-          <span class="pst-cost">${owned ? '해금됨' : `MS ${node.cost.moonstone}`}</span>
+          <span class="pst-cost">${owned ? '해금됨' : `★ ${node.cost.spaceScore}`}</span>
           ${!owned ? `<button class="pst-buy-btn${canBuy ? '' : ' disabled'}" onclick="buyPrestigeStar('${node.id}')" ${canBuy ? '' : 'disabled'}>
             ${!reqMet ? '잠금' : canBuy ? '해금' : '부족'}
           </button>` : ''}
@@ -652,19 +600,25 @@ function renderPrestigeStarTree() {
     html += '</div>';
   });
 
-  // Prestige reset section
+  // D6: Prestige reset section — EP→SS 변환
   html += `<div class="pst-reset-section">
     <div class="pst-reset-hd">// PRESTIGE RESET</div>`;
 
-  if (gs.launches > 0) {
-    const estGain = calculatePrestigeMoonstoneGain();
+  const ep = gs.explorationPoints || 0;
+  if (gs.launches > 0 && ep > 0) {
+    const estGain = typeof getPrestigeSSGain === 'function' ? getPrestigeSSGain() : 0;
+    const multVal = typeof getPrestigeMultiplier === 'function' ? getPrestigeMultiplier().toFixed(2) : '1.00';
     html += `<div class="pst-reset-info">
-      <div>현재 문스톤: <strong>${gs.moonstone}개</strong></div>
-      <div>예상 획득: <strong>+${estGain}개</strong></div>
+      <div>EP (탐험 포인트): <strong style="color:var(--cyan)">${ep}</strong></div>
+      <div>변환 배수: <strong>×${multVal}</strong></div>
+      <div>예상 SS 획득: <strong style="color:var(--amber)">+${estGain}★</strong></div>
+      <div>현재 SS: <strong>${gs.spaceScore}★</strong> → <strong>${(gs.spaceScore || 0) + estGain}★</strong></div>
       <div>프레스티지 횟수: <strong>${gs.prestigeCount || 0}회</strong></div>
     </div>`;
-    html += `<div class="pst-reset-warn">프레스티지 시 자원/건물/연구(기초)가 초기화됩니다.<br>문스톤, 업적, 스타 트리, 발사 기록은 유지됩니다.</div>`;
-    html += `<button class="btn btn-amber btn-full" onclick="confirmLaunch()">[ 프레스티지 실행 — 문스톤 +${estGain} ]</button>`;
+    html += `<div class="pst-reset-warn">프레스티지 시 자원/건물/부품/EP가 초기화됩니다.<br>SS(탐사 점수), 연구, 업적, 스타 트리, 자동화 설정은 유지됩니다.</div>`;
+    html += `<button class="btn btn-amber btn-full" onclick="confirmLaunch()">[ 프레스티지 실행 — EP ${ep} → ★ +${estGain} SS ]</button>`;
+  } else if (gs.launches > 0) {
+    html += `<div class="pst-reset-info" style="color:var(--green-dim);">// EP가 없습니다. 발사 성공 시 EP를 획득합니다.</div>`;
   } else {
     html += `<div class="pst-reset-info" style="color:var(--green-dim);">// 발사 기록이 없습니다. 발사 후 프레스티지 가능.</div>`;
   }
@@ -769,18 +723,18 @@ function renderMissionTab() {
     renderPrestigeStarTree();
   }
 
-  // ── Moonstone upgrade shop (milestones sub-tab) ───────────
+  // ── Space Score upgrade shop (milestones sub-tab) ───────────
   if (activeMissionSubTab === 'milestones') {
     const msShopWrap = document.getElementById('ms-shop-wrap');
     if (msShopWrap) {
-      if (gs.moonstone > 0 || Object.values(gs.msUpgrades || {}).some(v => v > 0)) {
+      if (gs.spaceScore > 0 || Object.values(gs.msUpgrades || {}).some(v => v > 0)) {
         let shopHtml = `<div class="ms-shop">
-          <div class="ms-shop-hd">// 문스톤 업그레이드 <span class="ms-balance">&#9670; ${gs.moonstone}</span></div>
+          <div class="ms-shop-hd">// 탐사 점수 업그레이드 <span class="ms-balance">★ ${gs.spaceScore}</span></div>
           <div class="ms-shop-grid">`;
         MS_UPGRADES.forEach(u => {
           const owned = (gs.msUpgrades && gs.msUpgrades[u.id]) || 0;
           const maxed = owned >= u.max;
-          const canBuy = gs.moonstone >= u.cost && !maxed;
+          const canBuy = gs.spaceScore >= u.cost && !maxed;
           shopHtml += `<div class="ms-card${maxed ? ' maxed' : canBuy ? ' buyable' : ''}">
             <div class="ms-card-icon">${u.icon}</div>
             <div class="ms-card-name">${u.name}</div>
@@ -789,7 +743,7 @@ function renderMissionTab() {
               <span class="ms-card-owned">${owned}/${u.max}</span>
               ${maxed
                 ? '<span class="ms-card-maxed">최대</span>'
-                : `<button class="ms-card-btn${canBuy ? '' : ' disabled'}" onclick="buyMsUpgrade('${u.id}')">&#9670; ${u.cost}</button>`}
+                : `<button class="ms-card-btn${canBuy ? '' : ' disabled'}" onclick="buyMsUpgrade('${u.id}')">★ ${u.cost}</button>`}
             </div>
           </div>`;
         });

@@ -70,7 +70,7 @@ const I18N = {
     q_main_title:   '// MAIN MISSION',
     q_main_desc:    'Complete the first launch to the Moon.',
     q_done_title:   '✔ Mission Complete!',
-    q_done_desc:    'First launch successful. Collect moonstones.',
+    q_done_desc:    'First launch successful. Collect exploration score.',
     q_sub_ops:      'Deploy an Operations Center',
     q_sub_money:    'Accumulate $1,000',
     q_sub_mine:     'Build a Mine',
@@ -88,7 +88,7 @@ const I18N = {
     hist_col_rel:   'Reliability',
     stat_launches:  'Total Launches',
     stat_max_alt:   'Max Altitude',
-    stat_moonstone: 'Moonstone',
+    stat_moonstone: 'Space Score',
     stat_bonus:     'Production Bonus',
 
     // LC GO/NO-GO checklist
@@ -118,7 +118,7 @@ const I18N = {
     lc_commit_hd:   '| LAUNCH COMMIT |',
     lc_success_pct: 'Success%',
     lc_target_alt:  'Target Alt',
-    lc_moonstone:   'Moonstone',
+    lc_moonstone:   'Space Score',
     lc_btn_launch:  '[ ▶▶ EXECUTE LAUNCH ]',
     lc_btn_abort:   '[ ABORT ]',
 
@@ -192,7 +192,7 @@ const I18N = {
     q_main_title:   '// MAIN MISSION',
     q_main_desc:    '달로 가는 우주선 첫 발사를 완료하세요.',
     q_done_title:   '✔ 임무 완료!',
-    q_done_desc:    '달 탐사 로켓 첫 발사 성공. 계속 발사하여 문스톤을 모으세요.',
+    q_done_desc:    '달 탐사 로켓 첫 발사 성공. 계속 발사하여 탐사 점수를 모으세요.',
     q_sub_ops:      '운영센터를 배치하세요',
     q_sub_money:    '자금 $1,000 확보',
     q_sub_mine:     '광산을 건설하세요',
@@ -209,7 +209,7 @@ const I18N = {
     hist_col_rel:   '신뢰도',
     stat_launches:  '총 발사',
     stat_max_alt:   '최고 고도',
-    stat_moonstone: '문스톤 보유',
+    stat_moonstone: '탐사 점수',
     stat_bonus:     '생산 보너스',
 
     // LC GO/NO-GO checklist
@@ -237,7 +237,7 @@ const I18N = {
     lc_commit_hd:   '│ LAUNCH COMMIT │',
     lc_success_pct: '성공률',
     lc_target_alt:  '목표 고도',
-    lc_moonstone:   '문스톤',
+    lc_moonstone:   '탐사 점수',
     lc_btn_launch:  '[ ▶▶ 발사 실행 ]',
     lc_btn_abort:   '[ ABORT ]',
 

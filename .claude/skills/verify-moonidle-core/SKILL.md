@@ -29,16 +29,20 @@ description: MoonIdle 핵심 게임 로직 일관성 검증. 게임 상태, 데�
 |------|---------|
 | `js/game-state.js` | 게임 전역 상태 (`gs` 객체) 및 헬퍼 함수 |
 | `js/game-data.js` | 건물, 파츠, 품질, 업그레이드 데이터 정의 |
+| `js/balance-data.js` | 밸런스 상수 (`BALANCE` 객체 — game-state.js가 30+ 참조) |
 | `js/main.js` | 탭 전환 로직 (`switchMainTab`) 및 렌더링 |
 | `js/tabs/production.js` | 생산 탭 — 건물 건설 및 인원 배치 |
 | `js/tabs/research.js` | 연구 탭 — 업그레이드 구매 |
 | `js/tabs/assembly.js` | 조립 탭 — 로켓 조립 |
-| `js/tabs/launch.js` | 발사 탭 — 발사 실행 |
+| `js/tabs/launch.js` | 발사 탭 — 단계별 실패/성공 판정 시스템 |
+| `js/tabs/rocket.js` | 조립동 로켓 디스플레이 탭 |
 | `js/tabs/mission.js` | 미션 탭 — 발사 히스토리 |
 | `js/tabs/automation.js` | 자동화 탭 — moonstone 업그레이드 |
 | `js/milestones.js` | 마일스톤 시스템 |
 | `js/unlock.js` | 해금 시스템 로직 |
 | `js/world.js` | 세계 상태 및 저장/로드 |
+| `js/audio-bgm.js` | BGM 시스템 (phase 기반 플레이리스트, 발사 덕킹, 크로스페이드) |
+| `js/i18n.js` | 다국어 시스템 (`I18N` 객체, 'en'/'ko' 2개 로케일) |
 | `index.html` | 게임 메인 파일 (HTML/CSS 통합, 일부 초기화 로직 포함 가능) |
 
 # Workflow
@@ -297,7 +301,7 @@ res: { money:1500, iron:0, copper:0, fuel:0, electronics:0, research:0 }
 
 ---
 
-## Step 5c: 신규 데이터 상수 정의 확인 (Sprint 8)
+## Step 5c: 신규 데이터 상수 정의 확인
 
 **파일:** `js/game-data.js`
 
@@ -319,6 +323,58 @@ grep -n "const OPS_ROLES\|const BLD_STAFF_NAMES\|const BLD_STAFF_ICONS\|const SP
 
 ---
 
+## Step 5d: BALANCE 상수 정의 확인
+
+**파일:** `js/balance-data.js`, `js/game-state.js`
+
+**검사:** `game-state.js`가 참조하는 `BALANCE.*` 최상위 키가 `balance-data.js`에 모두 정의되어 있는지 확인합니다.
+
+```bash
+node --input-type=commonjs << 'SCRIPT'
+const code = require('fs').readFileSync('js/game-state.js', 'utf8');
+const refs = [...new Set((code.match(/BALANCE\.([A-Z_]+)/g) || []).map(m => m.split('.')[1]))].sort();
+const bd = require('fs').readFileSync('js/balance-data.js', 'utf8');
+const defs = (bd.match(/^\s{2}([A-Z_]+):/gm) || []).map(m => m.trim().replace(':','')).sort();
+const missing = refs.filter(k => defs.indexOf(k) === -1);
+if (missing.length === 0) console.log('PASS — BALANCE 참조키 ' + refs.length + '개 모두 balance-data.js에 정의됨');
+else console.log('FAIL — 누락 키:', missing);
+SCRIPT
+```
+
+**PASS 기준:** 출력이 `✅ PASS` (누락 키 없음)
+
+**FAIL 시 조치:**
+- 누락된 키를 `js/balance-data.js`의 `BALANCE` 객체에 추가 (기획팀장 담당)
+- 게임 로직을 변경하지 않고 상수 값만 추가
+
+---
+
+## Step 5e: I18N 언어 키 완결성 확인
+
+**파일:** `js/i18n.js`
+
+**검사:** `I18N.en`과 `I18N.ko`의 최상위 키 개수가 일치하는지 확인합니다.
+
+```bash
+node --input-type=commonjs << 'SCRIPT'
+const code = require('fs').readFileSync('js/i18n.js', 'utf8');
+const enBlock = code.match(/en:\s*\{([\s\S]*?)ko:/);
+const koBlock = code.match(/ko:\s*\{([\s\S]*?)\n\s*\};/);
+const countKeys = function(b) { return b ? (b[1].match(/^\s{4}[a-z_]+:/gm) || []).length : 0; };
+const en = countKeys(enBlock), ko = countKeys(koBlock);
+if (en === ko) console.log('PASS — I18N 키 개수 일치: en=' + en + ', ko=' + ko);
+else console.log('FAIL — 키 개수 불일치: en=' + en + ', ko=' + ko);
+SCRIPT
+```
+
+**PASS 기준:** `en`과 `ko`의 키 개수가 동일
+
+**FAIL 시 조치:**
+- 누락된 언어의 키를 추가
+- `en` 기준으로 `ko`에 없는 키를 찾아 번역 추가 (UI팀장 또는 기획팀장 담당)
+
+---
+
 ## Step 6: 종합 검증
 
 위의 모든 검사를 통과한 경우, 마지막으로 파일 간 순환 참조가 없는지 확인합니다.
@@ -333,6 +389,48 @@ grep -l "tabs/research" js/tabs/*.js
 **PASS 기준:** 출력이 비어 있음 (탭 파일 간 직접 참조 없음)
 
 **FAIL 시 조치:** 순환 참조 제거 또는 공용 유틸리티 파일로 분리
+
+---
+
+## Step 7: 발사 단계 상수 키 일관성 검증
+
+**파일:** `js/tabs/launch.js`
+
+**검사:** 단계별 발사 시스템의 6개 상수 (`STAGE_FAILURES`, `STAGE_NAMES`, `STAGE_TIMING`, `STAGE_SUCCESS_EVENT`, `STAGE_PCT`, `STAGE_TELEM`) 모두 동일한 스테이지 번호 세트(4~11, 총 8개)를 커버하는지 확인합니다.
+
+```bash
+node --input-type=commonjs << 'SCRIPT'
+const code = require('fs').readFileSync('js/tabs/launch.js', 'utf8');
+const consts = ['STAGE_FAILURES','STAGE_NAMES','STAGE_TIMING','STAGE_SUCCESS_EVENT','STAGE_PCT','STAGE_TELEM'];
+consts.forEach(function(k) {
+  const m = code.match(new RegExp('const ' + k + ' = \\{'));
+  if (!m) { console.log(k + ': NOT FOUND'); return; }
+  let depth = 0, i = m.index + m[0].length - 1, found = [];
+  while (i < code.length) {
+    if (code[i] === '{') depth++;
+    else if (code[i] === '}') { depth--; if (depth === 0) break; }
+    else if (depth === 1 && /\d/.test(code[i]) && (i === 0 || /[,\{\s]/.test(code[i-1]))) {
+      const num = code.slice(i).match(/^(\d+)\s*:/);
+      if (num) found.push(num[1]);
+    }
+    i++;
+  }
+  const unique = found.filter(function(v, i, a) { return a.indexOf(v) === i; }).sort(function(a,b) { return +a-+b; });
+  const expected = [4,5,6,7,8,9,10,11].map(String);
+  const ok = JSON.stringify(unique) === JSON.stringify(expected);
+  console.log(k + ': ' + (ok ? 'PASS [4~11]' : 'FAIL ' + JSON.stringify(unique)));
+});
+SCRIPT
+```
+
+**PASS 기준:** 6개 상수 모두 `✅ [4~11]` 출력 (스테이지 4~11 총 8개 키 보유)
+
+**FAIL 시 조치:**
+- 누락된 스테이지 번호를 해당 상수에 추가
+- 일반적으로 단일 행에 정의된 상수(`STAGE_PCT`, `STAGE_TELEM` 등)는 `,` 누락이 원인인 경우가 많음
+
+**예외:**
+- `STAGE_TIMING.delay/duration` 구조 때문에 파서가 오탐할 수 있음 — 4~11 키가 실제로 있는지 직접 확인
 
 ---
 
