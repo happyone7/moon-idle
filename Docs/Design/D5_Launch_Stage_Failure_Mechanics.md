@@ -5,7 +5,7 @@
 | **문서 ID** | D5_Launch_Stage_Failure_Mechanics |
 | **작성자** | 기획팀장 (Game Designer) |
 | **작성일** | 2026-02-23 |
-| **버전** | v1.0 |
+| **버전** | v1.1 |
 | **상태** | 제안 (총괄PD 리뷰 대기) |
 | **관련 파일** | `js/balance-data.js`, `js/game-state.js`, `js/tabs/launch.js` |
 
@@ -254,22 +254,80 @@ thermal = clamp(
 | **셀레네** | LOI, ORBIT | STG SEP | 달 임무 특화. 3단 분리가 가장 복잡 |
 | **아르테미스** | TLI, LOI, LANDING | MAX-Q, STG SEP | 최종 클래스. 추진/항전/열 극강이나, 극대형이라 구조 위험 잔존 |
 
-### 5.3 클래스 진행에 따른 난이도 곡선
+### 5.3 클래스 진행에 따른 난이도 곡선 (v1.1 maxStage 반영)
 
 ```
-전체 성공률
-  95%|                                           ◆ (ARTEMIS + ELITE + 풀연구)
-  90%|                                  ◆ (SELENE + ADV)
-  85%|                        ◆ (ATLAS + STD)
-  80%|              ◆ (HERMES + STD)
-  70%|    ◆ (ARGO + PROTO)
-  60%| ◆ (VEGA + PROTO)
+전체 성공률 (maxStage까지만 곱)
+  96%|                                           ◆ (ARTEMIS + ELITE + 풀연구) [8단계]
+  92%|                                  ◆ (ARTEMIS + ELITE) [8단계]
+  91%|                        ◆ (ATLAS + ADV) [6단계]
+  87%|                                  ◆ (SELENE + ELITE) [7단계]
+  84%|                                  ◆ (SELENE + ADV) [7단계]
+  70%|              ◆ (HERMES + STD) [5단계]
+  67%|    ◆ (ARGO + STD) [3단계]
+  64%| ◆ (VEGA + PROTO) [2단계]
      +------+-------+-------+-------+-------+-------→ 진행도
        시작    Phase1  Phase2  Phase3  Phase4  Phase5
 ```
 
-클래스와 품질, 연구를 모두 올리면 최종적으로 95% 이상의 성공률에 도달 가능.
-하지만 완전한 100%는 불가능 (maxReliability = 99.5% 유지).
+- 하위 클래스는 통과 단계가 적어 성공률이 상대적으로 높지만, **도달 범위가 제한**됨.
+- 클래스와 품질, 연구를 모두 올리면 최종적으로 96% 이상의 성공률에 도달 가능.
+- 하지만 완전한 100%는 불가능 (maxReliability = 99.5% 유지).
+- 달 착륙(LANDING) 성공은 **ARTEMIS 클래스(maxStage=11)**에서만 가능.
+
+### 5.4 클래스별 최대 도달 단계 (maxStage)
+
+각 로켓 클래스는 물리적 한계로 인해 **도달 가능한 최대 단계**가 제한된다. maxStage에 도달하면 해당 클래스의 미션이 성공으로 처리되며, maxStage를 초과하는 단계는 확률과 무관하게 **절대 도달 불가**이다.
+
+#### 5.4.1 maxStage 설정 테이블
+
+| 클래스 | ID | maxStage | 최종 단계명 | 도달 단계 수 | 설계 근거 |
+|--------|-----|----------|-------------|-------------|-----------|
+| 베가 | `vega` | 5 | MAX-Q | 2단계 | 고도 10km급 소형 로켓. 대기권 저고도만 도달 가능 |
+| 아르고 | `argo` | 6 | MECO | 3단계 | 카르만 선(100km) 도달. 주엔진 연소 완료까지 |
+| 헤르메스 | `hermes` | 8 | ORBIT | 5단계 | 저궤도(LEO) 진입 가능. 달 전이 궤도는 추력 부족 |
+| 아틀라스 | `atlas` | 9 | TLI | 6단계 | 달 전이 궤도 진입 가능. 달 궤도 포획은 불가 |
+| 셀레네 | `selene` | 10 | LOI | 7단계 | 달 궤도 포획 가능. 착륙 장비 미탑재 |
+| 아르테미스 | `artemis` | 11 | LANDING | 8단계 (전체) | 달 착륙 가능. 유일한 완전 임무 클래스 |
+
+> **총괄PD 지시**: "사실상 도달 불가인 경우는 그냥 무조건 도달 불가로 해줘. 각 로켓의 최고 도달 가능 단계가 있어서 그 단계면 그냥 성공으로 끝나게 하는 거야."
+
+#### 5.4.2 maxStage 적용 규칙
+
+1. **미션 성공 판정**: maxStage까지 모든 단계를 통과하면 **미션 성공**으로 처리. maxStage 이후 단계는 판정하지 않음.
+2. **확률 무시**: maxStage를 초과하는 단계는 해당 클래스의 스펙이 아무리 높아도 도달 불가. 성공률 계산 자체가 생략됨.
+3. **overallRate 계산**: 전체 성공률은 **stage 4 ~ maxStage**까지의 단계별 성공률만 곱한다.
+
+```javascript
+// overallRate 계산 공식 (maxStage 적용)
+const maxStage = ROCKET_CLASSES.find(c => c.id === classId).maxStage;
+let overallRate = 1;
+for (let i = 4; i <= maxStage; i++) {
+  overallRate *= stageRates[i] / 100;
+}
+overallRate *= 100;
+```
+
+4. **executeLaunch() 루프**: `for (let i = 4; i <= maxStage; i++)` — 이미 코드에 적용 완료.
+5. **UI 표시**: `_renderSpecPanel()`은 maxStage까지의 단계만 표시해야 함. maxStage 이후 단계는 표시하지 않거나 "도달 불가" 표기.
+
+#### 5.4.3 maxStage에 따른 게임 진행 설계
+
+```
+클래스별 도달 가능 범위:
+
+VEGA     ■■□□□□□□  (LFT → MXQ)
+ARGO     ■■■□□□□□  (LFT → MECO)
+HERMES   ■■■■■□□□  (LFT → ORBIT)
+ATLAS    ■■■■■■□□  (LFT → TLI)
+SELENE   ■■■■■■■□  (LFT → LOI)
+ARTEMIS  ■■■■■■■■  (LFT → LANDING)  ← 달 착륙 가능
+         LFT MXQ MECO SEP ORB TLI LOI LAND
+```
+
+- 하위 클래스일수록 통과해야 할 단계가 적으므로 **전체 성공률이 높다** (단계별 곱이 적음).
+- 그러나 하위 클래스는 **달에 도달할 수 없으므로** 게임 최종 목표 달성이 불가능.
+- 플레이어는 "성공률은 높지만 도달 범위가 제한된 로켓" vs "성공률은 낮지만 달에 갈 수 있는 로켓" 사이에서 전략적 선택을 하게 됨.
 
 ---
 
@@ -391,8 +449,16 @@ function sigmoid(score) {
 
 ```javascript
 // 각 단계 성공률의 곱 = 전체 미션 성공률
-overallSuccessRate = stage4Rate * stage5Rate * stage6Rate * stage7Rate
-                   * stage8Rate * stage9Rate * stage10Rate * stage11Rate;
+// v1.1: maxStage까지만 곱한다 (클래스별 최대 도달 단계, 5.4절 참조)
+const maxStage = ROCKET_CLASSES.find(c => c.id === classId).maxStage;
+overallSuccessRate = 1;
+for (let i = 4; i <= maxStage; i++) {
+  overallSuccessRate *= stageRates[i] / 100;
+}
+overallSuccessRate *= 100;
+
+// 예: VEGA(maxStage=5) → stage4Rate * stage5Rate (2단계만)
+// 예: ARTEMIS(maxStage=11) → stage4~11 전체 곱 (8단계)
 ```
 
 ### 7.5 예시 계산
@@ -411,12 +477,16 @@ overallSuccessRate = stage4Rate * stage5Rate * stage6Rate * stage7Rate
 단계별 스코어 (모두 50):
   모든 단계: 50*W1 + 50*W2 + 50*W3 + 50*W4 = 50*(1.0) = 50
 
-성공률: sigmoid(50) = 0.731 → 60 + 39.5*0.731 = 88.9%
+성공률: sigmoid(50) = 0.731 → 60 + 39.5*0.731 = 88.9% (= 79.8% 보정 후)
 
-전체 성공률: 0.889^8 = 39.3%
+[v1.1 maxStage 적용] VEGA maxStage=5 → LFT(4) + MXQ(5) 2단계만 곱
+전체 성공률: 0.798^2 = 63.7%
+
+[참고] v1.0 기준 (8단계 전체): 0.798^8 = 39.3%
 ```
 
-> 초기 상태에서 ~39%: "조금 힘들지만 운이 좋으면 된다" -- 첫 발사 자동 성공 이후 도전감 제공
+> v1.1: VEGA 초기 ~64%는 "운이 좋으면 성공"하는 적절한 난이도. 8단계 전체(~39%)보다 현실적.
+> 첫 발사 자동 성공 이후 2번째 발사부터 도전감 제공.
 
 #### 예시 B: ATLAS + ADV (Phase 3, 주요 연구 완료)
 
@@ -452,13 +522,17 @@ overallSuccessRate = stage4Rate * stage5Rate * stage6Rate * stage7Rate
   STG SEP: sigmoid(86.7) → ~98.5%
   ORBIT:   sigmoid(88.2) → ~98.7%
   TLI:     sigmoid(87.7) → ~98.6%
-  LOI:     sigmoid(88.8) → ~98.8%
-  LANDING: sigmoid(88.9) → ~98.8%
+  LOI:     sigmoid(88.8) → ~98.8%  ← maxStage(9) 초과, ATLAS에서 도달 불가
+  LANDING: sigmoid(88.9) → ~98.8%  ← maxStage(9) 초과, ATLAS에서 도달 불가
 
-전체 성공률: 0.985 * 0.980 * 0.985 * 0.985 * 0.987 * 0.986 * 0.988 * 0.988 = ~89.1%
+[v1.1 maxStage 적용] ATLAS maxStage=9 → LFT~TLI 6단계만 곱
+전체 성공률: 0.985 * 0.980 * 0.985 * 0.985 * 0.987 * 0.986 = ~90.9%
+
+[참고] v1.0 기준 (8단계 전체): = ~89.1%
 ```
 
-> Phase 3 풀연구 + ADV 품질: ~89% -- 안정적이지만 가끔 실패, 연구/업그레이드 동기 유지
+> v1.1: ATLAS Phase 3 ~91%로 상향. LOI/LANDING 제외로 성공률이 소폭 높아짐.
+> 안정적이지만 가끔 실패하여 연구/업그레이드 동기 유지.
 
 ---
 
@@ -562,21 +636,25 @@ BALANCE.ROLL_VARIANCE = {
 };
 ```
 
-### 8.6 종합 성공률 기대값 테이블
+### 8.6 종합 성공률 기대값 테이블 (maxStage 적용)
 
 아래는 편차=0, 주요 연구 완료 기준의 예상 전체 성공률이다.
+**중요**: v1.0에서는 8단계 전체 곱이었으나, maxStage 적용 후 **실제 통과 단계 수만** 곱하므로 성공률이 변경되었다.
 
-| 조합 | structural | propulsion | avionics | thermal | 전체 성공률 (예상) |
-|------|------------|------------|----------|---------|-------------------|
-| VEGA + PROTO (초기) | 50 | 50 | 50 | 50 | ~39% |
-| VEGA + PROTO (일부 연구) | 58 | 55 | 55 | 55 | ~52% |
-| ARGO + STD (Phase 1) | 62 | 64 | 57 | 55 | ~62% |
-| HERMES + STD (Phase 2) | 70 | 75 | 73 | 68 | ~81% |
-| ATLAS + ADV (Phase 3) | 74 | 87 | 97 | 84 | ~89% |
-| SELENE + ADV (Phase 4) | 66 | 89 | 99 | 90 | ~88% |
-| SELENE + ELITE (Phase 4) | 72 | 93 | 100 | 96 | ~93% |
-| ARTEMIS + ELITE (Phase 5) | 66 | 100 | 100 | 99 | ~92% |
-| ARTEMIS + ELITE + 풀연구 | 80 | 100 | 100 | 100 | ~96% |
+| 조합 | structural | propulsion | avionics | thermal | maxStage | 단계 수 | 전체 성공률 | 비고 |
+|------|------------|------------|----------|---------|----------|---------|------------|------|
+| VEGA + PROTO (초기) | 50 | 50 | 50 | 50 | 5 | 2 | **~64%** | ~~39%~~ → 2단계만 곱. 초기에도 도전 가능 |
+| VEGA + PROTO (일부 연구) | 58 | 55 | 55 | 55 | 5 | 2 | **~71%** | ~~52%~~ → LFT(84.0) × MXQ(84.9) |
+| ARGO + STD (Phase 1) | 62 | 64 | 57 | 55 | 6 | 3 | **~67%** | ~~62%~~ → 3단계 곱 |
+| HERMES + STD (Phase 2) | 70 | 75 | 73 | 68 | 8 | 5 | **~70%** | ~~81%~~ → 5단계 곱 (TLI/LOI/LAND 생략) |
+| ATLAS + ADV (Phase 3) | 74 | 87 | 97 | 84 | 9 | 6 | **~91%** | ~~89%~~ → 6단계 곱 (LOI/LAND 생략) |
+| SELENE + ADV (Phase 4) | 66 | 89 | 99 | 90 | 10 | 7 | **~84%** | ~~88%~~ → 7단계 곱 (LAND 생략) |
+| SELENE + ELITE (Phase 4) | 72 | 93 | 100 | 96 | 10 | 7 | **~87%** | ~~93%~~ → 7단계 곱 |
+| ARTEMIS + ELITE (Phase 5) | 66 | 100 | 100 | 99 | 11 | 8 | **~92%** | 변동 없음 (전체 8단계) |
+| ARTEMIS + ELITE + 풀연구 | 80 | 100 | 100 | 100 | 11 | 8 | **~96%** | 변동 없음 (전체 8단계) |
+
+> **설계 의도**: maxStage 적용으로 하위 클래스의 성공률이 상향되어, 플레이어가 단계적 진행감을 체감할 수 있다.
+> VEGA 초기 ~64%는 "운이 좋으면 성공"하는 적절한 난이도이며, 클래스 업그레이드 동기를 제공한다.
 
 ### 8.7 첫 발사 특별 규칙
 
@@ -587,6 +665,49 @@ BALANCE.ROLL_VARIANCE = {
 // 이는 튜토리얼 경험: "첫 발사는 반드시 성공하여 시스템을 이해시킨다"
 ```
 
+### 8.8 밸런스 검토 노트: SPEC_RESEARCH_BONUS 불균형
+
+> **검토 요청 배경**: 총괄PD 지적 — 연구 보정 밸런스 불균형 검토 필요
+
+#### 현황 분석
+
+| 스펙 요소 | 관련 연구 수 | 총 보정값 | 개별 내역 |
+|-----------|-------------|-----------|-----------|
+| **structural** | 3개 | **+16** | alloy(8) + precision_mfg(6) + rocket_eng(2) |
+| **propulsion** | 6개 | **+34** | fuel_chem(5) + catalyst(8) + lightweight(6) + fusion(10) + cryo_storage(3) + rocket_eng(2) |
+| **avionics** | 5개 | **+34** | electronics_basics(5) + microchip(8) + reliability(10) + telemetry(6) + automation(5) |
+| **thermal** | 5개 | **+35** | hire_worker_1(5) + launch_ctrl(8) + mission_sys(8) + multipad(6) + heat_recov(8) |
+
+#### 문제점
+
+1. **structural 연구 항목 부족**: 전용 연구가 alloy, precision_mfg 2개뿐 (rocket_eng는 공유). 다른 스펙은 5~6개.
+2. **총 보정값 차이**: structural(+16)은 다른 스펙(+34~35) 대비 **절반 이하**.
+3. **실전 영향**: 구조강도가 주도하는 MAX-Q(가중치 0.55) 단계가 항상 병목이 됨. 풀연구 후에도 structural이 낮아 MAX-Q에서 실패 확률이 상대적으로 높음.
+
+#### 기획팀장 의견
+
+structural 보정 부족은 의도적인 설계인지 재검토가 필요하다:
+
+**옵션 A: 현 상태 유지 (의도적 약점)**
+- 구조강도는 주로 **클래스 보정 + 품질 보정**으로 올리도록 설계
+- MAX-Q가 "항상 조금 불안한 구간"으로 남아 긴장감 유지
+- 단, 풀연구 후 structural 최대치가 50+10(elite)+5(artemis는 0)+16(연구) = 76 수준이라 다른 스펙(100 도달 가능)과 괴리가 큼
+
+**옵션 B: structural 연구 2~3개 추가 (권장)**
+- Branch S(구조) 또는 Branch M(제조)에 추가 연구 배치
+- 예시: `composite_frame`(+8, 복합재 프레임), `vibration_damper`(+6, 진동 감쇠 장치), `pressure_test`(+5, 가압 시험 공정)
+- 조정 후 structural 총 보정: +16 → ~+35 (다른 스펙과 균형)
+- **장점**: 풀연구 시 4대 스펙 모두 90+ 도달 가능. 균형 잡힌 최종 성공률
+- **단점**: 연구 항목 총 수 증가로 진행 시간 길어질 수 있음
+
+**옵션 C: 기존 structural 연구 보정값 상향**
+- alloy: 8→12, precision_mfg: 6→10, rocket_eng의 structural: 2→8
+- 조정 후 structural 총 보정: +16 → +30
+- **장점**: 새 연구 항목 추가 없이 해결. 기존 연구 트리 구조 유지
+- **단점**: 개별 연구의 보정값이 과도해져 단일 연구 해금 시 급격한 점프 발생
+
+> **결론**: 총괄PD 판단 대기. 기획팀장은 **옵션 B를 권장**하며, 구체적인 연구 항목 설계는 승인 후 D3(연구 트리) 문서에서 상세 진행 예정.
+
 ---
 
 ## 9. 기존 시스템과의 호환성
@@ -594,6 +715,7 @@ BALANCE.ROLL_VARIANCE = {
 ### 9.1 `getRocketScience()` 변경 사항
 
 기존 함수를 확장하여 4대 스펙 값을 반환한다.
+**v1.1 변경**: `overallRate` 계산 시 maxStage까지만 곱해야 한다. 현재 코드는 stage 4~11 전체를 곱하고 있어 수정 필요.
 
 ```javascript
 // 기존 반환값 유지
@@ -606,7 +728,23 @@ BALANCE.ROLL_VARIANCE = {
 //   rollVariance: { structural, propulsion, avionics, thermal },  // 현재 슬롯 편차
 //   stageRates: { 4: 98.5, 5: 97.2, ..., 11: 99.1 },            // 단계별 성공률
 //   overallRate: 89.1,                                             // 전체 성공률
+//   maxStage: 9,                                                   // v1.1: 클래스별 최대 단계
 // }
+```
+
+**v1.1 필수 수정 (현재 코드 이슈)**:
+```javascript
+// 현재 코드 (game-state.js getRocketScience):
+// for (let i = 4; i <= 11; i++) { ... } ← 항상 8단계 전체 곱
+//
+// 수정 필요:
+const maxStage = _getClassMaxStage(cid);  // classId로 maxStage 조회
+let overallRate = 1;
+for (let i = 4; i <= maxStage; i++) {
+  overallRate *= stageRates[i] / 100;
+}
+overallRate *= 100;
+// 반환값에 maxStage 포함: return { ...기존, maxStage };
 ```
 
 ### 9.2 `reliability` 필드 호환
@@ -617,16 +755,18 @@ BALANCE.ROLL_VARIANCE = {
 
 ### 9.3 `executeLaunch()` 변경 사항
 
-```javascript
-// 기존: perStageProb = reliability^(1/8) * 100 → 균등 분배
-// 변경: 각 단계별 stageRates[i]를 개별 적용
+**이미 maxStage 적용 완료** (추가 변경 불필요).
 
-for (let i = 4; i <= 11; i++) {
-  const stageRate = sci.stageRates[i];
-  const success = Math.random() * 100 < stageRate;
-  stageRolls.push({ stage: i, success, rate: stageRate });
+```javascript
+// 현재 코드 (launch.js):
+const maxStage = _getClassMaxStage(classId);
+for (let i = 4; i <= maxStage; i++) {
+  const rate = isFirstLaunch ? 100 : sci.stageRates[i];
+  const success = Math.random() * 100 < rate;
+  stageRolls.push({ stage: i, success, rate });
   if (!success && firstFailStage === -1) firstFailStage = i;
 }
+const rollSuccess = firstFailStage === -1; // maxStage까지 전부 통과 시 성공
 ```
 
 ### 9.4 기존 발사 기록(`gs.history`) 호환
@@ -640,6 +780,7 @@ gs.history.push({
   rollVariance: sci.rollVariance,
   stageRates: sci.stageRates,
   overallRate: sci.overallRate,
+  maxStage: sci.maxStage,  // v1.1: 기록에도 maxStage 포함
 });
 ```
 
@@ -649,6 +790,31 @@ gs.history.push({
 - 변경: 기본 스펙(50) 상태에서의 **기대 전체 성공률 참조값**으로 역할 변경
 - 실제 계산은 4대 스펙 기반 시스템으로 대체
 - 값(70)은 참조/디버그 용도로 유지
+
+### 9.6 `_renderSpecPanel()` maxStage 반영 (v1.1 신규)
+
+현재 UI는 항상 8단계 전체(4~11)를 표시하고 있으나, maxStage 적용 후 해당 클래스가 도달할 수 없는 단계는 표시하지 않아야 한다.
+
+**현재 코드 이슈** (`launch.js` `_renderSpecPanel()`):
+```javascript
+// 현재: 3줄로 고정 표시 (LFT MXQ MECO / SEP ORB TLI / LOI LAND)
+const rows = [[4,5,6], [7,8,9], [10,11]];
+```
+
+**수정 방향**:
+```javascript
+// sci.maxStage를 참조하여 해당 단계까지만 표시
+const maxStage = sci.maxStage || 11;
+const allStages = [4,5,6,7,8,9,10,11].filter(s => s <= maxStage);
+// 3개씩 묶어서 줄바꿈
+const rows = [];
+for (let i = 0; i < allStages.length; i += 3) {
+  rows.push(allStages.slice(i, i + 3));
+}
+```
+
+- maxStage 이후 단계는 표시하지 않음 (도달 불가이므로 혼란 방지)
+- `overallRate`도 maxStage까지의 곱으로 표시 (9.1의 수정과 연동)
 
 ---
 
@@ -740,3 +906,4 @@ function getRocketScience(qualityId, classId?, rollVariance?) → {
 | 버전 | 날짜 | 변경 내용 |
 |------|------|-----------|
 | v1.0 | 2026-02-23 | 초안 작성 |
+| v1.1 | 2026-02-25 | maxStage 메카닉 추가(5.4절), 종합 성공률 테이블 maxStage 반영(8.6절), 연구 보정 밸런스 검토 노트(8.8절), 기존 시스템 호환성 maxStage 업데이트(9.1/9.3/9.4/9.6절) |
