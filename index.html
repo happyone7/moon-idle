@@ -1751,6 +1751,38 @@ body.tab-research #pane-research {
 .lc-sp-pct.amber { color: var(--amber); }
 .lc-sp-pct.red   { color: var(--red); }
 
+/* ── 스펙 바 그래프 패널 (D5 10.4) ── */
+#lc-spec-panel { width: 100%; max-width: 420px; margin: 6px auto 2px; padding: 8px 12px; box-sizing: border-box; background: rgba(0,8,2,0.7); border: 1px solid var(--green-dim); }
+.lc-spec-hd { font-size: 10px; letter-spacing: .2em; color: var(--green-dim); margin-bottom: 6px; text-transform: uppercase; }
+.lc-spec-row { display: flex; align-items: center; gap: 6px; padding: 3px 0; }
+.lc-spec-label { font-size: 11px; color: var(--text-primary); letter-spacing: .06em; min-width: 56px; text-align: right; flex-shrink: 0; }
+.lc-spec-bar-wrap { flex: 1; height: 10px; background: rgba(0,230,118,.04); border: 1px solid #0d3d1f; overflow: hidden; position: relative; }
+.lc-spec-bar-fill { height: 100%; transition: width .5s; }
+.lc-spec-bar-fill.green { background: var(--green-dim); box-shadow: inset 0 0 4px rgba(0,230,118,.3); }
+.lc-spec-bar-fill.amber { background: var(--amber); box-shadow: inset 0 0 4px rgba(255,171,0,.3); opacity: .85; }
+.lc-spec-bar-fill.red   { background: var(--red); box-shadow: inset 0 0 4px rgba(255,23,68,.3); opacity: .85; }
+.lc-spec-val { font-size: 12px; font-weight: bold; color: var(--green); min-width: 28px; text-align: right; font-family: 'Courier New', Consolas, monospace; flex-shrink: 0; }
+.lc-spec-var { font-size: 10px; min-width: 36px; text-align: left; flex-shrink: 0; font-family: 'Courier New', Consolas, monospace; }
+.lc-spec-var.pos { color: var(--green); }
+.lc-spec-var.neg { color: var(--red); }
+.lc-spec-var.zero { color: var(--green-dim); }
+.lc-spec-divider { border: none; border-top: 1px solid #0d3d1f; margin: 6px 0; }
+.lc-spec-overall { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.lc-spec-overall-label { font-size: 11px; color: var(--text-primary); letter-spacing: .08em; }
+.lc-spec-overall-val { font-size: 18px; font-weight: bold; font-family: 'Courier New', Consolas, monospace; }
+.lc-spec-overall-val.green { color: var(--green); text-shadow: 0 0 8px rgba(0,230,118,.5); }
+.lc-spec-overall-val.amber { color: var(--amber); text-shadow: 0 0 8px rgba(255,171,0,.5); }
+.lc-spec-overall-val.red   { color: var(--red); text-shadow: 0 0 8px rgba(255,23,68,.5); }
+.lc-spec-stages-hd { font-size: 9px; letter-spacing: .15em; color: var(--green-dim); margin-bottom: 4px; border-bottom: 1px solid #0d3d1f; padding-bottom: 2px; }
+.lc-spec-stages { font-size: 11px; font-family: 'Courier New', Consolas, monospace; letter-spacing: .04em; line-height: 1.6; }
+.lc-spec-stage-item { display: inline; }
+.lc-spec-stage-name { color: var(--text-primary); font-size: 10px; letter-spacing: .08em; }
+.lc-spec-stage-val { font-weight: bold; }
+.lc-spec-stage-val.green { color: var(--green); }
+.lc-spec-stage-val.amber { color: var(--amber); }
+.lc-spec-stage-val.red   { color: var(--red); }
+.lc-spec-sep { color: var(--green-dim); font-size: 10px; margin: 0 2px; }
+
 /* anim zone — 발사 중 flex:1로 로켓존 전체를 채움 */
 #lc-anim-zone  { width: 100%; display: none; flex-direction: column; align-items: center; }
 #lc-anim-zone.active { display: flex; flex: 1; position: relative; }
@@ -3550,6 +3582,8 @@ body.ignition-flash::before {
                 </div>
                 <!-- 조립/연료 상태 패널 -->
                 <div id="lc-status-panel"></div>
+                <!-- D5 10.4: 스펙 바 그래프 패널 (조립 완료 시만 표시) -->
+                <div id="lc-spec-panel" style="display:none;"></div>
                 <!-- 완성도 표시 (연료 바 아래) -->
                 <div id="lc-readiness"></div>
               </div>

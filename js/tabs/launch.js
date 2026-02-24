@@ -241,8 +241,8 @@ function _buildParallaxBg(wrapEl, totalMs) {
 //  발사 전 엔진 스타트업 연출: 하단 UI 숨기고 점화 애니메이션
 // ============================================================
 function _runPreLaunchIgnition(onComplete) {
-  // 1. 하단 UI 즉시 숨기기 (체크리스트, 상태, 완성도, 커밋박스 — stagebar는 유지)
-  ['lc-checklist', 'lc-status-panel', 'lc-readiness', 'lc-commit-box'].forEach(id => {
+  // 1. 하단 UI 즉시 숨기기 (체크리스트, 상태, 스펙, 완성도, 커밋박스 — stagebar는 유지)
+  ['lc-checklist', 'lc-status-panel', 'lc-spec-panel', 'lc-readiness', 'lc-commit-box'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -926,6 +926,96 @@ function _lcRocketArtHtml() {
 }
 
 // ============================================================
+//  D5 10.4: 스펙 바 그래프 패널
+// ============================================================
+const SPEC_LABELS = {
+  structural: '구조강도',
+  propulsion: '추진안정',
+  avionics:   '항전신뢰',
+  thermal:    '열방호도',
+};
+
+const STAGE_ABBR = {
+  4: 'LFT', 5: 'MXQ', 6: 'MECO', 7: 'SEP',
+  8: 'ORB', 9: 'TLI', 10: 'LOI', 11: 'LAND',
+};
+
+/**
+ * 스펙 바 그래프 + 단계별 성공률 패널 렌더링
+ * @param {object} sci - getRocketScience() 반환값
+ */
+function _renderSpecPanel(sci) {
+  const el = document.getElementById('lc-spec-panel');
+  if (!el) return;
+  if (!sci || !sci.specs) { el.style.display = 'none'; return; }
+
+  el.style.display = '';
+  const specs = sci.specs;
+  const rv = sci.rollVariance || { structural:0, propulsion:0, avionics:0, thermal:0 };
+
+  let html = '<div class="lc-spec-hd">// ROCKET SPECS</div>';
+
+  // 4대 스펙 바 그래프
+  ['structural', 'propulsion', 'avionics', 'thermal'].forEach(key => {
+    const val = Math.round(specs[key]);
+    const variance = rv[key] || 0;
+    // 바 색상: 70 이상 green, 50~70 amber, 50 미만 red
+    const barColor = val >= 70 ? 'green' : val >= 50 ? 'amber' : 'red';
+    // 편차 표시
+    let varHtml;
+    if (variance > 0) {
+      varHtml = `<span class="lc-spec-var pos">(+${variance}\u25B2)</span>`;
+    } else if (variance < 0) {
+      varHtml = `<span class="lc-spec-var neg">(${variance}\u25BC)</span>`;
+    } else {
+      varHtml = `<span class="lc-spec-var zero">(0)</span>`;
+    }
+
+    html += `<div class="lc-spec-row">` +
+      `<span class="lc-spec-label">${SPEC_LABELS[key]}</span>` +
+      `<div class="lc-spec-bar-wrap"><div class="lc-spec-bar-fill ${barColor}" style="width:${val}%"></div></div>` +
+      `<span class="lc-spec-val">${val}</span>` +
+      varHtml +
+      `</div>`;
+  });
+
+  // 구분선
+  html += '<hr class="lc-spec-divider">';
+
+  // 전체 성공률
+  const overall = sci.overallRate;
+  const oc = overall >= 95 ? 'green' : overall >= 90 ? 'amber' : 'red';
+  html += `<div class="lc-spec-overall">` +
+    `<span class="lc-spec-overall-label">예상 성공률:</span>` +
+    `<span class="lc-spec-overall-val ${oc}">${overall.toFixed(1)}%</span>` +
+    `</div>`;
+
+  // 단계별 성공률
+  html += '<div class="lc-spec-stages-hd">// 단계별</div>';
+  html += '<div class="lc-spec-stages">';
+
+  // 3줄: LFT MXQ MECO / SEP ORB TLI / LOI LAND
+  const rows = [[4,5,6], [7,8,9], [10,11]];
+  rows.forEach((row, ri) => {
+    row.forEach((sid, si) => {
+      const rate = sci.stageRates[sid];
+      const sc = rate >= 95 ? 'green' : rate >= 90 ? 'amber' : 'red';
+      html += `<span class="lc-spec-stage-item">` +
+        `<span class="lc-spec-stage-name">${STAGE_ABBR[sid]}</span> ` +
+        `<span class="lc-spec-stage-val ${sc}">${rate.toFixed(1)}</span>` +
+        `</span>`;
+      if (si < row.length - 1) {
+        html += `<span class="lc-spec-sep"> &gt; </span>`;
+      }
+    });
+    if (ri < rows.length - 1) html += '<br>';
+  });
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+// ============================================================
 //  RENDER: LAUNCH TAB
 // ============================================================
 function renderLaunchTab() {
@@ -1066,6 +1156,14 @@ function renderLaunchTab() {
     spHtml += `<div class="lc-sp-row"><span class="lc-sp-label">연료 주입</span><div class="lc-sp-bar-wrap"><div class="lc-sp-bar-fill ${fuelClr}" style="width:${fuelInjPct}%"></div></div><span class="lc-sp-pct ${fuelClr}">${fuelInjPct}%</span></div>`;
 
     statusPanel.innerHTML = spHtml;
+  }
+
+  // D5 10.4: 스펙 바 그래프 패널 (조립 완료 시만 표시)
+  if (canLaunch && sci) {
+    _renderSpecPanel(sci);
+  } else {
+    const specEl = document.getElementById('lc-spec-panel');
+    if (specEl) specEl.style.display = 'none';
   }
 
   // 미션 파라미터 (HUD)
