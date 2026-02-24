@@ -202,6 +202,9 @@ const BALANCE = {
     // Branch S (구조)
     alloy:              { s:8,  p:0,  a:0,  t:0 },
     precision_mfg:      { s:6,  p:0,  a:0,  t:0 },
+    composite_frame:    { s:7,  p:0,  a:0,  t:0 },
+    vibration_damper:   { s:6,  p:0,  a:0,  t:0 },
+    pressure_vessel:    { s:5,  p:0,  a:0,  t:0 },
     // Branch P (추진)
     fuel_chem:          { s:0,  p:5,  a:0,  t:0 },
     catalyst:           { s:0,  p:8,  a:0,  t:0 },
@@ -287,6 +290,9 @@ const UPGRADES = [
   { id:'basic_prod',   name:'기초 용접술',     icon:'S01', cost:{research:10},                       req:'ops_addon_unlock', time:   8, desc:'광산·생산 시설 잠금 해제',       effect:()=>{},                                                      unlocks:['bld_mine'] },
   { id:'alloy',        name:'CFRP 적층',       icon:'M02', cost:{research:2500,iron:800},            req:'rocket_eng',  time: 720, desc:'부품 비용 -20%',                 effect:()=>{ partCostMult*=0.8; },                                  unlocks:['bld_r_and_d'] },
   { id:'precision_mfg',  name:'정밀 제조 공정',  icon:'M03', cost:{research:6000,electronics:1000}, req:'alloy',       time:1200, desc:'부품 비용 추가 -10%',   effect:()=>{ partCostMult*=0.9; },                                               unlocks:[] },
+  { id:'composite_frame', name:'복합재 모노코크', icon:'S08', cost:{research:8000,iron:2000,copper:500},            req:'precision_mfg', time:1500, desc:'모노코크 쉘 구조 — 강도/중량비 +30%', effect:()=>{}, unlocks:[] },
+  { id:'vibration_damper', name:'진동 감쇠 시스템', icon:'S09', cost:{research:12000,iron:3000,electronics:1500},   req:'composite_frame', time:2400, desc:'Max-Q 구간 진동 저감 — POGO 억제', effect:()=>{}, unlocks:[] },
+  { id:'pressure_vessel',  name:'기체 가압 최적화', icon:'S10', cost:{research:18000,iron:5000,electronics:2000,copper:1000}, req:'vibration_damper', time:3600, desc:'아이소그리드 탱크 — 구조 효율 극대화', effect:()=>{}, unlocks:[] },
   { id:'rocket_eng',   name:'로켓 조립 공학', icon:'M01', cost:{research:150},                      req:'ops_addon_unlock', time:  45, desc:'조립동 해금 + 로켓 제조 시작',   effect:()=>{},                                                      unlocks:['tab_assembly'] },
   { id:'copper_mining',name:'구리 채굴 기술',  icon:'S05', cost:{research:200},                     req:'basic_prod',  time:  60, desc:'구리 채굴기 해금 — MK2+ 필수 원자재', effect:()=>{},                                                  unlocks:['bld_extractor'] },
   { id:'mine_expand',    name:'광맥 탐사 기술',  icon:'S06', cost:{research:500},              req:'basic_prod',  time: 360, desc:'철광석 생산 +15%',      effect:()=>{ prodMult.iron=(prodMult.iron||1)*1.15; },                           unlocks:[] },
@@ -335,7 +341,7 @@ const UPGRADES = [
 const RESEARCH_BRANCHES = [
   { id:'E', label:'경제',       nodes:['ops_addon_unlock','workforce_opt','market_analysis','corp_invest','housing_welfare'] },
   { id:'R', label:'채굴·생산', nodes:['basic_prod','copper_mining','mine_expand','ore_processing'] },
-  { id:'M', label:'제조·조립', nodes:['rocket_eng','alloy','precision_mfg'],                                unlockReq:'ops_addon_unlock' },
+  { id:'M', label:'제조·조립', nodes:['rocket_eng','alloy','precision_mfg','composite_frame','vibration_damper','pressure_vessel'], unlockReq:'ops_addon_unlock' },
   { id:'P', label:'추진',      nodes:['fuel_chem','catalyst','cryo_storage','lightweight','fusion'],        unlockReq:'rocket_eng' },
   { id:'A', label:'항전',      nodes:['electronics_basics','microchip','reliability','automation','telemetry'], unlockReq:'fuel_chem' },
   { id:'T', label:'열보호',    nodes:['hire_worker_1','launch_ctrl','mission_sys','multipad','heat_recov'], unlockReq:'electronics_basics' },

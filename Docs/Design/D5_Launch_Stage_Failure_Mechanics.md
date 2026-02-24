@@ -5,8 +5,8 @@
 | **문서 ID** | D5_Launch_Stage_Failure_Mechanics |
 | **작성자** | 기획팀장 (Game Designer) |
 | **작성일** | 2026-02-23 |
-| **버전** | v1.1 |
-| **상태** | 제안 (총괄PD 리뷰 대기) |
+| **버전** | v1.2 |
+| **상태** | 확정 (B안 적용 완료) |
 | **관련 파일** | `js/balance-data.js`, `js/game-state.js`, `js/tabs/launch.js` |
 
 ---
@@ -101,8 +101,11 @@ structural = clamp(
   50
   + qualityBonus.structural        // 품질별 고정 보너스
   + classBonus[classId].structural  // 클래스별 보정
-  + (gs.upgrades.alloy ? 8 : 0)    // CFRP 적층 연구
-  + (gs.upgrades.precision_mfg ? 6 : 0)  // 정밀 제조 공정
+  + (gs.upgrades.alloy ? 8 : 0)             // CFRP 적층 연구
+  + (gs.upgrades.precision_mfg ? 6 : 0)     // 정밀 제조 공정
+  + (gs.upgrades.composite_frame ? 7 : 0)   // 복합재 모노코크 (v1.2)
+  + (gs.upgrades.vibration_damper ? 6 : 0)  // 진동 감쇠 시스템 (v1.2)
+  + (gs.upgrades.pressure_vessel ? 5 : 0)   // 기체 가압 최적화 (v1.2)
   + rollVariance.structural,       // 제작 랜덤 편차
   0, 100
 );
@@ -595,9 +598,12 @@ BALANCE.SPEC_CLASS_BONUS = {
 ```javascript
 BALANCE.SPEC_RESEARCH_BONUS = {
   // 연구 ID -> 스펙 보정 { s, p, a, t }
-  // Branch S (구조)
+  // Branch S (구조) — v1.2: composite_frame, vibration_damper, pressure_vessel 추가
   alloy:             { s: 8,  p: 0, a: 0, t: 0 },
   precision_mfg:     { s: 6,  p: 0, a: 0, t: 0 },
+  composite_frame:   { s: 7,  p: 0, a: 0, t: 0 },   // v1.2 신규
+  vibration_damper:  { s: 6,  p: 0, a: 0, t: 0 },   // v1.2 신규
+  pressure_vessel:   { s: 5,  p: 0, a: 0, t: 0 },   // v1.2 신규
   // Branch P (추진)
   fuel_chem:         { s: 0,  p: 5, a: 0, t: 0 },
   catalyst:          { s: 0,  p: 8, a: 0, t: 0 },
@@ -643,15 +649,15 @@ BALANCE.ROLL_VARIANCE = {
 
 | 조합 | structural | propulsion | avionics | thermal | maxStage | 단계 수 | 전체 성공률 | 비고 |
 |------|------------|------------|----------|---------|----------|---------|------------|------|
-| VEGA + PROTO (초기) | 50 | 50 | 50 | 50 | 5 | 2 | **~64%** | ~~39%~~ → 2단계만 곱. 초기에도 도전 가능 |
-| VEGA + PROTO (일부 연구) | 58 | 55 | 55 | 55 | 5 | 2 | **~71%** | ~~52%~~ → LFT(84.0) × MXQ(84.9) |
-| ARGO + STD (Phase 1) | 62 | 64 | 57 | 55 | 6 | 3 | **~67%** | ~~62%~~ → 3단계 곱 |
-| HERMES + STD (Phase 2) | 70 | 75 | 73 | 68 | 8 | 5 | **~70%** | ~~81%~~ → 5단계 곱 (TLI/LOI/LAND 생략) |
-| ATLAS + ADV (Phase 3) | 74 | 87 | 97 | 84 | 9 | 6 | **~91%** | ~~89%~~ → 6단계 곱 (LOI/LAND 생략) |
-| SELENE + ADV (Phase 4) | 66 | 89 | 99 | 90 | 10 | 7 | **~84%** | ~~88%~~ → 7단계 곱 (LAND 생략) |
-| SELENE + ELITE (Phase 4) | 72 | 93 | 100 | 96 | 10 | 7 | **~87%** | ~~93%~~ → 7단계 곱 |
-| ARTEMIS + ELITE (Phase 5) | 66 | 100 | 100 | 99 | 11 | 8 | **~92%** | 변동 없음 (전체 8단계) |
-| ARTEMIS + ELITE + 풀연구 | 80 | 100 | 100 | 100 | 11 | 8 | **~96%** | 변동 없음 (전체 8단계) |
+| VEGA + PROTO (초기) | 50 | 50 | 50 | 50 | 5 | 2 | **~64%** | 2단계만 곱. 초기에도 도전 가능 |
+| VEGA + PROTO (일부 연구) | 58 | 55 | 55 | 55 | 5 | 2 | **~71%** | LFT(84.0) x MXQ(84.9) |
+| ARGO + STD (Phase 1) | 62 | 64 | 57 | 55 | 6 | 3 | **~67%** | 3단계 곱 |
+| HERMES + STD (Phase 2) | 75 | 75 | 73 | 68 | 8 | 5 | **~72%** | v1.2: structural +5 (composite_frame 추가 가능) |
+| ATLAS + ADV (Phase 3) | 87 | 87 | 97 | 84 | 9 | 6 | **~92%** | v1.2: structural +13 (composite+vibration 가능) |
+| SELENE + ADV (Phase 4) | 79 | 89 | 99 | 90 | 10 | 7 | **~86%** | v1.2: structural +13 |
+| SELENE + ELITE (Phase 4) | 85 | 93 | 100 | 96 | 10 | 7 | **~89%** | v1.2: structural +13 |
+| ARTEMIS + ELITE (Phase 5) | 78 | 100 | 100 | 99 | 11 | 8 | **~93%** | v1.2: structural +12 (3개 연구 중 2개) |
+| ARTEMIS + ELITE + 풀연구 | 94 | 100 | 100 | 100 | 11 | 8 | **~97%** | v1.2: structural 총 +34 (전체 8단계) |
 
 > **설계 의도**: maxStage 적용으로 하위 클래스의 성공률이 상향되어, 플레이어가 단계적 진행감을 체감할 수 있다.
 > VEGA 초기 ~64%는 "운이 좋으면 성공"하는 적절한 난이도이며, 클래스 업그레이드 동기를 제공한다.
@@ -665,11 +671,11 @@ BALANCE.ROLL_VARIANCE = {
 // 이는 튜토리얼 경험: "첫 발사는 반드시 성공하여 시스템을 이해시킨다"
 ```
 
-### 8.8 밸런스 검토 노트: SPEC_RESEARCH_BONUS 불균형
+### 8.8 밸런스 검토 노트: SPEC_RESEARCH_BONUS 균형 조정
 
-> **검토 요청 배경**: 총괄PD 지적 — 연구 보정 밸런스 불균형 검토 필요
+> **v1.2 — B안 적용 완료** (총괄PD 확정, 2026-02-25)
 
-#### 현황 분석
+#### 조정 전 현황 (v1.1)
 
 | 스펙 요소 | 관련 연구 수 | 총 보정값 | 개별 내역 |
 |-----------|-------------|-----------|-----------|
@@ -678,35 +684,43 @@ BALANCE.ROLL_VARIANCE = {
 | **avionics** | 5개 | **+34** | electronics_basics(5) + microchip(8) + reliability(10) + telemetry(6) + automation(5) |
 | **thermal** | 5개 | **+35** | hire_worker_1(5) + launch_ctrl(8) + mission_sys(8) + multipad(6) + heat_recov(8) |
 
-#### 문제점
+#### v1.2 조정 결과 (B안 — structural 연구 3개 추가)
 
-1. **structural 연구 항목 부족**: 전용 연구가 alloy, precision_mfg 2개뿐 (rocket_eng는 공유). 다른 스펙은 5~6개.
-2. **총 보정값 차이**: structural(+16)은 다른 스펙(+34~35) 대비 **절반 이하**.
-3. **실전 영향**: 구조강도가 주도하는 MAX-Q(가중치 0.55) 단계가 항상 병목이 됨. 풀연구 후에도 structural이 낮아 MAX-Q에서 실패 확률이 상대적으로 높음.
+| 스펙 요소 | 관련 연구 수 | 총 보정값 | 개별 내역 |
+|-----------|-------------|-----------|-----------|
+| **structural** | **6개** | **+34** | alloy(8) + precision_mfg(6) + **composite_frame(7)** + **vibration_damper(6)** + **pressure_vessel(5)** + rocket_eng(2) |
+| **propulsion** | 6개 | **+34** | fuel_chem(5) + catalyst(8) + lightweight(6) + fusion(10) + cryo_storage(3) + rocket_eng(2) |
+| **avionics** | 5개 | **+34** | electronics_basics(5) + microchip(8) + reliability(10) + telemetry(6) + automation(5) |
+| **thermal** | 5개 | **+35** | hire_worker_1(5) + launch_ctrl(8) + mission_sys(8) + multipad(6) + heat_recov(8) |
 
-#### 기획팀장 의견
+#### 추가된 연구 상세
 
-structural 보정 부족은 의도적인 설계인지 재검토가 필요하다:
+| ID | 이름 | 스펙 보정 | 비용 | 선행 연구 | 연구 시간 | 설명 | 실제 모티프 |
+|----|------|-----------|------|-----------|-----------|------|-------------|
+| `composite_frame` | 복합재 모노코크 | s:+7 | RP 8,000 + Fe 2,000 + Cu 500 | `precision_mfg` | 1,500초 | 모노코크 쉘 구조 — 강도/중량비 +30% | Falcon 9 복합재 인터스테이지, Starship CFRP 실험 |
+| `vibration_damper` | 진동 감쇠 시스템 | s:+6 | RP 12,000 + Fe 3,000 + PCB 1,500 | `composite_frame` | 2,400초 | Max-Q 구간 진동 저감 — POGO 억제 | Saturn V POGO 서프레서, Atlas V 능동 감쇠 |
+| `pressure_vessel` | 기체 가압 최적화 | s:+5 | RP 18,000 + Fe 5,000 + PCB 2,000 + Cu 1,000 | `vibration_damper` | 3,600초 | 아이소그리드 탱크 — 구조 효율 극대화 | Centaur 아이소그리드 탱크, Delta IV 가압 설계 |
 
-**옵션 A: 현 상태 유지 (의도적 약점)**
-- 구조강도는 주로 **클래스 보정 + 품질 보정**으로 올리도록 설계
-- MAX-Q가 "항상 조금 불안한 구간"으로 남아 긴장감 유지
-- 단, 풀연구 후 structural 최대치가 50+10(elite)+5(artemis는 0)+16(연구) = 76 수준이라 다른 스펙(100 도달 가능)과 괴리가 큼
+#### 테크트리 체인
 
-**옵션 B: structural 연구 2~3개 추가 (권장)**
-- Branch S(구조) 또는 Branch M(제조)에 추가 연구 배치
-- 예시: `composite_frame`(+8, 복합재 프레임), `vibration_damper`(+6, 진동 감쇠 장치), `pressure_test`(+5, 가압 시험 공정)
-- 조정 후 structural 총 보정: +16 → ~+35 (다른 스펙과 균형)
-- **장점**: 풀연구 시 4대 스펙 모두 90+ 도달 가능. 균형 잡힌 최종 성공률
-- **단점**: 연구 항목 총 수 증가로 진행 시간 길어질 수 있음
+```
+rocket_eng → alloy → precision_mfg → composite_frame → vibration_damper → pressure_vessel
+```
 
-**옵션 C: 기존 structural 연구 보정값 상향**
-- alloy: 8→12, precision_mfg: 6→10, rocket_eng의 structural: 2→8
-- 조정 후 structural 총 보정: +16 → +30
-- **장점**: 새 연구 항목 추가 없이 해결. 기존 연구 트리 구조 유지
-- **단점**: 개별 연구의 보정값이 과도해져 단일 연구 해금 시 급격한 점프 발생
+- `composite_frame`은 중반부 연구 (RP 8,000 + Fe 2,000 + Cu 500, 25분)
+- `vibration_damper`은 중후반부 연구 (RP 12,000 + Fe 3,000 + PCB 1,500, 40분)
+- `pressure_vessel`은 후반부 연구 (RP 18,000 + Fe 5,000 + PCB 2,000 + Cu 1,000, 60분)
 
-> **결론**: 총괄PD 판단 대기. 기획팀장은 **옵션 B를 권장**하며, 구체적인 연구 항목 설계는 승인 후 D3(연구 트리) 문서에서 상세 진행 예정.
+#### 풀연구 후 structural 최대치
+
+```
+ARTEMIS + ELITE + 풀연구:
+  50 (base) + 10 (elite) + 0 (artemis) + 34 (연구) = 94
+  → 기존 v1.1: 50 + 10 + 0 + 16 = 76
+  → 개선폭: +18 (다른 스펙 100 도달 가능 수준에 근접)
+```
+
+> **결론**: B안 적용 완료. structural 총 보정 +16 → +34로 상향되어 propulsion(+34), avionics(+34), thermal(+35)와 균형을 이룸. 4대 스펙 모두 90+ 도달 가능해져 풀연구 시 MAX-Q 병목이 해소됨.
 
 ---
 
@@ -907,3 +921,4 @@ function getRocketScience(qualityId, classId?, rollVariance?) → {
 |------|------|-----------|
 | v1.0 | 2026-02-23 | 초안 작성 |
 | v1.1 | 2026-02-25 | maxStage 메카닉 추가(5.4절), 종합 성공률 테이블 maxStage 반영(8.6절), 연구 보정 밸런스 검토 노트(8.8절), 기존 시스템 호환성 maxStage 업데이트(9.1/9.3/9.4/9.6절) |
+| v1.2 | 2026-02-25 | **B안 적용**: structural 연구 3개 추가(composite_frame/vibration_damper/pressure_vessel), SPEC_RESEARCH_BONUS structural 총 보정 +16→+34, 3.2절 계산식 업데이트, 8.4절 테이블 업데이트, 8.6절 성공률 테이블 structural 값 갱신, 8.8절 밸런스 검토→적용 완료 |

@@ -37,6 +37,38 @@ const RESEARCH_ASCII_ART = {
  VACUUM BAG  -0.9 bar
 [CURE 140C ####-- 67%]`,
 
+  composite_frame: `  MONOCOQUE SHELL
+  +====================+
+  |  /=============\\  |
+  | / ~~~~~~~~~~~~~ \\ |
+  ||  +-----------+  ||
+  || /  HONEYCOMB  \\ ||
+  ||/ ############# \\||
+  |/ ############### \\|
+  +====================+
+  SHEAR: 420 MPa  MASS↓`,
+  vibration_damper: `   POGO SUPPRESSOR
+  +-------+-------+
+  |  [=]  |  [=]  |
+  |  | |  |  | |  |
+  | -+-+- | -+-+- |
+  |  |~|  |  |~|  |
+  |  [=]  |  [=]  |
+  +-------+-------+
+  |  ACCUMULATOR   |
+  +=======+========+
+  FREQ: 5~50Hz  DAMP OK`,
+  pressure_vessel: `   ISOGRID PANEL
+  +-+-+-+-+-+-+-+-+
+  |/ \\ / \\ / \\ / \\ |
+  +---+---+---+---+
+  |\\ / \\ / \\ / \\ / |
+  +-+-+-+-+-+-+-+-+
+  |/ \\ / \\ / \\ / \\ |
+  +-+-+-+-+-+-+-+-+
+  HOOP STRESS OPTIMIZED
+  PROOF: 1.5x MEOP  OK`,
+
   // Propulsion branch
   fuel_chem: `  +==================+
   ||  COMBUSTION CHMB ||
@@ -139,6 +171,9 @@ const TECH_VIZ = {
   microchip:          { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 트랜지스터', '▓▓▓▓▓▓▓▓▓ ← 집적도', '▓▓▓▓▓▓▓ ← 전력 소비'], stat: '+35% ELECTRONICS' },
   automation:         { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 자동화율', '▓▓▓▓▓▓▓▓▓▓ ← 처리량', '▓▓▓▓▓▓▓▓▓ ← 효율'], stat: '×1.5 ALL OUTPUT' },
   alloy:              { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 인장 강도', '▓▓▓▓▓▓▓▓ ← 내열성', '▓▓▓▓▓▓▓▓▓ ← 경량비'], stat: '-20% PART COST' },
+  composite_frame:    { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 전단 강도', '▓▓▓▓▓▓▓▓▓ ← 좌굴 저항', '▓▓▓▓▓▓▓▓ ← 중량비'], stat: 'STRUCTURAL +7' },
+  vibration_damper:   { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 감쇠 계수', '▓▓▓▓▓▓▓▓▓ ← 주파수 대역', '▓▓▓▓▓▓▓▓ ← POGO 억제'], stat: 'STRUCTURAL +6' },
+  pressure_vessel:    { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 후프 응력', '▓▓▓▓▓▓▓▓▓ ← 격자 밀도', '▓▓▓▓▓▓▓▓ ← 내압 한계'], stat: 'STRUCTURAL +5' },
   rocket_eng:         { lines: ['▓▓▓▓▓▓▓▓▓ ← 추진 설계', '▓▓▓▓▓▓▓▓▓▓ ← 구조 해석', '▓▓▓▓▓▓▓ ← 시험 횟수'], stat: 'ASSEMBLY UNLOCK' },
   launch_ctrl:        { lines: ['▓▓▓▓▓▓▓▓▓ ← 텔레메트리', '▓▓▓▓▓▓▓▓▓ ← 비행 S/W', '▓▓▓▓▓▓▓▓ ← GO/NOGO'], stat: 'LAUNCH TAB UNLOCK' },
   mission_sys:        { lines: ['▓▓▓▓▓▓▓▓▓▓ ← 궤도 계산', '▓▓▓▓▓▓▓▓ ← 탑재체 최적화', '▓▓▓▓▓▓▓▓▓ ← 임무 계획'], stat: 'MISSION TAB UNLOCK' },
