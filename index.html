@@ -1792,6 +1792,13 @@ body.tab-research #pane-research {
 /* 로켓 고정 진동 (위로 날아가지 않고 hover) */
 .launch-rocket-ascii.launching { animation: launch-hover 0.10s ease-in-out infinite alternate !important; }
 .launch-rocket-ascii.exploding { animation: rocket-explode 0.3s ease-out both; }
+/* D5 5.4: 클래스별 실패 화면 효과 강도 */
+.launch-rocket-ascii.exploding.rocket-vega    { animation: shake-sm 0.08s infinite !important; }
+.launch-rocket-ascii.exploding.rocket-argo    { animation: shake-sm 0.07s infinite !important; }
+.launch-rocket-ascii.exploding.rocket-hermes  { animation: shake-md 0.06s infinite !important; }
+.launch-rocket-ascii.exploding.rocket-atlas   { animation: shake-md 0.05s infinite !important; }
+.launch-rocket-ascii.exploding.rocket-selene  { animation: shake-lg 0.04s infinite !important; }
+.launch-rocket-ascii.exploding.rocket-artemis { animation: shake-xl 0.03s infinite !important; }
 @keyframes launch-hover { 0% { transform: translateY(0); } 100% { transform: translateY(-5px); } }
 /* 오버레이 .lo-rocket 전용 (유지) */
 @keyframes rocket-launch { 0% { transform: translateY(0); } 100% { transform: translateY(-400px); } }
@@ -1818,8 +1825,10 @@ body.tab-research #pane-research {
 #lc-anim-zone.flash-red { animation: screen-flash-red 0.5s ease-out; }
 /* D5: 단계 라벨 (발사 중 상단 표시) */
 #launch-stage-label { font-family: 'Share Tech Mono', monospace; font-size: 20px; letter-spacing: 4px; font-weight: bold; transition: color 0.3s, text-shadow 0.3s; }
-/* D5: 단계 정보 패널 (발사 중 하단 표시) */
-#launch-stage-info { font-family: 'Courier New', Consolas, monospace; font-size: 11px; line-height: 1.4; transition: color 0.4s, text-shadow 0.4s; }
+/* D5: launch-scene — 메인 씬 영역 (로켓+이펙트 통합, 화면 중앙) */
+#launch-scene { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; text-align: center; }
+/* D5: 텔레메트리 보조 텍스트 (작게, 하단) */
+#launch-telem-info { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 3; font-family: 'Courier New', Consolas, monospace; font-size: 10px; line-height: 1.4; white-space: pre; color: var(--green-mid); text-shadow: 0 0 4px rgba(0,230,118,0.2); text-align: center; pointer-events: none; transition: color 0.4s, text-shadow 0.4s; }
 .exhaust-anim { font-family: 'Courier New', Consolas, monospace; font-size: 13px; line-height: 1.3; white-space: pre; letter-spacing: 0; color: var(--amber); text-shadow: 0 0 6px var(--amber); display: inline-block; animation: exhaust-flicker 0.15s step-start infinite; }
 @keyframes exhaust-flicker { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 

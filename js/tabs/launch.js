@@ -106,33 +106,7 @@ const CLASS_ACHIEVEMENTS = {
   },
 };
 
-// 단계별 실패 ASCII 폭발 프레임 (실패 위치에 따라 다른 아트)
-const FAIL_FRAMES_BY_ZONE = {
-  // LIFTOFF/MAX-Q 실패: 지상 근처 폭발
-  ground: [
-    '       *\n     /\\!\\  GYRO ALERT\n    / !! \\\n   / WARN \\\n  |  ROLL  |\n  |__+47°__|',
-    '    \\  * . /\n  . * \u2554\u2550\u2557 * .\n * \u2591\u2591\u2591\u2551!\u2551\u2591\u2591\u2591 *\n  \u2591\u2592\u2593\u2593\u2588\u2588\u2588\u2593\u2593\u2592\u2591\n   \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n  ~~ FIRE ~~',
-    '     .   \u00b7   .\n   \u00b7   .   \u00b7\n    \u2591  \u2592\u2593\u2592  \u2591\n  \u2591\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\u2591\n  \u2500\u2500\u2500\u2550\u2550\u2564\u2550\u2550\u2500\u2500\u2500\n  \u2593\u2593 DAMAGED \u2593\u2593',
-  ],
-  // MECO/STG_SEP 실패: 고고도 분리 실패
-  high_atm: [
-    '       /|\\\n      / | \\\n     /  |! \\\n    / ALERT \\\n   |  SEPAR  |\n   |  FAIL   |',
-    '     .  *  .\n    * . | . *\n   / * .|. * \\\n  *\u2591\u2591\u2592\u2593\u2588|\u2588\u2593\u2592\u2591\u2591*\n   \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n ~~ BREAKUP ~~',
-    '   .  \u00b7  .  \u00b7  .\n  \u00b7  . \u00b7 . \u00b7  .\n    \u2591 . \u2592 . \u2591\n   \u2591  \u2592\u2593\u2592  \u2591\n    .  \u00b7  .  \u00b7\n  // DEBRIS //\n   .  .  .  .',
-  ],
-  // ORBIT/TLI 실패: 우주 공간 엔진 고장
-  space: [
-    '    .  *  .\n   *       *\n  . [ENGINE] .\n  . [CUTOFF] .\n   *   !   *\n    .  *  .',
-    '    .  \u00b7  .\n  \u00b7         \u00b7\n   . \u2591\u2592\u2593\u2592\u2591 .\n   \u2591\u2591 !! \u2591\u2591\n  \u00b7         \u00b7\n ~~ DRIFT ~~',
-    '   \u00b7    .    \u00b7\n .    \u00b7    .\n    . \u00b7 . \u00b7\n  \u00b7    .    \u00b7\n .    \u00b7    .\n // LOST //\n   .    .    .',
-  ],
-  // LOI/LANDING 실패: 달 표면 충돌
-  lunar: [
-    '    . * .\n   *     *\n  .  \\|/  .\n  . --*-- .\n  .  /|\\  .\n   *     *\n  ~IMPACT~',
-    '  \u2591\u2592\u2593\u2588\u2588\u2588\u2593\u2592\u2591\n \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\n  \u2591\u2592\u2593\u2588\u2588\u2588\u2593\u2592\u2591\n ~~ CRASH ~~',
-    '    .  \u00b7  .\n  _____________\n /  .  \u00b7  .  \\\n/ \u00b7   RUD   . \\\n\\ .  \u00b7  .  \u00b7 /\n \\_____\u25cf_____/\n  // MOON //',
-  ],
-};
+// (레거시 FAIL_FRAMES_BY_ZONE 제거됨 — D5: STAGE_FAIL_FRAMES로 통합)
 
 function _getFailZone(stageIdx) {
   if (stageIdx <= 5) return 'ground';
@@ -204,10 +178,10 @@ function _buildParallaxBg(wrapEl, totalMs) {
     return { pre, speed: def.speed };
   });
 
-  // 로켓 컨테이너 앞에 삽입 (z-index로 배경이 뒤로)
-  const rocketCnt = wrapEl.querySelector('#launch-rocket-cnt');
-  if (rocketCnt) wrapEl.insertBefore(bg, rocketCnt);
-  else           wrapEl.prepend(bg);
+  // 씬 컨테이너 앞에 삽입 (z-index로 배경이 뒤로)
+  const sceneContainer = wrapEl.querySelector('#launch-scene');
+  if (sceneContainer) wrapEl.insertBefore(bg, sceneContainer);
+  else                wrapEl.prepend(bg);
 
   const startTime = Date.now();
   let stopped = false;
@@ -463,64 +437,44 @@ function _setLcStageFail(failStageIdx) {
 // ============================================================
 
 /**
- * 단계 프레임 아트를 로켓 아래 보조 패널에 표시하는 헬퍼
- * rocketEl: 로켓 <pre>, stageInfoEl: 단계 정보 <pre>
+ * 단계 프레임 아트를 씬 영역에 표시하는 헬퍼
+ * rocketEl: 로켓 <pre>, stageInfoEl: 텔레메트리 보조 <pre>
  */
+function _getGlowColor(color) {
+  if (color === '--cyan')  return 'rgba(0,229,255,0.5)';
+  if (color === '--amber') return 'rgba(255,171,0,0.6)';
+  if (color === '--red')   return 'rgba(255,23,68,0.6)';
+  return 'rgba(0,230,118,0.4)';
+}
+
 function _applyStageFrame(frame, rocketEl, stageInfoEl) {
   if (!frame) return;
 
-  // 풀씬 프레임: 로켓 숨기고 stageInfoEl에 전체 씬 표시 (중앙 배치)
+  const frameColor = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
+  const glowColor = _getGlowColor(frame.color);
+
+  // ── fullScene 프레임: 로켓 숨기고 #launch-scene 전체를 씬 아트로 교체 ──
   if (frame.fullScene) {
     if (rocketEl) rocketEl.style.display = 'none';
-    if (stageInfoEl) {
-      stageInfoEl.textContent = frame.art.join('\n');
-      stageInfoEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
-      stageInfoEl.style.position = 'absolute';
-      stageInfoEl.style.top = '50%';
-      stageInfoEl.style.left = '50%';
-      stageInfoEl.style.transform = 'translate(-50%, -50%)';
-      stageInfoEl.style.bottom = '';
-      stageInfoEl.style.fontSize = '13px';
-      stageInfoEl.style.lineHeight = '1.4';
-      // 글로우
-      if (frame.color === '--cyan') {
-        stageInfoEl.style.textShadow = '0 0 8px rgba(0,229,255,0.5)';
-      } else if (frame.color === '--amber') {
-        stageInfoEl.style.textShadow = '0 0 8px rgba(255,171,0,0.6)';
-      } else {
-        stageInfoEl.style.textShadow = '0 0 8px rgba(0,230,118,0.4)';
-      }
+    const sceneEl = document.getElementById('launch-scene');
+    if (sceneEl) {
+      sceneEl.innerHTML = `<pre class="rocket-art-core launch-rocket-ascii"
+        style="font-size:13px;line-height:1.4;white-space:pre;color:${frameColor};
+               text-shadow:0 0 8px ${glowColor};text-align:center;">${frame.art.join('\n')}</pre>`;
     }
     return;
   }
 
-  // 비-풀씬: 로켓 복원 + stageInfoEl 위치 원복
+  // ── 비-fullScene: 로켓 복원, 보조 텔레메트리에 상태 텍스트 표시 ──
   if (rocketEl) rocketEl.style.display = '';
-  if (stageInfoEl) {
-    stageInfoEl.style.position = 'absolute';
-    stageInfoEl.style.top = '';
-    stageInfoEl.style.left = '50%';
-    stageInfoEl.style.transform = 'translateX(-50%)';
-    stageInfoEl.style.bottom = '12px';
-    stageInfoEl.style.fontSize = '';
-    stageInfoEl.style.lineHeight = '';
-  }
 
-  // 보조 패널에 단계 아트 표시
+  // 텔레메트리 보조 패널에 상태 텍스트 표시
   if (stageInfoEl) {
     stageInfoEl.textContent = frame.art.join('\n');
-    stageInfoEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
-    // 글로우 효과
-    if (frame.color === '--red') {
-      stageInfoEl.style.textShadow = '0 0 8px rgba(255,23,68,0.6)';
-    } else if (frame.color === '--amber') {
-      stageInfoEl.style.textShadow = '0 0 8px rgba(255,171,0,0.6)';
-    } else if (frame.color === '--cyan') {
-      stageInfoEl.style.textShadow = '0 0 8px rgba(0,229,255,0.5)';
-    } else {
-      stageInfoEl.style.textShadow = '0 0 8px rgba(0,230,118,0.4)';
-    }
+    stageInfoEl.style.color = frameColor;
+    stageInfoEl.style.textShadow = `0 0 4px ${glowColor}`;
   }
+
   // 로켓 효과
   if (rocketEl) {
     rocketEl.classList.remove('shake-sm', 'shake-md', 'shake-lg', 'shake-xl',
@@ -576,16 +530,16 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
     launchArt = getRocketArtHtml({ allGreen: true });
   }
 
-  // 레이아웃: 로켓(중앙 고정) + 단계 라벨(상단) + 단계 정보(하단)
+  // 레이아웃: 씬(중앙, 로켓+이펙트 통합) + 단계 라벨(상단) + 텔레메트리(하단 보조)
   animWrap.innerHTML = `
 <div id="launch-stage-label" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;text-align:center;font-family:'Share Tech Mono',monospace;font-size:20px;letter-spacing:4px;color:var(--green);text-shadow:0 0 12px rgba(0,230,118,0.6);pointer-events:none;"></div>
-<div id="launch-rocket-cnt" style="position:absolute;top:40%;left:50%;transform:translate(-50%,-55%);z-index:2;text-align:center;">
-<pre class="rocket-art-core launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6)">${launchArt}</pre>
+<div id="launch-scene" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;text-align:center;">
+<pre class="rocket-art-core launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6);font-size:13px;line-height:1.35;white-space:pre;">${launchArt}</pre>
 </div>
-<pre id="launch-stage-info" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:3;font-family:'Courier New',Consolas,monospace;font-size:11px;line-height:1.4;white-space:pre;color:var(--green);text-shadow:0 0 6px rgba(0,230,118,0.4);text-align:center;pointer-events:none;min-height:60px;"></pre>`;
+<pre id="launch-telem-info" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:3;font-family:'Courier New',Consolas,monospace;font-size:10px;line-height:1.4;white-space:pre;color:var(--green-mid);text-shadow:0 0 4px rgba(0,230,118,0.2);text-align:center;pointer-events:none;"></pre>`;
 
   const rocketEl    = document.getElementById('launch-rocket-pre');
-  const stageInfoEl = document.getElementById('launch-stage-info');
+  const stageInfoEl = document.getElementById('launch-telem-info');
   const stageLabelEl = document.getElementById('launch-stage-label');
 
   setTimeout(() => {
@@ -828,15 +782,26 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
       const failFrameStart = anomalyDelay + 1500;
       stageFailFrames.forEach((frame, fi) => {
         setTimeout(() => {
-          _applyStageFrame(frame, rocketEl, stageInfoEl);
-          // 폭발 프레임에서 로켓 아트도 교체
-          if (rocketEl && fi >= 1) {
-            rocketEl.classList.remove('launching', 'warning-glow', failScale.shakeClass);
-            rocketEl.classList.add('exploding', 'fail-glow');
-            // 기존 FAIL_FRAMES_BY_ZONE 아트로 로켓 교체
-            const legacyFrames = FAIL_FRAMES_BY_ZONE[zone] || [];
-            if (legacyFrames[fi - 1]) {
-              rocketEl.textContent = legacyFrames[fi - 1];
+          if (fi >= 1 && frame && frame.art) {
+            // D5: 폭발 프레임 — #launch-scene 전체를 폭발 아트로 교체 (크게, 중앙)
+            const sceneEl = document.getElementById('launch-scene');
+            if (sceneEl) {
+              const failColor = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
+              const failGlow = _getGlowColor(frame.color);
+              sceneEl.innerHTML = `<pre class="rocket-art-core launch-rocket-ascii exploding rocket-${classIdFail} fail-glow"
+                style="font-size:13px;line-height:1.4;white-space:pre;color:${failColor};
+                       text-shadow:0 0 12px ${failGlow};text-align:center;">${frame.art.join('\n')}</pre>`;
+            }
+            // 텔레메트리 보조 텍스트 업데이트
+            if (stageInfoEl && frame.art) {
+              stageInfoEl.textContent = '';
+            }
+          } else {
+            // fi === 0: 첫 프레임 (경고 — 로켓 유지 + 경고 이펙트)
+            _applyStageFrame(frame, rocketEl, stageInfoEl);
+            if (rocketEl) {
+              rocketEl.classList.remove('launching', 'warning-glow', failScale.shakeClass);
+              rocketEl.classList.add(failScale.shakeClass, 'warning-glow');
             }
           }
           // 대형 로켓 첫 폭발 프레임에서 화면 레드 플래시
@@ -929,11 +894,12 @@ function _showLaunchOverlay(q, sci, earned, success, firstFailStage) {
         loRocket.innerHTML = getRocketArtHtml({ allGreen: true });
       }
     } else {
-      const zone   = _getFailZone(firstFailStage);
-      const frames = FAIL_FRAMES_BY_ZONE[zone];
+      const zone       = _getFailZone(firstFailStage);
+      const failFrames = (typeof STAGE_FAIL_FRAMES !== 'undefined' && STAGE_FAIL_FRAMES[zone]) || [];
+      const lastFrame  = failFrames[failFrames.length - 1];
       loRocket.style.color      = 'var(--red)';
       loRocket.style.textShadow = '0 0 10px rgba(255,23,68,0.6)';
-      loRocket.textContent      = frames[frames.length - 1];
+      loRocket.textContent      = lastFrame ? lastFrame.art.join('\n') : 'MISSION LOST';
     }
   }
 
