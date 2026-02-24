@@ -156,14 +156,14 @@ function _buildParallaxBg(wrapEl, totalMs) {
 
   const rep = (lines, n) => Array.from({ length: n }, () => lines.join('\n')).join('\n');
 
-  // 색상 구간별 분리 (3개 레이어: 속도 다름)
+  // 색상 구간별 분리 (3개 레이어: 속도 다름 — 빠른 지상→느린 우주)
   const layerDefs = [
-    // near: 지상·구름 — 빠름
-    { content: rep(G, 10) + '\n\n' + rep(A, 10) + '\n\n' + rep(C, 8), color: '#1f4a1f', speed: 1.0 },
-    // mid: 구름·대기 — 보통
-    { content: rep(C, 8) + '\n\n' + rep(A, 8) + '\n\n' + rep(U, 10), color: '#1a3a3a', speed: 0.75 },
-    // far: 별 — 느림
-    { content: rep(U, 10) + '\n\n' + rep(L, 20),                      color: '#0f2a1a', speed: 0.5  },
+    // near: 지상·구름 — 매우 빠름 (지상 러시감)
+    { content: rep(G, 15) + '\n\n' + rep(A, 15) + '\n\n' + rep(C, 12), color: '#1f4a1f', speed: 2.5 },
+    // mid: 구름·대기 — 빠름
+    { content: rep(C, 12) + '\n\n' + rep(A, 12) + '\n\n' + rep(U, 15), color: '#1a3a3a', speed: 1.8 },
+    // far: 별 — 보통
+    { content: rep(U, 15) + '\n\n' + rep(L, 30),                        color: '#0f2a1a', speed: 1.0 },
   ];
 
   const bg = document.createElement('div');
@@ -192,11 +192,15 @@ function _buildParallaxBg(wrapEl, totalMs) {
     const progress = Math.min(1, elapsed / totalMs);
     const wrapH    = wrapEl.offsetHeight || 280;
 
+    // Ease-out: 빠른 시작(지상 러시) → 우주에서 감속
+    const easedProgress = 1 - Math.pow(1 - progress, 2);
+
     strips.forEach(({ pre, speed }) => {
       const stripH = pre.scrollHeight || 1000;
       const maxY   = Math.max(0, stripH - wrapH);
+      const effectiveProgress = Math.min(1, easedProgress * speed);
       // 시작: -maxY (스트립 위로 올려 하단=지상 보이게), 끝: 0 (상단=우주 보이게)
-      pre.style.transform = `translateY(${-maxY * (1 - progress * speed)}px)`;
+      pre.style.transform = `translateY(${-maxY * (1 - effectiveProgress)}px)`;
     });
 
     if (progress < 1) requestAnimationFrame(tick);
@@ -465,14 +469,25 @@ function _applyStageFrame(frame, rocketEl, stageInfoEl) {
     return;
   }
 
-  // ── 비-fullScene: 로켓 복원, 보조 텔레메트리에 상태 텍스트 표시 ──
+  // ── 비-fullScene: 로켓 유지 + 프레임 아트를 로켓 아래에 통합 표시 ──
   if (rocketEl) rocketEl.style.display = '';
 
-  // 텔레메트리 보조 패널에 상태 텍스트 표시
-  if (stageInfoEl) {
-    stageInfoEl.textContent = frame.art.join('\n');
-    stageInfoEl.style.color = frameColor;
-    stageInfoEl.style.textShadow = `0 0 4px ${glowColor}`;
+  // 로켓 아래에 이펙트 아트 요소 생성/갱신
+  let effectEl = document.getElementById('launch-effect-art');
+  if (!effectEl) {
+    const sceneEl = document.getElementById('launch-scene');
+    if (sceneEl) {
+      effectEl = document.createElement('pre');
+      effectEl.id = 'launch-effect-art';
+      effectEl.className = 'rocket-art-core';
+      effectEl.style.cssText = 'font-size:13px;line-height:1.4;white-space:pre;text-align:center;margin-top:-2px;';
+      sceneEl.appendChild(effectEl);
+    }
+  }
+  if (effectEl) {
+    effectEl.textContent = frame.art.join('\n');
+    effectEl.style.color = frameColor;
+    effectEl.style.textShadow = `0 0 8px ${glowColor}`;
   }
 
   // 로켓 효과
