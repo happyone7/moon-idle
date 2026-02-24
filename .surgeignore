@@ -8,7 +8,6 @@ scripts
 qa
 Docs
 electron
-audio/bgm
 sfx
 assets/icon.ico
 *.md
