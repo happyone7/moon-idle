@@ -180,11 +180,11 @@ function _buildParallaxBg(wrapEl, totalMs) {
   // 색상 구간별 분리 (3개 레이어: 속도 다름)
   const layerDefs = [
     // near: 지상·구름 — 빠름
-    { content: rep(G, 3) + '\n\n' + rep(A, 4) + '\n\n' + rep(C, 3), color: '#1f4a1f', speed: 1.0 },
+    { content: rep(G, 10) + '\n\n' + rep(A, 10) + '\n\n' + rep(C, 8), color: '#1f4a1f', speed: 1.0 },
     // mid: 구름·대기 — 보통
-    { content: rep(C, 3) + '\n\n' + rep(A, 3) + '\n\n' + rep(U, 4), color: '#1a3a3a', speed: 0.75 },
+    { content: rep(C, 8) + '\n\n' + rep(A, 8) + '\n\n' + rep(U, 10), color: '#1a3a3a', speed: 0.75 },
     // far: 별 — 느림
-    { content: rep(U, 4) + '\n\n' + rep(L, 8),                       color: '#0f2a1a', speed: 0.5  },
+    { content: rep(U, 10) + '\n\n' + rep(L, 20),                      color: '#0f2a1a', speed: 0.5  },
   ];
 
   const bg = document.createElement('div');
@@ -436,8 +436,80 @@ function _setLcStageFail(failStageIdx) {
 }
 
 // ============================================================
-//  LAUNCH ANIMATION — 단계별 성공/실패 판정 시스템
+//  LAUNCH ANIMATION — 단계별 프레임 기반 성공/실패 시스템
+//  각 단계 최소 5초 (총괄PD 지시), 8단계 전체 = 최소 40초
 // ============================================================
+
+/**
+ * 단계 프레임 아트를 로켓 아래 보조 패널에 표시하는 헬퍼
+ * rocketEl: 로켓 <pre>, stageInfoEl: 단계 정보 <pre>
+ */
+function _applyStageFrame(frame, rocketEl, stageInfoEl) {
+  if (!frame) return;
+  // 보조 패널에 단계 아트 표시
+  if (stageInfoEl) {
+    stageInfoEl.textContent = frame.art.join('\n');
+    stageInfoEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
+    // 글로우 효과
+    if (frame.color === '--red') {
+      stageInfoEl.style.textShadow = '0 0 8px rgba(255,23,68,0.6)';
+    } else if (frame.color === '--amber') {
+      stageInfoEl.style.textShadow = '0 0 8px rgba(255,171,0,0.6)';
+    } else if (frame.color === '--cyan') {
+      stageInfoEl.style.textShadow = '0 0 8px rgba(0,229,255,0.5)';
+    } else {
+      stageInfoEl.style.textShadow = '0 0 8px rgba(0,230,118,0.4)';
+    }
+  }
+  // 로켓 효과
+  if (rocketEl) {
+    rocketEl.classList.remove('shake-sm', 'shake-md', 'shake-lg', 'shake-xl',
+      'shaking', 'warning-glow', 'success-glow', 'fail-glow');
+    if (frame.effect === 'shake') {
+      rocketEl.classList.add('shaking');
+    } else if (frame.effect === 'shake-heavy') {
+      rocketEl.classList.add('shake-md');
+    } else if (frame.effect === 'flash') {
+      const animZoneEl = document.getElementById('lc-anim-zone');
+      if (animZoneEl) {
+        animZoneEl.classList.remove('flash-red');
+        void animZoneEl.offsetWidth;
+        animZoneEl.classList.add('flash-red');
+      }
+      rocketEl.classList.add('fail-glow');
+    } else if (frame.effect === 'success-glow') {
+      rocketEl.classList.add('success-glow');
+    } else if (frame.effect === 'glow-amber') {
+      rocketEl.classList.add('warning-glow');
+    } else if (frame.effect === 'rise') {
+      rocketEl.classList.add('launching');
+    }
+  }
+}
+
+/**
+ * 성공 단계의 프레임을 순차 스케줄링하는 헬퍼
+ * baseDelay: 이 단계가 시작되는 ms, frames: 프레임 배열
+ * 반환: 이 단계가 끝나는 ms (baseDelay + 모든 프레임 duration 합)
+ */
+function _scheduleSuccessFrames(stageIdx, baseDelay, frames, rocketEl, stageInfoEl, stageLabelEl) {
+  let offset = 0;
+  frames.forEach((frame, fi) => {
+    setTimeout(() => {
+      _applyStageFrame(frame, rocketEl, stageInfoEl);
+      // 단계 라벨 갱신
+      if (stageLabelEl) {
+        const stgName = STAGE_NAMES[stageIdx] || '';
+        const rate = typeof sci !== 'undefined' ? '' : ''; // sci not in scope, skip
+        stageLabelEl.textContent = stgName;
+        stageLabelEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
+      }
+    }, baseDelay + offset);
+    offset += frame.durationMs;
+  });
+  return offset; // 이 단계의 총 프레임 duration
+}
+
 function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage) {
   launchInProgress = true;
   if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('launch');
@@ -466,17 +538,21 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   } else if (typeof getRocketArtHtml === 'function') {
     launchArt = getRocketArtHtml({ allGreen: true });
   }
-  // 로켓은 절대 중앙 고정 (패럴랙스 배경이 스크롤하며 상승감 연출)
+
+  // 레이아웃: 로켓(중앙 고정) + 단계 라벨(상단) + 단계 정보(하단)
   animWrap.innerHTML = `
-<div id="launch-rocket-cnt" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;text-align:center;">
+<div id="launch-stage-label" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;text-align:center;font-family:'Share Tech Mono',monospace;font-size:20px;letter-spacing:4px;color:var(--green);text-shadow:0 0 12px rgba(0,230,118,0.6);pointer-events:none;"></div>
+<div id="launch-rocket-cnt" style="position:absolute;top:40%;left:50%;transform:translate(-50%,-55%);z-index:2;text-align:center;">
 <pre class="rocket-art-core launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6)">${launchArt}</pre>
-</div>`;
+</div>
+<pre id="launch-stage-info" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:3;font-family:'Courier New',Consolas,monospace;font-size:11px;line-height:1.4;white-space:pre;color:var(--green);text-shadow:0 0 6px rgba(0,230,118,0.4);text-align:center;pointer-events:none;min-height:60px;"></pre>`;
+
+  const rocketEl    = document.getElementById('launch-rocket-pre');
+  const stageInfoEl = document.getElementById('launch-stage-info');
+  const stageLabelEl = document.getElementById('launch-stage-label');
 
   setTimeout(() => {
-    const rocketEl = document.getElementById('launch-rocket-pre');
     if (rocketEl) rocketEl.classList.add('launching');
-    const exhaustEl = document.getElementById('exhaust-art');
-    if (exhaustEl) exhaustEl.style.display = 'block';
   }, 100);
 
   // T+ 타이머
@@ -495,12 +571,12 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   const maxAlt   = Math.floor(sci.altitude);
   // 실패 시: 실패 단계까지의 진행비율로 peak 계산
   const failProgress = firstFailStage >= 0 ? (STAGE_PCT[firstFailStage] || 50) / 100 : 1;
-  // 실패 발생 시점 (ms) — 실패 단계 시작 + duration 절반
+  // 실패 발생 시점 (ms) — 실패 단계 시작 + duration*0.6
   const failTimeMs = firstFailStage >= 0
     ? STAGE_TIMING[firstFailStage].delay + STAGE_TIMING[firstFailStage].duration * 0.6
     : 99999;
   // 성공 시 총 애니메이션 시간
-  const totalAnimMs = success ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration) : (failTimeMs + 2000);
+  const totalAnimMs = success ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration) : (failTimeMs + 6000);
 
   // ── 패럴랙스 배경 (지상→우주 스크롤) ──
   const parallax = _buildParallaxBg(animWrap, totalAnimMs);
@@ -518,7 +594,6 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
     const altBar    = document.getElementById('lc-alt-bar');
 
     if (success) {
-      // 성공: 전 단계에 걸쳐 점진 증가
       const t = Math.min(1, elapsed / totalAnimMs);
       const easedSpeed = t * t;
       const easedAlt   = t < 0.7 ? (t / 0.7) * (t / 0.7) : 1;
@@ -529,7 +604,6 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
       if (speedBar) speedBar.style.width = Math.min(100, (curSpeed / (maxSpeed || 1)) * 100).toFixed(1) + '%';
       if (altBar)   altBar.style.width   = Math.min(100, (curAlt   / (maxAlt   || 1)) * 100).toFixed(1) + '%';
     } else {
-      // 실패: 실패 시점까지 증가 후 빨갛게 감소
       if (elapsed < failTimeMs) {
         const t2  = elapsed / failTimeMs;
         const spd = Math.round(t2 * t2 * maxSpeed * failProgress);
@@ -541,11 +615,10 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
       } else {
         if (!gaugeFailTriggered) {
           gaugeFailTriggered = true;
-          // 게이지 빨간색 전환
           if (speedEl) speedEl.classList.add('gauge-fail');
           if (altEl)   altEl.classList.add('gauge-fail');
         }
-        const t3      = Math.min(1, (elapsed - failTimeMs) / 1200);
+        const t3      = Math.min(1, (elapsed - failTimeMs) / 2000);
         const peakSpd = Math.round(maxSpeed * failProgress);
         const peakAlt = Math.round(maxAlt * failProgress);
         const spd     = Math.round(peakSpd * (1 - t3));
@@ -558,7 +631,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
     }
   }, 50);
 
-  setTimeout(() => clearInterval(gaugeInterval), totalAnimMs + 1500);
+  setTimeout(() => clearInterval(gaugeInterval), totalAnimMs + 2000);
 
   // ── 텔레메트리 로그 ──
   const telemWrap = document.getElementById('telem-wrap');
@@ -569,22 +642,27 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   telemDiv.className = 'telemetry-wrap';
   if (telemWrap) telemWrap.appendChild(telemDiv);
 
-  // ── 단계별 순차 처리 ──
+  // ── 단계별 순차 처리 (프레임 기반) ──
   const stageIds = [4, 5, 6, 7, 8, 9, 10, 11];
 
   stageIds.forEach((stageIdx, i) => {
     const timing = STAGE_TIMING[stageIdx];
-    const roll = stageRolls[i];
     const isFailStage = (stageIdx === firstFailStage);
     const isAfterFail = (firstFailStage >= 0 && stageIdx > firstFailStage);
 
-    // 실패 이후 단계는 스킵 (표시만)
+    // 실패 이후 단계는 스킵
     if (isAfterFail) return;
 
-    // 1. 단계 시작: active 표시 + 텔레메트리
+    // 1. 단계 시작: active 표시 + 텔레메트리 + 단계 라벨
     setTimeout(() => {
       _setLcStage(stageIdx);
-      if (statusTextEl) statusTextEl.textContent = `// ${STAGE_NAMES[stageIdx]}`;
+      const stgName = STAGE_NAMES[stageIdx] || '';
+      if (statusTextEl) statusTextEl.textContent = `// ${stgName}`;
+      if (stageLabelEl) {
+        stageLabelEl.textContent = `[ ${stgName} ]`;
+        stageLabelEl.style.color = 'var(--green)';
+        stageLabelEl.style.textShadow = '0 0 12px rgba(0,230,118,0.6)';
+      }
 
       // 단계 시작 SFX
       playSfx('triangle', 300 + i * 40, 0.06, 0.02, 400 + i * 30);
@@ -602,15 +680,59 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
       if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
     }, timing.delay);
 
-    // 2. 단계 결과 (시작 후 duration*0.6 — 긴장감 유지)
-    const resultDelay = timing.delay + Math.round(timing.duration * 0.6);
+    // 2. 성공 시: 프레임 순차 애니메이션 (단계 시작 300ms 후부터)
+    if (!isFailStage) {
+      const successFrames = (typeof LAUNCH_SUCCESS_FRAMES !== 'undefined' && LAUNCH_SUCCESS_FRAMES[stageIdx]) || [];
+      let frameOffset = 300; // 단계 시작 후 약간 지연
+      successFrames.forEach((frame, fi) => {
+        setTimeout(() => {
+          _applyStageFrame(frame, rocketEl, stageInfoEl);
+          // 단계 라벨 색상 동기화
+          if (stageLabelEl && frame.color) {
+            stageLabelEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
+          }
+        }, timing.delay + frameOffset);
+        frameOffset += frame.durationMs;
+      });
 
+      // 마지막 프레임 후 단계 완료 텔레메트리
+      setTimeout(() => {
+        const doneLine = document.createElement('div');
+        doneLine.className = 'telem-line';
+        doneLine.innerHTML =
+          `<span class="telem-time">${STAGE_TELEM[stageIdx]}</span>` +
+          `<span class="telem-event" style="color:var(--green)">OK — ${STAGE_NAMES[stageIdx]} COMPLETE</span>` +
+          `<span class="telem-pct" style="color:var(--green)">\u2713</span>`;
+        telemDiv.appendChild(doneLine);
+        const hudBody = document.getElementById('lc-hud-body');
+        if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+      }, timing.delay + timing.duration - 200);
+    }
+
+    // 3. 실패 단계: 정상 프레임 일부 → 이상 감지 → 실패 프레임
     if (isFailStage) {
-      // ── 실패 처리 ──
+      const zone = _getFailZone(stageIdx);
+      const classIdFail = gs.assembly.selectedClass || 'vega';
+      const failScale = (typeof FAIL_SCALE !== 'undefined' && FAIL_SCALE[classIdFail]) || { frameDuration: 700, shakeClass: 'shake-sm' };
+
+      // 성공 프레임 첫 1~2개만 짧게 보여주고 (정상 진행 연출)
+      const successFrames = (typeof LAUNCH_SUCCESS_FRAMES !== 'undefined' && LAUNCH_SUCCESS_FRAMES[stageIdx]) || [];
+      const normalFrameCount = Math.min(2, successFrames.length);
+      let frameOffset = 300;
+      for (let fi = 0; fi < normalFrameCount; fi++) {
+        const frame = successFrames[fi];
+        setTimeout(() => {
+          _applyStageFrame(frame, rocketEl, stageInfoEl);
+        }, timing.delay + frameOffset);
+        frameOffset += Math.min(frame.durationMs, 1200); // 실패 전 정상 프레임은 단축
+      }
+
+      // anomaly 감지 시점 (duration * 0.4 이후)
+      const anomalyDelay = timing.delay + Math.round(timing.duration * 0.4);
+
+      // 텔레메트리: ANOMALY DETECTED
       setTimeout(() => {
         const failInfo = STAGE_FAILURES[stageIdx];
-
-        // 텔레메트리: ANOMALY DETECTED
         const anomalyLine = document.createElement('div');
         anomalyLine.className = 'telem-line telem-fail';
         anomalyLine.innerHTML =
@@ -620,16 +742,26 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         telemDiv.appendChild(anomalyLine);
 
         if (statusTextEl) statusTextEl.textContent = '// ANOMALY';
+        if (stageLabelEl) {
+          stageLabelEl.textContent = `!! ${STAGE_NAMES[stageIdx]} ANOMALY !!`;
+          stageLabelEl.style.color = 'var(--amber)';
+          stageLabelEl.style.textShadow = '0 0 12px rgba(255,171,0,0.8)';
+        }
         playSfx('sawtooth', 180, 0.14, 0.05, 80);
+
+        // 로켓 경고 진동
+        if (rocketEl) {
+          rocketEl.classList.remove('launching', 'success-glow');
+          rocketEl.classList.add(failScale.shakeClass, 'warning-glow');
+        }
 
         const hudBody = document.getElementById('lc-hud-body');
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
-      }, resultDelay);
+      }, anomalyDelay);
 
-      // 실패 메시지 (anomaly 후 0.6초)
+      // 실패 확정 (anomaly + 1.2s)
       setTimeout(() => {
         const failInfo = STAGE_FAILURES[stageIdx];
-
         const failLine = document.createElement('div');
         failLine.className = 'telem-line telem-fail';
         failLine.innerHTML =
@@ -639,94 +771,85 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         telemDiv.appendChild(failLine);
 
         playSfx('sawtooth', 140, 0.18, 0.06, 60);
-
-        // 단계 바: 실패 단계부터 전부 fail
         _setLcStageFail(stageIdx);
-
         if (statusTextEl) statusTextEl.textContent = `// ${failInfo.desc}`;
+        if (stageLabelEl) {
+          stageLabelEl.textContent = `// ${failInfo.desc}`;
+          stageLabelEl.style.color = 'var(--red)';
+          stageLabelEl.style.textShadow = '0 0 12px rgba(255,23,68,0.8)';
+        }
 
         const hudBody = document.getElementById('lc-hud-body');
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
-      }, resultDelay + 600);
+      }, anomalyDelay + 1200);
 
-      // MISSION LOST 메시지 (실패 후 1.2초)
+      // D5: 실패 프레임 순차 표시 (존별 4프레임)
+      const stageFailFrames = (typeof STAGE_FAIL_FRAMES !== 'undefined' && STAGE_FAIL_FRAMES[zone]) || [];
+      const failFrameStart = anomalyDelay + 1500;
+      stageFailFrames.forEach((frame, fi) => {
+        setTimeout(() => {
+          _applyStageFrame(frame, rocketEl, stageInfoEl);
+          // 폭발 프레임에서 로켓 아트도 교체
+          if (rocketEl && fi >= 1) {
+            rocketEl.classList.remove('launching', 'warning-glow', failScale.shakeClass);
+            rocketEl.classList.add('exploding', 'fail-glow');
+            // 기존 FAIL_FRAMES_BY_ZONE 아트로 로켓 교체
+            const legacyFrames = FAIL_FRAMES_BY_ZONE[zone] || [];
+            if (legacyFrames[fi - 1]) {
+              rocketEl.textContent = legacyFrames[fi - 1];
+            }
+          }
+          // 대형 로켓 첫 폭발 프레임에서 화면 레드 플래시
+          if (fi === 1) {
+            const animZoneEl = document.getElementById('lc-anim-zone');
+            if (animZoneEl && ['hermes','atlas','selene','artemis'].includes(classIdFail)) {
+              animZoneEl.classList.remove('flash-red');
+              void animZoneEl.offsetWidth;
+              animZoneEl.classList.add('flash-red');
+            }
+          }
+        }, failFrameStart + fi * failScale.frameDuration);
+      });
+
+      // MISSION LOST 메시지
+      const missionLostDelay = failFrameStart + stageFailFrames.length * failScale.frameDuration + 500;
       setTimeout(() => {
         const missionLostLine = document.createElement('div');
         missionLostLine.className = 'telem-line telem-fail';
         missionLostLine.innerHTML =
           `<span class="telem-time">---</span>` +
-          `<span class="telem-event">// MISSION LOST — RUD</span>` +
+          `<span class="telem-event">// MISSION LOST \u2014 RUD</span>` +
           `<span class="telem-pct">0%</span>`;
         telemDiv.appendChild(missionLostLine);
-
         playSfx('sawtooth', 100, 0.22, 0.05, 50);
+
+        if (stageLabelEl) {
+          stageLabelEl.textContent = '// MISSION LOST';
+          stageLabelEl.style.color = 'var(--red)';
+        }
 
         const hudBody = document.getElementById('lc-hud-body');
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
-      }, resultDelay + 1200);
-
-      // D5: 클래스별 실패 프레임 스케일링
-      const zone = _getFailZone(stageIdx);
-      const classIdFail = gs.assembly.selectedClass || 'vega';
-      const failData = (typeof getScaledFailFrames === 'function')
-        ? getScaledFailFrames(classIdFail, zone)
-        : { frames: FAIL_FRAMES_BY_ZONE[zone], frameDuration: 700, shakeClass: 'shake-sm' };
-
-      // D5: 경고 프레임 (anomaly 시점) — 진동 + 앰버 경고
-      setTimeout(() => {
-        const rocketEl = document.getElementById('launch-rocket-pre');
-        if (rocketEl) {
-          rocketEl.classList.remove('launching', 'success-glow');
-          rocketEl.classList.add(failData.shakeClass, 'warning-glow');
-        }
-      }, resultDelay);
-
-      failData.frames.forEach((frame, fi) => {
-        setTimeout(() => {
-          const rocketEl = document.getElementById('launch-rocket-pre');
-          if (rocketEl) {
-            rocketEl.classList.remove('launching', 'warning-glow', failData.shakeClass);
-            rocketEl.classList.add('exploding', 'fail-glow');
-            rocketEl.style.color = 'var(--red)';
-            rocketEl.style.textShadow = '0 0 12px rgba(255,23,68,0.8)';
-            rocketEl.textContent = frame;
-          }
-          const exhaustEl = document.getElementById('exhaust-art');
-          if (exhaustEl) exhaustEl.style.display = 'none';
-          // D5: 대형 로켓(hermes+) 첫 폭발 프레임에서 화면 레드 플래시
-          if (fi === 0) {
-            const animZoneEl = document.getElementById('lc-anim-zone');
-            if (animZoneEl && ['hermes','atlas','selene','artemis'].includes(classIdFail)) {
-              animZoneEl.classList.remove('flash-red');
-              void animZoneEl.offsetWidth; // reflow 강제
-              animZoneEl.classList.add('flash-red');
-            }
-          }
-        }, resultDelay + 600 + fi * failData.frameDuration);
-      });
+      }, missionLostDelay);
     }
   });
 
   // ── 결과 패널 표시 ──
-  // 성공: 마지막 단계 완료 후
-  // 실패: 실패 단계의 애니메이션 완료 후
-  // D5: 클래스별 frameDuration 기반 실패 애니메이션 종료 시점 계산
+  // 성공: 마지막 단계 완료 + 여유
+  // 실패: 실패 단계의 전체 애니메이션 종료 후
   const failClassId = gs.assembly.selectedClass || 'vega';
   const failFd = (typeof FAIL_SCALE !== 'undefined' && FAIL_SCALE[failClassId])
     ? FAIL_SCALE[failClassId].frameDuration : 700;
-  const failFrameCount = firstFailStage >= 0
-    ? (FAIL_FRAMES_BY_ZONE[_getFailZone(firstFailStage)] || []).length : 0;
+  const failZoneFrames = firstFailStage >= 0
+    ? ((typeof STAGE_FAIL_FRAMES !== 'undefined' && STAGE_FAIL_FRAMES[_getFailZone(firstFailStage)]) || []) : [];
   const failAnimEndMs = firstFailStage >= 0
-    ? STAGE_TIMING[firstFailStage].delay + Math.round(STAGE_TIMING[firstFailStage].duration * 0.6) + 600 + failFrameCount * failFd + 400
+    ? STAGE_TIMING[firstFailStage].delay + Math.round(STAGE_TIMING[firstFailStage].duration * 0.4) + 1500 + failZoneFrames.length * failFd + 1500
     : 0;
   const resultPanelDelay = success
-    ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration + 200)
+    ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration + 500)
     : failAnimEndMs;
 
-  const failDesc = firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : '';
-  const failStageName = firstFailStage >= 0 ? STAGE_NAMES[firstFailStage] : '';
-
-  // 결과 오버레이 직접 표시 (하단 launch-result 패널 없이 로켓 유지)
+  // 결과 오버레이 표시
   setTimeout(() => {
     if (statusTextEl) statusTextEl.textContent = success ? '// MISSION COMPLETE' : '// MISSION LOST';
     if (success) _setLcStage(12); // 모든 단계 done (LANDING 포함)
