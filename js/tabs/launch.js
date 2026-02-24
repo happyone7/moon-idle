@@ -75,8 +75,13 @@ const STAGE_PCT = { 4: 5, 5: 18, 6: 35, 7: 50, 8: 65, 9: 78, 10: 90, 11: 100 };
 // 클래스별 성취 메시지 (성공 오버레이 / 결과 패널용)
 const CLASS_ACHIEVEMENTS = {
   vega: {
-    title:  '// KÁRMÁN LINE REACHED',
-    flavor: '인류의 위대한 첫걸음\n카르만 라인 — 우주의 문턱을 돌파했습니다',
+    title:  '// FIRST FLIGHT',
+    flavor: '인류의 첫 비행이 성공했습니다\n고도 10km — 우주를 향한 첫걸음',
+    next:   '다음 목표: 카르만 선 돌파 (Argo 클래스)',
+  },
+  argo: {
+    title:  '// KÁRMÁN LINE CROSSED',
+    flavor: '카르만 선을 돌파했습니다\n100km — 우주의 경계를 넘었습니다',
     next:   '다음 목표: 지구 궤도 진입 (Hermes 클래스)',
   },
   hermes: {
@@ -216,8 +221,8 @@ function _buildParallaxBg(wrapEl, totalMs) {
     strips.forEach(({ pre, speed }) => {
       const stripH = pre.scrollHeight || 1000;
       const maxY   = Math.max(0, stripH - wrapH);
-      // 시작: maxY (지상 아래), 끝: 0 (우주 위) — 위로 스크롤
-      pre.style.transform = `translateY(${maxY * (1 - progress * speed)}px)`;
+      // 시작: -maxY (스트립 위로 올려 하단=지상 보이게), 끝: 0 (상단=우주 보이게)
+      pre.style.transform = `translateY(${-maxY * (1 - progress * speed)}px)`;
     });
 
     if (progress < 1) requestAnimationFrame(tick);
@@ -228,7 +233,7 @@ function _buildParallaxBg(wrapEl, totalMs) {
     const wrapH = wrapEl.offsetHeight || 280;
     strips.forEach(({ pre }) => {
       const stripH = pre.scrollHeight || 1000;
-      pre.style.transform = `translateY(${Math.max(0, stripH - wrapH)}px)`;
+      pre.style.transform = `translateY(${-Math.max(0, stripH - wrapH)}px)`;
     });
     requestAnimationFrame(tick);
   });
@@ -308,6 +313,15 @@ function _runPreLaunchIgnition(onComplete) {
   }, 3400);
 }
 
+// 클래스별 maxStage 조회 헬퍼
+function _getClassMaxStage(classId) {
+  if (typeof ROCKET_CLASSES !== 'undefined') {
+    const cls = ROCKET_CLASSES.find(c => c.id === classId);
+    if (cls && cls.maxStage) return cls.maxStage;
+  }
+  return 11; // fallback: LANDING까지
+}
+
 function executeLaunch() {
   if (launchInProgress) return;
   // 발사 가능 조건: 부품+연료 100%
@@ -321,18 +335,21 @@ function executeLaunch() {
   const rv = gs.assembly.rollVariance;
   const sci = getRocketScience(q.id, classId, rv);
 
+  // 클래스별 최대 도달 단계
+  const maxStage = _getClassMaxStage(classId);
+
   // ── D5: 단계별 성공 확률 계산 (4대 스펙 기반) ──
   // 첫 발사(gs.launches === 0)는 전 단계 자동 성공
   const isFirstLaunch = gs.launches === 0;
   const stageRolls = [];
   let firstFailStage = -1;
-  for (let i = 4; i <= 11; i++) {
+  for (let i = 4; i <= maxStage; i++) {
     const rate = isFirstLaunch ? 100 : sci.stageRates[i];
     const success = Math.random() * 100 < rate;
     stageRolls.push({ stage: i, success, rate });
     if (!success && firstFailStage === -1) firstFailStage = i;
   }
-  const rollSuccess = firstFailStage === -1; // 전 단계 통과 시 성공
+  const rollSuccess = firstFailStage === -1; // maxStage까지 전부 통과 시 성공
   const earned = rollSuccess ? getExplorationReward(q.id) : 0;
 
   // 발사 후 항상 부품+연료 전체 초기화 (성공/실패 무관)
@@ -451,6 +468,44 @@ function _setLcStageFail(failStageIdx) {
  */
 function _applyStageFrame(frame, rocketEl, stageInfoEl) {
   if (!frame) return;
+
+  // 풀씬 프레임: 로켓 숨기고 stageInfoEl에 전체 씬 표시 (중앙 배치)
+  if (frame.fullScene) {
+    if (rocketEl) rocketEl.style.display = 'none';
+    if (stageInfoEl) {
+      stageInfoEl.textContent = frame.art.join('\n');
+      stageInfoEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
+      stageInfoEl.style.position = 'absolute';
+      stageInfoEl.style.top = '50%';
+      stageInfoEl.style.left = '50%';
+      stageInfoEl.style.transform = 'translate(-50%, -50%)';
+      stageInfoEl.style.bottom = '';
+      stageInfoEl.style.fontSize = '13px';
+      stageInfoEl.style.lineHeight = '1.4';
+      // 글로우
+      if (frame.color === '--cyan') {
+        stageInfoEl.style.textShadow = '0 0 8px rgba(0,229,255,0.5)';
+      } else if (frame.color === '--amber') {
+        stageInfoEl.style.textShadow = '0 0 8px rgba(255,171,0,0.6)';
+      } else {
+        stageInfoEl.style.textShadow = '0 0 8px rgba(0,230,118,0.4)';
+      }
+    }
+    return;
+  }
+
+  // 비-풀씬: 로켓 복원 + stageInfoEl 위치 원복
+  if (rocketEl) rocketEl.style.display = '';
+  if (stageInfoEl) {
+    stageInfoEl.style.position = 'absolute';
+    stageInfoEl.style.top = '';
+    stageInfoEl.style.left = '50%';
+    stageInfoEl.style.transform = 'translateX(-50%)';
+    stageInfoEl.style.bottom = '12px';
+    stageInfoEl.style.fontSize = '';
+    stageInfoEl.style.lineHeight = '';
+  }
+
   // 보조 패널에 단계 아트 표시
   if (stageInfoEl) {
     stageInfoEl.textContent = frame.art.join('\n');
@@ -557,8 +612,10 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   const failTimeMs = firstFailStage >= 0
     ? STAGE_TIMING[firstFailStage].delay + STAGE_TIMING[firstFailStage].duration * 0.6
     : 99999;
-  // 성공 시 총 애니메이션 시간
-  const totalAnimMs = success ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration) : (failTimeMs + 6000);
+  // 클래스별 최대 단계
+  const maxStage = _getClassMaxStage(gs.assembly.selectedClass || 'vega');
+  // 성공 시 총 애니메이션 시간 (maxStage 기준)
+  const totalAnimMs = success ? (STAGE_TIMING[maxStage].delay + STAGE_TIMING[maxStage].duration) : (failTimeMs + 6000);
 
   // ── 패럴랙스 배경 (지상→우주 스크롤) ──
   const parallax = _buildParallaxBg(animWrap, totalAnimMs);
@@ -624,8 +681,9 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   telemDiv.className = 'telemetry-wrap';
   if (telemWrap) telemWrap.appendChild(telemDiv);
 
-  // ── 단계별 순차 처리 (프레임 기반) ──
-  const stageIds = [4, 5, 6, 7, 8, 9, 10, 11];
+  // ── 단계별 순차 처리 (프레임 기반, maxStage까지만) ──
+  const stageIds = [];
+  for (let si = 4; si <= maxStage; si++) stageIds.push(si);
 
   stageIds.forEach((stageIdx, i) => {
     const timing = STAGE_TIMING[stageIdx];
@@ -828,13 +886,13 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
     ? STAGE_TIMING[firstFailStage].delay + Math.round(STAGE_TIMING[firstFailStage].duration * 0.4) + 1500 + failZoneFrames.length * failFd + 1500
     : 0;
   const resultPanelDelay = success
-    ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration + 500)
+    ? (STAGE_TIMING[maxStage].delay + STAGE_TIMING[maxStage].duration + 500)
     : failAnimEndMs;
 
   // 결과 오버레이 표시
   setTimeout(() => {
     if (statusTextEl) statusTextEl.textContent = success ? '// MISSION COMPLETE' : '// MISSION LOST';
-    if (success) _setLcStage(12); // 모든 단계 done (LANDING 포함)
+    if (success) _setLcStage(maxStage + 1); // 모든 단계 done (maxStage 포함)
     clearInterval(timerInterval);
     launchInProgress = false;
     if (success) {

@@ -576,12 +576,12 @@ const MILESTONES = [
 //  unlock: 해금 조건 (null = 즉시 해금)
 // ============================================================
 const ROCKET_CLASSES = [
-  { id:'vega',    name:'베가',       nameEn:'VEGA',     icon:'[V1]', totalMassKg:850,    thrustKN:18,    ispSec:285, deltaVMs:2840,  unlock:null,      modelNum:1, desc:'고도 10km 도달. 동체+탱크+엔진 3부품 구성.' },
-  { id:'argo',    name:'아르고',     nameEn:'ARGO',     icon:'[V2]', totalMassKg:3200,   thrustKN:78,    ispSec:305, deltaVMs:4200,  unlock:'phase_1', modelNum:2, desc:'카르만 선(100km) 도달. 스러스터 추가 구성.' },
-  { id:'hermes',  name:'헤르메스',   nameEn:'HERMES',   icon:'[V3]', totalMassKg:12000,  thrustKN:310,   ispSec:320, deltaVMs:5800,  unlock:'phase_2', modelNum:3, desc:'저궤도(LEO) 진입. 2단 + 페이로드.' },
-  { id:'atlas',   name:'아틀라스',   nameEn:'ATLAS',    icon:'[V4]', totalMassKg:45000,  thrustKN:1200,  ispSec:335, deltaVMs:7200,  unlock:'phase_3', modelNum:4, desc:'중궤도(MEO) 진입. 1단 재사용 구조.' },
-  { id:'selene',  name:'셀레네',     nameEn:'SELENE',   icon:'[V5]', totalMassKg:120000, thrustKN:3500,  ispSec:350, deltaVMs:9800,  unlock:'phase_4', modelNum:5, desc:'달 궤도 진입(TLI). 3단 + 달 궤도선.' },
-  { id:'artemis', name:'아르테미스', nameEn:'ARTEMIS',  icon:'[V6]', totalMassKg:350000, thrustKN:7500,  ispSec:365, deltaVMs:12500, unlock:'phase_5', modelNum:6, desc:'달 착륙. 2단 초대형 완전 재사용.' },
+  { id:'vega',    name:'베가',       nameEn:'VEGA',     icon:'[V1]', totalMassKg:850,    thrustKN:18,    ispSec:285, deltaVMs:2840,  unlock:null,      modelNum:1, maxStage:5,  desc:'고도 10km 도달. 동체+탱크+엔진 3부품 구성.' },
+  { id:'argo',    name:'아르고',     nameEn:'ARGO',     icon:'[V2]', totalMassKg:3200,   thrustKN:78,    ispSec:305, deltaVMs:4200,  unlock:'phase_1', modelNum:2, maxStage:6,  desc:'카르만 선(100km) 도달. 스러스터 추가 구성.' },
+  { id:'hermes',  name:'헤르메스',   nameEn:'HERMES',   icon:'[V3]', totalMassKg:12000,  thrustKN:310,   ispSec:320, deltaVMs:5800,  unlock:'phase_2', modelNum:3, maxStage:8,  desc:'저궤도(LEO) 진입. 2단 + 페이로드.' },
+  { id:'atlas',   name:'아틀라스',   nameEn:'ATLAS',    icon:'[V4]', totalMassKg:45000,  thrustKN:1200,  ispSec:335, deltaVMs:7200,  unlock:'phase_3', modelNum:4, maxStage:9,  desc:'중궤도(MEO) 진입. 1단 재사용 구조.' },
+  { id:'selene',  name:'셀레네',     nameEn:'SELENE',   icon:'[V5]', totalMassKg:120000, thrustKN:3500,  ispSec:350, deltaVMs:9800,  unlock:'phase_4', modelNum:5, maxStage:10, desc:'달 궤도 진입(TLI). 3단 + 달 궤도선.' },
+  { id:'artemis', name:'아르테미스', nameEn:'ARTEMIS',  icon:'[V6]', totalMassKg:350000, thrustKN:7500,  ispSec:365, deltaVMs:12500, unlock:'phase_5', modelNum:6, maxStage:11, desc:'달 착륙. 2단 초대형 완전 재사용.' },
 ];
 
 // ============================================================

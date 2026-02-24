@@ -519,11 +519,14 @@ function _execAutoLaunch() {
   const sci = typeof getRocketScience === 'function' ? getRocketScience(q.id, classId, rv) : null;
   if (!sci) return;
 
+  // 클래스별 최대 단계
+  const maxStage = (typeof _getClassMaxStage === 'function') ? _getClassMaxStage(classId) : 11;
+
   // 성공률 체크
   if (sci.overallRate < (mc.minOverallRate || 0)) return;
-  // 단계별 성공률 체크
+  // 단계별 성공률 체크 (maxStage까지만)
   if (mc.minStageRate > 0 && sci.stageRates) {
-    for (let i = 4; i <= 11; i++) {
+    for (let i = 4; i <= maxStage; i++) {
       if ((sci.stageRates[i]||0) < mc.minStageRate) return;
     }
   }
@@ -531,15 +534,15 @@ function _execAutoLaunch() {
   const expectedEP = typeof getExplorationReward === 'function' ? getExplorationReward(q.id) : 0;
   if (expectedEP < (mc.minExpectedEP || 0)) return;
 
-  // 발사 실행 (D5 per-stage — 저장된 rv 재사용)
+  // 발사 실행 (D5 per-stage — 저장된 rv 재사용, maxStage까지만)
   const sciRoll = sci;
   const isFirstLaunch = gs.launches === 0;
   let firstFailStage = -1;
-  for (let i = 4; i <= 11; i++) {
+  for (let i = 4; i <= maxStage; i++) {
     const rate = isFirstLaunch ? 100 : sciRoll.stageRates[i];
     if (Math.random() * 100 >= rate) { firstFailStage = i; break; }
   }
-  const rollSuccess = firstFailStage === -1;
+  const rollSuccess = firstFailStage === -1; // maxStage까지 전부 통과 시 성공
   const earned = rollSuccess ? (typeof getExplorationReward === 'function' ? getExplorationReward(q.id) : 0) : 0;
 
   // 부품+연료 초기화
