@@ -1372,14 +1372,17 @@ function openSpecPanel(bld) {
   let html = `<div class="sp2-head">${wkIcon}&nbsp;직원 전문화</div><div class="sp2-body">`;
   unlockedRoles.forEach(r => {
     const count = specs[r.id] || 0;
-    const canPromote = assigned >= 1;
+    const moneyCost = (r.cost && r.cost.money) || 0;
+    const canAffordMoney = moneyCost <= 0 || (gs.res.money || 0) >= moneyCost;
+    const canPromote = assigned >= 1 && canAffordMoney;
+    const costFmt = moneyCost > 0 ? ` · $${typeof fmt === 'function' ? fmt(moneyCost) : moneyCost.toLocaleString()}` : '';
     const descHtml = r.desc.replace(/\n/g, '<br>');
     html += `<div class="sp2-role">
       <div class="sp2-role-icon ${r.iconCls}"></div>
       <div class="sp2-role-info">
         <div class="sp2-role-name">${r.name} <span class="sp2-count">(${count}명)</span></div>
         <div class="sp2-role-desc">${descHtml}</div>
-        <div class="sp2-cost">${wkIcon}&thinsp;×1
+        <div class="sp2-cost">${wkIcon}&thinsp;×1${costFmt}
           <button class="sp2-btn${canPromote ? '' : ' dis'}" onclick="specClick('${bld.id}','${r.id}')">[전직]</button>
         </div>
       </div>
@@ -1412,10 +1415,17 @@ function specClick(bldId, specId) {
     notify('연구 필요 — 연구탭에서 먼저 해금하세요', 'red');
     return;
   }
+  // 돈 비용 검사
+  const moneyCost = (role && role.cost && role.cost.money) || 0;
+  if (moneyCost > 0 && (gs.res.money || 0) < moneyCost) {
+    notify(`자금 부족 — $${typeof fmt === 'function' ? fmt(moneyCost) : moneyCost.toLocaleString()} 필요`, 'red');
+    return;
+  }
   if (typeof promoteToSpecialist !== 'function' || !promoteToSpecialist(bldId, specId)) {
     notify('배치 직원이 없습니다 — 먼저 직원을 고용하세요', 'red');
     return;
   }
+  if (moneyCost > 0) gs.res.money = Math.max(0, (gs.res.money || 0) - moneyCost);
   notify(`${role ? role.name : specId} 전직 완료`, 'green');
   playSfx('triangle', 600, 0.1, 0.04, 800);
   const el = document.querySelector('.world-bld[data-bid="' + bldId + '"]');

@@ -49,12 +49,12 @@ const BLD_STAFF_ICONS = {
 
 const SPECIALIST_ROLES = {
   research_lab: [
-    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 포인트 생산 +25%/명',    effect:'res_research_mult', val:0.25, unlockResearch:'spec_experiment' },
-    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 자원 생산 +8%/명',       effect:'all_prod_mult',     val:0.08, unlockResearch:'spec_analyst'    },
+    { id:'experiment', name:'실험 전문가',   iconCls:'sp-exp',  desc:'연구 포인트 생산 +25%/명',    effect:'res_research_mult', val:0.25, unlockResearch:'spec_experiment', cost:{money:50000} },
+    { id:'analyst',    name:'데이터 분석가', iconCls:'sp-data', desc:'모든 자원 생산 +8%/명',       effect:'all_prod_mult',     val:0.08, unlockResearch:'spec_analyst',    cost:{money:80000} },
   ],
   ops_center: [
-    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%/명',          effect:'money_mult',    val:0.20, unlockResearch:'spec_sales_pro' },
-    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'(미구현) 건물 유지비 -15%/명', effect:'upkeep_reduce', val:0.15, unlockResearch:'spec_sysadmin'  },
+    { id:'sales_pro',  name:'영업 전문가',   iconCls:'sp-sales', desc:'자금 수입 +20%/명',          effect:'money_mult',    val:0.20, unlockResearch:'spec_sales_pro', cost:{money:30000} },
+    { id:'sysadmin',   name:'시스템 관리자', iconCls:'sp-sys',   desc:'(미구현) 건물 유지비 -15%/명', effect:'upkeep_reduce', val:0.15, unlockResearch:'spec_sysadmin',  cost:{money:40000} },
   ],
 };
 
