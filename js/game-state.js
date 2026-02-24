@@ -665,6 +665,16 @@ function _getRequiredParts() {
   });
 }
 
+/** 로켓 완성 시 rollVariance 자동 생성 — 이미 있으면 무시 */
+function ensureRollVariance() {
+  if (typeof getRocketCompletion !== 'function') return;
+  if (getRocketCompletion() < 100) return;
+  if (gs.assembly && gs.assembly.rollVariance) return; // 이미 존재
+  ensureAssemblyState();
+  const qid = gs.assembly.selectedQuality || 'proto';
+  gs.assembly.rollVariance = generateRollVariance(qid);
+}
+
 /** 공정 완료도 기반 로켓 전체 완성도 (0-100) */
 function getRocketCompletion() {
   const mk1Parts = PARTS.filter(p => !p.minQuality);
@@ -722,7 +732,10 @@ function updateMfgJobs(now) {
       }
     }
   });
-  if (changed) renderAll();
+  if (changed) {
+    ensureRollVariance();  // D5: 부품 완료 시 로켓 100%이면 rollVariance 확정
+    renderAll();
+  }
 }
 
 /** 연료 주입 시작/중단 토글 */
@@ -780,6 +793,7 @@ function tickFuelInjection(dt) {
     gs.fuelInjection = F.maxPct;
     gs.fuelInjecting = false;
     gs.fuelLoaded = true;  // 연료 주입 100% → 자동으로 발사 준비 플래그 설정
+    ensureRollVariance();  // D5: 완성 즉시 rollVariance 확정
     notify('✓ 연료 주입 완료 (100%)', 'green');
     playSfx('sine', 660, 0.09, 0.02, 880);
   }

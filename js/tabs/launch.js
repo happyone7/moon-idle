@@ -316,7 +316,9 @@ function executeLaunch() {
 
   const q = getQuality(gs.assembly.selectedQuality || 'proto');
   const classId = gs.assembly.selectedClass || 'vega';
-  const rv = generateRollVariance(q.id);
+  // D5: 저장된 rollVariance 사용 (없으면 안전 생성)
+  if (!gs.assembly.rollVariance) gs.assembly.rollVariance = generateRollVariance(q.id);
+  const rv = gs.assembly.rollVariance;
   const sci = getRocketScience(q.id, classId, rv);
 
   // ── D5: 단계별 성공 확률 계산 (4대 스펙 기반) ──
@@ -338,6 +340,8 @@ function executeLaunch() {
   gs.fuelInjection = 0;
   gs.fuelLoaded = false;
   gs.fuelInjecting = false;
+  // D5: rollVariance 초기화 — 다음 로켓에서 새로 생성
+  if (gs.assembly) gs.assembly.rollVariance = null;
   // 진행 중인 제작 공정도 초기화
   gs.mfgActive = {};
 
@@ -354,6 +358,7 @@ function executeLaunch() {
     reliability: sci.reliability.toFixed(1),
     overallRate: sci.overallRate.toFixed(1),
     specs: sci.specs,
+    rollVariance: sci.rollVariance,  // D5 9.4: 발사 기록에 편차 저장
     stageRates: sci.stageRates,
     success: rollSuccess,
     earned: earned,
@@ -961,7 +966,9 @@ function renderLaunchTab() {
   let q = null, sci = null, earned = 0;
   if (canLaunch) {
     q      = getQuality(gs.assembly.selectedQuality || 'proto');
-    sci    = getRocketScience(q.id, gs.assembly.selectedClass || 'vega');
+    // D5: 저장된 rollVariance를 사용하여 실제 스펙 표시
+    const rvPre = (gs.assembly && gs.assembly.rollVariance) || undefined;
+    sci    = getRocketScience(q.id, gs.assembly.selectedClass || 'vega', rvPre);
     earned = getExplorationReward(q.id);
   }
 

@@ -388,9 +388,10 @@ function renderAssemblyTab() {
   let checklist = document.getElementById('parts-checklist');
   if (checklist) checklist.innerHTML = partsHtml;
 
-  // 5. Science box
+  // 5. Science box — D5: 저장된 rollVariance가 있으면 실제 스펙 표시
   const q = getQuality(gs.assembly.selectedQuality);
-  const sci = getRocketScience(q.id);
+  const rvAsm = (gs.assembly && gs.assembly.rollVariance) || undefined;
+  const sci = getRocketScience(q.id, gs.assembly.selectedClass || 'vega', rvAsm);
   const reward = getExplorationReward(q.id);
   const asmCost = getAssemblyCost(q.id);
   const asmCostStr = getCostStr(asmCost);

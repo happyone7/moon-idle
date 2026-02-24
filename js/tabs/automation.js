@@ -511,7 +511,12 @@ function _execAutoLaunch() {
   const q = typeof getQuality === 'function' ? getQuality(gs.assembly.selectedQuality || 'proto') : null;
   if (!q) return;
   const classId = gs.assembly.selectedClass || 'vega';
-  const sci = typeof getRocketScience === 'function' ? getRocketScience(q.id, classId) : null;
+  // D5: 저장된 rollVariance 사용 (없으면 안전 생성)
+  if (gs.assembly && !gs.assembly.rollVariance && typeof generateRollVariance === 'function') {
+    gs.assembly.rollVariance = generateRollVariance(q.id);
+  }
+  const rv = (gs.assembly && gs.assembly.rollVariance) || {};
+  const sci = typeof getRocketScience === 'function' ? getRocketScience(q.id, classId, rv) : null;
   if (!sci) return;
 
   // 성공률 체크
@@ -526,9 +531,8 @@ function _execAutoLaunch() {
   const expectedEP = typeof getExplorationReward === 'function' ? getExplorationReward(q.id) : 0;
   if (expectedEP < (mc.minExpectedEP || 0)) return;
 
-  // 발사 실행 (D5 per-stage)
-  const rv = typeof generateRollVariance === 'function' ? generateRollVariance(q.id) : {};
-  const sciRoll = typeof getRocketScience === 'function' ? getRocketScience(q.id, classId, rv) : sci;
+  // 발사 실행 (D5 per-stage — 저장된 rv 재사용)
+  const sciRoll = sci;
   const isFirstLaunch = gs.launches === 0;
   let firstFailStage = -1;
   for (let i = 4; i <= 11; i++) {
@@ -544,6 +548,8 @@ function _execAutoLaunch() {
   gs.fuelLoaded = false;
   gs.fuelInjecting = false;
   gs.mfgActive = {};
+  // D5: rollVariance 초기화
+  if (gs.assembly) gs.assembly.rollVariance = null;
 
   gs.launches++;
   if (rollSuccess) gs.successfulLaunches = (gs.successfulLaunches||0) + 1;
@@ -553,7 +559,8 @@ function _execAutoLaunch() {
     no: gs.launches, quality: q.name, qualityId: q.id, rocketClass: classId,
     deltaV: sciRoll.deltaV.toFixed(2), altitude: rollSuccess ? Math.floor(sciRoll.altitude) : 0,
     reliability: sciRoll.reliability.toFixed(1), overallRate: sciRoll.overallRate.toFixed(1),
-    specs: sciRoll.specs, stageRates: sciRoll.stageRates,
+    specs: sciRoll.specs, rollVariance: sciRoll.rollVariance,  // D5 9.4
+    stageRates: sciRoll.stageRates,
     success: rollSuccess, earned, failStage: firstFailStage, date: `D+${gs.launches*2}`,
   });
 
