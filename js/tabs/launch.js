@@ -1048,25 +1048,24 @@ function _renderSpecPanel(sci) {
     `<span class="lc-spec-overall-val ${oc}">${overall.toFixed(1)}%</span>` +
     `</div>`;
 
-  // 단계별 성공률
+  // 단계별 성공률 — maxStage까지만 표시
   html += '<div class="lc-spec-stages-hd">// 단계별</div>';
   html += '<div class="lc-spec-stages">';
 
-  // 3줄: LFT MXQ MECO / SEP ORB TLI / LOI LAND
-  const rows = [[4,5,6], [7,8,9], [10,11]];
-  rows.forEach((row, ri) => {
-    row.forEach((sid, si) => {
-      const rate = sci.stageRates[sid];
-      const sc = rate >= 95 ? 'green' : rate >= 90 ? 'amber' : 'red';
-      html += `<span class="lc-spec-stage-item">` +
-        `<span class="lc-spec-stage-name">${STAGE_ABBR[sid]}</span> ` +
-        `<span class="lc-spec-stage-val ${sc}">${rate.toFixed(1)}</span>` +
-        `</span>`;
-      if (si < row.length - 1) {
-        html += `<span class="lc-spec-sep"> &gt; </span>`;
-      }
-    });
-    if (ri < rows.length - 1) html += '<br>';
+  const maxStage = sci.maxStage || 11;
+  const visibleStages = [];
+  for (let i = 4; i <= maxStage; i++) visibleStages.push(i);
+
+  visibleStages.forEach((sid, si) => {
+    const rate = sci.stageRates[sid];
+    const sc = rate >= 95 ? 'green' : rate >= 90 ? 'amber' : 'red';
+    html += `<span class="lc-spec-stage-item">` +
+      `<span class="lc-spec-stage-name">${STAGE_ABBR[sid]}</span> ` +
+      `<span class="lc-spec-stage-val ${sc}">${rate.toFixed(1)}</span>` +
+      `</span>`;
+    if (si < visibleStages.length - 1) html += ' <span class="lc-spec-stage-sep">&gt;</span> ';
+    // 3개마다 줄바꿈
+    if ((si + 1) % 3 === 0 && si < visibleStages.length - 1) html += '<br>';
   });
   html += '</div>';
 

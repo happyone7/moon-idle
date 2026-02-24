@@ -510,15 +510,20 @@ function getRocketScience(qualityId, classId, rollVariance) {
   // D5: 4대 스펙 계산
   const rv = rollVariance || { structural:0, propulsion:0, avionics:0, thermal:0 };
   const specs = computeSpecs(qualityId, cid, rv);
+
+  // cid로 maxStage 조회 — overallRate는 실제 발사 단계(4~maxStage)만 반영
+  const clsData = ROCKET_CLASSES.find(c => c.id === cid);
+  const maxStage = (clsData && clsData.maxStage) ? clsData.maxStage : 11;
+
   const stageRates = {};
   let overallRate = 1;
   for (let i = 4; i <= 11; i++) {
     stageRates[i] = getStageSuccessRate(i, specs);
-    overallRate *= stageRates[i] / 100;
+    if (i <= maxStage) overallRate *= stageRates[i] / 100;
   }
   overallRate *= 100;
 
-  return { deltaV, twr, reliability, altitude, specs, rollVariance: rv, stageRates, overallRate };
+  return { deltaV, twr, reliability, altitude, specs, rollVariance: rv, stageRates, overallRate, maxStage };
 }
 
 function getExplorationReward(qualityId) {
