@@ -38,16 +38,17 @@ const STAGE_NAMES = {
   8: 'ORBIT', 9: 'TLI', 10: 'LOI', 11: 'LANDING'
 };
 
-// 단계별 타이밍 (성공 시 총 ~8초)
+// 단계별 타이밍 — 각 단계 최소 5000ms (총괄PD 지시: 단계별 최소 5초)
+// 8단계 전체 = 최소 40초 발사 시퀀스
 const STAGE_TIMING = {
-  4:  { delay: 0,    duration: 800  },
-  5:  { delay: 800,  duration: 1000 },
-  6:  { delay: 1800, duration: 800  },
-  7:  { delay: 2600, duration: 800  },
-  8:  { delay: 3400, duration: 1000 },
-  9:  { delay: 4400, duration: 1000 },
-  10: { delay: 5400, duration: 1000 },
-  11: { delay: 6400, duration: 1200 },
+  4:  { delay: 0,     duration: 5000 },  // LIFTOFF  (0~5s)
+  5:  { delay: 5000,  duration: 5000 },  // MAX-Q    (5~10s)
+  6:  { delay: 10000, duration: 5000 },  // MECO     (10~15s)
+  7:  { delay: 15000, duration: 5000 },  // STG SEP  (15~20s)
+  8:  { delay: 20000, duration: 5500 },  // ORBIT    (20~25.5s)
+  9:  { delay: 25500, duration: 5500 },  // TLI      (25.5~31s)
+  10: { delay: 31000, duration: 5500 },  // LOI      (31~36.5s)
+  11: { delay: 36500, duration: 6000 },  // LANDING  (36.5~42.5s)
 };
 
 // 단계별 텔레메트리 라벨
@@ -240,8 +241,8 @@ function _buildParallaxBg(wrapEl, totalMs) {
 //  발사 전 엔진 스타트업 연출: 하단 UI 숨기고 점화 애니메이션
 // ============================================================
 function _runPreLaunchIgnition(onComplete) {
-  // 1. 하단 UI 즉시 숨기기 (체크리스트, 상태, 완성도, 커밋박스, 스테이지바)
-  ['lc-checklist', 'lc-status-panel', 'lc-readiness', 'lc-commit-box', 'lc-stagebar'].forEach(id => {
+  // 1. 하단 UI 즉시 숨기기 (체크리스트, 상태, 완성도, 커밋박스 — stagebar는 유지)
+  ['lc-checklist', 'lc-status-panel', 'lc-readiness', 'lc-commit-box'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -721,48 +722,15 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
   const resultPanelDelay = success
     ? (STAGE_TIMING[11].delay + STAGE_TIMING[11].duration + 200)
     : failAnimEndMs;
-  const overlayDelay = resultPanelDelay + 600;
 
   const failDesc = firstFailStage >= 0 ? STAGE_FAILURES[firstFailStage].desc : '';
   const failStageName = firstFailStage >= 0 ? STAGE_NAMES[firstFailStage] : '';
 
+  // 결과 오버레이 직접 표시 (하단 launch-result 패널 없이 로켓 유지)
   setTimeout(() => {
-    const lr = document.getElementById('launch-result');
-    if (lr) {
-      lr.classList.add('show');
-      const lrTitle = document.getElementById('lr-title');
-      if (lrTitle) {
-        lrTitle.textContent = success
-          ? (CLASS_ACHIEVEMENTS[classId] || CLASS_ACHIEVEMENTS.artemis).title
-          : `// 발사 실패 — ${failStageName}`;
-      }
-      const lrStats = document.getElementById('lr-stats');
-      if (lrStats) lrStats.innerHTML =
-        `<span class="launch-result-stat-lbl">기체</span><span class="launch-result-stat-val">${q.name}</span>` +
-        `<span class="launch-result-stat-lbl">\u0394v</span><span class="launch-result-stat-val">${sci.deltaV.toFixed(2)} km/s</span>` +
-        `<span class="launch-result-stat-lbl">TWR</span><span class="launch-result-stat-val">${sci.twr.toFixed(2)}</span>` +
-        `<span class="launch-result-stat-lbl">최고도</span><span class="launch-result-stat-val">${success ? Math.floor(sci.altitude) : '---'} km</span>` +
-        `<span class="launch-result-stat-lbl">성공률</span><span class="launch-result-stat-val">${sci.overallRate.toFixed(1)}%</span>` +
-        (success ? '' : `<span class="launch-result-stat-lbl">실패 단계</span><span class="launch-result-stat-val" style="color:var(--red)">${failStageName} — ${failDesc}</span>`);
-      const lrMs = document.getElementById('lr-ms');
-      if (lrMs) {
-        if (success) {
-          const achLr = CLASS_ACHIEVEMENTS[classId] || CLASS_ACHIEVEMENTS.artemis;
-          lrMs.innerHTML = `<span style="color:var(--green);">${achLr.flavor.split('\n')[0]}</span>` +
-            (earned > 0 ? `<br><span style="color:var(--amber);">EP +${earned}</span>` : '');
-          lrMs.style.color = '';
-        } else {
-          lrMs.textContent = `${failStageName}에서 실패 — ${failDesc}`;
-          lrMs.style.color = 'var(--red)';
-        }
-      }
-    }
     if (statusTextEl) statusTextEl.textContent = success ? '// MISSION COMPLETE' : '// MISSION LOST';
     if (success) _setLcStage(12); // 모든 단계 done (LANDING 포함)
     clearInterval(timerInterval);
-  }, resultPanelDelay);
-
-  setTimeout(() => {
     launchInProgress = false;
     if (success) {
       playLaunchSfx();
@@ -771,7 +739,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
     }
     if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.stopEvent();
     _showLaunchOverlay(q, sci, earned, success, firstFailStage);
-  }, overlayDelay);
+  }, resultPanelDelay);
 }
 
 function _showLaunchOverlay(q, sci, earned, success, firstFailStage) {
@@ -1052,8 +1020,13 @@ function renderLaunchTab() {
   if (lcGuideEl) {
     if (!canLaunch && readinessPct < 100) {
       lcGuideEl.style.display = '';
-      const hasAssembly = gs.unlocks && gs.unlocks['tab_assembly'];
-      if (hasAssembly) {
+      // 조립 가능 부품이 하나라도 있으면 조립동으로, 없으면 생산허브로
+      const reqPartsForGuide = _getRequiredParts();
+      const hasAnyParts = reqPartsForGuide.some(pt =>
+        (gs.parts && (gs.parts[pt.id] || 0) > 0) ||
+        (gs.mfgActive && gs.mfgActive[pt.id])
+      );
+      if (hasAnyParts) {
         lcGuideEl.innerHTML =
           `<div style="font-size:11px;color:var(--cyan);margin-bottom:6px;">` +
           `&#9654; 조립동에서 부품 제작과 연료 주입을 완료하세요.</div>` +

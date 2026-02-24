@@ -365,3 +365,443 @@ function getScaledFailFrames(classId, zone) {
     shakeClass: scale.shakeClass,
   };
 }
+
+// ============================================================
+//  LAUNCH STAGE ANIMATION FRAMES — 단계별 성공/실패 프레임
+//  각 단계 5초 이상 — 프레임 3~4개 × 1.2~1.7초 간격
+//  { art: string[], color: CSS var, effect: string, durationMs: number }
+// ============================================================
+
+/** 단계별 성공 애니메이션 프레임 (로켓 클래스에 무관한 공용 프레임) */
+const LAUNCH_SUCCESS_FRAMES = {
+  // ── LIFTOFF (stage 4) — 점화/이륙 ──
+  4: [
+    { art: [
+      '   IGNITION SEQUENCE START',
+      '',
+      '     .|. .|. .|.',
+      '      | . | . |',
+    ], color: '--amber', effect: 'none', durationMs: 1200 },
+    { art: [
+      '   ~~ LIFTOFF ~~',
+      '',
+      '     \\| | |/',
+      '    \\\\| | |//',
+      '   \\\\\\| | |///',
+    ], color: '--amber', effect: 'glow-amber', durationMs: 1300 },
+    { art: [
+      '     \\| | |/',
+      '    \\\\| | |//',
+      '   \\\\\\| | |///',
+      '  \\\\\\\\| | |////',
+      '',
+      '  TOWER CLEAR',
+    ], color: '--green', effect: 'rise', durationMs: 1300 },
+    { art: [
+      '    \\\\| | |//',
+      '   \\\\\\| | |///',
+      '  \\\\\\\\| | |////',
+      ' \\\\\\\\\\| | |/////',
+      '',
+      '  ALTITUDE: NOMINAL',
+    ], color: '--green', effect: 'rise', durationMs: 1200 },
+  ],
+
+  // ── MAX-Q (stage 5) — 최대 동압 ──
+  5: [
+    { art: [
+      '          MAX-Q',
+      '    동압: ████████░░',
+      '',
+      '    VIBRATION ALERT',
+      '    ▓▓▓▓▓▓▓▓░░░░',
+    ], color: '--amber', effect: 'shake', durationMs: 1500 },
+    { art: [
+      '          MAX-Q',
+      '    동압: ██████████',
+      '',
+      '    STRUCTURAL LOAD',
+      '    ▓▓▓▓▓▓▓▓▓▓▓▓',
+    ], color: '--amber', effect: 'shake-heavy', durationMs: 1500 },
+    { art: [
+      '          MAX-Q',
+      '    동압: ████░░░░░░',
+      '',
+      '    NOMINAL',
+      '    MAX-Q 통과',
+    ], color: '--green', effect: 'none', durationMs: 1200 },
+    { art: [
+      '    동압 감소',
+      '',
+      '    고도: 상승 중',
+      '    속도: NOMINAL',
+    ], color: '--green', effect: 'none', durationMs: 800 },
+  ],
+
+  // ── MECO (stage 6) — 주엔진 차단 ──
+  6: [
+    { art: [
+      '    ENGINE BURN',
+      '    ████████████',
+      '',
+      '    연소: 정상 진행',
+      '    추력: NOMINAL',
+    ], color: '--amber', effect: 'none', durationMs: 1500 },
+    { art: [
+      '    ENGINE BURN',
+      '    ████████████',
+      '',
+      '    MECO 준비',
+      '    T+ COUNTDOWN',
+    ], color: '--amber', effect: 'none', durationMs: 1200 },
+    { art: [
+      '        MECO',
+      '      엔진 차단',
+      '',
+      '     .  .  .',
+      '    관성 비행 전환',
+    ], color: '--green', effect: 'none', durationMs: 1300 },
+    { art: [
+      '    1단 연소 종료',
+      '',
+      '    관성 비행 중',
+      '    V = NOMINAL',
+    ], color: '--green', effect: 'none', durationMs: 1000 },
+  ],
+
+  // ── STG SEP (stage 7) — 단분리 ──
+  7: [
+    { art: [
+      '    SEPARATION',
+      '    분리 시퀀스...',
+      '',
+      '   ====X X====',
+      '    폭발 볼트 작동',
+    ], color: '--amber', effect: 'none', durationMs: 1300 },
+    { art: [
+      '    STG SEP OK',
+      '    2단 점화',
+      '',
+      '      \\| |/',
+      '     \\\\| |//',
+      '',
+      '           v v v',
+      '         [STAGE 1]',
+    ], color: '--green', effect: 'none', durationMs: 1500 },
+    { art: [
+      '    2ND STAGE',
+      '    NOMINAL',
+      '',
+      '      \\| |/',
+      '     \\\\| |//',
+    ], color: '--green', effect: 'rise', durationMs: 1200 },
+    { art: [
+      '    2단 비행 정상',
+      '',
+      '    고도: 상승 중',
+      '    속도: 증가 중',
+    ], color: '--green', effect: 'none', durationMs: 1000 },
+  ],
+
+  // ── ORBIT (stage 8) — 궤도 진입 ──
+  8: [
+    { art: [
+      '                        *',
+      ' .  *  .             . /|\\',
+      '*      .  *          [====]',
+      ' . * .   .            \\|/',
+      '  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+      '   ~~ EARTH HORIZON ~~',
+    ], color: '--cyan', effect: 'none', durationMs: 1600 },
+    { art: [
+      '  ORBIT INSERT',
+      '  속도: 7.8 km/s',
+      '  고도: 200 km',
+      '',
+      '       ---->  *',
+      '             /|\\',
+      '  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+      '   ~~ LEO 200km ~~',
+    ], color: '--cyan', effect: 'none', durationMs: 1500 },
+    { art: [
+      ' .  *  .  .  *',
+      '*      .  *',
+      ' . * .   .    ---->  *',
+      '  .  * .            /|\\',
+      '  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~',
+      '    ORBIT ACHIEVED',
+    ], color: '--green', effect: 'none', durationMs: 1400 },
+    { art: [
+      '  궤도 진입 성공',
+      '',
+      '  LEO 안정 궤도',
+      '  V = 7.8 km/s',
+    ], color: '--green', effect: 'none', durationMs: 1000 },
+  ],
+
+  // ── TLI (stage 9) — 달 전이 궤도 ──
+  9: [
+    { art: [
+      '                         .  (  )',
+      ' .  *  .                (    )',
+      '*      .     ===>  *   (  @  )',
+      ' . * .              /|\\  (  )',
+      ' ~~~~~~~~~~           ()',
+      '  ~~ EARTH ~~',
+      '',
+      '  TLI BURN',
+    ], color: '--amber', effect: 'none', durationMs: 1600 },
+    { art: [
+      '                         .  (  )',
+      '                        (    )',
+      '    *         ===>  *  (  @  )',
+      '   (O)             /|\\  (  )',
+      '   EARTH             ()',
+      '',
+      '  V = 10.9 km/s',
+    ], color: '--amber', effect: 'none', durationMs: 1500 },
+    { art: [
+      '                    .  (  )',
+      '                   (    )',
+      '  *          * -> (  @  )',
+      ' (O)              (  )',
+      ' EARTH             ()',
+      '',
+      ' --- TLI COMPLETE ---',
+    ], color: '--green', effect: 'none', durationMs: 1400 },
+    { art: [
+      '  달 전이 궤도 진입 성공',
+      '',
+      '  지구→달 전이 중',
+      '  ETA: 3일',
+    ], color: '--green', effect: 'none', durationMs: 1000 },
+  ],
+
+  // ── LOI (stage 10) — 달 궤도 포획 ──
+  10: [
+    { art: [
+      '      .  (    )',
+      '     (        )',
+      '    (  MOON    )    *  <---',
+      '     (        )    /|\\',
+      '      (      )    [==]',
+      '       (  )',
+      '',
+      '  LOI BURN — 감속 연소 중',
+    ], color: '--cyan', effect: 'none', durationMs: 1600 },
+    { art: [
+      '      .  (    )',
+      '     (        )',
+      '    (  MOON    )   <--- *',
+      '     (        )       /|\\',
+      '      (      )',
+      '       (  )',
+      '',
+      '  감속 연소 진행 중...',
+    ], color: '--cyan', effect: 'none', durationMs: 1500 },
+    { art: [
+      '      .  (    )',
+      '     (   *     )',
+      '    (  /|\\      )',
+      '     ( [==]    )',
+      '      (      )',
+      '       (  )',
+      '',
+      '  LOI COMPLETE',
+    ], color: '--green', effect: 'none', durationMs: 1400 },
+    { art: [
+      '  달 궤도 포획 성공',
+      '',
+      '  달 궤도 안정화',
+      '  착륙 준비 시작',
+    ], color: '--green', effect: 'none', durationMs: 1000 },
+  ],
+
+  // ── LANDING (stage 11) — 달 착륙 ──
+  11: [
+    { art: [
+      '      *',
+      '     /|\\',
+      '    / | \\    DESCENT',
+      '   [=====]   고도: 15km',
+      '      |      속도: 1.7km/s',
+      '      v',
+      '  ___________',
+      ' /  .  o  .  \\',
+      '/ .  MOON  .  \\',
+    ], color: '--cyan', effect: 'none', durationMs: 1500 },
+    { art: [
+      '     /|\\',
+      '    / | \\    RETRO BURN',
+      '   [=====]   고도: 500m',
+      '     |||     속도: 50m/s',
+      '    \\|||/',
+      '   \\\\|||//',
+      '  ___________',
+      ' /  .  o  .  \\',
+      '/ .  MOON  .  \\',
+    ], color: '--amber', effect: 'none', durationMs: 1500 },
+    { art: [
+      '     /|\\',
+      '    / | \\    TOUCHDOWN',
+      '   [=====]   고도: 0m',
+      '   _|   |_   속도: 0m/s',
+      '  / |   | \\',
+      ' ___________',
+      ' .  .  o  .  .',
+      '   . MOON .',
+    ], color: '--green', effect: 'none', durationMs: 1500 },
+    { art: [
+      '                _',
+      '     /|\\       | |',
+      '    / | \\      | |   MISSION',
+      '   [=====]-----\' |   COMPLETE',
+      '   _|   |_       |',
+      '  / |   | \\      |',
+      ' ___________________________',
+      ' .  . o .  .  . o .  .  .',
+      '   . . LUNAR BASE .  .',
+      '',
+      ' ** TOUCHDOWN CONFIRMED **',
+    ], color: '--green', effect: 'success-glow', durationMs: 1500 },
+  ],
+};
+
+// ── 단계별 실패 애니메이션 프레임 (존별) ──
+// 기존 FAIL_FRAMES_BY_ZONE은 3프레임인데, 5초 이상을 채우기 위해
+// 경고 → 이상 감지 → 폭발/분해 → 잔해 4프레임 구조로 확장
+const STAGE_FAIL_FRAMES = {
+  // ground zone (LIFTOFF 4, MAX-Q 5) — 지상/저고도 폭발
+  ground: [
+    { art: [
+      '    !! WARNING !!',
+      '',
+      '  .|!  !  !|.',
+      '  ENGINE ANOMALY',
+    ], color: '--amber', effect: 'shake', durationMs: 1500 },
+    { art: [
+      '   \\  * . /',
+      ' . * \u2554\u2550\u2557 * .',
+      '* \u2591\u2591\u2591\u2551!\u2551\u2591\u2591\u2591 *',
+      ' \u2591\u2592\u2593\u2593\u2588\u2588\u2588\u2593\u2593\u2592\u2591',
+      '  \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591',
+      '',
+      '  !!FIRE ON PAD!!',
+    ], color: '--red', effect: 'flash', durationMs: 1500 },
+    { art: [
+      '    .   \u00b7   .',
+      '  \u00b7   .   \u00b7',
+      '   \u2591  \u2592\u2593\u2592  \u2591',
+      ' \u2591\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591\u2591',
+      ' \u2500\u2500\u2500\u2550\u2550\u2564\u2550\u2550\u2500\u2500\u2500',
+      ' \u2593\u2593 PAD DAMAGED \u2593\u2593',
+    ], color: '--red', effect: 'none', durationMs: 1200 },
+    { art: [
+      '  .  \u00b7  .  \u00b7',
+      ' \u00b7  .  \u00b7  .',
+      '   .  .  .  .',
+      '',
+      '  ~~ RUD CONFIRMED ~~',
+    ], color: '--green-dim', effect: 'none', durationMs: 800 },
+  ],
+  // high_atm zone (MECO 6, STG SEP 7) — 고고도 분해
+  high_atm: [
+    { art: [
+      '    !! ALERT !!',
+      '',
+      '   구조 이상 감지',
+      '   SEPARATION FAIL',
+    ], color: '--amber', effect: 'shake', durationMs: 1500 },
+    { art: [
+      '    .  *  .',
+      '   * . | . *',
+      '  / * .|. * \\',
+      ' *\u2591\u2591\u2592\u2593\u2588|\u2588\u2593\u2592\u2591\u2591*',
+      '  \u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2593\u2592\u2591',
+      '',
+      ' ~~ BREAKUP ~~',
+    ], color: '--red', effect: 'flash', durationMs: 1500 },
+    { art: [
+      '  .  \u00b7  .  \u00b7  .',
+      ' \u00b7  . \u00b7 . \u00b7  .',
+      '   \u2591 . \u2592 . \u2591',
+      '  \u2591  \u2592\u2593\u2592  \u2591',
+      '',
+      ' // DEBRIS //',
+    ], color: '--red', effect: 'none', durationMs: 1200 },
+    { art: [
+      '   .  .  .  .',
+      '  \u00b7  .  \u00b7  .',
+      '    .  \u00b7  .',
+      '',
+      '  동체 공중분해 확인',
+    ], color: '--green-dim', effect: 'none', durationMs: 800 },
+  ],
+  // space zone (ORBIT 8, TLI 9) — 우주 엔진 고장
+  space: [
+    { art: [
+      '   .  *  .',
+      '  *       *',
+      ' . [ENGINE] .',
+      ' .  WARNING  .',
+      '  *   !   *',
+    ], color: '--amber', effect: 'none', durationMs: 1500 },
+    { art: [
+      '   .  \u00b7  .',
+      ' \u00b7         \u00b7',
+      '  . \u2591\u2592\u2593\u2592\u2591 .',
+      '  \u2591\u2591 !! \u2591\u2591',
+      '',
+      ' ~~ ENGINE LOST ~~',
+    ], color: '--red', effect: 'none', durationMs: 1500 },
+    { art: [
+      '   .  \u00b7  .',
+      ' \u00b7         \u00b7',
+      '  . \u2591\u2592\u2593\u2592\u2591 .',
+      '',
+      ' ~~ DRIFT ~~',
+      '  신호 감쇠 중',
+    ], color: '--red', effect: 'none', durationMs: 1200 },
+    { art: [
+      '  \u00b7    .    \u00b7',
+      '.    \u00b7    .',
+      '   . \u00b7 . \u00b7',
+      '',
+      ' // LOST //',
+    ], color: '--green-dim', effect: 'none', durationMs: 800 },
+  ],
+  // lunar zone (LOI 10, LANDING 11) — 달 충돌
+  lunar: [
+    { art: [
+      '   . * .',
+      '  *     *',
+      ' .  \\|/  .',
+      ' . --*-- .',
+      '',
+      ' !! ANOMALY !!',
+    ], color: '--amber', effect: 'shake', durationMs: 1500 },
+    { art: [
+      ' \u2591\u2592\u2593\u2588\u2588\u2588\u2593\u2592\u2591',
+      '\u2591\u2592\u2593\u2588\u2588\u2588\u2588\u2588\u2593\u2592\u2591',
+      ' \u2591\u2592\u2593\u2588\u2588\u2588\u2593\u2592\u2591',
+      '',
+      ' ~~ IMPACT ~~',
+    ], color: '--red', effect: 'flash', durationMs: 1500 },
+    { art: [
+      '   .  \u00b7  .',
+      ' _____________',
+      '/  .  \u00b7  .  \\',
+      '/ \u00b7   RUD   . \\',
+      '\\ .  \u00b7  .  \u00b7 /',
+      ' \\_____\u25cf_____/',
+    ], color: '--red', effect: 'none', durationMs: 1200 },
+    { art: [
+      ' _____________',
+      '/  .  \u00b7  .  \\',
+      '/ \u00b7  DEBRIS  . \\',
+      '\\ .  \u00b7  .  \u00b7 /',
+      ' \\_____________/',
+      '  // MOON //',
+    ], color: '--green-dim', effect: 'none', durationMs: 800 },
+  ],
+};
