@@ -487,29 +487,6 @@ function _applyStageFrame(frame, rocketEl, stageInfoEl) {
   }
 }
 
-/**
- * 성공 단계의 프레임을 순차 스케줄링하는 헬퍼
- * baseDelay: 이 단계가 시작되는 ms, frames: 프레임 배열
- * 반환: 이 단계가 끝나는 ms (baseDelay + 모든 프레임 duration 합)
- */
-function _scheduleSuccessFrames(stageIdx, baseDelay, frames, rocketEl, stageInfoEl, stageLabelEl) {
-  let offset = 0;
-  frames.forEach((frame, fi) => {
-    setTimeout(() => {
-      _applyStageFrame(frame, rocketEl, stageInfoEl);
-      // 단계 라벨 갱신
-      if (stageLabelEl) {
-        const stgName = STAGE_NAMES[stageIdx] || '';
-        const rate = typeof sci !== 'undefined' ? '' : ''; // sci not in scope, skip
-        stageLabelEl.textContent = stgName;
-        stageLabelEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
-      }
-    }, baseDelay + offset);
-    offset += frame.durationMs;
-  });
-  return offset; // 이 단계의 총 프레임 duration
-}
-
 function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage) {
   launchInProgress = true;
   if (typeof BGM !== 'undefined' && gs.settings.sound) BGM.playEvent('launch');
