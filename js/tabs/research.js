@@ -292,6 +292,8 @@ function renderResearchTab() {
   let branchesHtml = '';
   RESEARCH_BRANCHES.forEach(branch => {
     if (branch.locked) return;  // locked 브랜치 전체 스킵
+    // unlockReq: 해당 연구가 완료되어야 섹션 표시 (진행 공개)
+    if (branch.unlockReq && !(gs.upgrades && gs.upgrades[branch.unlockReq])) return;
 
     let cardsHtml = '';
 
