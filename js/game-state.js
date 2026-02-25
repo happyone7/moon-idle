@@ -1515,58 +1515,7 @@ function getRocketArtHtml(opts) {
     return `<span style="${color}">${lines.join('\n')}</span>`;
   }
 
-  // 폴백: 레거시 단일 아트
-  const _partDone = id => {
-    const p = (typeof PARTS !== 'undefined') ? PARTS.find(x => x.id === id) : null;
-    return p && (gs.parts[id] || 0) >= p.cycles;
-  };
-  const cls = (base, doneCheck) => {
-    if (opts.allGreen) return base + ' go';
-    return base + (doneCheck ? ' done' : '');
-  };
-  const noseClass = cls('r-nose',     _partDone('hull'));
-  const payClass  = cls('r-payload',  _partDone('propellant'));
-  const aviClass  = cls('r-avionics', _partDone('propellant'));
-  const engClass  = cls('r-engine',   _partDone('engine'));
-  const exhClass  = cls('r-exhaust',  _partDone('engine') && (gs.fuelInjection || 0) >= 100);
-
-  const rc = (typeof ROCKET_CLASSES !== 'undefined')
-    ? ROCKET_CLASSES.find(c => c.id === selClass) || ROCKET_CLASSES[0]
-    : null;
-  const className = rc ? rc.name : 'VEGA';
-  const thrustLabel = rc ? String(rc.thrustKN) + ' kN' : '18 kN';
-  const namePadded = ' ' + _padEndVisual(className, 11) + ' ';
-  const thrustInner = ' ' + thrustLabel.padEnd(7) + ' ';
-
-  return `<span class="${noseClass}">           *
-          /|\\
-         / | \\
-        /  |  \\
-       /   |   \\
-    /${namePadded}\\
-   /_______________\\</span>
-<span class="${payClass}">   |  [PAYLOAD]    |
-   |  ___________  |
-   |  |  NAV    |  |
-   |  |  SYS    |  |
-   |  |_________|  |</span>
-<span class="${aviClass}">   |               |
-   |  [AVIONICS]   |
-   |  ___________  |
-   |  | O  O  O |  |
-   |  |  GYRO   |  |
-   |  |_________|  |</span>
-<span class="${engClass}">   |               |
-   | [PROPULSION]  |
-   |  ___________  |
-   |  |         |  |
-   |  |${thrustInner}|  |
-   |  |_________|  |
-   |_______________|</span>
-<span class="${exhClass}">  / [LOX]   [RP-1]  \\
- /___________________\\
-       |   |   |
-      /|   |   |\\
-     /_|___|___|_\\</span>`;
+  // 최소 폴백 (ROCKET_ASCII 미로드 시)
+  return '<span style="color:var(--green)">[ ROCKET ]</span>';
 }
 

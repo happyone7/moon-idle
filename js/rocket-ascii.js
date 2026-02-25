@@ -377,9 +377,10 @@ const FAIL_SCALE = {
   artemis: { frameDuration: 800, shakeClass: 'shake-xl' },
 };
 
-/** 클래스별 실패 프레임 + 스케일링 데이터 반환 */
+/** 클래스별 실패 프레임 + 스케일링 데이터 반환 (D5: STAGE_FAIL_FRAMES 사용) */
 function getScaledFailFrames(classId, zone) {
-  const baseFrames = FAIL_FRAMES_BY_ZONE[zone] || FAIL_FRAMES_BY_ZONE.ground;
+  const baseFrames = (typeof STAGE_FAIL_FRAMES !== 'undefined' && STAGE_FAIL_FRAMES[zone])
+    || (typeof STAGE_FAIL_FRAMES !== 'undefined' && STAGE_FAIL_FRAMES.ground) || [];
   const scale = FAIL_SCALE[classId] || FAIL_SCALE.vega;
   return {
     frames: baseFrames,
