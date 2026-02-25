@@ -7,7 +7,7 @@ description: |
   Excludes: game logic code, UI, asset creation
 skills:
   - MOONIDLE-dev-protocol
-  - web-build-deploy
+  - deploy
 ---
 
 # Build Engineer

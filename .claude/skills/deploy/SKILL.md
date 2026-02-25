@@ -1,12 +1,11 @@
 ---
-name: web-build-deploy
+name: deploy
 description: |
-  Web project deploy pipeline: surge.sh beta, GitHub Pages live.
-  Triggers: "/deploy beta", "/deploy live", "배포"
-  Excludes: game logic, UI, asset creation
+  Web project deploy: /deploy beta (surge.sh) or /deploy live (GitHub Pages).
+argument-hint: "beta|live"
 ---
 
-# Web Build & Deploy
+# Web Deploy
 
 ## Purpose
 Deploy web projects to beta (surge.sh) or live (GitHub Pages). Project-specific settings are stored in `references/deploy-config.md`.
