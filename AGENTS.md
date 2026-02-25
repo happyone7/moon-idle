@@ -25,7 +25,7 @@ A skill is a set of local instructions stored in a `SKILL.md` file.
 - moonidle-concept-art-direction: MoonIdle-specific visual direction for concept art and mockup asset packs. (file: .agent/skills/moonidle-concept-art-direction/SKILL.md)
 - svg-keyvisual-illustration: Web-native key visual (원화) and concept art illustration using SVG + CSS. Use for game splash screens, atmospheric environment art, hero key visuals, and promotional illustrations. (file: .agent/skills/svg-keyvisual-illustration/SKILL.md)
 - moonidle-agent-skill-standards: Quality standards for creating/modifying agents and skills. (file: .claude/skills/moonidle-agent-skill-standards/SKILL.md)
-- moonidle-build-deploy: Build/deploy workflow for Unity + SteamCMD pipelines. (file: .claude/skills/moonidle-build-deploy/SKILL.md)
+- web-build-deploy: Web deploy pipeline — surge.sh beta, GitHub Pages live. (file: .claude/skills/web-build-deploy/SKILL.md)
 - moonidle-dev-protocol: Team development protocol (git rules, prefab/scene ownership). (file: .claude/skills/moonidle-dev-protocol/SKILL.md)
 - moonidle-pm-sync: Sprint/progress synchronization workflow. (file: .claude/skills/moonidle-pm-sync/SKILL.md)
 - moonidle-qa-ops: QA gate/checklist operations for integration readiness. (file: .claude/skills/moonidle-qa-ops/SKILL.md)

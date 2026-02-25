@@ -162,9 +162,9 @@ primordial-station/.worktrees/wt-dev-build\       ← dev/build
 ---
 
 ## 빌드/배포 정책
-- 빌드 절차는 `moonidle-build-deploy` 스킬 참조
-- **프로토타입 기간: 빌드 전 반드시 총괄PD 승인 필요**
-- **로컬 브라우저 테스트 통과 후에만 GitHub Pages / Steam 업로드 진행**
+- 배포 절차는 `web-build-deploy` 스킬 참조 (`/deploy beta` 또는 `/deploy live`)
+- **프로토타입 기간: 배포 전 반드시 총괄PD 승인 필요**
+- **로컬 브라우저 테스트 통과 후에만 GitHub Pages 배포 진행**
 
 ---
 
