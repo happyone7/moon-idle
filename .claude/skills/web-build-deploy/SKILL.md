@@ -1,19 +1,19 @@
 ---
-name: deploy
+name: web-build-deploy
 description: |
-  Web project deploy: /deploy beta (surge.sh) or /deploy live (GitHub Pages).
+  Web project deploy: /web-build-deploy beta (surge.sh) or /web-build-deploy live (GitHub Pages).
 argument-hint: "beta|live"
 ---
 
-# Web Deploy
+# Web Build & Deploy
 
 ## Purpose
 Deploy web projects to beta (surge.sh) or live (GitHub Pages). Project-specific settings are stored in `references/deploy-config.md`.
 
 ## Usage
 ```
-/deploy beta    — surge.sh 베타 배포
-/deploy live    — GitHub Pages 라이브 배포
+/web-build-deploy beta    — surge.sh 베타 배포
+/web-build-deploy live    — GitHub Pages 라이브 배포
 ```
 
 ## Procedure

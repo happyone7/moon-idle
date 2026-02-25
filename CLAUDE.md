@@ -162,9 +162,10 @@ primordial-station/.worktrees/wt-dev-build\       ← dev/build
 ---
 
 ## 빌드/배포 정책
-- 배포 절차는 `deploy` 스킬 참조 (`/deploy beta` 또는 `/deploy live`)
+- 웹 배포: `web-build-deploy` 스킬 (`/web-build-deploy beta` 또는 `/web-build-deploy live`)
+- Steam 배포: `web-steam-build-deploy` 스킬 (`/web-steam-build-deploy dev|qa|release`)
 - **프로토타입 기간: 배포 전 반드시 총괄PD 승인 필요**
-- **로컬 브라우저 테스트 통과 후에만 GitHub Pages 배포 진행**
+- **로컬 브라우저 테스트 통과 후에만 GitHub Pages / Steam 배포 진행**
 
 ---
 
