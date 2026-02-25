@@ -491,32 +491,38 @@ function _applyStageFrame(frame, rocketEl, stageInfoEl) {
   }
 
   // 로켓 효과 (D5 5.4 참조)
-  if (rocketEl) {
-    rocketEl.classList.remove('shake-sm', 'shake-md', 'shake-lg', 'shake-xl',
-      'shaking', 'warning-glow', 'success-glow', 'fail-glow', 'launching');
+  const shakeWrapEl = document.getElementById('launch-shake-wrap');
 
-    if (frame.effect && frame.effect.startsWith('shake')) {
-      // shake, shake-sm, shake-md, shake-lg, shake-xl 지원
-      const shakeClass = frame.effect === 'shake' ? 'shaking' : frame.effect;
-      rocketEl.classList.add(shakeClass);
+  if (shakeWrapEl) {
+    shakeWrapEl.classList.remove('shake-sm', 'shake-md', 'shake-lg', 'shake-xl', 'shaking');
+  }
+  if (rocketEl) {
+    rocketEl.classList.remove('warning-glow', 'success-glow', 'fail-glow', 'launching');
+  }
+
+  if (frame.effect) {
+    if (frame.effect.startsWith('shake')) {
+      if (shakeWrapEl) {
+        const shakeClass = frame.effect === 'shake' ? 'shaking' : frame.effect;
+        shakeWrapEl.classList.add(shakeClass);
+      }
     } else if (frame.effect === 'shake-heavy') {
-      rocketEl.classList.add('shake-md');
+      if (shakeWrapEl) shakeWrapEl.classList.add('shake-md');
     } else if (frame.effect === 'flash') {
-      // 화면 전체 플래시 (D5 5.6)
       const animZoneEl = document.getElementById('lc-anim-zone');
       if (animZoneEl) {
         animZoneEl.classList.remove('flash-red');
-        void animZoneEl.offsetWidth; // Reflow
+        void animZoneEl.offsetWidth;
         animZoneEl.classList.add('flash-red');
       }
-      rocketEl.classList.add('fail-glow');
-      rocketEl.classList.add('shake-xl'); // 폭발 시 최대 진동
+      if (rocketEl) rocketEl.classList.add('fail-glow');
+      if (shakeWrapEl) shakeWrapEl.classList.add('shake-xl');
     } else if (frame.effect === 'success-glow') {
-      rocketEl.classList.add('success-glow');
+      if (rocketEl) rocketEl.classList.add('success-glow');
     } else if (frame.effect === 'glow-amber') {
-      rocketEl.classList.add('warning-glow');
+      if (rocketEl) rocketEl.classList.add('warning-glow');
     } else if (frame.effect === 'rise') {
-      rocketEl.classList.add('launching');
+      if (rocketEl) rocketEl.classList.add('launching');
     }
   }
 }
@@ -552,13 +558,18 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
 
   // 레이아웃: 씬(중앙, 로켓+이펙트 통합) + 단계 라벨(상단) + 텔레메트리(하단 보조)
   animWrap.innerHTML = `
-<div id="launch-stage-label" style="position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;text-align:center;font-family:'Share Tech Mono',monospace;font-size:20px;letter-spacing:4px;color:var(--green);text-shadow:0 0 12px rgba(0,230,118,0.6);pointer-events:none;"></div>
+<div id="launch-stage-label" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3;text-align:center;font-family:'Share Tech Mono',monospace;font-size:22px;letter-spacing:5px;color:var(--green);text-shadow:0 0 15px rgba(0,230,118,0.7);pointer-events:none;text-transform:uppercase;"></div>
 <div id="launch-scene" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;text-align:center;">
-<pre class="rocket-art-core launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6);font-size:13px;line-height:1.35;white-space:pre;">${launchArt}</pre>
+  <div id="launch-shake-wrap" style="display:inline-block;">
+    <pre class="rocket-art-core launch-rocket-ascii" id="launch-rocket-pre" style="color:#00e676;text-shadow:0 0 8px rgba(0,230,118,0.6);font-size:13px;line-height:1.35;white-space:pre;">${launchArt}</pre>
+  </div>
 </div>
-<pre id="launch-telem-info" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:3;font-family:'Courier New',Consolas,monospace;font-size:10px;line-height:1.4;white-space:pre;color:var(--green-mid);text-shadow:0 0 4px rgba(0,230,118,0.2);text-align:center;pointer-events:none;"></pre>`;
+<div id="launch-telem-overlay" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:3;width:100%;text-align:center;pointer-events:none;">
+  <pre id="launch-telem-info" style="font-family:'Courier New',Consolas,monospace;font-size:11px;line-height:1.4;white-space:pre;color:var(--green-mid);text-shadow:0 0 6px rgba(0,230,118,0.3);margin:0 auto;"></pre>
+</div>`;
 
   const rocketEl = document.getElementById('launch-rocket-pre');
+  const shakeWrapEl = document.getElementById('launch-shake-wrap');
   const stageInfoEl = document.getElementById('launch-telem-info');
   const stageLabelEl = document.getElementById('launch-stage-label');
 
@@ -606,25 +617,19 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
     const speedBar = document.getElementById('lc-speed-bar');
     const altBar = document.getElementById('lc-alt-bar');
 
+    let curSpdNum = 0, curAltNum = 0;
+
     if (success) {
       const t = Math.min(1, elapsed / totalAnimMs);
       const easedSpeed = t * t;
       const easedAlt = t < 0.7 ? (t / 0.7) * (t / 0.7) : 1;
-      const curSpeed = Math.round(easedSpeed * maxSpeed);
-      const curAlt = Math.round(easedAlt * maxAlt);
-      if (speedEl) speedEl.textContent = curSpeed.toLocaleString();
-      if (altEl) altEl.textContent = curAlt.toLocaleString();
-      if (speedBar) speedBar.style.width = Math.min(100, (curSpeed / (maxSpeed || 1)) * 100).toFixed(1) + '%';
-      if (altBar) altBar.style.width = Math.min(100, (curAlt / (maxAlt || 1)) * 100).toFixed(1) + '%';
+      curSpdNum = Math.round(easedSpeed * maxSpeed);
+      curAltNum = Math.round(easedAlt * maxAlt);
     } else {
       if (elapsed < failTimeMs) {
         const t2 = elapsed / failTimeMs;
-        const spd = Math.round(t2 * t2 * maxSpeed * failProgress);
-        const alt = Math.round(t2 * maxAlt * failProgress);
-        if (speedEl) speedEl.textContent = spd.toLocaleString();
-        if (altEl) altEl.textContent = alt.toLocaleString();
-        if (speedBar) speedBar.style.width = Math.min(100, (spd / (maxSpeed || 1)) * 100).toFixed(1) + '%';
-        if (altBar) altBar.style.width = Math.min(100, (alt / (maxAlt || 1)) * 100).toFixed(1) + '%';
+        curSpdNum = Math.round(t2 * t2 * maxSpeed * failProgress);
+        curAltNum = Math.round(t2 * maxAlt * failProgress);
       } else {
         if (!gaugeFailTriggered) {
           gaugeFailTriggered = true;
@@ -634,13 +639,30 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         const t3 = Math.min(1, (elapsed - failTimeMs) / 2000);
         const peakSpd = Math.round(maxSpeed * failProgress);
         const peakAlt = Math.round(maxAlt * failProgress);
-        const spd = Math.round(peakSpd * (1 - t3));
-        const alt = Math.round(peakAlt * (1 - t3));
-        if (speedEl) speedEl.textContent = Math.max(0, spd).toLocaleString();
-        if (altEl) altEl.textContent = Math.max(0, alt).toLocaleString();
-        if (speedBar) { speedBar.style.width = Math.max(0, (1 - t3) * failProgress * 100).toFixed(1) + '%'; speedBar.style.background = 'var(--red)'; }
-        if (altBar) { altBar.style.width = Math.max(0, (1 - t3) * failProgress * 100).toFixed(1) + '%'; altBar.style.background = 'var(--red)'; }
+        curSpdNum = Math.round(peakSpd * (1 - t3));
+        curAltNum = Math.round(peakAlt * (1 - t3));
       }
+    }
+
+    // UI 업데이트
+    if (speedEl) speedEl.textContent = Math.max(0, curSpdNum).toLocaleString();
+    if (altEl) altEl.textContent = Math.max(0, curAltNum).toLocaleString();
+
+    const sPct = Math.min(100, (curSpdNum / (maxSpeed || 1)) * 100);
+    const aPct = Math.min(100, (curAltNum / (maxAlt || 1)) * 100);
+    if (speedBar) speedBar.style.width = Math.max(0, sPct).toFixed(1) + '%';
+    if (altBar) altBar.style.width = Math.max(0, aPct).toFixed(1) + '%';
+
+    if (gaugeFailTriggered) {
+      if (speedBar) speedBar.style.background = 'var(--red)';
+      if (altBar) altBar.style.background = 'var(--red)';
+    }
+
+    // 통합 텔레메트리 보조 텍스트 (하단)
+    if (stageInfoEl && elapsed < totalAnimMs) {
+      const unitSpd = (gs.settings.unit === 'us') ? 'mph' : 'km/h';
+      const unitAlt = (gs.settings.unit === 'us') ? 'mi' : 'km';
+      stageInfoEl.textContent = `VELOCITY: ${Math.max(0, curSpdNum).toLocaleString()} ${unitSpd}  |  ALTITUDE: ${Math.max(0, curAltNum).toLocaleString()} ${unitAlt}`;
     }
   }, 50);
 
@@ -675,7 +697,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
       if (stageLabelEl) {
         stageLabelEl.textContent = `[ ${stgName} ]`;
         stageLabelEl.style.color = 'var(--green)';
-        stageLabelEl.style.textShadow = '0 0 12px rgba(0,230,118,0.6)';
+        stageLabelEl.style.textShadow = '0 0 16px rgba(0,230,118,0.7)';
       }
 
       // 단계 시작 SFX
@@ -692,6 +714,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
 
       const hudBody = document.getElementById('lc-hud-body');
       if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+      if (telemDiv.parentElement) telemDiv.parentElement.scrollTop = telemDiv.parentElement.scrollHeight;
     }, timing.delay);
 
     // 2. 성공 시: 프레임 순차 애니메이션 (단계 시작 300ms 후부터)
@@ -704,6 +727,8 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
           // 단계 라벨 색상 동기화
           if (stageLabelEl && frame.color) {
             stageLabelEl.style.color = frame.color.startsWith('--') ? `var(${frame.color})` : frame.color;
+            const glowColor = _getGlowColor(frame.color);
+            stageLabelEl.style.textShadow = `0 0 16px ${glowColor}`;
           }
         }, timing.delay + frameOffset);
         frameOffset += frame.durationMs;
@@ -720,6 +745,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         telemDiv.appendChild(doneLine);
         const hudBody = document.getElementById('lc-hud-body');
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+        if (telemDiv.parentElement) telemDiv.parentElement.scrollTop = telemDiv.parentElement.scrollHeight;
       }, timing.delay + timing.duration - 200);
     }
 
@@ -759,7 +785,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         if (stageLabelEl) {
           stageLabelEl.textContent = `!! ${STAGE_NAMES[stageIdx]} ANOMALY !!`;
           stageLabelEl.style.color = 'var(--amber)';
-          stageLabelEl.style.textShadow = '0 0 12px rgba(255,171,0,0.8)';
+          stageLabelEl.style.textShadow = '0 0 16px rgba(255,171,0,1.0)';
         }
         playSfx('sawtooth', 180, 0.14, 0.05, 80);
 
@@ -771,6 +797,7 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
 
         const hudBody = document.getElementById('lc-hud-body');
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+        if (telemDiv.parentElement) telemDiv.parentElement.scrollTop = telemDiv.parentElement.scrollHeight;
       }, anomalyDelay);
 
       // 실패 확정 (anomaly + 1.2s)
@@ -790,11 +817,12 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         if (stageLabelEl) {
           stageLabelEl.textContent = `// ${failInfo.desc}`;
           stageLabelEl.style.color = 'var(--red)';
-          stageLabelEl.style.textShadow = '0 0 12px rgba(255,23,68,0.8)';
+          stageLabelEl.style.textShadow = '0 0 16px rgba(255,23,68,1.0)';
         }
 
         const hudBody = document.getElementById('lc-hud-body');
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+        if (telemDiv.parentElement) telemDiv.parentElement.scrollTop = telemDiv.parentElement.scrollHeight;
       }, anomalyDelay + 1200);
 
       // D5: 실패 프레임 순차 표시 (존별 4프레임)
@@ -810,10 +838,10 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
               const failGlow = _getGlowColor(frame.color);
               sceneEl.innerHTML = `<pre class="rocket-art-core launch-rocket-ascii exploding rocket-${classIdFail} fail-glow"
                 style="font-size:13px;line-height:1.4;white-space:pre;color:${failColor};
-                       text-shadow:0 0 12px ${failGlow};text-align:center;">${frame.art.join('\n')}</pre>`;
+                       text-shadow:0 0 16px ${failGlow};text-align:center;">${frame.art.join('\n')}</pre>`;
             }
             // 텔레메트리 보조 텍스트 업데이트
-            if (stageInfoEl && frame.art) {
+            if (stageInfoEl) {
               stageInfoEl.textContent = '';
             }
           } else {
@@ -851,10 +879,12 @@ function _runLaunchAnimation(q, sci, earned, success, stageRolls, firstFailStage
         if (stageLabelEl) {
           stageLabelEl.textContent = '// MISSION LOST';
           stageLabelEl.style.color = 'var(--red)';
+          stageLabelEl.style.textShadow = '0 0 16px rgba(255,23,68,1.0)';
         }
 
         const hudBody = document.getElementById('lc-hud-body');
         if (hudBody) hudBody.scrollTop = hudBody.scrollHeight;
+        if (telemDiv.parentElement) telemDiv.parentElement.scrollTop = telemDiv.parentElement.scrollHeight;
       }, missionLostDelay);
     }
   });
