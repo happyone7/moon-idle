@@ -60,7 +60,9 @@ Build type → VDF selection (from `references/steam-config.md`):
 
 ```bash
 source .env
-"$STEAMCMD_PATH" +login "$STEAM_ACCOUNT" +run_app_build "../scripts/{VDF_FILE}" +quit
+# SteamCMD requires absolute path for VDF files
+VDF_PATH="$(pwd)/SteamBuild/scripts/{VDF_FILE}"
+"$STEAMCMD_PATH" +login "$STEAM_ACCOUNT" +run_app_build "$VDF_PATH" +quit
 ```
 
 ### Step 4: Release — Set Default Branch Live (release only)

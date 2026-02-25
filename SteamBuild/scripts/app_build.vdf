@@ -1,9 +1,9 @@
 "AppBuild"
 {
   "AppID" "4426340"
-  "Desc" "MoonIdle v0.8.0"
-  "BuildOutput" ".\steamcmd_output\"
-  "ContentRoot" ".\dist\win-unpacked\"
+  "Desc" "MoonIdle Release Build"
+  "BuildOutput" "..\output\"
+  "ContentRoot" "..\content\"
   "SetLive" ""
   "Depots"
   {

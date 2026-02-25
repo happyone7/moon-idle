@@ -1,0 +1,20 @@
+"AppBuild"
+{
+  "AppID" "4426340"
+  "Desc" "MoonIdle QA Build"
+  "BuildOutput" "..\output\"
+  "ContentRoot" "..\content\"
+  "SetLive" "live_test"
+  "Depots"
+  {
+    "4426341"
+    {
+      "FileMapping"
+      {
+        "LocalPath" ".\*"
+        "DepotPath" "."
+        "recursive" "1"
+      }
+    }
+  }
+}
